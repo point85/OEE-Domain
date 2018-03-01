@@ -5,14 +5,14 @@ import java.time.OffsetDateTime;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-import org.point85.domain.CollectorUtils;
+import org.point85.domain.DomainUtils;
 
 @Converter
 public class OffsetDateTimeConverter implements AttributeConverter<OffsetDateTime, String> {
 
 	@Override
 	public String convertToDatabaseColumn(OffsetDateTime time) {
-		return CollectorUtils.offsetDateTimeToString(time);
+		return DomainUtils.offsetDateTimeToString(time);
 	}
 
 	@Override
@@ -36,7 +36,7 @@ public class OffsetDateTimeConverter implements AttributeConverter<OffsetDateTim
 		OffsetDateTime odt = null;
 
 		try {
-			odt = CollectorUtils.offsetDateTimeFromString(toConvert);
+			odt = DomainUtils.offsetDateTimeFromString(toConvert);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

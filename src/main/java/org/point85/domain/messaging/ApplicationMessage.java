@@ -2,7 +2,7 @@ package org.point85.domain.messaging;
 
 import java.time.OffsetDateTime;
 
-import org.point85.domain.CollectorUtils;
+import org.point85.domain.DomainUtils;
 
 public class ApplicationMessage {
 	// type of message for deserialization
@@ -76,7 +76,7 @@ public class ApplicationMessage {
 	}
 
 	public void setTimestamp(OffsetDateTime odt) {
-		this.timestamp = CollectorUtils.offsetDateTimeToString(odt);
+		this.timestamp = DomainUtils.offsetDateTimeToString(odt);
 	}
 	
 }

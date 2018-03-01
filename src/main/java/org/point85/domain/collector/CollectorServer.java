@@ -18,7 +18,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
-import org.point85.domain.CollectorUtils;
+import org.point85.domain.DomainUtils;
 import org.point85.domain.http.HttpEventListener;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.http.OeeHttpServer;
@@ -938,7 +938,7 @@ public class CollectorServer
 				Object javaValue = dataValue.getValue().getValue();
 				String itemId = item.getReadValueId().getNodeId().toParseableString();
 				DateTime dt = dataValue.getServerTime();
-				OffsetDateTime odt = CollectorUtils.localTimeFromDateTime(dt);
+				OffsetDateTime odt = DomainUtils.localTimeFromDateTime(dt);
 
 				if (logger.isInfoEnabled()) {
 					logger.info(
@@ -1092,7 +1092,7 @@ public class CollectorServer
 					EquipmentEventMessage eventMessage = (EquipmentEventMessage) message;
 					String dataValue = eventMessage.getValue();
 					String sourceId = eventMessage.getSourceId();
-					OffsetDateTime timestamp = CollectorUtils.offsetDateTimeFromString(eventMessage.getTimestamp());
+					OffsetDateTime timestamp = DomainUtils.offsetDateTimeFromString(eventMessage.getTimestamp());
 
 					if (logger.isInfoEnabled()) {
 						logger.info("Equipment event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "

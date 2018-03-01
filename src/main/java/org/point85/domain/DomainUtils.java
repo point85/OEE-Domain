@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
 
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 
-public class CollectorUtils {
+public class DomainUtils {
 
 	public static String[] parseDomainAndUser(String user) {
 

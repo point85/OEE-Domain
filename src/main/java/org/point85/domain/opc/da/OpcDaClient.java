@@ -32,7 +32,7 @@ import org.openscada.opc.dcom.list.ClassDetails;
 import org.openscada.opc.lib.da.browser.TreeBrowser;
 import org.openscada.opc.lib.list.Category;
 import org.openscada.opc.lib.list.ServerList;
-import org.point85.domain.CollectorUtils;
+import org.point85.domain.DomainUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -105,7 +105,7 @@ public class OpcDaClient {
 	private void connect(String host, String domainUser, String password, String progId, String classId)
 			throws Exception {
 
-		String[] userInfo = CollectorUtils.parseDomainAndUser(domainUser);
+		String[] userInfo = DomainUtils.parseDomainAndUser(domainUser);
 
 		// prevents waiting indefinitely for socket close on server pinging
 		JISystem.setJavaCoClassAutoCollection(false);
@@ -209,7 +209,7 @@ public class OpcDaClient {
 
 	public static ArrayList<String> getServerProgIds(String hostName, String userName, String password)
 			throws Exception {
-		String[] userInfo = CollectorUtils.parseDomainAndUser(userName);
+		String[] userInfo = DomainUtils.parseDomainAndUser(userName);
 
 		ServerList serverList = new ServerList(hostName, userInfo[0], password, userInfo[1]);
 

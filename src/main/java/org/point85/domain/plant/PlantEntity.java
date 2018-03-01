@@ -22,7 +22,7 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.point85.domain.persistence.EntityLevelConverter;
-import org.point85.domain.workschedule.WorkSchedule;
+import org.point85.domain.schedule.WorkSchedule;
 
 /**
  * The PlantEntity class is an object in the S95 hierarchy (Enterprise, Site,

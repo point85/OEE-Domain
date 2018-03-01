@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package org.point85.domain.workschedule;
+package org.point85.domain.schedule;
 
 import java.time.Duration;
 import java.time.LocalDate;

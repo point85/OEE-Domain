@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.point85.domain.CollectorUtils;
+import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.DataSource;
 import org.point85.domain.collector.DataSourceType;
 import org.point85.domain.persistence.PersistencyService;
@@ -204,7 +204,7 @@ public class OeeHttpServer extends NanoHTTPD {
 		}
 
 		// timestamp
-		OffsetDateTime odt = CollectorUtils.offsetDateTimeFromString(dto.getTimestamp());
+		OffsetDateTime odt = DomainUtils.offsetDateTimeFromString(dto.getTimestamp());
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Data change for source id: " + dto.getSourceId() + ", Value: " + dto.getValue()
