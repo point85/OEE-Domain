@@ -18,7 +18,6 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
-import org.point85.app.AppUtils;
 import org.point85.domain.CollectorUtils;
 import org.point85.domain.http.HttpEventListener;
 import org.point85.domain.http.HttpSource;
@@ -883,6 +882,7 @@ public class CollectorServer
 			this.source = source;
 		}
 
+		@SuppressWarnings("unused")
 		private WebSource getSource() {
 			return source;
 		}
@@ -938,7 +938,7 @@ public class CollectorServer
 				Object javaValue = dataValue.getValue().getValue();
 				String itemId = item.getReadValueId().getNodeId().toParseableString();
 				DateTime dt = dataValue.getServerTime();
-				OffsetDateTime odt = AppUtils.localTimeFromDateTime(dt);
+				OffsetDateTime odt = CollectorUtils.localTimeFromDateTime(dt);
 
 				if (logger.isInfoEnabled()) {
 					logger.info(

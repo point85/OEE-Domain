@@ -1,8 +1,14 @@
 package org.point85.domain;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+
+import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 
 public class CollectorUtils {
 
@@ -50,5 +56,25 @@ public class CollectorUtils {
 			}
 		}
 		return OffsetDateTime.parse(timestamp, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+	}
+	
+	// create a UTC ZonedDateTime from the DateTime
+	public static synchronized ZonedDateTime utcTimeFromDateTime(DateTime dateTime) {
+		long epochMillis = dateTime.getJavaTime();
+		Instant instant = Instant.ofEpochMilli(epochMillis);
+		ZonedDateTime time = ZonedDateTime.ofInstant(instant, ZoneId.of("Z"));
+		return time;
+	}
+
+	// create a local ZonedDateTime from the DateTime
+	public static synchronized OffsetDateTime localTimeFromDateTime(DateTime dateTime) {
+		ZonedDateTime utc = utcTimeFromDateTime(dateTime);
+		ZonedDateTime time = utc.withZoneSameInstant(ZoneId.systemDefault());
+		return OffsetDateTime.from(time);
+	}
+	
+	public static OffsetDateTime fromLocalDateTime(LocalDateTime ldt) {
+		ZoneOffset offset = OffsetDateTime.now().getOffset();
+		return OffsetDateTime.of(ldt, offset);
 	}
 }
