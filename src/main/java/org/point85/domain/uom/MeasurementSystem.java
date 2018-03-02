@@ -82,7 +82,7 @@ public class MeasurementSystem {
 	private static ResourceBundle messages;
 
 	// standard unified system
-	private static MeasurementSystem unifiedSystem = new MeasurementSystem();
+	private static MeasurementSystem unifiedSystem;
 
 	// name of resource bundle with translatable strings for UOMs (e.g. time)
 	private static final String UNIT_BUNDLE_NAME = "Unit";
@@ -91,9 +91,11 @@ public class MeasurementSystem {
 	private static ResourceBundle units;
 
 	// UOM cache manager
-	private CacheManager cacheManager = new CacheManager();
+	private CacheManager cacheManager;
 
 	protected MeasurementSystem() {
+		cacheManager = new CacheManager();
+
 		// common unit strings
 		units = ResourceBundle.getBundle(UNIT_BUNDLE_NAME, Locale.getDefault());
 		messages = ResourceBundle.getBundle(MESSAGE_BUNDLE_NAME, Locale.getDefault());
@@ -110,12 +112,15 @@ public class MeasurementSystem {
 	}
 
 	/**
-	 * Get the unified system of units of measure for International Customary,
-	 * SI, US, British Imperial as well as custom systems
+	 * Get the unified system of units of measure for International Customary, SI,
+	 * US, British Imperial as well as custom systems
 	 * 
 	 * @return {@link MeasurementSystem}
 	 */
 	public static MeasurementSystem instance() {
+		if (unifiedSystem == null) {
+			unifiedSystem = new MeasurementSystem();
+		}
 		return unifiedSystem;
 	}
 
@@ -293,14 +298,14 @@ public class MeasurementSystem {
 			named.setSymbol(units.getString("hubble.symbol"));
 			named.setDescription(units.getString("hubble.desc"));
 			break;
-			
+
 		case CAESIUM_FREQUENCY:
 			named = new Quantity(9192631770d, getUOM(Unit.HERTZ));
 			named.setName(units.getString("caesium.name"));
 			named.setSymbol(units.getString("caesium.symbol"));
 			named.setDescription(units.getString("caesium.desc"));
 			break;
-			
+
 		case LUMINOUS_EFFICACY:
 			UnitOfMeasure kcd = createQuotientUOM(getUOM(Unit.LUMEN), getUOM(Unit.WATT));
 			named = new Quantity(683d, kcd);
@@ -575,7 +580,7 @@ public class MeasurementSystem {
 			break;
 
 		case NEWTON:
-			// force F = m·A (newton)
+			// force F = mï¿½A (newton)
 			uom = createProductUOM(UnitType.FORCE, Unit.NEWTON, units.getString("newton.name"),
 					units.getString("newton.symbol"), units.getString("newton.desc"), getUOM(Unit.KILOGRAM),
 					getUOM(Unit.METRE_PER_SEC_SQUARED));
@@ -719,7 +724,7 @@ public class MeasurementSystem {
 			break;
 
 		case CELSIUS:
-			// °C = °K - 273.15
+			// ï¿½C = ï¿½K - 273.15
 			uom = createScalarUOM(UnitType.TEMPERATURE, Unit.CELSIUS, units.getString("celsius.name"),
 					units.getString("celsius.symbol"), units.getString("celsius.desc"));
 			uom.setConversion(1.0, getUOM(Unit.KELVIN), 273.15);
@@ -819,7 +824,7 @@ public class MeasurementSystem {
 					units.getString("au.symbol"), units.getString("au.desc"));
 			uom.setConversion(1.49597870700E+11, getUOM(Unit.METRE));
 			break;
-			
+
 		case NORMALITY:
 			// equivalent concentration
 			uom = createScalarUOM(UnitType.MOLAR_CONCENTRATION, Unit.NORMALITY, units.getString("normal.name"),
@@ -1059,7 +1064,7 @@ public class MeasurementSystem {
 			break;
 
 		case POUND_FORCE:
-			// force F = m·A (lbf)
+			// force F = mï¿½A (lbf)
 			uom = createProductUOM(UnitType.FORCE, Unit.POUND_FORCE, units.getString("lbf.name"),
 					units.getString("lbf.symbol"), units.getString("lbf.desc"), getUOM(Unit.POUND_MASS),
 					getUOM(Unit.FEET_PER_SEC_SQUARED));
@@ -1591,8 +1596,7 @@ public class MeasurementSystem {
 	}
 
 	/**
-	 * Create a unit of measure that is the product of two other units of
-	 * measure
+	 * Create a unit of measure that is the product of two other units of measure
 	 * 
 	 * @param type
 	 *            {@link UnitType}
@@ -1623,8 +1627,7 @@ public class MeasurementSystem {
 	}
 
 	/**
-	 * Create a unit of measure that is the product of two other units of
-	 * measure
+	 * Create a unit of measure that is the product of two other units of measure
 	 * 
 	 * @param type
 	 *            {@link UnitType}
@@ -1648,8 +1651,7 @@ public class MeasurementSystem {
 	}
 
 	/**
-	 * Create a unit of measure that is the product of two other units of
-	 * measure
+	 * Create a unit of measure that is the product of two other units of measure
 	 * 
 	 * @param multiplier
 	 *            {@link UnitOfMeasure} multiplier
@@ -1755,8 +1757,7 @@ public class MeasurementSystem {
 	 * against the target unit of measure.
 	 * 
 	 * @param prefix
-	 *            {@link Prefix} Scaling prefix with the scaling factor, e.g.
-	 *            1000
+	 *            {@link Prefix} Scaling prefix with the scaling factor, e.g. 1000
 	 * @param targetUOM
 	 *            abscissa {@link UnitOfMeasure}
 	 * @return {@link UnitOfMeasure}
@@ -1789,8 +1790,7 @@ public class MeasurementSystem {
 	 * against the target unit of measure.
 	 * 
 	 * @param prefix
-	 *            {@link Prefix} Scaling prefix with the scaling factor, e.g.
-	 *            1000
+	 *            {@link Prefix} Scaling prefix with the scaling factor, e.g. 1000
 	 * @param unit
 	 *            {@link Unit}
 	 * @return {@link UnitOfMeasure}

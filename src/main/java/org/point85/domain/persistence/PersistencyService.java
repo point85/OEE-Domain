@@ -43,15 +43,10 @@ import org.point85.domain.uom.UnitOfMeasure;
 import org.point85.domain.uom.UnitOfMeasure.MeasurementType;
 import org.point85.domain.uom.UnitType;
 import org.point85.domain.web.WebSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PersistencyService {
 	// JPA persistence unit name
 	private static final String PERSISTENCE_UNIT = "OEE";
-
-	// logger
-	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	// entity manager factory
 	private EntityManagerFactory emf;
@@ -78,12 +73,16 @@ public class PersistencyService {
 		return emf.getPersistenceUnitUtil().isLoaded(entity);
 	}
 
-	// create the EntityManager
-	private EntityManager createEntityManager() {
+	public EntityManagerFactory createEntityManagerFactory() {
 		if (emf == null) {
 			emf = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT);
 		}
-		return emf.createEntityManager();
+		return emf;
+	}
+
+	// create the EntityManager
+	public EntityManager createEntityManager() {
+		return createEntityManagerFactory().createEntityManager();
 	}
 
 	// execute the named query
@@ -224,8 +223,6 @@ public class PersistencyService {
 
 	// insert the object into the database
 	public void persist(BaseEvent object) throws Exception {
-		logger.info("Persisting object of class " + object.getClass().getSimpleName());
-
 		EntityManager em = createEntityManager();
 		EntityTransaction txn = null;
 
@@ -252,10 +249,6 @@ public class PersistencyService {
 
 	// delete the PersistentObjectfrom the database
 	public void delete(KeyedObject keyed) throws Exception {
-
-		logger.info("Deleting persistent object of class " + keyed.getClass().getSimpleName() + " with key "
-				+ keyed.getKey());
-
 		if (keyed instanceof WorkSchedule) {
 			// check for plant entity references
 			List<PlantEntity> entities = fetchEntityCrossReferences((WorkSchedule) keyed);
@@ -760,7 +753,7 @@ public class PersistencyService {
 
 		return eqms;
 	}
-	
+
 	public List<UnitOfMeasure> fetchUomCrossReferences(UnitOfMeasure uom) throws Exception {
 		Query query = createEntityManager().createNamedQuery(UnitOfMeasure.UOM_XREF);
 		query.setParameter("uom", uom);

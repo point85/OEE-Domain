@@ -5,11 +5,7 @@
 	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
 
     <persistence-unit name="OEE" transaction-type="RESOURCE_LOCAL">
-        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
-        
-      	<!-- specify name of jar file containing the entity classes 
-        <jar-file>oee-domain-1.0.jar</jar-file>   
-        -->     
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>    
 
         <!-- entity classes -->                
       	<class>org.point85.domain.collector.DataCollector</class>
@@ -64,20 +60,18 @@
          	<!--  multiple representations of the same entity are being merged -->
          	<property name="hibernate.event.merge.entity_copy_observer" value="allow"/>
          	
-         	<!-- Configuring Connection Pool 
+         	<!-- Configuring Connection Pool -->
       		<property name="hibernate.c3p0.min_size" value="5" />
       		<property name="hibernate.c3p0.max_size" value="20" />
       		<property name="hibernate.c3p0.timeout" value="1000" />
       		<property name="hibernate.c3p0.max_statements" value="50" />
       		<property name="hibernate.c3p0.idle_test_period" value="2000" />
-      		-->
+      		
       		 
-         	
          	<!-- debugging -->
          	<!-- <property name="hibernate.generate_statistics" value="true" /> -->
-         	<property name="show_sql" value="true"/>
-        	<property name="format_sql" value="true"/>
-        	<!-- <property name="hibernate.ejb.interceptor" value="org.point85.oee.persistence.AuditInterceptor" /> -->
+         	<!-- <property name="show_sql" value="true"/> -->
+        	<!-- <property name="format_sql" value="true"/> -->
         </properties>
     </persistence-unit>
 </persistence>

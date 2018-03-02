@@ -190,7 +190,7 @@ public class UnitOfMeasure extends NamedObject {
 
 	// user-defined category
 	@Column(name = "CATEGORY")
-	private String category = MeasurementSystem.getUnitString("default.category.text");
+	private String category;
 
 	// base UOMs and exponents for a product of two power UOMs follow
 	// power base unit, product multiplier or quotient dividend
@@ -476,6 +476,9 @@ public class UnitOfMeasure extends NamedObject {
 	 * @return Category
 	 */
 	public String getCategory() {
+		if (category == null) {
+			category = MeasurementSystem.getUnitString("default.category.text");
+		}
 		return category;
 	}
 
