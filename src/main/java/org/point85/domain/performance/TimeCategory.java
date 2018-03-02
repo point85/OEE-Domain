@@ -2,11 +2,11 @@ package org.point85.domain.performance;
 
 public enum TimeCategory {
 	TOTAL, REQUIRED_OPERATIONS, AVAILABLE, SCHEDULED_PRODUCTION, PRODUCTION, REPORTED_PRODUCTION, NET_PRODUCTION, EFFICIENT_NET_PRODUCTION, EFFECTIVE_NET_PRODUCTION, VALUE_ADDING;
-	
+
 	@Override
 	public String toString() {
-		String value = null;
-		
+		String value = "Undefined";
+
 		switch (this) {
 		case TOTAL:
 			value = "Total";
@@ -41,7 +41,7 @@ public enum TimeCategory {
 		default:
 			break;
 		}
-		
+
 		return value;
 	}
 }

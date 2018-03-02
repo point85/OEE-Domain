@@ -135,15 +135,6 @@
     <version>1.7.25</version>
 </dependency>
 
-<!-- DATABASE -->
-<!-- https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc -->
-<dependency>
-    <groupId>com.microsoft.sqlserver</groupId>
-    <artifactId>mssql-jdbc</artifactId>
-    <version>6.2.2.jre8</version>
-    <scope>test</scope>
-</dependency>
-
 <!-- RABBITMQ AMQP -->
 <dependency>
     <groupId>com.rabbitmq</groupId>

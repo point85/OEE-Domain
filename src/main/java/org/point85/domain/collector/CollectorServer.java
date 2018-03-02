@@ -532,8 +532,6 @@ public class CollectorServer
 		// clear resolution caches
 		equipmentResolver.clearCache();
 
-		appContext = null;
-
 		// disconnect from RMQ brokers
 		for (PublisherSubscriber pubsub : appContext.getPublisherSubscribers()) {
 			pubsub.disconnect();

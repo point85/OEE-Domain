@@ -46,18 +46,18 @@ public class DomainUtils {
 			return OffsetDateTime.now();
 		}
 
-		// look for T separator
-		if (timestamp.indexOf('T') == -1) {
-			// missing T
-			int space = timestamp.indexOf(' ');
+		String timeString = timestamp;
 
-			if (space != -1) {
-				timestamp.split(" ");
+		// look for T separator
+		if (timeString.indexOf('T') == -1) {
+			// missing T
+			if (timestamp.indexOf(' ') != -1) {
+				timeString = timeString.replace(' ', 'T');
 			}
 		}
-		return OffsetDateTime.parse(timestamp, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+		return OffsetDateTime.parse(timeString, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 	}
-	
+
 	// create a UTC ZonedDateTime from the DateTime
 	public static synchronized ZonedDateTime utcTimeFromDateTime(DateTime dateTime) {
 		long epochMillis = dateTime.getJavaTime();
@@ -72,7 +72,7 @@ public class DomainUtils {
 		ZonedDateTime time = utc.withZoneSameInstant(ZoneId.systemDefault());
 		return OffsetDateTime.from(time);
 	}
-	
+
 	public static OffsetDateTime fromLocalDateTime(LocalDateTime ldt) {
 		ZoneOffset offset = OffsetDateTime.now().getOffset();
 		return OffsetDateTime.of(ldt, offset);

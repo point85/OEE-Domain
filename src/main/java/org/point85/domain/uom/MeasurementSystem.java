@@ -93,12 +93,25 @@ public class MeasurementSystem {
 	// UOM cache manager
 	private CacheManager cacheManager;
 
-	protected MeasurementSystem() {
+	private MeasurementSystem() {
 		cacheManager = new CacheManager();
 
 		// common unit strings
 		units = ResourceBundle.getBundle(UNIT_BUNDLE_NAME, Locale.getDefault());
 		messages = ResourceBundle.getBundle(MESSAGE_BUNDLE_NAME, Locale.getDefault());
+	}
+
+	/**
+	 * Get the unified system of units of measure for International Customary, SI,
+	 * US, British Imperial as well as custom systems
+	 * 
+	 * @return {@link MeasurementSystem}
+	 */
+	public static synchronized MeasurementSystem instance() {
+		if (unifiedSystem == null) {
+			unifiedSystem = new MeasurementSystem();
+		}
+		return unifiedSystem;
 	}
 
 	// get a particular message by its key
@@ -109,19 +122,6 @@ public class MeasurementSystem {
 	// get a particular unit string by its key
 	static String getUnitString(String key) {
 		return units.getString(key);
-	}
-
-	/**
-	 * Get the unified system of units of measure for International Customary, SI,
-	 * US, British Imperial as well as custom systems
-	 * 
-	 * @return {@link MeasurementSystem}
-	 */
-	public static MeasurementSystem instance() {
-		if (unifiedSystem == null) {
-			unifiedSystem = new MeasurementSystem();
-		}
-		return unifiedSystem;
 	}
 
 	private UnitOfMeasure createUOM(Unit enumeration) throws Exception {
