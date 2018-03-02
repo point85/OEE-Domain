@@ -140,7 +140,11 @@ public class PublisherSubscriber {
 	}
 
 	private void sendMessage(ApplicationMessage message, String routingKey, BasicProperties properties)
-			throws IOException {
+			throws Exception {
+		if (channel == null) {
+			return;
+		}
+		
 		// payload is JSON string
 		String payload = serialize(message);
 

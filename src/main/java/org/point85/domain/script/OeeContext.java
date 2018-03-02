@@ -53,6 +53,7 @@ public class OeeContext {
 		setOpcDaClients(new ArrayList<OpcDaClient>());
 		setOpcUaClients(new ArrayList<UaOpcClient>());
 		setPublisherSubscribers(new ArrayList<PublisherSubscriber>());
+		setHttpServers(new ArrayList<OeeHttpServer>());
 	}
 
 	public String getJob(Equipment equipment) {

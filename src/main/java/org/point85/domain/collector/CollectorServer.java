@@ -498,7 +498,7 @@ public class CollectorServer
 			try {
 				pubSub.publish(message, RoutingKey.NOTIFICATION_MESSAGE);
 			} catch (Exception e) {
-				onException("Unable to publish notification.", e);
+				logger.error("Unable to publish notification.", e);
 			}
 		}
 	}
@@ -620,6 +620,9 @@ public class CollectorServer
 		for (UaOpcClient uaClient : appContext.getOpcUaClients()) {
 			uaClient.unregisterAsynchListener(this);
 		}
+		if (logger.isInfoEnabled()) {
+			logger.info("Unsubscribed from data sources.");
+		}
 	}
 
 	public void subscribeToDataSource() {
@@ -633,6 +636,10 @@ public class CollectorServer
 		// UA clients
 		for (UaOpcClient uaClient : appContext.getOpcUaClients()) {
 			uaClient.registerAsynchListener(this);
+		}
+		
+		if (logger.isInfoEnabled()) {
+			logger.info("Subscribed to data sources.");
 		}
 	}
 
