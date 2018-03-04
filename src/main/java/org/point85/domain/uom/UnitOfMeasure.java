@@ -100,6 +100,7 @@ import org.point85.domain.plant.NamedObject;
 @Entity
 @Table(name = "UOM")
 @AttributeOverride(name = "primaryKey", column = @Column(name = "UOM_KEY"))
+
 @NamedQueries({
 		@NamedQuery(name = UnitOfMeasure.UOM_CATEGORIES, query = "SELECT DISTINCT uom.category FROM UnitOfMeasure uom"),
 		@NamedQuery(name = UnitOfMeasure.UOM_SYMBOLS, query = "SELECT uom.symbol, uom.name FROM UnitOfMeasure uom WHERE uom.unit IS NULL AND uom.unitType = :type"),

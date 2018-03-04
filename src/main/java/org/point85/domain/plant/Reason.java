@@ -32,18 +32,15 @@ import org.point85.domain.persistence.TimeLossConverter;
 
 @NamedQueries({
 		@NamedQuery(name = Reason.REASON_BY_NAME, query = "SELECT reason FROM Reason reason WHERE reason.name = :name"),
-		@NamedQuery(name = Reason.REASON_NAMES, query = "SELECT reason.name FROM Reason reason"),
-		@NamedQuery(name = Reason.REASON_KEY_BY_NAME, query = "SELECT reason.primaryKey, reason.version FROM Reason reason WHERE reason.name = :name"),
 		@NamedQuery(name = Reason.REASON_ROOTS, query = "SELECT reason FROM Reason reason WHERE reason.parent IS NULL"),
 		@NamedQuery(name = Reason.REASON_ALL, query = "SELECT reason FROM Reason reason"), })
+
 public class Reason extends NamedObject {
 	// the one and only root reason in the hierarchy
 	public static final String ROOT_REASON_NAME = "All Reasons";
 
 	// named queries
 	public static final String REASON_BY_NAME = "REASON.ByName";
-	public static final String REASON_NAMES = "REASON.Names";
-	public static final String REASON_KEY_BY_NAME = "REASON.KeyByName";
 	public static final String REASON_ROOTS = "REASON.Roots";
 	public static final String REASON_ALL = "REASON.All";
 
@@ -102,12 +99,10 @@ public class Reason extends NamedObject {
 	public void setLossCategory(TimeLoss loss) {
 		this.toCategory = loss;
 	}
-/*
-	@Override
-	public String getFetchQueryName() {
-		return REASON_BY_NAME;
-	}
-*/
+
+	/*
+	 * @Override public String getFetchQueryName() { return REASON_BY_NAME; }
+	 */
 	@Override
 	public String toString() {
 		return super.toString() + ", Loss: " + getLossCategory();

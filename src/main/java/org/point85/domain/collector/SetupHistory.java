@@ -15,6 +15,7 @@ import org.point85.domain.script.ResolvedEvent;
 
 @NamedQueries({
 		@NamedQuery(name = SetupHistory.LAST_RECORD, query = "SELECT hist FROM SetupHistory hist WHERE hist.equipment = :equipment AND hist.type = :type ORDER BY hist.sourceTimestamp DESC"), })
+
 public class SetupHistory extends BaseEvent {
 	public static final String LAST_RECORD = "Setup.Last";
 

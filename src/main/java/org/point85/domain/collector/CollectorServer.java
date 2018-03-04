@@ -535,7 +535,7 @@ public class CollectorServer
 		// disconnect from RMQ brokers
 		for (PublisherSubscriber pubsub : appContext.getPublisherSubscribers()) {
 			pubsub.disconnect();
-			onInformation("Disconnected from pubsub with binding key" + pubsub.getBindingKey());
+			onInformation("Disconnected from pubsub with binding key " + pubsub.getBindingKey());
 		}
 		appContext.getPublisherSubscribers().clear();
 

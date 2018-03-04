@@ -22,11 +22,10 @@ import org.point85.domain.plant.NamedObject;
 @AttributeOverride(name = "primaryKey", column = @Column(name = "SOURCE_KEY"))
 
 @NamedQueries({
-		@NamedQuery(name = DataSource.SRC_BY_TYPE, query = "SELECT source FROM DataSource source WHERE sourceType = :type"),
-		@NamedQuery(name = DataSource.SRC_BY_NAME, query = "SELECT source FROM DataSource source WHERE name = :name"), })
+		@NamedQuery(name = DataSource.SRC_BY_TYPE, query = "SELECT source FROM DataSource source WHERE sourceType = :type"), })
+
 public abstract class DataSource extends NamedObject {
 	// queries
-	public static final String SRC_BY_NAME = "DS.ByName";
 	public static final String SRC_BY_TYPE = "DS.ByType";
 
 	@Column(name = "HOST")

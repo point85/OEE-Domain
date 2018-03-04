@@ -419,7 +419,7 @@ public class PersistencyService {
 
 		return reasons;
 	}
-
+	
 	public List<String> fetchProgIds() {
 		Query query = createEntityManager().createNamedQuery(OpcDaSource.DA_PROG_IDS);
 

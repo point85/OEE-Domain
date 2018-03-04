@@ -61,6 +61,7 @@ import org.point85.domain.plant.NamedObject;
 @Entity
 @Table(name = "WORK_SCHEDULE")
 @AttributeOverride(name = "primaryKey", column = @Column(name = "WS_KEY"))
+
 @NamedQueries({ @NamedQuery(name = WorkSchedule.WS_SCHEDULES, query = "SELECT ws FROM WorkSchedule ws"),
 		@NamedQuery(name = WorkSchedule.WS_NAMES, query = "SELECT ws.name FROM WorkSchedule ws"),
 		@NamedQuery(name = WorkSchedule.WS_BY_NAME, query = "SELECT ws FROM WorkSchedule ws WHERE ws.name = :name"),

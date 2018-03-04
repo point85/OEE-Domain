@@ -13,17 +13,12 @@ import org.point85.domain.collector.DataSourceType;
 @DiscriminatorValue(DataSourceType.OPC_UA_VALUE)
 
 @NamedQueries({
-		@NamedQuery(name = OpcUaSource.UA_SRC_KEY_BY_NAME, query = "SELECT source.primaryKey, source.version FROM OpcUaSource source WHERE source.name = :name"),
-		@NamedQuery(name = OpcUaSource.UA_SRC_BY_NAME, query = "SELECT source FROM OpcUaSource source WHERE source.name = :name"),
-		@NamedQuery(name = OpcUaSource.UA_BY_TYPE, query = "SELECT source FROM OpcUaSource source WHERE source.sourceType = '"
-				+ DataSourceType.OPC_UA_VALUE + "'"), })
+		@NamedQuery(name = OpcUaSource.UA_SRC_BY_NAME, query = "SELECT source FROM OpcUaSource source WHERE source.name = :name"), })
+
 public class OpcUaSource extends DataSource {
 
 	// queries
-	public static final String UA_SRC_BY_KEY = "OPCUA.ByKey";
-	public static final String UA_SRC_KEY_BY_NAME = "OPCUA.KeyByName";
 	public static final String UA_SRC_BY_NAME = "OPCUA.ByName";
-	public static final String UA_BY_TYPE = "OPCUA.ByType";
 
 	private transient SecurityPolicy policy;
 
@@ -52,7 +47,7 @@ public class OpcUaSource extends DataSource {
 			setPort(Integer.valueOf(tokens[1]));
 		}
 	}
-	
+
 	public String getPath() {
 		return param1;
 	}

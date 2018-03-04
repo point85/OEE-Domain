@@ -17,8 +17,10 @@ import org.point85.domain.uom.UnitOfMeasure;
 @Entity
 @Table(name = "EQUIPMENT_MATERIAL")
 @AttributeOverride(name = "primaryKey", column = @Column(name = "EM_KEY"))
+
 @NamedQueries({
 		@NamedQuery(name = EquipmentMaterial.EQM_XREF, query = "SELECT eqm FROM EquipmentMaterial eqm WHERE runRateUOM = :uom OR rejectUOM = :uom"), })
+
 public class EquipmentMaterial extends KeyedObject {
 	// named queries
 	public static final String EQM_XREF = "EQM.XRef";
