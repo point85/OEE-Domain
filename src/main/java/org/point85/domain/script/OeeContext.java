@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 
 public class OeeContext {
 	// logger for scripting
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private Logger logger;
 
 	// material key
 	private static final String MATL_KEY = "MATL";
@@ -44,8 +44,6 @@ public class OeeContext {
 
 	public OeeContext() {
 		contextMap = new ConcurrentHashMap<>();
-
-		setLogger();
 
 		contextMap.put(MATL_KEY, new ConcurrentHashMap<Equipment, Material>());
 		contextMap.put(JOB_KEY, new ConcurrentHashMap<Equipment, String>());
@@ -91,6 +89,10 @@ public class OeeContext {
 	}
 
 	public Logger getLogger() {
+		if (logger == null) {
+			logger = LoggerFactory.getLogger(getClass());
+			setLogger();
+		}
 		return (Logger) contextMap.get(LOGGER_KEY);
 	}
 
