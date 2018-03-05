@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentMap;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.point85.domain.persistence.PersistencyService;
+import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.script.OeeContext;
 import org.point85.domain.script.ResolvedEvent;
 import org.point85.domain.script.ResolverFunction;
@@ -56,7 +56,7 @@ public class EquipmentEventResolver {
 	private void cacheResolvers() {
 		if (resolverCache.size() == 0) {
 			// query db
-			List<ScriptResolver> resolvers = PersistencyService.instance().fetchScriptResolvers();
+			List<ScriptResolver> resolvers = PersistenceService.instance().fetchScriptResolvers();
 
 			for (ScriptResolver resolver : resolvers) {
 
@@ -265,7 +265,7 @@ public class EquipmentEventResolver {
 
 		if (reason == null) {
 			// fetch from database
-			reason = PersistencyService.instance().fetchReasonByName(reasonName);
+			reason = PersistenceService.instance().fetchReasonByName(reasonName);
 
 			// cache it
 			if (reason != null) {
@@ -300,7 +300,7 @@ public class EquipmentEventResolver {
 
 		if (material == null) {
 			// fetch from database
-			material = PersistencyService.instance().fetchMaterialByName(materialName);
+			material = PersistenceService.instance().fetchMaterialByName(materialName);
 
 			// cache it
 			if (material != null) {

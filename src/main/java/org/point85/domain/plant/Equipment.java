@@ -11,7 +11,7 @@ import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 
 import org.point85.domain.collector.SetupHistory;
-import org.point85.domain.persistence.PersistencyService;
+import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.script.ScriptResolver;
 import org.point85.domain.script.ScriptResolverType;
 
@@ -133,7 +133,7 @@ public class Equipment extends PlantEntity {
 	public Material getCurrentMaterial() {
 		Material material = null;
 
-		SetupHistory history = PersistencyService.instance().fetchLastHistory(this, ScriptResolverType.MATERIAL);
+		SetupHistory history = PersistenceService.instance().fetchLastHistory(this, ScriptResolverType.MATERIAL);
 
 		if (history != null) {
 			material = history.getMaterial();
@@ -145,7 +145,7 @@ public class Equipment extends PlantEntity {
 	public String getCurrentJob() {
 		String job = null;
 
-		SetupHistory history = PersistencyService.instance().fetchLastHistory(this, ScriptResolverType.JOB);
+		SetupHistory history = PersistenceService.instance().fetchLastHistory(this, ScriptResolverType.JOB);
 
 		if (history != null) {
 			job = history.getJob();

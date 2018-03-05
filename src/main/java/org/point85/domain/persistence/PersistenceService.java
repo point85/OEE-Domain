@@ -40,7 +40,7 @@ import org.point85.domain.uom.UnitOfMeasure;
 import org.point85.domain.uom.UnitOfMeasure.MeasurementType;
 import org.point85.domain.uom.UnitType;
 
-public class PersistencyService {
+public class PersistenceService {
 	// JPA persistence unit name
 	private static final String PERSISTENCE_UNIT = "OEE";
 
@@ -48,19 +48,19 @@ public class PersistencyService {
 	private EntityManagerFactory emf;
 
 	// singleton service
-	private static PersistencyService persistencyService;
+	private static PersistenceService persistencyService;
 
 	private CompletableFuture<EntityManagerFactory> emfFuture;
 
 	private Map<String, Boolean> namedQueryMap;
 
-	private PersistencyService() {
+	private PersistenceService() {
 		namedQueryMap = new ConcurrentHashMap<>();
 	}
 
-	public static PersistencyService instance() {
+	public static PersistenceService instance() {
 		if (persistencyService == null) {
-			persistencyService = new PersistencyService();
+			persistencyService = new PersistenceService();
 		}
 		return persistencyService;
 	}

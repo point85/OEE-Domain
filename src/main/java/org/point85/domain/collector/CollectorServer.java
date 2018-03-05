@@ -45,7 +45,7 @@ import org.point85.domain.opc.da.TagItemInfo;
 import org.point85.domain.opc.ua.OpcUaAsynchListener;
 import org.point85.domain.opc.ua.OpcUaSource;
 import org.point85.domain.opc.ua.UaOpcClient;
-import org.point85.domain.persistence.PersistencyService;
+import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentEventResolver;
 import org.point85.domain.plant.EquipmentMaterial;
@@ -341,7 +341,7 @@ public class CollectorServer
 		List<CollectorState> states = new ArrayList<>();
 		states.add(CollectorState.READY);
 		states.add(CollectorState.RUNNING);
-		List<ScriptResolver> resolvers = PersistencyService.instance().fetchScriptResolversByHost(hostNames, states);
+		List<ScriptResolver> resolvers = PersistenceService.instance().fetchScriptResolversByHost(hostNames, states);
 
 		if (resolvers.size() == 0) {
 			if (logger.isInfoEnabled()) {
@@ -508,7 +508,7 @@ public class CollectorServer
 
 		for (DataCollector collector : collectors) {
 			collector.setCollectorState(state);
-			DataCollector saved = (DataCollector) PersistencyService.instance().save(collector);
+			DataCollector saved = (DataCollector) PersistenceService.instance().save(collector);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Saved collector " + collector.getName());
@@ -668,7 +668,7 @@ public class CollectorServer
 		EventHistory history = new EventHistory(resolvedItem);
 		history.setReason(resolvedItem.getReason());
 
-		PersistencyService.instance().persist(history);
+		PersistenceService.instance().persist(history);
 	}
 
 	private void saveSetupRecord(ResolvedEvent resolvedItem) throws Exception {
@@ -678,7 +678,7 @@ public class CollectorServer
 
 		SetupHistory history = new SetupHistory(resolvedItem);
 
-		PersistencyService.instance().persist(history);
+		PersistenceService.instance().persist(history);
 	}
 
 	private void saveProductionRecord(ResolvedEvent resolvedItem) throws Exception {
@@ -711,7 +711,7 @@ public class CollectorServer
 		history.setAmount(resolvedItem.getQuantity().getAmount());
 		history.setUOM(uom);
 
-		PersistencyService.instance().persist(history);
+		PersistenceService.instance().persist(history);
 	}
 
 	protected void onOtherResolution(ResolvedEvent resolvedItem) {

@@ -9,7 +9,7 @@ import java.util.Map;
 import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.DataSource;
 import org.point85.domain.collector.DataSourceType;
-import org.point85.domain.persistence.PersistencyService;
+import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.PlantEntity;
 import org.point85.domain.plant.Reason;
@@ -254,7 +254,7 @@ public class OeeHttpServer extends NanoHTTPD {
 				throw new Exception("The data source type must be specified.");
 			}
 
-			List<String> sourceIds = PersistencyService.instance().fetchResolverSourceIds(equipmentName,
+			List<String> sourceIds = PersistenceService.instance().fetchResolverSourceIds(equipmentName,
 					DataSourceType.valueOf(sourceType));
 
 			String payload = gson.toJson(new SourceIdResponseDto(sourceIds));
@@ -278,7 +278,7 @@ public class OeeHttpServer extends NanoHTTPD {
 				throw new Exception("The data source type must be specified.");
 			}
 
-			List<DataSource> dataSources = PersistencyService.instance()
+			List<DataSource> dataSources = PersistenceService.instance()
 					.fetchDataSources(DataSourceType.valueOf(sourceType));
 
 			List<DataSourceDto> dataSourceDtos = new ArrayList<>();
@@ -301,7 +301,7 @@ public class OeeHttpServer extends NanoHTTPD {
 	private Response serveMaterialRequest() throws Exception {
 		List<MaterialDto> materialDtos = new ArrayList<>();
 
-		List<Material> allMaterial = PersistencyService.instance().fetchAllMaterials();
+		List<Material> allMaterial = PersistenceService.instance().fetchAllMaterials();
 
 		for (Material material : allMaterial) {
 			MaterialDto dto = new MaterialDto(material.getName(), material.getDescription(), material.getCategory());
@@ -322,7 +322,7 @@ public class OeeHttpServer extends NanoHTTPD {
 
 		List<ReasonDto> topDtos = new ArrayList<>();
 
-		List<Reason> allReasons = PersistencyService.instance().fetchAllReasons();
+		List<Reason> allReasons = PersistenceService.instance().fetchAllReasons();
 
 		for (Reason reason : allReasons) {
 			// this reason
@@ -364,7 +364,7 @@ public class OeeHttpServer extends NanoHTTPD {
 
 		List<PlantEntityDto> topDtos = new ArrayList<>();
 
-		List<PlantEntity> allEntities = PersistencyService.instance().fetchAllPlantEntities();
+		List<PlantEntity> allEntities = PersistenceService.instance().fetchAllPlantEntities();
 
 		for (PlantEntity entity : allEntities) {
 			// this entity

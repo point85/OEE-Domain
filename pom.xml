@@ -75,29 +75,32 @@
     <scope>runtime</scope>
 </dependency>
 
-<!-- https://mvnrepository.com/artifact/org.eclipse.milo/sdk-core -->
+<!-- https://mvnrepository.com/artifact/org.eclipse.milo/sdk-core 
 <dependency>
     <groupId>org.eclipse.milo</groupId>
     <artifactId>sdk-core</artifactId>
     <version>0.1.6</version>
     <scope>runtime</scope>
 </dependency>
+-->
 
-<!-- https://mvnrepository.com/artifact/org.eclipse.milo/stack-client  -->
+<!-- https://mvnrepository.com/artifact/org.eclipse.milo/stack-client  
 <dependency>
     <groupId>org.eclipse.milo</groupId>
     <artifactId>stack-client</artifactId>
     <version>0.1.6</version>
     <scope>runtime</scope>
 </dependency>
+-->
 
-<!-- https://mvnrepository.com/artifact/org.eclipse.milo/stack-core -->
+<!-- https://mvnrepository.com/artifact/org.eclipse.milo/stack-core 
 <dependency>
     <groupId>org.eclipse.milo</groupId>
     <artifactId>stack-core</artifactId>
     <version>0.1.6</version>
     <scope>runtime</scope>
 </dependency>
+-->
 
 <!-- HIBERNATE JPA -->
 <!-- HikariCP -->
