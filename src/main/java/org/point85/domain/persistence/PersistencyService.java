@@ -2,18 +2,14 @@ package org.point85.domain.persistence;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 
 import org.point85.domain.collector.BaseEvent;
 import org.point85.domain.collector.CollectorState;
@@ -21,15 +17,12 @@ import org.point85.domain.collector.DataCollector;
 import org.point85.domain.collector.DataSource;
 import org.point85.domain.collector.DataSourceType;
 import org.point85.domain.collector.SetupHistory;
-import org.point85.domain.http.HttpSource;
-import org.point85.domain.messaging.MessagingSource;
 import org.point85.domain.opc.da.OpcDaSource;
 import org.point85.domain.opc.ua.OpcUaSource;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentMaterial;
 import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.plant.Material;
-import org.point85.domain.plant.NamedObject;
 import org.point85.domain.plant.PlantEntity;
 import org.point85.domain.plant.Reason;
 import org.point85.domain.schedule.Rotation;
@@ -42,7 +35,6 @@ import org.point85.domain.uom.Unit;
 import org.point85.domain.uom.UnitOfMeasure;
 import org.point85.domain.uom.UnitOfMeasure.MeasurementType;
 import org.point85.domain.uom.UnitType;
-import org.point85.domain.web.WebSource;
 
 public class PersistencyService {
 	// JPA persistence unit name
@@ -65,15 +57,7 @@ public class PersistencyService {
 		return persistencyService;
 	}
 
-	public boolean contains(EntityManager em, KeyedObject entity) {
-		return em.contains(entity);
-	}
-
-	public boolean isLoaded(KeyedObject entity) {
-		return emf.getPersistenceUnitUtil().isLoaded(entity);
-	}
-
-	public EntityManagerFactory createEntityManagerFactory() {
+	public EntityManagerFactory getEntityManagerFactory() {
 		if (emf == null) {
 			emf = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT);
 		}
@@ -82,107 +66,51 @@ public class PersistencyService {
 
 	// create the EntityManager
 	public EntityManager createEntityManager() {
-		return createEntityManagerFactory().createEntityManager();
-	}
-
-	// execute the named query
-	List<?> executeNamedQuery(String queryName, Map<String, Object> parameters) {
-		Query query = createEntityManager().createNamedQuery(queryName);
-
-		if (parameters != null) {
-			for (Entry<String, Object> entry : parameters.entrySet()) {
-				query.setParameter(entry.getKey(), entry.getValue());
-			}
-		}
-		return query.getResultList();
+		return getEntityManagerFactory().createEntityManager();
 	}
 
 	public List<String> fetchPlantEntityNames() {
-		@SuppressWarnings("unchecked")
-		List<String> values = (List<String>) executeNamedQuery(PlantEntity.ENTITY_NAMES, null);
-
-		return values;
+		TypedQuery<String> query = createEntityManager().createNamedQuery(PlantEntity.ENTITY_NAMES, String.class);
+		return query.getResultList();
 	}
 
-	// fetch persistent object by its primary key
-	public Object fetchByKey(Class<?> clazz, Long key) throws Exception {
-		Object found = createEntityManager().find(clazz, key);
-		return found;
-	}
+	public PlantEntity fetchPlantEntityByName(String name) {
+		PlantEntity entity = null;
+		TypedQuery<PlantEntity> query = createEntityManager().createNamedQuery(PlantEntity.ENTITY_BY_NAME,
+				PlantEntity.class);
+		List<PlantEntity> entities = query.getResultList();
 
-	// fetch NamedObject by its name
-	public NamedObject fetchByName(String queryName, String objectName) throws Exception {
-		NamedObject result = null;
-
-		if (objectName != null) {
-			Map<String, Object> parameters = new HashMap<>();
-			parameters.put("name", objectName);
-
-			result = (NamedObject) fetchObject(queryName, parameters);
+		if (entities.size() == 1) {
+			entity = entities.get(0);
 		}
-		return result;
+		return entity;
 	}
 
 	// fetch list of PersistentObjects by names
 	public List<PlantEntity> fetchEntitiesByName(List<String> names) throws Exception {
-		Query query = createEntityManager().createNamedQuery(PlantEntity.ENTITY_BY_NAME_LIST);
+		TypedQuery<PlantEntity> query = createEntityManager().createNamedQuery(PlantEntity.ENTITY_BY_NAME_LIST,
+				PlantEntity.class);
 		query.setParameter("names", names);
-
-		@SuppressWarnings("unchecked")
-		List<PlantEntity> entities = query.getResultList();
-
-		return entities;
+		return query.getResultList();
 	}
 
 	public List<ScriptResolver> fetchScriptResolvers() {
-		Query query = createEntityManager().createNamedQuery(ScriptResolver.RESOLVER_ALL);
-
-		@SuppressWarnings("unchecked")
-		List<ScriptResolver> resolvers = query.getResultList();
-
-		return resolvers;
+		TypedQuery<ScriptResolver> query = createEntityManager().createNamedQuery(ScriptResolver.RESOLVER_ALL,
+				ScriptResolver.class);
+		return query.getResultList();
 	}
 
 	public List<String> fetchResolverSourceIds(String equipmentName, DataSourceType sourceType) {
-		Query query = createEntityManager().createNamedQuery(Equipment.EQUIPMENT_SOURCE_IDS);
+		TypedQuery<String> query = createEntityManager().createNamedQuery(Equipment.EQUIPMENT_SOURCE_IDS, String.class);
 		query.setParameter("name", equipmentName);
 		query.setParameter("type", sourceType);
-
-		@SuppressWarnings("unchecked")
-		List<String> sources = query.getResultList();
-
-		return sources;
+		return query.getResultList();
 	}
 
 	public List<DataSource> fetchDataSources(DataSourceType sourceType) {
-		Query query = createEntityManager().createNamedQuery(DataSource.SRC_BY_TYPE);
+		TypedQuery<DataSource> query = createEntityManager().createNamedQuery(DataSource.SRC_BY_TYPE, DataSource.class);
 		query.setParameter("type", sourceType);
-
-		@SuppressWarnings("unchecked")
-		List<DataSource> sources = query.getResultList();
-
-		return sources;
-	}
-
-	// fetch persistent object by a named query
-	public Object fetchObject(String queryName, Map<String, Object> parameters) throws Exception {
-
-		Object entity = null;
-
-		Query query = createEntityManager().createNamedQuery(queryName);
-
-		if (parameters != null) {
-			for (Entry<String, Object> entry : parameters.entrySet()) {
-				query.setParameter(entry.getKey(), entry.getValue());
-			}
-		}
-
-		try {
-			entity = query.getSingleResult();
-		} catch (Exception e) {
-			// not id db yet
-		}
-		return entity;
+		return query.getResultList();
 	}
 
 	// remove the PersistentObject from the persistence context
@@ -294,223 +222,171 @@ public class PersistencyService {
 
 	// all entities
 	public List<PlantEntity> fetchAllPlantEntities() {
-		Query query = createEntityManager().createNamedQuery(PlantEntity.ENTITY_ALL);
-
-		@SuppressWarnings("unchecked")
-		List<PlantEntity> entities = query.getResultList();
-
-		return entities;
+		TypedQuery<PlantEntity> query = createEntityManager().createNamedQuery(PlantEntity.ENTITY_ALL,
+				PlantEntity.class);
+		return query.getResultList();
 	}
 
 	// top-level plant entities
 	public List<PlantEntity> fetchTopPlantEntities() {
-		Query query = createEntityManager().createNamedQuery(PlantEntity.ENTITY_ROOTS);
-
-		@SuppressWarnings("unchecked")
+		TypedQuery<PlantEntity> query = createEntityManager().createNamedQuery(PlantEntity.ENTITY_ROOTS,
+				PlantEntity.class);
 		List<PlantEntity> entities = query.getResultList();
 
 		return entities;
 	}
 
 	public List<String> fetchTopPlantEntityNames() {
-		Query query = createEntityManager().createNamedQuery(PlantEntity.ENTITY_ROOT_NAMES);
-
-		@SuppressWarnings("unchecked")
-		List<String> entities = query.getResultList();
-
-		return entities;
+		TypedQuery<String> query = createEntityManager().createNamedQuery(PlantEntity.ENTITY_ROOT_NAMES, String.class);
+		return query.getResultList();
 	}
 
 	public List<DataCollector> fetchCollectorsByHostAndState(List<String> hostNames, List<CollectorState> states) {
-		Query query = createEntityManager().createNamedQuery(DataCollector.COLLECTOR_BY_HOST_BY_STATE);
+		TypedQuery<DataCollector> query = createEntityManager()
+				.createNamedQuery(DataCollector.COLLECTOR_BY_HOST_BY_STATE, DataCollector.class);
 		query.setParameter("names", hostNames);
 		query.setParameter("states", states);
-
-		@SuppressWarnings("unchecked")
-		List<DataCollector> collectors = query.getResultList();
-
-		return collectors;
+		return query.getResultList();
 	}
 
 	public List<DataCollector> fetchCollectorsByState(List<CollectorState> states) {
-		Query query = createEntityManager().createNamedQuery(DataCollector.COLLECTOR_BY_STATE);
+		TypedQuery<DataCollector> query = createEntityManager().createNamedQuery(DataCollector.COLLECTOR_BY_STATE,
+				DataCollector.class);
 		query.setParameter("states", states);
-
-		@SuppressWarnings("unchecked")
-		List<DataCollector> collectors = query.getResultList();
-
-		return collectors;
+		return query.getResultList();
 	}
 
 	public List<ScriptResolver> fetchScriptResolversByHost(List<String> hostNames, List<CollectorState> states)
 			throws Exception {
-		Query query = createEntityManager().createNamedQuery(ScriptResolver.RESOLVER_BY_HOST);
+		TypedQuery<ScriptResolver> query = createEntityManager().createNamedQuery(ScriptResolver.RESOLVER_BY_HOST,
+				ScriptResolver.class);
 		query.setParameter("names", hostNames);
 		query.setParameter("states", states);
-
-		@SuppressWarnings("unchecked")
-		List<ScriptResolver> resolvers = query.getResultList();
-
-		return resolvers;
+		return query.getResultList();
 	}
 
 	public List<ScriptResolver> fetchScriptResolversByCollector(List<String> definitionNames) throws Exception {
-		Query query = createEntityManager().createNamedQuery(ScriptResolver.RESOLVER_BY_COLLECTOR);
+		TypedQuery<ScriptResolver> query = createEntityManager().createNamedQuery(ScriptResolver.RESOLVER_BY_COLLECTOR,
+				ScriptResolver.class);
 		query.setParameter("names", definitionNames);
-
-		@SuppressWarnings("unchecked")
-		List<ScriptResolver> resolvers = query.getResultList();
-
-		return resolvers;
+		return query.getResultList();
 	}
 
 	public List<Material> fetchMaterialsByCategory(String category) throws Exception {
-		Query query = createEntityManager().createNamedQuery(Material.MATLS_BY_CATEGORY);
+		TypedQuery<Material> query = createEntityManager().createNamedQuery(Material.MATLS_BY_CATEGORY, Material.class);
 		query.setParameter("category", category);
-
-		@SuppressWarnings("unchecked")
-		List<Material> materials = query.getResultList();
-
-		return materials;
+		return query.getResultList();
 	}
 
 	public List<DataCollector> fetchAllDataCollectors() {
-		Query query = createEntityManager().createNamedQuery(DataCollector.COLLECT_ALL);
-
-		@SuppressWarnings("unchecked")
-		List<DataCollector> configs = query.getResultList();
-
-		return configs;
+		TypedQuery<DataCollector> query = createEntityManager().createNamedQuery(DataCollector.COLLECT_ALL,
+				DataCollector.class);
+		return query.getResultList();
 	}
 
 	public List<Material> fetchAllMaterials() {
-		Query query = createEntityManager().createNamedQuery(Material.MATL_ALL);
-
-		@SuppressWarnings("unchecked")
-		List<Material> material = query.getResultList();
-
-		return material;
+		TypedQuery<Material> query = createEntityManager().createNamedQuery(Material.MATL_ALL, Material.class);
+		return query.getResultList();
 	}
 
 	public List<String> fetchMaterialCategories() {
-		Query query = createEntityManager().createNamedQuery(Material.MATL_CATEGORIES);
+		TypedQuery<String> query = createEntityManager().createNamedQuery(Material.MATL_CATEGORIES, String.class);
+		return query.getResultList();
+	}
 
-		@SuppressWarnings("unchecked")
-		List<String> categories = query.getResultList();
+	public Material fetchMaterialByName(String materialName) {
+		Material material = null;
+		TypedQuery<Material> query = createEntityManager().createNamedQuery(Material.MATL_BY_NAME, Material.class);
+		List<Material> materials = query.getResultList();
 
-		return categories;
+		if (materials.size() == 1) {
+			material = materials.get(0);
+		}
+		return material;
+	}
+
+	public Material fetchMaterialByKey(Long key) throws Exception {
+		return createEntityManager().find(Material.class, key);
+	}
+
+	public Reason fetchReasonByName(String name) {
+		Reason reason = null;
+		TypedQuery<Reason> query = createEntityManager().createNamedQuery(Reason.REASON_BY_NAME, Reason.class);
+		List<Reason> reasons = query.getResultList();
+
+		if (reasons.size() == 1) {
+			reason = reasons.get(0);
+		}
+		return reason;
+	}
+
+	public Reason fetchReasonByKey(Long key) throws Exception {
+		return createEntityManager().find(Reason.class, key);
 	}
 
 	public List<Reason> fetchAllReasons() {
-		Query query = createEntityManager().createNamedQuery(Reason.REASON_ALL);
-
-		@SuppressWarnings("unchecked")
-		List<Reason> reasons = query.getResultList();
-
-		return reasons;
+		TypedQuery<Reason> query = createEntityManager().createNamedQuery(Reason.REASON_ALL, Reason.class);
+		return query.getResultList();
 	}
 
 	// top-level reasons
 	public List<Reason> fetchTopReasons() {
-		Query query = createEntityManager().createNamedQuery(Reason.REASON_ROOTS);
-
-		@SuppressWarnings("unchecked")
-		List<Reason> reasons = query.getResultList();
-
-		return reasons;
+		TypedQuery<Reason> query = createEntityManager().createNamedQuery(Reason.REASON_ROOTS, Reason.class);
+		return query.getResultList();
 	}
-	
+
 	public List<String> fetchProgIds() {
-		Query query = createEntityManager().createNamedQuery(OpcDaSource.DA_PROG_IDS);
-
-		@SuppressWarnings("unchecked")
-		List<String> ids = query.getResultList();
-
-		return ids;
+		TypedQuery<String> query = createEntityManager().createNamedQuery(OpcDaSource.DA_PROG_IDS, String.class);
+		return query.getResultList();
 	}
 
-	public List<OpcUaSource> fetchOpcUaSources() {
-		Query query = createEntityManager().createNamedQuery(DataSource.SRC_BY_TYPE);
-		query.setParameter("type", DataSourceType.OPC_UA);
+	public OpcDaSource fetchOpcDaSourceByName(String name) {
+		OpcDaSource source = null;
+		TypedQuery<OpcDaSource> query = createEntityManager().createNamedQuery(OpcDaSource.DA_SRC_BY_NAME,
+				OpcDaSource.class);
+		query.setParameter("name", name);
 
-		@SuppressWarnings("unchecked")
-		List<OpcUaSource> ids = query.getResultList();
+		List<OpcDaSource> sources = query.getResultList();
 
-		return ids;
+		if (sources.size() == 1) {
+			source = sources.get(0);
+		}
+		return source;
 	}
 
-	public List<HttpSource> fetchHttpSources() {
-		Query query = createEntityManager().createNamedQuery(DataSource.SRC_BY_TYPE);
-		query.setParameter("type", DataSourceType.HTTP);
+	public OpcUaSource fetchOpcUaSourceByName(String name) {
+		OpcUaSource source = null;
+		TypedQuery<OpcUaSource> query = createEntityManager().createNamedQuery(OpcUaSource.UA_SRC_BY_NAME,
+				OpcUaSource.class);
+		query.setParameter("name", name);
 
-		@SuppressWarnings("unchecked")
-		List<HttpSource> sources = query.getResultList();
+		List<OpcUaSource> sources = query.getResultList();
 
-		return sources;
-	}
-
-	public List<MessagingSource> fetchMessagingSources() {
-		Query query = createEntityManager().createNamedQuery(DataSource.SRC_BY_TYPE);
-		query.setParameter("type", DataSourceType.MESSAGING);
-
-		@SuppressWarnings("unchecked")
-		List<MessagingSource> sources = query.getResultList();
-
-		return sources;
-	}
-
-	public List<WebSource> fetchWebSources() {
-		Query query = createEntityManager().createNamedQuery(DataSource.SRC_BY_TYPE);
-		query.setParameter("type", DataSourceType.WEB);
-
-		@SuppressWarnings("unchecked")
-		List<WebSource> sources = query.getResultList();
-
-		return sources;
+		if (sources.size() == 1) {
+			source = sources.get(0);
+		}
+		return source;
 	}
 
 	// ******************** work schedule related *******************************
+	public WorkSchedule fetchScheduleByKey(Long key) throws Exception {
+		return createEntityManager().find(WorkSchedule.class, key);
+	}
+
 	public List<WorkSchedule> fetchWorkSchedules() {
-		@SuppressWarnings("unchecked")
-		List<WorkSchedule> values = (List<WorkSchedule>) executeNamedQuery(WorkSchedule.WS_SCHEDULES, null);
-		return values;
+		TypedQuery<WorkSchedule> query = createEntityManager().createNamedQuery(WorkSchedule.WS_SCHEDULES,
+				WorkSchedule.class);
+		return query.getResultList();
 	}
 
 	public List<String> fetchWorkScheduleNames() {
-		@SuppressWarnings("unchecked")
-		List<String> values = (List<String>) executeNamedQuery(WorkSchedule.WS_NAMES, null);
-		return values;
-	}
-
-	// fetch WorkSchedule by its primary key
-	public WorkSchedule fetchWorkScheduleByKey(Long key) throws Exception {
-		return (WorkSchedule) fetchByKey(WorkSchedule.class, key);
-	}
-
-	// fetch WorkSchedule by its unique name
-	public WorkSchedule fetchWorkScheduleByName(String name) throws Exception {
-		Map<String, Object> parameters = new HashMap<>();
-		parameters.put("name", name);
-
-		return fetchWorkSchedule(WorkSchedule.WS_BY_NAME, parameters);
-	}
-
-	// fetch WorkSchedule by a named query
-	public WorkSchedule fetchWorkSchedule(String queryName, Map<String, Object> parameters) throws Exception {
-		Query query = createEntityManager().createNamedQuery(queryName);
-
-		if (parameters != null) {
-			for (Entry<String, Object> entry : parameters.entrySet()) {
-				query.setParameter(entry.getKey(), entry.getValue());
-			}
-		}
-
-		return (WorkSchedule) query.getSingleResult();
+		TypedQuery<String> query = createEntityManager().createNamedQuery(WorkSchedule.WS_NAMES, String.class);
+		return query.getResultList();
 	}
 
 	// fetch Team by its primary key
 	public Team fetchTeamByKey(Long key) throws Exception {
-		return (Team) fetchByKey(Team.class, key);
+		return createEntityManager().find(Team.class, key);
 	}
 
 	public OffsetDateTime fetchDatabaseTime() {
@@ -523,70 +399,57 @@ public class PersistencyService {
 
 	// get any Team references to the Rotation
 	public List<Team> fetchTeamCrossReferences(Rotation rotation) throws Exception {
-		Long key = rotation.getKey();
-
-		Query query = createEntityManager().createNamedQuery(WorkSchedule.WS_ROT_XREF);
-		query.setParameter(1, key);
-
-		@SuppressWarnings("unchecked")
-		List<Long> keys = (List<Long>) query.getResultList();
-
-		List<Team> referencingTeams = new ArrayList<>(keys.size());
-
-		// get the referenced Teams
-		for (Long primaryKey : keys) {
-			Team referencing = fetchTeamByKey(primaryKey);
-			referencingTeams.add(referencing);
-		}
-		return referencingTeams;
+		TypedQuery<Team> query = createEntityManager().createNamedQuery(WorkSchedule.WS_ROT_XREF, Team.class);
+		query.setParameter("rotation", rotation);
+		return query.getResultList();
 	}
 
-	@SuppressWarnings("unchecked")
 	public List<PlantEntity> fetchEntityCrossReferences(WorkSchedule schedule) {
-		Query query = createEntityManager().createNamedQuery(WorkSchedule.WS_ENT_XREF);
+		TypedQuery<PlantEntity> query = createEntityManager().createNamedQuery(WorkSchedule.WS_ENT_XREF,
+				PlantEntity.class);
 		query.setParameter("schedule", schedule);
-
-		return (List<PlantEntity>) query.getResultList();
+		return query.getResultList();
 	}
 
 	// ******************** unit of measure related ***************************
+	public UnitOfMeasure fetchUomByKey(Long key) throws Exception {
+		return createEntityManager().find(UnitOfMeasure.class, key);
+	}
+
 	// get symbols and names in this category
-	public List<Object[]> fetchUomSymbolsAndNames(String category) {
-		Map<String, Object> parameters = new HashMap<>();
-		parameters.put("category", category);
+	public List<String[]> fetchUomSymbolsAndNamesByCategory(String category) {
+		TypedQuery<String[]> query = createEntityManager().createNamedQuery(UnitOfMeasure.UOM_CAT_SYMBOLS,
+				String[].class);
+		query.setParameter("category", category);
+		return query.getResultList();
+	}
 
-		@SuppressWarnings("unchecked")
-		List<Object[]> values = (List<Object[]>) executeNamedQuery(UnitOfMeasure.UOM_CAT_SYMBOLS, parameters);
-
-		return values;
+	// fetch symbols and their names for this UOM type
+	public List<String[]> fetchUomSymbolsAndNamesByType(UnitType unitType) {
+		TypedQuery<String[]> query = createEntityManager().createNamedQuery(UnitOfMeasure.UOM_SYMBOLS, String[].class);
+		query.setParameter("type", unitType);
+		return query.getResultList();
 	}
 
 	// fetch all defined categories
 	public List<String> fetchCategories() {
-		@SuppressWarnings("unchecked")
-		List<String> categories = (List<String>) executeNamedQuery(UnitOfMeasure.UOM_CATEGORIES, null);
-		Collections.sort(categories);
-		return categories;
+		TypedQuery<String> query = createEntityManager().createNamedQuery(UnitOfMeasure.UOM_CATEGORIES, String.class);
+		return query.getResultList();
 	}
 
 	// query for UOM based on its unique symbol
 	public UnitOfMeasure fetchUOMBySymbol(String symbol) throws Exception {
-		Map<String, Object> parameters = new HashMap<>();
-		parameters.put("symbol", symbol);
-
-		UnitOfMeasure uom = (UnitOfMeasure) fetchObject(UnitOfMeasure.UOM_BY_SYMBOL, parameters);
-
-		return uom;
+		TypedQuery<UnitOfMeasure> query = createEntityManager().createNamedQuery(UnitOfMeasure.UOM_BY_SYMBOL,
+				UnitOfMeasure.class);
+		query.setParameter("symbol", symbol);
+		return query.getSingleResult();
 	}
 
 	public List<UnitOfMeasure> fetchUomsByCategory(String category) throws Exception {
-		Query query = createEntityManager().createNamedQuery(UnitOfMeasure.UOM_BY_CATEGORY);
+		TypedQuery<UnitOfMeasure> query = createEntityManager().createNamedQuery(UnitOfMeasure.UOM_BY_CATEGORY,
+				UnitOfMeasure.class);
 		query.setParameter("category", category);
-
-		@SuppressWarnings("unchecked")
-		List<UnitOfMeasure> uoms = query.getResultList();
-
-		return uoms;
+		return query.getResultList();
 	}
 
 	// fetch UOM by its enumeration
@@ -597,15 +460,15 @@ public class PersistencyService {
 			return uom;
 		}
 
-		// check in the database
-		Map<String, Object> parameters = new HashMap<>();
-		parameters.put("unit", unit);
-
 		// fetch by Unit enum
-		Object result = fetchObject(UnitOfMeasure.UOM_BY_UNIT, parameters);
+		TypedQuery<UnitOfMeasure> query = createEntityManager().createNamedQuery(UnitOfMeasure.UOM_BY_UNIT,
+				UnitOfMeasure.class);
+		query.setParameter("unit", unit);
 
-		if (result != null) {
-			uom = (UnitOfMeasure) result;
+		List<UnitOfMeasure> uoms = query.getResultList();
+
+		if (uoms.size() == 1) {
+			uom = uoms.get(0);
 		} else {
 			// not in db, get from pre-defined units
 			uom = MeasurementSystem.instance().getUOM(unit);
@@ -718,50 +581,45 @@ public class PersistencyService {
 	}
 
 	public SetupHistory fetchLastHistory(Equipment equipment, ScriptResolverType type) {
-		Query query = createEntityManager().createNamedQuery(SetupHistory.LAST_RECORD);
+		TypedQuery<SetupHistory> query = createEntityManager().createNamedQuery(SetupHistory.LAST_RECORD,
+				SetupHistory.class);
 		query.setParameter("equipment", equipment);
 		query.setParameter("type", type);
 		query.setMaxResults(1);
+		List<SetupHistory> histories = query.getResultList();
 
 		SetupHistory history = null;
-		try {
-			history = (SetupHistory) query.getSingleResult();
-		} catch (Exception e) {
-			// no history yet
+		if (histories.size() == 1) {
+			history = histories.get(0);
 		}
 
 		return history;
 	}
 
-	// fetch symbols and their names for this UOM type
-	public List<Object[]> fetchSymbolsAndNames(UnitType unitType) {
-		Map<String, Object> parameters = new HashMap<>();
-		parameters.put("type", unitType);
-
-		@SuppressWarnings("unchecked")
-		List<Object[]> values = (List<Object[]>) executeNamedQuery(UnitOfMeasure.UOM_SYMBOLS, parameters);
-
-		return values;
-	}
-
 	public List<EquipmentMaterial> fetchEquipmentMaterials(UnitOfMeasure uom) throws Exception {
-		Query query = createEntityManager().createNamedQuery(EquipmentMaterial.EQM_XREF);
+		TypedQuery<EquipmentMaterial> query = createEntityManager().createNamedQuery(EquipmentMaterial.EQM_XREF,
+				EquipmentMaterial.class);
 		query.setParameter("uom", uom);
-
-		@SuppressWarnings("unchecked")
-		List<EquipmentMaterial> eqms = (List<EquipmentMaterial>) query.getResultList();
-
-		return eqms;
+		return query.getResultList();
 	}
 
 	public List<UnitOfMeasure> fetchUomCrossReferences(UnitOfMeasure uom) throws Exception {
-		Query query = createEntityManager().createNamedQuery(UnitOfMeasure.UOM_XREF);
+		TypedQuery<UnitOfMeasure> query = createEntityManager().createNamedQuery(UnitOfMeasure.UOM_XREF,
+				UnitOfMeasure.class);
 		query.setParameter("uom", uom);
+		return query.getResultList();
+	}
 
-		@SuppressWarnings("unchecked")
-		List<UnitOfMeasure> uoms = (List<UnitOfMeasure>) query.getResultList();
+	public DataCollector fetchCollectorByName(String name) {
+		DataCollector collector = null;
+		TypedQuery<DataCollector> query = createEntityManager().createNamedQuery(DataCollector.COLLECT_BY_NAME,
+				DataCollector.class);
+		List<DataCollector> collectors = query.getResultList();
 
-		return uoms;
+		if (collectors.size() == 1) {
+			collector = collectors.get(0);
+		}
+		return collector;
 	}
 
 }

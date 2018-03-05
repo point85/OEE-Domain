@@ -108,8 +108,8 @@ public class EquipmentEventResolver {
 		String script = scriptResolver.getScript();
 
 		if (script == null) {
-			throw new Exception("The resolver script is not defined for source id " + sourceId
-					+ " for equipment " + scriptResolver.getEquipment().getName());
+			throw new Exception("The resolver script is not defined for source id " + sourceId + " for equipment "
+					+ scriptResolver.getEquipment().getName());
 		}
 
 		if (logger.isInfoEnabled()) {
@@ -223,8 +223,7 @@ public class EquipmentEventResolver {
 		} else if (outputValue instanceof Byte) {
 			amount = Double.valueOf((Byte) outputValue);
 		} else {
-			throw new Exception(
-					"The result " + resolvedItem.getOutputValue() + " cannot be converted to a number.");
+			throw new Exception("The result " + resolvedItem.getOutputValue() + " cannot be converted to a number.");
 		}
 
 		// get UOM from material and equipment
@@ -266,7 +265,7 @@ public class EquipmentEventResolver {
 
 		if (reason == null) {
 			// fetch from database
-			reason = (Reason) PersistencyService.instance().fetchByName(Reason.REASON_BY_NAME, reasonName);
+			reason = PersistencyService.instance().fetchReasonByName(reasonName);
 
 			// cache it
 			if (reason != null) {
@@ -301,7 +300,7 @@ public class EquipmentEventResolver {
 
 		if (material == null) {
 			// fetch from database
-			material = (Material) PersistencyService.instance().fetchByName(Material.MATL_BY_NAME, materialName);
+			material = PersistencyService.instance().fetchMaterialByName(materialName);
 
 			// cache it
 			if (material != null) {

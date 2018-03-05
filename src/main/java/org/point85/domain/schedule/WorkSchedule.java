@@ -41,8 +41,6 @@ import javax.persistence.AttributeOverride;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.NamedNativeQueries;
-import javax.persistence.NamedNativeQuery;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
@@ -65,10 +63,8 @@ import org.point85.domain.plant.NamedObject;
 @NamedQueries({ @NamedQuery(name = WorkSchedule.WS_SCHEDULES, query = "SELECT ws FROM WorkSchedule ws"),
 		@NamedQuery(name = WorkSchedule.WS_NAMES, query = "SELECT ws.name FROM WorkSchedule ws"),
 		@NamedQuery(name = WorkSchedule.WS_BY_NAME, query = "SELECT ws FROM WorkSchedule ws WHERE ws.name = :name"),
-		@NamedQuery(name = WorkSchedule.WS_ENT_XREF, query = "select ent FROM PlantEntity ent WHERE ent.workSchedule = :schedule"), })
-
-@NamedNativeQueries({
-		@NamedNativeQuery(name = WorkSchedule.WS_ROT_XREF, query = "select TEAM_KEY from TEAM where ROTATION_KEY = ?1"), })
+		@NamedQuery(name = WorkSchedule.WS_ENT_XREF, query = "SELECT ent FROM PlantEntity ent WHERE ent.workSchedule = :schedule"),
+		@NamedQuery(name = WorkSchedule.WS_ROT_XREF, query = "SELECT team FROM Team team WHERE rotation = :rotation"), })
 
 public class WorkSchedule extends NamedObject {
 	// named queries
