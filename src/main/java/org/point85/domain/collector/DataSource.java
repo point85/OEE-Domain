@@ -8,8 +8,6 @@ import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import org.point85.domain.persistence.DataSourceConverter;
@@ -21,12 +19,12 @@ import org.point85.domain.plant.NamedObject;
 @DiscriminatorColumn(name = "TYPE", discriminatorType = DiscriminatorType.STRING)
 @AttributeOverride(name = "primaryKey", column = @Column(name = "SOURCE_KEY"))
 
-@NamedQueries({
-		@NamedQuery(name = DataSource.SRC_BY_TYPE, query = "SELECT source FROM DataSource source WHERE sourceType = :type"), })
+//@NamedQueries({
+		//@NamedQuery(name = DataSource.SRC_BY_TYPE, query = "SELECT source FROM DataSource source WHERE sourceType = :type"), })
 
 public abstract class DataSource extends NamedObject {
 	// queries
-	public static final String SRC_BY_TYPE = "DS.ByType";
+	//public static final String SRC_BY_TYPE = "DS.ByType";
 
 	@Column(name = "HOST")
 	private String host;

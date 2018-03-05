@@ -6,8 +6,6 @@ import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -18,12 +16,12 @@ import org.point85.domain.uom.UnitOfMeasure;
 @Table(name = "EQUIPMENT_MATERIAL")
 @AttributeOverride(name = "primaryKey", column = @Column(name = "EM_KEY"))
 
-@NamedQueries({
-		@NamedQuery(name = EquipmentMaterial.EQM_XREF, query = "SELECT eqm FROM EquipmentMaterial eqm WHERE runRateUOM = :uom OR rejectUOM = :uom"), })
+//@NamedQueries({
+		//@NamedQuery(name = EquipmentMaterial.EQM_XREF, query = "SELECT eqm FROM EquipmentMaterial eqm WHERE runRateUOM = :uom OR rejectUOM = :uom"), })
 
 public class EquipmentMaterial extends KeyedObject {
 	// named queries
-	public static final String EQM_XREF = "EQM.XRef";
+	//public static final String EQM_XREF = "EQM.XRef";
 
 	// OEE target
 	@Column(name = "OEE_TARGET")

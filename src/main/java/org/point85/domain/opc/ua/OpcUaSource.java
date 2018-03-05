@@ -2,8 +2,6 @@ package org.point85.domain.opc.ua;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.point85.domain.collector.DataSource;
@@ -12,13 +10,13 @@ import org.point85.domain.collector.DataSourceType;
 @Entity
 @DiscriminatorValue(DataSourceType.OPC_UA_VALUE)
 
-@NamedQueries({
-		@NamedQuery(name = OpcUaSource.UA_SRC_BY_NAME, query = "SELECT source FROM OpcUaSource source WHERE source.name = :name"), })
+//@NamedQueries({
+		//@NamedQuery(name = OpcUaSource.UA_SRC_BY_NAME, query = "SELECT source FROM OpcUaSource source WHERE source.name = :name"), })
 
 public class OpcUaSource extends DataSource {
 
 	// queries
-	public static final String UA_SRC_BY_NAME = "OPCUA.ByName";
+	//public static final String UA_SRC_BY_NAME = "OPCUA.ByName";
 
 	private transient SecurityPolicy policy;
 

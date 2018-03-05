@@ -2,8 +2,6 @@ package org.point85.domain.http;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 
 import org.point85.domain.collector.DataSource;
 import org.point85.domain.collector.DataSourceType;
@@ -11,13 +9,13 @@ import org.point85.domain.collector.DataSourceType;
 @Entity
 @DiscriminatorValue(DataSourceType.HTTP_VALUE)
 
-@NamedQueries({
-		@NamedQuery(name = HttpSource.HTTP_SRC_BY_TYPE, query = "SELECT source FROM HttpSource source WHERE source.sourceType = '"
-				+ DataSourceType.HTTP_VALUE + "'"), })
+//@NamedQueries({
+		//@NamedQuery(name = HttpSource.HTTP_SRC_BY_TYPE, query = "SELECT source FROM HttpSource source WHERE source.sourceType = '"
+				//+ DataSourceType.HTTP_VALUE + "'"), })
 
 public class HttpSource extends DataSource {
 	// queries
-	public static final String HTTP_SRC_BY_TYPE = "HTTP.ByType";
+	//public static final String HTTP_SRC_BY_TYPE = "HTTP.ByType";
 
 	public HttpSource() {
 		super();

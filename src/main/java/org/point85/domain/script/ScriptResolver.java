@@ -9,8 +9,6 @@ import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -26,15 +24,15 @@ import org.slf4j.LoggerFactory;
 @Table(name = "SCRIPT_RESOLVER")
 @AttributeOverride(name = "primaryKey", column = @Column(name = "SR_KEY"))
 
-@NamedQueries({ @NamedQuery(name = ScriptResolver.RESOLVER_ALL, query = "SELECT sr FROM ScriptResolver sr"),
-		@NamedQuery(name = ScriptResolver.RESOLVER_BY_COLLECTOR, query = "SELECT sr FROM ScriptResolver sr WHERE sr.collector.name IN :names"),
-		@NamedQuery(name = ScriptResolver.RESOLVER_BY_HOST, query = "SELECT sr FROM ScriptResolver sr WHERE sr.collector.host IN :names AND sr.collector.state IN :states"), })
+//@NamedQueries({ @NamedQuery(name = ScriptResolver.RESOLVER_ALL, query = "SELECT sr FROM ScriptResolver sr"),
+		//@NamedQuery(name = ScriptResolver.RESOLVER_BY_COLLECTOR, query = "SELECT sr FROM ScriptResolver sr WHERE sr.collector.name IN :names"),
+		//@NamedQuery(name = ScriptResolver.RESOLVER_BY_HOST, query = "SELECT sr FROM ScriptResolver sr WHERE sr.collector.host IN :names AND sr.collector.state IN :states"), })
 
 public class ScriptResolver extends KeyedObject {
 	// named queries
-	public static final String RESOLVER_BY_COLLECTOR = "RESOLVER.ByCollector";
-	public static final String RESOLVER_BY_HOST = "RESOLVER.ByHost";
-	public static final String RESOLVER_ALL = "RESOLVER.All";
+	//public static final String RESOLVER_BY_COLLECTOR = "RESOLVER.ByCollector";
+	//public static final String RESOLVER_BY_HOST = "RESOLVER.ByHost";
+	//public static final String RESOLVER_ALL = "RESOLVER.All";
 
 	// period between value updates
 	public static final int DEFAULT_UPDATE_PERIOD = 1000;

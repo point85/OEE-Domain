@@ -15,8 +15,6 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -39,24 +37,22 @@ import org.point85.domain.schedule.WorkSchedule;
 @DiscriminatorColumn(name = "LEVEL", discriminatorType = DiscriminatorType.STRING)
 @AttributeOverride(name = "primaryKey", column = @Column(name = "ENT_KEY"))
 
-@NamedQueries({ 
-		@NamedQuery(name = PlantEntity.ENTITY_BY_NAME, query = "SELECT ent FROM PlantEntity ent WHERE ent.name = :name"),
-		@NamedQuery(name = PlantEntity.ENTITY_NAMES, query = "SELECT ent.name FROM PlantEntity ent"),
-		@NamedQuery(name = PlantEntity.ENTITY_BY_NAME_LIST, query = "SELECT ent FROM PlantEntity ent WHERE ent.name IN :names"),
-		@NamedQuery(name = PlantEntity.ENTITY_ROOTS, query = "SELECT ent FROM PlantEntity ent WHERE ent.parent IS NULL"),
-		@NamedQuery(name = PlantEntity.ENTITY_ROOT_NAMES, query = "SELECT ent.name FROM PlantEntity ent WHERE ent.parent IS NULL"),
-		@NamedQuery(name = PlantEntity.ENTITY_ALL, query = "SELECT ent FROM PlantEntity ent"), })
+//@NamedQueries({ 
+		//@NamedQuery(name = PlantEntity.ENTITY_BY_NAME, query = "SELECT ent FROM PlantEntity ent WHERE ent.name = :name"),
+		//@NamedQuery(name = PlantEntity.ENTITY_NAMES, query = "SELECT ent.name FROM PlantEntity ent"),
+		//@NamedQuery(name = PlantEntity.ENTITY_BY_NAME_LIST, query = "SELECT ent FROM PlantEntity ent WHERE ent.name IN :names"),
+		//@NamedQuery(name = PlantEntity.ENTITY_ROOTS, query = "SELECT ent FROM PlantEntity ent WHERE ent.parent IS NULL"),
+		//@NamedQuery(name = PlantEntity.ENTITY_ALL, query = "SELECT ent FROM PlantEntity ent"), })
 
 public class PlantEntity extends NamedObject {
 	public static final String ROOT_ENTITY_NAME = "All Entities";
 
 	// named queries
-	public static final String ENTITY_BY_NAME = "ENTITY.ByName";
-	public static final String ENTITY_NAMES = "ENTITY.Names";
-	public static final String ENTITY_BY_NAME_LIST = "ENTITY.ByNameList";
-	public static final String ENTITY_ROOTS = "ENTITY.Roots";
-	public static final String ENTITY_ROOT_NAMES = "ENTITY.RootNames";
-	public static final String ENTITY_ALL = "ENTITY.All";
+	//public static final String ENTITY_BY_NAME = "ENTITY.ByName";
+	//public static final String ENTITY_NAMES = "ENTITY.Names";
+	//public static final String ENTITY_BY_NAME_LIST = "ENTITY.ByNameList";
+	//public static final String ENTITY_ROOTS = "ENTITY.Roots";
+	//public static final String ENTITY_ALL = "ENTITY.All";
 
 	// parent object in the S95 hierarchy
 	@ManyToOne

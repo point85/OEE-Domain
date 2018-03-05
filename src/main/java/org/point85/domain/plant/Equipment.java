@@ -8,8 +8,6 @@ import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 
 import org.point85.domain.collector.SetupHistory;
@@ -20,8 +18,8 @@ import org.point85.domain.script.ScriptResolverType;
 @Entity
 @DiscriminatorValue(Equipment.EQUIP_VALUE)
 
-@NamedQueries({
-		@NamedQuery(name = Equipment.EQUIPMENT_SOURCE_IDS, query = "SELECT sr.sourceId FROM ScriptResolver sr JOIN sr.equipment e JOIN sr.dataSource ds WHERE e.name = :name AND ds.sourceType = :type"), })
+//@NamedQueries({
+		//@NamedQuery(name = Equipment.EQUIPMENT_SOURCE_IDS, query = "SELECT sr.sourceId FROM ScriptResolver sr JOIN sr.equipment e JOIN sr.dataSource ds WHERE e.name = :name AND ds.sourceType = :type"), })
 		
 public class Equipment extends PlantEntity {
 	public static final String EQUIP_VALUE = "EQ";
@@ -29,7 +27,7 @@ public class Equipment extends PlantEntity {
 	public static final String DEFAULT_DESC = "Default equipment";
 
 	// named queries
-	public static final String EQUIPMENT_SOURCE_IDS = "EQUIP.SourceIds";
+	//public static final String EQUIPMENT_SOURCE_IDS = "EQUIP.SourceIds";
 
 	// map by Material
 	transient private Map<Material, EquipmentMaterial> equipmentMaterialsMap = new HashMap<>();

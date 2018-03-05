@@ -11,8 +11,6 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
@@ -30,19 +28,19 @@ import org.point85.domain.persistence.TimeLossConverter;
 @Table(name = "REASON")
 @AttributeOverride(name = "primaryKey", column = @Column(name = "REASON_KEY"))
 
-@NamedQueries({
-		@NamedQuery(name = Reason.REASON_BY_NAME, query = "SELECT reason FROM Reason reason WHERE reason.name = :name"),
-		@NamedQuery(name = Reason.REASON_ROOTS, query = "SELECT reason FROM Reason reason WHERE reason.parent IS NULL"),
-		@NamedQuery(name = Reason.REASON_ALL, query = "SELECT reason FROM Reason reason"), })
+//@NamedQueries({
+		//@NamedQuery(name = Reason.REASON_BY_NAME, query = "SELECT reason FROM Reason reason WHERE reason.name = :name"),
+		//@NamedQuery(name = Reason.REASON_ROOTS, query = "SELECT reason FROM Reason reason WHERE reason.parent IS NULL"),
+		//@NamedQuery(name = Reason.REASON_ALL, query = "SELECT reason FROM Reason reason"), })
 
 public class Reason extends NamedObject {
 	// the one and only root reason in the hierarchy
 	public static final String ROOT_REASON_NAME = "All Reasons";
 
 	// named queries
-	public static final String REASON_BY_NAME = "REASON.ByName";
-	public static final String REASON_ROOTS = "REASON.Roots";
-	public static final String REASON_ALL = "REASON.All";
+	//public static final String REASON_BY_NAME = "REASON.ByName";
+	//public static final String REASON_ROOTS = "REASON.Roots";
+	//public static final String REASON_ALL = "REASON.All";
 
 	// parent reason
 	@ManyToOne

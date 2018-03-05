@@ -2,8 +2,6 @@ package org.point85.domain.opc.da;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 
 import org.point85.domain.collector.DataSource;
 import org.point85.domain.collector.DataSourceType;
@@ -11,14 +9,14 @@ import org.point85.domain.collector.DataSourceType;
 @Entity
 @DiscriminatorValue(DataSourceType.OPC_DA_VALUE)
 
-@NamedQueries({
-	@NamedQuery(name = OpcDaSource.DA_SRC_BY_NAME, query = "SELECT source FROM OpcDaSource source WHERE source.name = :name"),
-	@NamedQuery(name = OpcDaSource.DA_PROG_IDS, query = "SELECT source.name FROM OpcDaSource source"), })
+//@NamedQueries({
+	//@NamedQuery(name = OpcDaSource.DA_SRC_BY_NAME, query = "SELECT source FROM OpcDaSource source WHERE source.name = :name"),
+	//@NamedQuery(name = OpcDaSource.DA_PROG_IDS, query = "SELECT source.name FROM OpcDaSource source"), })
 
 public class OpcDaSource extends DataSource {
 	// queries
-	public static final String DA_PROG_IDS = "OPCDA.ProgIds";
-	public static final String DA_SRC_BY_NAME = "OPCDA.ByName";
+	//public static final String DA_PROG_IDS = "OPCDA.ProgIds";
+	//public static final String DA_SRC_BY_NAME = "OPCDA.ByName";
 	
 	public OpcDaSource() {
 		super();
