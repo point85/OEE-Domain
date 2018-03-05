@@ -28,35 +28,12 @@ public class CollectorServerStatusMessage extends ApplicationMessage {
 	}
 
 	private void setProcessCpuLoad() {
-		try {
-			//OperatingSystemMXBean bean = ManagementFactory.getOperatingSystemMXBean();
-			//systemLoadAvg = bean.getSystemLoadAverage();
-			
-			
+		try {			
 			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();			
 			ObjectName oname = new ObjectName(ManagementFactory.OPERATING_SYSTEM_MXBEAN_NAME);
 			
 			processCpuLoad = (Double) mbs.getAttribute(oname, "ProcessCpuLoad");
-			
-			//System.out.println(cpuLoad);
-
-			/*
-			AttributeList list = mbs.getAttributes(name, new String[] { "ProcessCpuLoad" });
-
-			if (list.isEmpty()) {
-				return;
-			}
-
-			Attribute att = (Attribute) list.get(0);
-			Double value = (Double) att.getValue();
-
-			// usually takes a couple of seconds before we get real values
-			if (value != -1.0) {
-				// returns a percentage value with 1 decimal point precision
-				setProcessCpuLoad((int) ((long) (value * 1000) / 10.0));
-			}
-			*/
-			
+						
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import javax.persistence.EntityManager;
@@ -67,24 +66,16 @@ public class PersistencyService {
 	}
 
 	public void initialize() {
-		emfFuture = new CompletableFuture<>();
-
-		Executors.newCachedThreadPool().submit(() -> {
-			long before = System.currentTimeMillis();
-			EntityManagerFactory factory = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT);
-			System.out.println(("1.  msec to create EMF: " + (System.currentTimeMillis() - before)));
-			emfFuture.complete(factory);
+		// create EM on a a background thread
+		emfFuture = CompletableFuture.supplyAsync(() -> {
+			//long before = System.currentTimeMillis();
+			emf = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT);
+			//System.out.println(("1.  msec to create EMF: " + (System.currentTimeMillis() - before)));
+			return emf;
 		});
 	}
 
 	public EntityManagerFactory getEntityManagerFactory() {
-
-		if (emf == null) {
-			long before = System.currentTimeMillis();
-			emf = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT);
-			System.out.println(("2.  msec to create EMF: " + (System.currentTimeMillis() - before)));
-		}
-
 		if (emf == null && emfFuture != null) {
 			try {
 				emf = emfFuture.get(10, TimeUnit.SECONDS);
@@ -300,13 +291,9 @@ public class PersistencyService {
 	}
 
 	private void createNamedQuery(String name, String jsql) {
-		long before = System.currentTimeMillis();
-		System.out.println("Creating the named query: " + jsql);
-
 		Query query = getEntityManager().createQuery(jsql);
 		getEntityManagerFactory().addNamedQuery(name, query);
 		namedQueryMap.put(name, true);
-		System.out.println("msec to create query: " + (System.currentTimeMillis() - before));
 	}
 
 	// top-level plant entities
