@@ -58,7 +58,7 @@ public class PersistenceService {
 		namedQueryMap = new ConcurrentHashMap<>();
 	}
 
-	public static PersistenceService instance() {
+	public synchronized static PersistenceService instance() {
 		if (persistencyService == null) {
 			persistencyService = new PersistenceService();
 		}
