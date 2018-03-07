@@ -13,7 +13,7 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.point85.domain.collector.DataCollector;
-import org.point85.domain.collector.DataSource;
+import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.persistence.ScriptResolverTypeConverter;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.KeyedObject;
@@ -47,7 +47,7 @@ public class ScriptResolver extends KeyedObject {
 
 	@OneToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH })
 	@JoinColumn(name = "SOURCE_KEY")
-	private DataSource dataSource;
+	private CollectorDataSource dataSource;
 
 	@Column(name = "SOURCE_ID")
 	private String sourceId;
@@ -76,11 +76,11 @@ public class ScriptResolver extends KeyedObject {
 		super();
 	}
 
-	public DataSource getDataSource() {
+	public CollectorDataSource getDataSource() {
 		return dataSource;
 	}
 
-	public void setDataSource(DataSource source) {
+	public void setDataSource(CollectorDataSource source) {
 		this.dataSource = source;
 	}
 

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.point85.domain.DomainUtils;
-import org.point85.domain.collector.DataSource;
+import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Material;
@@ -278,11 +278,11 @@ public class OeeHttpServer extends NanoHTTPD {
 				throw new Exception("The data source type must be specified.");
 			}
 
-			List<DataSource> dataSources = PersistenceService.instance()
+			List<CollectorDataSource> dataSources = PersistenceService.instance()
 					.fetchDataSources(DataSourceType.valueOf(sourceType));
 
 			List<DataSourceDto> dataSourceDtos = new ArrayList<>();
-			for (DataSource dataSource : dataSources) {
+			for (CollectorDataSource dataSource : dataSources) {
 				DataSourceDto dataSourceDto = new DataSourceDto(dataSource);
 				dataSourceDtos.add(dataSourceDto);
 			}

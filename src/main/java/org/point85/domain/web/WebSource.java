@@ -3,13 +3,13 @@ package org.point85.domain.web;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
-import org.point85.domain.collector.DataSource;
+import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 
 @Entity
 @DiscriminatorValue(DataSourceType.WEB_VALUE)
 
-public class WebSource extends DataSource {
+public class WebSource extends CollectorDataSource {
 	public WebSource() {
 		super();
 		setDataSourceType(DataSourceType.WEB);

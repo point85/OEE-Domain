@@ -4,7 +4,7 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
-import org.point85.domain.collector.DataSource;
+import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 
 @Entity
@@ -13,7 +13,7 @@ import org.point85.domain.collector.DataSourceType;
 //@NamedQueries({
 		//@NamedQuery(name = OpcUaSource.UA_SRC_BY_NAME, query = "SELECT source FROM OpcUaSource source WHERE source.name = :name"), })
 
-public class OpcUaSource extends DataSource {
+public class OpcUaSource extends CollectorDataSource {
 
 	// queries
 	//public static final String UA_SRC_BY_NAME = "OPCUA.ByName";

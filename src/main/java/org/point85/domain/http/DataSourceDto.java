@@ -1,6 +1,6 @@
 package org.point85.domain.http;
 
-import org.point85.domain.collector.DataSource;
+import org.point85.domain.collector.CollectorDataSource;
 
 public class DataSourceDto {
 	private String name;
@@ -12,7 +12,7 @@ public class DataSourceDto {
 
 	}
 
-	public DataSourceDto(DataSource source) {
+	public DataSourceDto(CollectorDataSource source) {
 		this.name = source.getName();
 		this.host = source.getHost();
 		this.port = source.getPort();

@@ -3,7 +3,7 @@ package org.point85.domain.http;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
-import org.point85.domain.collector.DataSource;
+import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 
 @Entity
@@ -13,7 +13,7 @@ import org.point85.domain.collector.DataSourceType;
 		//@NamedQuery(name = HttpSource.HTTP_SRC_BY_TYPE, query = "SELECT source FROM HttpSource source WHERE source.sourceType = '"
 				//+ DataSourceType.HTTP_VALUE + "'"), })
 
-public class HttpSource extends DataSource {
+public class HttpSource extends CollectorDataSource {
 	// queries
 	//public static final String HTTP_SRC_BY_TYPE = "HTTP.ByType";
 

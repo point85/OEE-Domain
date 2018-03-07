@@ -19,13 +19,7 @@ import org.point85.domain.plant.NamedObject;
 @DiscriminatorColumn(name = "TYPE", discriminatorType = DiscriminatorType.STRING)
 @AttributeOverride(name = "primaryKey", column = @Column(name = "SOURCE_KEY"))
 
-//@NamedQueries({
-		//@NamedQuery(name = DataSource.SRC_BY_TYPE, query = "SELECT source FROM DataSource source WHERE sourceType = :type"), })
-
-public abstract class DataSource extends NamedObject {
-	// queries
-	//public static final String SRC_BY_TYPE = "DS.ByType";
-
+public abstract class CollectorDataSource extends NamedObject {
 	@Column(name = "HOST")
 	private String host;
 
@@ -45,11 +39,11 @@ public abstract class DataSource extends NamedObject {
 	@Column(name = "PARAM1")
 	protected String param1;
 
-	public DataSource() {
+	public CollectorDataSource() {
 		super();
 	}
 
-	protected DataSource(String name, String description) {
+	protected CollectorDataSource(String name, String description) {
 		super(name, description);
 	}
 

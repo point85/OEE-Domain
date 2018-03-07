@@ -2,34 +2,55 @@ package org.point85.domain.persistence;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
-import javax.persistence.Persistence;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+import javax.persistence.spi.PersistenceUnitInfo;
+import javax.sql.DataSource;
 
+import org.hibernate.integrator.spi.Integrator;
+import org.hibernate.jpa.HibernatePersistenceProvider;
+import org.hibernate.jpa.boot.spi.IntegratorProvider;
 import org.point85.domain.collector.BaseEvent;
+import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.CollectorState;
 import org.point85.domain.collector.DataCollector;
-import org.point85.domain.collector.DataSource;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.collector.EventHistory;
+import org.point85.domain.collector.ProductionHistory;
 import org.point85.domain.collector.SetupHistory;
+import org.point85.domain.http.HttpSource;
+import org.point85.domain.messaging.MessagingSource;
 import org.point85.domain.opc.da.OpcDaSource;
 import org.point85.domain.opc.ua.OpcUaSource;
+import org.point85.domain.plant.Area;
+import org.point85.domain.plant.Enterprise;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentMaterial;
 import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.PlantEntity;
+import org.point85.domain.plant.ProductionLine;
 import org.point85.domain.plant.Reason;
+import org.point85.domain.plant.Site;
+import org.point85.domain.plant.WorkCell;
+import org.point85.domain.schedule.NonWorkingPeriod;
 import org.point85.domain.schedule.Rotation;
+import org.point85.domain.schedule.RotationSegment;
+import org.point85.domain.schedule.Shift;
 import org.point85.domain.schedule.Team;
 import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.script.ScriptResolver;
@@ -39,10 +60,11 @@ import org.point85.domain.uom.Unit;
 import org.point85.domain.uom.UnitOfMeasure;
 import org.point85.domain.uom.UnitOfMeasure.MeasurementType;
 import org.point85.domain.uom.UnitType;
+import org.point85.domain.web.WebSource;
 
 public class PersistenceService {
-	// JPA persistence unit name
-	private static final String PERSISTENCE_UNIT = "OEE";
+	// time in sec to wait for EntityManagerFactory creation to complete
+	private static final int EMF_CREATION_TO_SEC = 15;
 
 	// entity manager factory
 	private EntityManagerFactory emf;
@@ -65,20 +87,28 @@ public class PersistenceService {
 		return persistencyService;
 	}
 
-	public void initialize() {
+	public void initialize(String jdbcUrl, String userName, String password) {
 		// create EM on a a background thread
 		emfFuture = CompletableFuture.supplyAsync(() -> {
-			//long before = System.currentTimeMillis();
-			emf = Persistence.createEntityManagerFactory(PERSISTENCE_UNIT);
-			//System.out.println(("1.  msec to create EMF: " + (System.currentTimeMillis() - before)));
+			try {
+				createContainerManagedEntityManagerFactory(jdbcUrl, userName, password);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			return emf;
 		});
+	}
+
+	public void close() {
+		if (emf.isOpen()) {
+			emf.close();
+		}
 	}
 
 	public EntityManagerFactory getEntityManagerFactory() {
 		if (emf == null && emfFuture != null) {
 			try {
-				emf = emfFuture.get(10, TimeUnit.SECONDS);
+				emf = emfFuture.get(EMF_CREATION_TO_SEC, TimeUnit.SECONDS);
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
@@ -159,14 +189,15 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<DataSource> fetchDataSources(DataSourceType sourceType) {
+	public List<CollectorDataSource> fetchDataSources(DataSourceType sourceType) {
 		final String SRC_BY_TYPE = "DS.ByType";
 
 		if (namedQueryMap.get(SRC_BY_TYPE) == null) {
 			createNamedQuery(SRC_BY_TYPE, "SELECT source FROM DataSource source WHERE sourceType = :type");
 		}
 
-		TypedQuery<DataSource> query = getEntityManager().createNamedQuery(SRC_BY_TYPE, DataSource.class);
+		TypedQuery<CollectorDataSource> query = getEntityManager().createNamedQuery(SRC_BY_TYPE,
+				CollectorDataSource.class);
 		query.setParameter("type", sourceType);
 		return query.getResultList();
 	}
@@ -853,6 +884,97 @@ public class PersistenceService {
 			collector = collectors.get(0);
 		}
 		return collector;
+	}
+
+	// *******************************************************************************************************
+
+	public void createContainerManagedEntityManagerFactory(String jdbcUrl, String userName, String password)
+			throws Exception {
+		long before = System.currentTimeMillis();
+
+		// create the PU info
+		PersistenceUnitInfo persistenceUnitInfo = new PersistenceUnitInfoImpl("OEE", getEntityClassNames(),
+				createProperties(jdbcUrl, userName, password));
+
+		// add any mapping files
+		String[] fileNames = getMappingFileNames();
+		if (fileNames != null) {
+			persistenceUnitInfo.getMappingFileNames().addAll(Arrays.asList(fileNames));
+		}
+
+		// PU configuration map
+		Map<String, Object> configuration = new HashMap<>();
+
+		Integrator integrator = getIntegrator();
+		if (integrator != null) {
+			configuration.put("hibernate.integrator_provider",
+					(IntegratorProvider) () -> Collections.singletonList(integrator));
+		}
+
+		emf = new HibernatePersistenceProvider().createContainerEntityManagerFactory(persistenceUnitInfo,
+				configuration);
+
+		System.out.println(("msec to create EMF: " + (System.currentTimeMillis() - before)));
+	}
+
+	private String[] getMappingFileNames() {
+		return null;
+	}
+
+	private Class<?>[] getEntityClasses() {
+		return new Class<?>[] { DataCollector.class, DataSource.class, EventHistory.class, ProductionHistory.class,
+				SetupHistory.class, HttpSource.class, MessagingSource.class, OpcDaSource.class, OpcUaSource.class,
+				WebSource.class, Area.class, Enterprise.class, Equipment.class, EquipmentMaterial.class, Material.class,
+				PlantEntity.class, ProductionLine.class, Reason.class, Site.class, WorkCell.class, ScriptResolver.class,
+				UnitOfMeasure.class, NonWorkingPeriod.class, Rotation.class, RotationSegment.class, Shift.class,
+				Team.class, WorkSchedule.class };
+	}
+
+	protected List<String> getEntityClassNames() {
+		return Arrays.asList(getEntityClasses()).stream().map(Class::getName).collect(Collectors.toList());
+	}
+
+	protected Properties createProperties(String jdbcUrl, String userName, String password) throws Exception {
+		DatabaseType databaseType = null;
+
+		if (jdbcUrl.contains("jdbc:sqlserver")) {
+			databaseType = DatabaseType.MSSQL;
+		}
+
+		if (databaseType == null) {
+			throw new Exception("Invalid JDBC URL: " + jdbcUrl);
+		}
+
+		Properties properties = new Properties();
+
+		if (databaseType.equals(DatabaseType.MSSQL)) {
+			properties.put("hibernate.dialect", "org.hibernate.dialect.SQLServer2012Dialect");
+			properties.put("javax.persistence.jdbc.driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
+		}
+
+		// jdbc connection
+		properties.put("javax.persistence.jdbc.url", jdbcUrl);
+		properties.put("javax.persistence.jdbc.user", userName);
+		properties.put("javax.persistence.jdbc.password", password);
+
+		// lazy loading without a transaction
+		properties.put("hibernate.enable_lazy_load_no_trans", "true");
+
+		// multiple representations of the same entity are being merged
+		properties.put("hibernate.event.merge.entity_copy_observer", "allow");
+
+		// Hikari connection pool
+		properties.put("hibernate.hikari.minimumIdle", "1");
+		properties.put("hibernate.hikari.maximumPoolSize", "20");
+		properties.put("hibernate.hikari.idleTimeout", "60000");
+		properties.put("hibernate.connection.provider_class",
+				"org.hibernate.hikaricp.internal.HikariCPConnectionProvider");
+
+		return properties;
+	}
+
+	private Integrator getIntegrator() {
+		return null;
 	}
 
 }

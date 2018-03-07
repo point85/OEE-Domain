@@ -3,7 +3,7 @@ package org.point85.domain.opc.da;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
-import org.point85.domain.collector.DataSource;
+import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 
 @Entity
@@ -13,7 +13,7 @@ import org.point85.domain.collector.DataSourceType;
 	//@NamedQuery(name = OpcDaSource.DA_SRC_BY_NAME, query = "SELECT source FROM OpcDaSource source WHERE source.name = :name"),
 	//@NamedQuery(name = OpcDaSource.DA_PROG_IDS, query = "SELECT source.name FROM OpcDaSource source"), })
 
-public class OpcDaSource extends DataSource {
+public class OpcDaSource extends CollectorDataSource {
 	// queries
 	//public static final String DA_PROG_IDS = "OPCDA.ProgIds";
 	//public static final String DA_SRC_BY_NAME = "OPCDA.ByName";

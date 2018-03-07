@@ -3,13 +3,13 @@ package org.point85.domain.messaging;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
-import org.point85.domain.collector.DataSource;
+import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 
 @Entity
 @DiscriminatorValue(DataSourceType.MESSAGING_VALUE)
 
-public class MessagingSource extends DataSource {
+public class MessagingSource extends CollectorDataSource {
 
 	public MessagingSource() {
 		super();
