@@ -890,7 +890,7 @@ public class PersistenceService {
 
 	public void createContainerManagedEntityManagerFactory(String jdbcUrl, String userName, String password)
 			throws Exception {
-		long before = System.currentTimeMillis();
+		//long before = System.currentTimeMillis();
 
 		// create the PU info
 		PersistenceUnitInfo persistenceUnitInfo = new PersistenceUnitInfoImpl("OEE", getEntityClassNames(),
@@ -914,7 +914,7 @@ public class PersistenceService {
 		emf = new HibernatePersistenceProvider().createContainerEntityManagerFactory(persistenceUnitInfo,
 				configuration);
 
-		System.out.println(("msec to create EMF: " + (System.currentTimeMillis() - before)));
+		//System.out.println(("msec to create EMF: " + (System.currentTimeMillis() - before)));
 	}
 
 	private String[] getMappingFileNames() {
