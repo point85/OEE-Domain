@@ -99,7 +99,7 @@ public class PersistenceService {
 	}
 
 	public void close() {
-		if (emf.isOpen()) {
+		if (emf != null && emf.isOpen()) {
 			emf.close();
 		}
 	}
@@ -626,6 +626,7 @@ public class PersistenceService {
 	}
 
 	// get symbols and names in this category
+	@SuppressWarnings("unchecked")
 	public List<String[]> fetchUomSymbolsAndNamesByCategory(String category) {
 		final String UOM_CAT_SYMBOLS = "UOM.SymbolsInCategory";
 
@@ -634,12 +635,13 @@ public class PersistenceService {
 					"SELECT uom.symbol, uom.name FROM UnitOfMeasure uom WHERE uom.category = :category");
 		}
 
-		TypedQuery<String[]> query = getEntityManager().createNamedQuery(UOM_CAT_SYMBOLS, String[].class);
+		Query query = getEntityManager().createNamedQuery(UOM_CAT_SYMBOLS);
 		query.setParameter("category", category);
-		return query.getResultList();
+		return (List<String[]>) query.getResultList();
 	}
 
 	// fetch symbols and their names for this UOM type
+	@SuppressWarnings("unchecked")
 	public List<String[]> fetchUomSymbolsAndNamesByType(UnitType unitType) {
 		final String UOM_SYMBOLS = "UOM.Symbols";
 
@@ -648,9 +650,10 @@ public class PersistenceService {
 					"SELECT uom.symbol, uom.name FROM UnitOfMeasure uom WHERE uom.unit IS NULL AND uom.unitType = :type");
 		}
 
-		TypedQuery<String[]> query = getEntityManager().createNamedQuery(UOM_SYMBOLS, String[].class);
+		Query query = getEntityManager().createNamedQuery(UOM_SYMBOLS);
 		query.setParameter("type", unitType);
-		return query.getResultList();
+
+		return (List<String[]>) query.getResultList();
 	}
 
 	// fetch all defined categories
@@ -889,8 +892,6 @@ public class PersistenceService {
 
 	public void createContainerManagedEntityManagerFactory(String jdbcUrl, String userName, String password)
 			throws Exception {
-		// long before = System.currentTimeMillis();
-
 		// create the PU info
 		PersistenceUnitInfo persistenceUnitInfo = new PersistenceUnitInfoImpl("OEE", getEntityClassNames(),
 				createProperties(jdbcUrl, userName, password));
@@ -912,9 +913,6 @@ public class PersistenceService {
 
 		emf = new HibernatePersistenceProvider().createContainerEntityManagerFactory(persistenceUnitInfo,
 				configuration);
-
-		// System.out.println(("msec to create EMF: " + (System.currentTimeMillis() -
-		// before)));
 	}
 
 	private String[] getMappingFileNames() {
@@ -939,9 +937,15 @@ public class PersistenceService {
 
 		if (jdbcUrl.contains("jdbc:sqlserver")) {
 			databaseType = DatabaseType.MSSQL;
-		}
-
-		if (databaseType == null) {
+		} else if (jdbcUrl.contains("jdbc:oracle")) {
+			databaseType = DatabaseType.ORACLE;
+		} else if (jdbcUrl.contains("jdbc:hsqldb")) {
+			databaseType = DatabaseType.HSQL;
+		} else if (jdbcUrl.contains("jdbc:mysql")) {
+			databaseType = DatabaseType.MYSQL;
+		} else if (jdbcUrl.contains("jdbc:mysql")) {
+			databaseType = DatabaseType.POSTGRES;
+		} else {
 			throw new Exception("Invalid JDBC URL: " + jdbcUrl);
 		}
 
@@ -950,6 +954,18 @@ public class PersistenceService {
 		if (databaseType.equals(DatabaseType.MSSQL)) {
 			properties.put("hibernate.dialect", "org.hibernate.dialect.SQLServer2012Dialect");
 			properties.put("javax.persistence.jdbc.driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
+		} else if (databaseType.equals(DatabaseType.ORACLE)) {
+			properties.put("hibernate.dialect", "org.hibernate.dialect.Oracle10gDialect");
+			properties.put("javax.persistence.jdbc.driver", "oracle.jdbc.driver.OracleDriver");
+		} else if (databaseType.equals(DatabaseType.HSQL)) {
+			properties.put("hibernate.dialect", "org.hibernate.dialect.HSQLDialect");
+			properties.put("javax.persistence.jdbc.driver", "org.hsqldb.jdbc.JDBCDriver");
+		} else if (databaseType.equals(DatabaseType.MYSQL)) {
+			properties.put("hibernate.dialect", "org.hibernate.dialect.MySQL57Dialect");
+			properties.put("javax.persistence.jdbc.driver", "com.mysql.jdbc.Driver");
+		} else if (databaseType.equals(DatabaseType.POSTGRES)) {
+			properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQL95Dialect");
+			properties.put("javax.persistence.jdbc.driver", "org.postgresql.Driver");
 		}
 
 		// jdbc connection

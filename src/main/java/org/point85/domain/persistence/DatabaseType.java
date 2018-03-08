@@ -1,5 +1,5 @@
 package org.point85.domain.persistence;
 
 public enum DatabaseType {
-	MSSQL, ORACLE;
+	MSSQL, ORACLE, HSQL, MYSQL, POSTGRES;
 }
