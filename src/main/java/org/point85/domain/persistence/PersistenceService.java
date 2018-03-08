@@ -19,7 +19,6 @@ import javax.persistence.EntityTransaction;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.spi.PersistenceUnitInfo;
-import javax.sql.DataSource;
 
 import org.hibernate.integrator.spi.Integrator;
 import org.hibernate.jpa.HibernatePersistenceProvider;
@@ -193,7 +192,7 @@ public class PersistenceService {
 		final String SRC_BY_TYPE = "DS.ByType";
 
 		if (namedQueryMap.get(SRC_BY_TYPE) == null) {
-			createNamedQuery(SRC_BY_TYPE, "SELECT source FROM DataSource source WHERE sourceType = :type");
+			createNamedQuery(SRC_BY_TYPE, "SELECT source FROM CollectorDataSource source WHERE sourceType = :type");
 		}
 
 		TypedQuery<CollectorDataSource> query = getEntityManager().createNamedQuery(SRC_BY_TYPE,
@@ -890,7 +889,7 @@ public class PersistenceService {
 
 	public void createContainerManagedEntityManagerFactory(String jdbcUrl, String userName, String password)
 			throws Exception {
-		//long before = System.currentTimeMillis();
+		// long before = System.currentTimeMillis();
 
 		// create the PU info
 		PersistenceUnitInfo persistenceUnitInfo = new PersistenceUnitInfoImpl("OEE", getEntityClassNames(),
@@ -914,7 +913,8 @@ public class PersistenceService {
 		emf = new HibernatePersistenceProvider().createContainerEntityManagerFactory(persistenceUnitInfo,
 				configuration);
 
-		//System.out.println(("msec to create EMF: " + (System.currentTimeMillis() - before)));
+		// System.out.println(("msec to create EMF: " + (System.currentTimeMillis() -
+		// before)));
 	}
 
 	private String[] getMappingFileNames() {
@@ -922,12 +922,12 @@ public class PersistenceService {
 	}
 
 	private Class<?>[] getEntityClasses() {
-		return new Class<?>[] { DataCollector.class, DataSource.class, EventHistory.class, ProductionHistory.class,
-				SetupHistory.class, HttpSource.class, MessagingSource.class, OpcDaSource.class, OpcUaSource.class,
-				WebSource.class, Area.class, Enterprise.class, Equipment.class, EquipmentMaterial.class, Material.class,
-				PlantEntity.class, ProductionLine.class, Reason.class, Site.class, WorkCell.class, ScriptResolver.class,
-				UnitOfMeasure.class, NonWorkingPeriod.class, Rotation.class, RotationSegment.class, Shift.class,
-				Team.class, WorkSchedule.class };
+		return new Class<?>[] { DataCollector.class, CollectorDataSource.class, EventHistory.class,
+				ProductionHistory.class, SetupHistory.class, HttpSource.class, MessagingSource.class, OpcDaSource.class,
+				OpcUaSource.class, WebSource.class, Area.class, Enterprise.class, Equipment.class,
+				EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class, Reason.class,
+				Site.class, WorkCell.class, ScriptResolver.class, UnitOfMeasure.class, NonWorkingPeriod.class,
+				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class };
 	}
 
 	protected List<String> getEntityClassNames() {
