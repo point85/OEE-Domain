@@ -230,17 +230,28 @@ public class EquipmentEventResolver {
 		UnitOfMeasure uom = null;
 		Material material = resolvedItem.getMaterial();
 
+		if (material == null) {
+			EquipmentMaterial eqm = resolvedItem.getEquipment().getDefaultEquipmentMaterial();
+
+			if (eqm != null) {
+				material = eqm.getMaterial();
+
+				if (logger.isInfoEnabled()) {
+					logger.info("Produced material is not defined.  Using default of " + material.getName());
+				}
+			}
+		}
+
 		if (material != null) {
-			EquipmentMaterial equipmentMaterial = resolvedItem.getEquipment().getEquipmentMaterial(material);
+			EquipmentMaterial eqm = resolvedItem.getEquipment().getEquipmentMaterial(material);
 
-			if (equipmentMaterial != null) {
-
+			if (eqm != null) {
 				switch (type) {
 				case PROD_GOOD:
-					uom = equipmentMaterial.getRunRateUOM();
+					uom = eqm.getRunRateUOM();
 					break;
 				case PROD_REJECT:
-					uom = equipmentMaterial.getRejectUOM();
+					uom = eqm.getRejectUOM();
 					break;
 				default:
 					break;
@@ -249,7 +260,6 @@ public class EquipmentEventResolver {
 		}
 
 		resolvedItem.setQuantity(new Quantity(amount, uom));
-
 	}
 
 	// availability

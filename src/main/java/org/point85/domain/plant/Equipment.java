@@ -75,6 +75,20 @@ public class Equipment extends PlantEntity {
 		}
 		return equipmentMaterial;
 	}
+	
+	public EquipmentMaterial getDefaultEquipmentMaterial() {
+		if (equipmentMaterialsMap.size() == 0) {
+			populateMap();
+		}
+
+		EquipmentMaterial equipmentMaterial = null;
+		for (EquipmentMaterial eqm : this.getEquipmentMaterials()) {
+			// TODO check a default flag
+			equipmentMaterial = eqm;
+			break;	
+		}
+		return equipmentMaterial;
+	} 
 
 	public void addEquipmentMaterial(EquipmentMaterial equipmentMaterial) {
 		if (!equipmentMaterials.contains(equipmentMaterial)) {
