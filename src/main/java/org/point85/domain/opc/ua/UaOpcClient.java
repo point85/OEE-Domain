@@ -125,7 +125,7 @@ public class UaOpcClient {
 	private void unregisterSubscription(NodeId nodeId) {
 		this.subscriptionMap.remove(nodeId);
 	}
-	
+
 	public boolean isSubscribed(NodeId nodeId) {
 		return this.subscriptionMap.containsKey(nodeId);
 	}
@@ -156,8 +156,8 @@ public class UaOpcClient {
 			String password = source.getPassword();
 			if (user != null && user.length() > 0) {
 				/*
-				 * Authentication is handled by setting an appropriate
-				 * IdentityProvider when building the UaTcpStackClientConfig.
+				 * Authentication is handled by setting an appropriate IdentityProvider when
+				 * building the UaTcpStackClientConfig.
 				 */
 				identityProvider = new CompositeProvider(new UsernameProvider(user, password), new AnonymousProvider());
 			} else {
@@ -252,8 +252,7 @@ public class UaOpcClient {
 		}
 	}
 
-	public synchronized List<StatusCode> writeSynch(List<NodeId> nodeIds, List<Variant> values)
-			throws Exception {
+	public synchronized List<StatusCode> writeSynch(List<NodeId> nodeIds, List<Variant> values) throws Exception {
 		checkPreconditions();
 
 		try {
@@ -526,8 +525,8 @@ public class UaOpcClient {
 			if (item.getStatusCode().isGood()) {
 				logger.info("Monitored item created for nodeId: " + item.getReadValueId().getNodeId());
 			} else {
-				throw new Exception("Failed to create monitored item for nodeId: "
-						+ item.getReadValueId().getNodeId() + ", code: " + item.getStatusCode());
+				throw new Exception("Failed to create monitored item for nodeId: " + item.getReadValueId().getNodeId()
+						+ ", code: " + item.getStatusCode());
 			}
 		}
 
@@ -566,7 +565,7 @@ public class UaOpcClient {
 			if (nodeId == null) {
 				return;
 			}
-			
+
 			// from the registry
 			UaSubscription subscription = getSubscription(nodeId);
 
@@ -640,7 +639,7 @@ public class UaOpcClient {
 			ServerNode serverNode = opcUaClient.getAddressSpace().getObjectNode(Identifiers.Server, ServerNode.class)
 					.get();
 
-			ServerStatusNode serverStatusNode = serverNode.serverStatus().get();
+			ServerStatusNode serverStatusNode = serverNode.getServerStatusNode().get();
 			DateTime currentTime = serverStatusNode.getCurrentTime().get();
 			return currentTime;
 		} catch (Exception e) {
@@ -673,7 +672,7 @@ public class UaOpcClient {
 
 			// Get a typed reference to the ServerStatus variable
 			// component and read value attributes individually
-			ServerStatusNode serverStatusNode = serverNode.serverStatus().get();
+			ServerStatusNode serverStatusNode = serverNode.getServerStatusNode().get();
 
 			// TODO throws class cast exception
 			// BuildInfo buildInfo = serverStatusNode.getBuildInfo().get();
@@ -695,12 +694,11 @@ public class UaOpcClient {
 			 * 
 			 * Class<?> javaClass =
 			 * Point85OpcUaClient.getJavaDataType(dataValue.getValue());
-			 * logger.info("Synch Read: " + dataValue.getValue().getValue() +
-			 * " of type: " + javaClass); }
+			 * logger.info("Synch Read: " + dataValue.getValue().getValue() + " of type: " +
+			 * javaClass); }
 			 * 
-			 * // state Integer i = (Integer)
-			 * dataValues.get(0).getValue().getValue(); ServerState state =
-			 * ServerState.from(i); serverStatus.setState(state);
+			 * // state Integer i = (Integer) dataValues.get(0).getValue().getValue();
+			 * ServerState state = ServerState.from(i); serverStatus.setState(state);
 			 * 
 			 * // start time DateTime dt = (DateTime)
 			 * dataValues.get(1).getValue().getValue();
@@ -714,7 +712,7 @@ public class UaOpcClient {
 			throw new Exception(e.getMessage());
 		}
 	}
-	
+
 	public boolean isConnected() {
 		return opcUaClient != null ? true : false;
 	}

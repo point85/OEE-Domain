@@ -142,6 +142,8 @@ public class PersistenceService {
 
 		PlantEntity entity = null;
 		TypedQuery<PlantEntity> query = getEntityManager().createNamedQuery(ENTITY_BY_NAME, PlantEntity.class);
+		query.setParameter("name", name);
+
 		List<PlantEntity> entities = query.getResultList();
 
 		if (entities.size() == 1) {
@@ -441,7 +443,7 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public Material fetchMaterialByName(String materialName) {
+	public Material fetchMaterialByName(String name) {
 		final String MATL_BY_NAME = "MATL.ByName";
 
 		if (namedQueryMap.get(MATL_BY_NAME) == null) {
@@ -450,6 +452,7 @@ public class PersistenceService {
 
 		Material material = null;
 		TypedQuery<Material> query = getEntityManager().createNamedQuery(MATL_BY_NAME, Material.class);
+		query.setParameter("name", name);
 		List<Material> materials = query.getResultList();
 
 		if (materials.size() == 1) {
@@ -471,6 +474,8 @@ public class PersistenceService {
 
 		Reason reason = null;
 		TypedQuery<Reason> query = getEntityManager().createNamedQuery(REASON_BY_NAME, Reason.class);
+		query.setParameter("name", name);
+
 		List<Reason> reasons = query.getResultList();
 
 		if (reasons.size() == 1) {
@@ -880,6 +885,8 @@ public class PersistenceService {
 
 		DataCollector collector = null;
 		TypedQuery<DataCollector> query = getEntityManager().createNamedQuery(COLLECT_BY_NAME, DataCollector.class);
+		query.setParameter("name", name);
+
 		List<DataCollector> collectors = query.getResultList();
 
 		if (collectors.size() == 1) {
@@ -888,9 +895,7 @@ public class PersistenceService {
 		return collector;
 	}
 
-	// *******************************************************************************************************
-
-	public void createContainerManagedEntityManagerFactory(String jdbcUrl, String userName, String password)
+	private void createContainerManagedEntityManagerFactory(String jdbcUrl, String userName, String password)
 			throws Exception {
 		// create the PU info
 		PersistenceUnitInfo persistenceUnitInfo = new PersistenceUnitInfoImpl("OEE", getEntityClassNames(),
@@ -928,11 +933,11 @@ public class PersistenceService {
 				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class };
 	}
 
-	protected List<String> getEntityClassNames() {
+	private List<String> getEntityClassNames() {
 		return Arrays.asList(getEntityClasses()).stream().map(Class::getName).collect(Collectors.toList());
 	}
 
-	protected Properties createProperties(String jdbcUrl, String userName, String password) throws Exception {
+	private Properties createProperties(String jdbcUrl, String userName, String password) throws Exception {
 		DatabaseType databaseType = null;
 
 		if (jdbcUrl.contains("jdbc:sqlserver")) {

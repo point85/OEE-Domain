@@ -65,14 +65,14 @@
 <dependency>
     <groupId>org.eclipse.milo</groupId>
     <artifactId>sdk-client</artifactId>
-    <version>0.1.6</version>
+    <version>0.2.1</version>
 </dependency>
 
 <!-- https://mvnrepository.com/artifact/org.eclipse.milo/sdk-core 
 <dependency>
     <groupId>org.eclipse.milo</groupId>
     <artifactId>sdk-core</artifactId>
-    <version>0.1.6</version>
+    <version>0.2.1</version>
 </dependency>
 -->
 
@@ -80,7 +80,7 @@
 <dependency>
     <groupId>org.eclipse.milo</groupId>
     <artifactId>stack-client</artifactId>
-    <version>0.1.6</version>
+    <version>0.2.1</version>
 </dependency>
 -->
 
@@ -88,7 +88,7 @@
 <dependency>
     <groupId>org.eclipse.milo</groupId>
     <artifactId>stack-core</artifactId>
-    <version>0.1.6</version>
+    <version>0.2.1</version>
 </dependency>
 -->
 
