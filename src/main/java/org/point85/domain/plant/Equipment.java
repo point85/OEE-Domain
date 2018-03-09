@@ -18,16 +18,18 @@ import org.point85.domain.script.ScriptResolverType;
 @Entity
 @DiscriminatorValue(Equipment.EQUIP_VALUE)
 
-//@NamedQueries({
-		//@NamedQuery(name = Equipment.EQUIPMENT_SOURCE_IDS, query = "SELECT sr.sourceId FROM ScriptResolver sr JOIN sr.equipment e JOIN sr.dataSource ds WHERE e.name = :name AND ds.sourceType = :type"), })
-		
+// @NamedQueries({
+// @NamedQuery(name = Equipment.EQUIPMENT_SOURCE_IDS, query = "SELECT
+// sr.sourceId FROM ScriptResolver sr JOIN sr.equipment e JOIN sr.dataSource ds
+// WHERE e.name = :name AND ds.sourceType = :type"), })
+
 public class Equipment extends PlantEntity {
 	public static final String EQUIP_VALUE = "EQ";
 	public static final String DEFAULT_NAME = "Equipment";
 	public static final String DEFAULT_DESC = "Default equipment";
 
 	// named queries
-	//public static final String EQUIPMENT_SOURCE_IDS = "EQUIP.SourceIds";
+	// public static final String EQUIPMENT_SOURCE_IDS = "EQUIP.SourceIds";
 
 	// map by Material
 	transient private Map<Material, EquipmentMaterial> equipmentMaterialsMap = new HashMap<>();
@@ -75,20 +77,24 @@ public class Equipment extends PlantEntity {
 		}
 		return equipmentMaterial;
 	}
-	
+
 	public EquipmentMaterial getDefaultEquipmentMaterial() {
-		if (equipmentMaterialsMap.size() == 0) {
-			populateMap();
-		}
 
 		EquipmentMaterial equipmentMaterial = null;
-		for (EquipmentMaterial eqm : this.getEquipmentMaterials()) {
-			// TODO check a default flag
-			equipmentMaterial = eqm;
-			break;	
+
+		Set<EquipmentMaterial> eqms = getEquipmentMaterials();
+
+		if (eqms.size() == 1) {
+			equipmentMaterial = eqms.iterator().next();
+		} else {
+			for (EquipmentMaterial eqm : eqms) {
+				// TODO check a default flag
+				equipmentMaterial = eqm;
+				break;
+			}
 		}
 		return equipmentMaterial;
-	} 
+	}
 
 	public void addEquipmentMaterial(EquipmentMaterial equipmentMaterial) {
 		if (!equipmentMaterials.contains(equipmentMaterial)) {
@@ -139,7 +145,7 @@ public class Equipment extends PlantEntity {
 	public boolean hasResolver(ScriptResolver resolver) {
 		return scriptResolvers.contains(resolver);
 	}
-	
+
 	public boolean hasEquipmentMaterial(EquipmentMaterial equipmentMaterial) {
 		return equipmentMaterials.contains(equipmentMaterial);
 	}
