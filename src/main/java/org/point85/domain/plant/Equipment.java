@@ -18,18 +18,10 @@ import org.point85.domain.script.ScriptResolverType;
 @Entity
 @DiscriminatorValue(Equipment.EQUIP_VALUE)
 
-// @NamedQueries({
-// @NamedQuery(name = Equipment.EQUIPMENT_SOURCE_IDS, query = "SELECT
-// sr.sourceId FROM ScriptResolver sr JOIN sr.equipment e JOIN sr.dataSource ds
-// WHERE e.name = :name AND ds.sourceType = :type"), })
-
 public class Equipment extends PlantEntity {
 	public static final String EQUIP_VALUE = "EQ";
 	public static final String DEFAULT_NAME = "Equipment";
 	public static final String DEFAULT_DESC = "Default equipment";
-
-	// named queries
-	// public static final String EQUIPMENT_SOURCE_IDS = "EQUIP.SourceIds";
 
 	// map by Material
 	transient private Map<Material, EquipmentMaterial> equipmentMaterialsMap = new HashMap<>();

@@ -265,11 +265,47 @@ public class PersistenceService {
 		}
 	}
 
-	// delete the PersistentObjectfrom the database
-	public void delete(KeyedObject keyed) throws Exception {
-		if (keyed instanceof WorkSchedule) {
+	public void checkReferences(KeyedObject keyed) throws Exception {
+		if (keyed instanceof Rotation) {
+			Rotation rotation = (Rotation) keyed;
+
+			// check for team reference
+			List<Team> referencingTeams = fetchTeamCrossReferences(rotation);
+
+			if (referencingTeams.size() != 0) {
+				String refs = "";
+
+				for (Team team : referencingTeams) {
+					if (refs.length() > 0) {
+						refs += ", ";
+					}
+					refs += team.getName();
+				}
+				throw new Exception(
+						"Rotation " + rotation.getName() + " cannot be deleted.  It is referenced by team(s) " + refs);
+			}
+		} else if (keyed instanceof CollectorDataSource) {
+			CollectorDataSource source = (CollectorDataSource) keyed;
+
+			// check for script resolver references
+			List<ScriptResolver> resolvers = fetchResolverCrossReferences(source);
+
+			if (resolvers.size() > 0) {
+				String refs = "";
+				for (ScriptResolver resolver : resolvers) {
+					if (refs.length() > 0) {
+						refs += ", ";
+					}
+					refs += resolver.getSourceId();
+				}
+				throw new Exception("Collector source " + source.getName()
+						+ " cannot be deleted.  It is being referenced by these script resolvers: " + refs);
+			}
+		} else if (keyed instanceof WorkSchedule) {
+			WorkSchedule schedule = (WorkSchedule) keyed;
+
 			// check for plant entity references
-			List<PlantEntity> entities = fetchEntityCrossReferences((WorkSchedule) keyed);
+			List<PlantEntity> entities = fetchEntityCrossReferences(schedule);
 
 			if (entities.size() > 0) {
 				String refs = "";
@@ -279,10 +315,49 @@ public class PersistenceService {
 					}
 					refs += entity.getName();
 				}
-				throw new Exception("WorkSchedule " + ((WorkSchedule) keyed).getName()
-						+ " is being referenced by plant entities " + refs);
+				throw new Exception("Work schedule " + schedule.getName()
+						+ " cannot be deleted.  It is being referenced by these plant entities: " + refs);
+			}
+		} else if (keyed instanceof UnitOfMeasure) {
+			UnitOfMeasure uom = (UnitOfMeasure) keyed;
+
+			// check for usage by equipment material
+			List<EquipmentMaterial> eqms = fetchEquipmentMaterials(uom);
+
+			if (eqms.size() != 0) {
+				String refs = "";
+				for (int i = 0; i < eqms.size(); i++) {
+					if (i > 0) {
+						refs += ", ";
+					}
+
+					refs += eqms.get(i).getEquipment().getName();
+				}
+				throw new Exception("Unit of measure " + uom.getSymbol()
+						+ " cannot be deleted.  It is being referenced by this equipment: " + refs);
+			}
+
+			// check for usage by UOM
+			List<UnitOfMeasure> uoms = PersistenceService.instance().fetchUomCrossReferences(uom);
+
+			if (uoms.size() != 0) {
+				String refs = "";
+				for (int i = 0; i < uoms.size(); i++) {
+					if (i > 0) {
+						refs += ", ";
+					}
+
+					refs += uoms.get(i).getSymbol();
+				}
+				throw new Exception("Unit of measure " + uom.getSymbol()
+						+ " cannot be deleted.  It is being referenced by these units of measure: " + refs);
 			}
 		}
+	}
+
+	// delete the PersistentObjectfrom the database
+	public void delete(KeyedObject keyed) throws Exception {
+		checkReferences(keyed);
 
 		EntityManager em = getEntityManager();
 		EntityTransaction txn = null;
@@ -560,7 +635,6 @@ public class PersistenceService {
 		return source;
 	}
 
-	// ******************** work schedule related *******************************
 	public WorkSchedule fetchScheduleByKey(Long key) throws Exception {
 		return getEntityManager().find(WorkSchedule.class, key);
 	}
@@ -625,7 +699,6 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	// ******************** unit of measure related ***************************
 	public UnitOfMeasure fetchUomByKey(Long key) throws Exception {
 		return getEntityManager().find(UnitOfMeasure.class, key);
 	}
@@ -683,15 +756,15 @@ public class PersistenceService {
 
 		TypedQuery<UnitOfMeasure> query = getEntityManager().createNamedQuery(UOM_BY_SYMBOL, UnitOfMeasure.class);
 		query.setParameter("symbol", symbol);
-		
+
 		List<UnitOfMeasure> uoms = query.getResultList();
-		
+
 		UnitOfMeasure uom = null;
-		
+
 		if (uoms.size() == 1) {
 			uom = uoms.get(0);
 		}
-		
+
 		return uom;
 	}
 
@@ -902,6 +975,19 @@ public class PersistenceService {
 			collector = collectors.get(0);
 		}
 		return collector;
+	}
+
+	public List<ScriptResolver> fetchResolverCrossReferences(CollectorDataSource source) {
+		final String COLLECT_RES_XREF = "COLLECT.Resolver.CrossRef";
+
+		if (namedQueryMap.get(COLLECT_RES_XREF) == null) {
+			createNamedQuery(COLLECT_RES_XREF,
+					"SELECT resolver FROM ScriptResolver resolver WHERE resolver.dataSource = :source");
+		}
+
+		TypedQuery<ScriptResolver> query = getEntityManager().createNamedQuery(COLLECT_RES_XREF, ScriptResolver.class);
+		query.setParameter("source", source);
+		return query.getResultList();
 	}
 
 	private void createContainerManagedEntityManagerFactory(String jdbcUrl, String userName, String password)

@@ -696,7 +696,8 @@ public class CollectorServer
 			if (equipmentMaterial != null) {
 				switch (resolvedItem.getResolverType()) {
 				case PROD_GOOD:
-					uom = equipmentMaterial.getRunRateUOM();
+					// per unit of time
+					uom = equipmentMaterial.getRunRateUOM().getDividend();
 					break;
 				case PROD_REJECT:
 					uom = equipmentMaterial.getRejectUOM();
