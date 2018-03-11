@@ -683,7 +683,16 @@ public class PersistenceService {
 
 		TypedQuery<UnitOfMeasure> query = getEntityManager().createNamedQuery(UOM_BY_SYMBOL, UnitOfMeasure.class);
 		query.setParameter("symbol", symbol);
-		return query.getSingleResult();
+		
+		List<UnitOfMeasure> uoms = query.getResultList();
+		
+		UnitOfMeasure uom = null;
+		
+		if (uoms.size() == 1) {
+			uom = uoms.get(0);
+		}
+		
+		return uom;
 	}
 
 	public List<UnitOfMeasure> fetchUomsByCategory(String category) throws Exception {
