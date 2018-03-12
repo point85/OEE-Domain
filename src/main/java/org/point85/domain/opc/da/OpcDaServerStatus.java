@@ -47,14 +47,14 @@ public class OpcDaServerStatus {
 	}
 
 	public ZonedDateTime getStartTime() {
-		return (serverStatus != null) ? OpcDaClient.fromFiletime(serverStatus.getStartTime()) : null;
+		return (serverStatus != null) ? DaOpcClient.fromFiletime(serverStatus.getStartTime()) : null;
 	}
 
 	public ZonedDateTime getCurrentTime() {
-		return (serverStatus != null) ? OpcDaClient.fromFiletime(serverStatus.getCurrentTime()) : null;
+		return (serverStatus != null) ? DaOpcClient.fromFiletime(serverStatus.getCurrentTime()) : null;
 	}
 
 	public ZonedDateTime getLastUpdateTime() {
-		return (serverStatus != null) ? OpcDaClient.fromFiletime(serverStatus.getLastUpdateTime()) : null;
+		return (serverStatus != null) ? DaOpcClient.fromFiletime(serverStatus.getLastUpdateTime()) : null;
 	}
 }

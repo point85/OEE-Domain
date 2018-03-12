@@ -41,7 +41,7 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
  * 
  * @author Kent Randall
  */
-public class OpcDaClient {
+public class DaOpcClient {
 	static {
 		// jinterop uses java.util.logging directly
 		// remove existing handlers attached to j.u.l root logger
@@ -52,7 +52,7 @@ public class OpcDaClient {
 	}
 
 	// logging utility
-	private static Logger logger = LoggerFactory.getLogger(OpcDaClient.class);
+	private static Logger logger = LoggerFactory.getLogger(DaOpcClient.class);
 
 	private JISession jiSession;
 	private OPCServer opcServer;
@@ -65,7 +65,7 @@ public class OpcDaClient {
 
 	private Map<String, OpcDaMonitoredGroup> monitoredGroups = new HashMap<>();
 
-	public OpcDaClient() {
+	public DaOpcClient() {
 
 	}
 

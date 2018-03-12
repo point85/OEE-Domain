@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.point85.domain.http.OeeHttpServer;
 import org.point85.domain.messaging.PublisherSubscriber;
-import org.point85.domain.opc.da.OpcDaClient;
+import org.point85.domain.opc.da.DaOpcClient;
 import org.point85.domain.opc.ua.UaOpcClient;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Material;
@@ -48,7 +48,7 @@ public class OeeContext {
 		contextMap.put(MATL_KEY, new ConcurrentHashMap<Equipment, Material>());
 		contextMap.put(JOB_KEY, new ConcurrentHashMap<Equipment, String>());
 
-		setOpcDaClients(new ArrayList<OpcDaClient>());
+		setOpcDaClients(new ArrayList<DaOpcClient>());
 		setOpcUaClients(new ArrayList<UaOpcClient>());
 		setPublisherSubscribers(new ArrayList<PublisherSubscriber>());
 		setHttpServers(new ArrayList<OeeHttpServer>());
@@ -101,13 +101,13 @@ public class OeeContext {
 	}
 
 	@SuppressWarnings("unchecked")
-	public List<OpcDaClient> getOpcDaClients() {
-		return (List<OpcDaClient>) this.contextMap.get(OPC_DA_KEY);
+	public List<DaOpcClient> getOpcDaClients() {
+		return (List<DaOpcClient>) this.contextMap.get(OPC_DA_KEY);
 	}
 
-	public OpcDaClient getOpcDaClient() {
+	public DaOpcClient getOpcDaClient() {
 		// get the first one
-		OpcDaClient client = null;
+		DaOpcClient client = null;
 
 		if (getOpcDaClients().size() > 0) {
 			client = getOpcDaClients().get(0);
@@ -115,7 +115,7 @@ public class OeeContext {
 		return client;
 	}
 
-	public void setOpcDaClients(List<OpcDaClient> clients) {
+	public void setOpcDaClients(List<DaOpcClient> clients) {
 		this.contextMap.put(OPC_DA_KEY, clients);
 	}
 

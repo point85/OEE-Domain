@@ -42,6 +42,9 @@ public class EquipmentMaterial extends KeyedObject {
 	@JoinColumn(name = "EQ_KEY")
 	private Equipment equipment;
 
+	@Column(name = "IS_DEFAULT")
+	private Boolean isDefault = false;
+
 	public EquipmentMaterial() {
 	}
 
@@ -131,9 +134,18 @@ public class EquipmentMaterial extends KeyedObject {
 		return true;
 	}
 
+	public Boolean isDefault() {
+		return isDefault;
+	}
+
+	public void setDefault(Boolean isDefault) {
+		this.isDefault = isDefault;
+	}
+
 	@Override
 	public String toString() {
 		String text = "Matl: " + this.getMaterial().getName() + ", OEE: " + getOeeTarget();
 		return text;
 	}
+
 }

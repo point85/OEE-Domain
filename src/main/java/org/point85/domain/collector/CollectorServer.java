@@ -33,7 +33,7 @@ import org.point85.domain.messaging.MessagingSource;
 import org.point85.domain.messaging.NotificationSeverity;
 import org.point85.domain.messaging.PublisherSubscriber;
 import org.point85.domain.messaging.RoutingKey;
-import org.point85.domain.opc.da.OpcDaClient;
+import org.point85.domain.opc.da.DaOpcClient;
 import org.point85.domain.opc.da.OpcDaDataChangeListener;
 import org.point85.domain.opc.da.OpcDaMonitoredGroup;
 import org.point85.domain.opc.da.OpcDaMonitoredItem;
@@ -292,7 +292,7 @@ public class CollectorServer
 			OpcDaInfo subscribingClient = entry.getValue();
 			OpcDaSource daSource = subscribingClient.getSource();
 
-			OpcDaClient opcDaClient = new OpcDaClient();
+			DaOpcClient opcDaClient = new DaOpcClient();
 
 			opcDaClient.connect(daSource);
 
@@ -547,7 +547,7 @@ public class CollectorServer
 		appContext.getHttpServers().clear();
 
 		// disconnect OPC DA clients
-		for (OpcDaClient daClient : appContext.getOpcDaClients()) {
+		for (DaOpcClient daClient : appContext.getOpcDaClients()) {
 			daClient.disconnect();
 			onInformation("Disconnected from OPC DA client ");
 		}
@@ -610,7 +610,7 @@ public class CollectorServer
 
 	public void unsubscribeFromDataSource() throws Exception {
 		// DA clients
-		for (OpcDaClient daClient : appContext.getOpcDaClients()) {
+		for (DaOpcClient daClient : appContext.getOpcDaClients()) {
 			for (OpcDaMonitoredGroup group : daClient.getMonitoredGroups()) {
 				group.unregisterDataChangeListener(this);
 			}
@@ -627,7 +627,7 @@ public class CollectorServer
 
 	public void subscribeToDataSource() {
 		// DA clients
-		for (OpcDaClient daClient : appContext.getOpcDaClients()) {
+		for (DaOpcClient daClient : appContext.getOpcDaClients()) {
 			for (OpcDaMonitoredGroup group : daClient.getMonitoredGroups()) {
 				group.registerDataChangeListener(this);
 			}

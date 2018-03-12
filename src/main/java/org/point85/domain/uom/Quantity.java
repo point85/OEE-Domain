@@ -26,6 +26,8 @@ package org.point85.domain.uom;
 import java.math.BigInteger;
 import java.util.Objects;
 
+import org.point85.domain.DomainUtils;
+
 /**
  * The Quantity class represents an amount and {@link UnitOfMeasure}. A constant
  * quantity can be named and given a symbol, e.g. the speed of light.
@@ -159,7 +161,6 @@ public class Quantity {
 		}
 		return answer;
 	}
-	
 
 	/**
 	 * Get the symbol
@@ -192,7 +193,8 @@ public class Quantity {
 	/**
 	 * Set the name
 	 * 
-	 * @param name Name
+	 * @param name
+	 *            Name
 	 */
 	public void setName(String name) {
 		this.name = name;
@@ -217,7 +219,6 @@ public class Quantity {
 		this.description = description;
 	}
 
-
 	/**
 	 * Create an amount of a quantity from a String
 	 * 
@@ -231,7 +232,7 @@ public class Quantity {
 		if (value == null || value.length() == 0) {
 			throw new Exception(MeasurementSystem.getMessage("amount.cannot.be.null"));
 		}
-		return Double.valueOf(value);
+		return Double.valueOf(DomainUtils.removeThousandsSeparator(value));
 	}
 
 	/**
@@ -323,7 +324,7 @@ public class Quantity {
 	 */
 	public Quantity divide(Quantity other) throws Exception {
 		Quantity toDivide = other;
-		
+
 		if (toDivide.getAmount() == 0.0d) {
 			throw new Exception(MeasurementSystem.getMessage("divisor.cannot.be.zero"));
 		}
@@ -514,7 +515,7 @@ public class Quantity {
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append(this.getAmount());
-		
+
 		if (getUOM() != null) {
 			sb.append(", [").append(getUOM().toString()).append("] ");
 		}

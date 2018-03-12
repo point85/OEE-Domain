@@ -1,5 +1,6 @@
 package org.point85.domain;
 
+import java.text.DecimalFormatSymbols;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -76,5 +77,26 @@ public class DomainUtils {
 	public static OffsetDateTime fromLocalDateTime(LocalDateTime ldt) {
 		ZoneOffset offset = OffsetDateTime.now().getOffset();
 		return OffsetDateTime.of(ldt, offset);
+	}
+	
+	// removed formatting from decimal string
+	public static String removeThousandsSeparator(String formattedString) {
+		if (formattedString == null) {
+			return null;
+		}
+		DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols();
+
+		StringBuffer sb = new StringBuffer();
+		sb.append(decimalFormatSymbols.getGroupingSeparator());
+		String separator = sb.toString();
+
+		String[] thousands = formattedString.split(separator);
+
+		sb = new StringBuffer();
+
+		for (String thousand : thousands) {
+			sb.append(thousand);
+		}
+		return sb.toString();
 	}
 }
