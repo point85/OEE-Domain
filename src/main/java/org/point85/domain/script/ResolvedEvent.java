@@ -14,7 +14,6 @@ public class ResolvedEvent {
 	private String itemId;
 	private OffsetDateTime timestamp;
 	private Reason reason;
-	private int number;
 	private String job;
 	private Material material;
 	private Quantity quantity;
@@ -46,14 +45,6 @@ public class ResolvedEvent {
 
 	public void setReason(Reason reason) {
 		this.reason = reason;
-	}
-
-	public int getNumber() {
-		return number;
-	}
-
-	public void setNumber(int number) {
-		this.number = number;
 	}
 
 	public Object getInputValue() {

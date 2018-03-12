@@ -9,15 +9,7 @@ import org.point85.domain.collector.DataSourceType;
 @Entity
 @DiscriminatorValue(DataSourceType.OPC_DA_VALUE)
 
-//@NamedQueries({
-	//@NamedQuery(name = OpcDaSource.DA_SRC_BY_NAME, query = "SELECT source FROM OpcDaSource source WHERE source.name = :name"),
-	//@NamedQuery(name = OpcDaSource.DA_PROG_IDS, query = "SELECT source.name FROM OpcDaSource source"), })
-
-public class OpcDaSource extends CollectorDataSource {
-	// queries
-	//public static final String DA_PROG_IDS = "OPCDA.ProgIds";
-	//public static final String DA_SRC_BY_NAME = "OPCDA.ByName";
-	
+public class OpcDaSource extends CollectorDataSource {	
 	public OpcDaSource() {
 		super();
 		setDataSourceType(DataSourceType.OPC_DA);

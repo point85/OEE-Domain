@@ -1,0 +1,6 @@
+How to Obtain the j-interop and OpenSCADA jars:
+(1)  Provided by Distributed Services Architecture (DSA), an open source IoT platform (http://iot-dsa.org/)
+(2)  Browse to https://github.com/IOT-DSA/dslink-java-opc
+(3)  Clone repo 
+(4)  The jars in in the lib folder:
+	

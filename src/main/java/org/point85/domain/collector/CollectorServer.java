@@ -296,6 +296,7 @@ public class CollectorServer
 
 			opcDaClient.connect(daSource);
 
+			// put in context
 			appContext.getOpcDaClients().add(opcDaClient);
 
 			// subscribe to tags, one group per equipment
@@ -329,6 +330,7 @@ public class CollectorServer
 				opcDaGroup.startMonitoring();
 			}
 		}
+		
 	}
 
 	private void buildDataSources() throws Exception {

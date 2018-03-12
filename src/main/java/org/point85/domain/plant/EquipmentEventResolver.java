@@ -183,7 +183,7 @@ public class EquipmentEventResolver {
 			break;
 		case PROD_GOOD:
 		case PROD_REJECT:
-			processProductionCount(event, type);
+			processProductionCount(event, type, context);
 			break;
 		default:
 			break;
@@ -203,7 +203,7 @@ public class EquipmentEventResolver {
 	}
 
 	// production counts
-	private void processProductionCount(ResolvedEvent resolvedItem, ScriptResolverType type) throws Exception {
+	private void processProductionCount(ResolvedEvent resolvedItem, ScriptResolverType type, OeeContext context) throws Exception {
 		Object outputValue = resolvedItem.getOutputValue();
 		Double amount = null;
 
@@ -235,7 +235,10 @@ public class EquipmentEventResolver {
 
 			if (eqm != null) {
 				material = eqm.getMaterial();
-
+				
+				// set material into context too
+				context.setMaterial(eqm.getEquipment(), material);
+				
 				if (logger.isInfoEnabled()) {
 					logger.info("Produced material is not defined.  Using default of " + material.getName());
 				}
