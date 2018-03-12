@@ -67,7 +67,7 @@ public class NonWorkingPeriod extends Named implements Comparable<NonWorkingPeri
 	// loss category
 	@Column(name = "LOSS")
 	@Convert(converter = TimeLossConverter.class)
-	private TimeLoss toCategory;
+	private TimeLoss timeLoss;
 
 	/**
 	 * Default constructor
@@ -192,11 +192,11 @@ public class NonWorkingPeriod extends Named implements Comparable<NonWorkingPeri
 	}
 
 	public TimeLoss getLossCategory() {
-		return this.toCategory;
+		return this.timeLoss;
 	}
 
 	public void setLossCategory(TimeLoss loss) {
-		this.toCategory = loss;
+		this.timeLoss = loss;
 	}
 
 	/**

@@ -5,6 +5,7 @@ import java.util.List;
 
 public class ReasonDto extends NamedDto {
 	private String parent;
+	private String lossCategory;
 
 	private List<ReasonDto> children = new ArrayList<>();
 
@@ -12,8 +13,9 @@ public class ReasonDto extends NamedDto {
 		super();
 	}
 
-	public ReasonDto(String name, String description) {
+	public ReasonDto(String name, String description, String lossCategory) {
 		super(name, description);
+		this.lossCategory = lossCategory;
 	}
 
 	public String getParent() {
@@ -31,6 +33,14 @@ public class ReasonDto extends NamedDto {
 	public void setChildren(List<ReasonDto> children) {
 		this.children = children;
 	}
+	
+	public String getLossCategory() {
+		return lossCategory;
+	}
+
+	public void setLossCategory(String lossCategory) {
+		this.lossCategory = lossCategory;
+	}
 
 	@Override
 	public String toString() {
@@ -43,5 +53,4 @@ public class ReasonDto extends NamedDto {
 		}
 		return sb.toString();
 	}
-
 }

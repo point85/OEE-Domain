@@ -9,6 +9,7 @@ import java.util.Map;
 import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.performance.TimeLoss;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.PlantEntity;
@@ -326,7 +327,13 @@ public class OeeHttpServer extends NanoHTTPD {
 
 		for (Reason reason : allReasons) {
 			// this reason
-			ReasonDto reasonDto = new ReasonDto(reason.getName(), reason.getDescription());
+			TimeLoss timeLoss = reason.getLossCategory();
+
+			String lossName = null;
+			if (timeLoss != null) {
+				lossName = timeLoss.name();
+			}
+			ReasonDto reasonDto = new ReasonDto(reason.getName(), reason.getDescription(), lossName);
 
 			// parent entity
 			if (reason.getParent() == null) {

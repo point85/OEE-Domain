@@ -28,19 +28,9 @@ import org.point85.domain.persistence.TimeLossConverter;
 @Table(name = "REASON")
 @AttributeOverride(name = "primaryKey", column = @Column(name = "REASON_KEY"))
 
-//@NamedQueries({
-		//@NamedQuery(name = Reason.REASON_BY_NAME, query = "SELECT reason FROM Reason reason WHERE reason.name = :name"),
-		//@NamedQuery(name = Reason.REASON_ROOTS, query = "SELECT reason FROM Reason reason WHERE reason.parent IS NULL"),
-		//@NamedQuery(name = Reason.REASON_ALL, query = "SELECT reason FROM Reason reason"), })
-
 public class Reason extends NamedObject {
 	// the one and only root reason in the hierarchy
 	public static final String ROOT_REASON_NAME = "All Reasons";
-
-	// named queries
-	//public static final String REASON_BY_NAME = "REASON.ByName";
-	//public static final String REASON_ROOTS = "REASON.Roots";
-	//public static final String REASON_ALL = "REASON.All";
 
 	// parent reason
 	@ManyToOne
@@ -51,10 +41,10 @@ public class Reason extends NamedObject {
 	@OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
 	private Set<Reason> children = new HashSet<>();
 
-	// transition loss category
+	// loss category
 	@Column(name = "LOSS")
 	@Convert(converter = TimeLossConverter.class)
-	private TimeLoss toCategory;
+	private TimeLoss timeLoss;
 
 	public Reason() {
 		super();
@@ -91,16 +81,13 @@ public class Reason extends NamedObject {
 	}
 
 	public TimeLoss getLossCategory() {
-		return this.toCategory;
+		return this.timeLoss;
 	}
 
 	public void setLossCategory(TimeLoss loss) {
-		this.toCategory = loss;
+		this.timeLoss = loss;
 	}
 
-	/*
-	 * @Override public String getFetchQueryName() { return REASON_BY_NAME; }
-	 */
 	@Override
 	public String toString() {
 		return super.toString() + ", Loss: " + getLossCategory();
