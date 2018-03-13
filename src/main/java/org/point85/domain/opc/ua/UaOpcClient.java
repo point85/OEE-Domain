@@ -13,9 +13,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
+import org.eclipse.milo.opcua.sdk.client.api.UaSession;
 import org.eclipse.milo.opcua.sdk.client.api.config.OpcUaClientConfig;
 import org.eclipse.milo.opcua.sdk.client.api.config.OpcUaClientConfigBuilder;
 import org.eclipse.milo.opcua.sdk.client.api.identity.AnonymousProvider;
@@ -68,7 +71,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
 
-public class UaOpcClient {
+public class UaOpcClient implements SessionActivityListener {
 	// logging utility
 	private static Logger logger = LoggerFactory.getLogger(UaOpcClient.class);
 
@@ -84,7 +87,7 @@ public class UaOpcClient {
 	private static final double SAMPLING_INTERVAL = 0.0d;
 
 	// future to complete the Milo client
-	private final CompletableFuture<OpcUaClient> clientFuture = new CompletableFuture<>();
+	//private final CompletableFuture<OpcUaClient> clientFuture = new CompletableFuture<>();
 
 	// wrapped UA client
 	private OpcUaClient opcUaClient;
@@ -106,6 +109,8 @@ public class UaOpcClient {
 
 	// registry of subscriptions
 	private ConcurrentMap<NodeId, UaSubscription> subscriptionMap = new ConcurrentHashMap<>();
+	
+	  private final AtomicReference<BiConsumer<Boolean, Throwable>> listener = new AtomicReference<>();
 
 	public UaOpcClient() {
 	}
@@ -208,7 +213,7 @@ public class UaOpcClient {
 			// synchronous connect
 			opcUaClient.connect().get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
 
-			clientFuture.complete(opcUaClient);
+			//clientFuture.complete(opcUaClient);
 
 		} catch (Exception e) {
 			throw new Exception("Unable to log in to server " + endpointUrl + ": " + e.getMessage());
@@ -220,7 +225,7 @@ public class UaOpcClient {
 			try {
 				opcUaClient.disconnect().get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
 				Stack.releaseSharedResources();
-				clientFuture.complete(opcUaClient);
+				//clientFuture.complete(opcUaClient);
 				opcUaClient = null;
 			} catch (Exception e) {
 				throw new Exception("Error disconnecting: " + e.getMessage());
@@ -244,7 +249,7 @@ public class UaOpcClient {
 			List<DataValue> values = opcUaClient.readValues(MAX_AGE, TimestampsToReturn.Both, nodeIds)
 					.get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
 
-			clientFuture.complete(opcUaClient);
+			//clientFuture.complete(opcUaClient);
 			return values;
 
 		} catch (Exception e) {
@@ -263,7 +268,7 @@ public class UaOpcClient {
 			}
 			List<StatusCode> codes = opcUaClient.writeValues(nodeIds, dataValues).get(REQUEST_TIMEOUT,
 					REQUEST_TIMEOUT_UNIT);
-			clientFuture.complete(opcUaClient);
+			//clientFuture.complete(opcUaClient);
 			return codes;
 
 		} catch (Exception e) {
@@ -286,7 +291,7 @@ public class UaOpcClient {
 				listener.onOpcUaWrite(statusCodes);
 			}
 		});
-		clientFuture.complete(opcUaClient);
+		//clientFuture.complete(opcUaClient);
 	}
 
 	public synchronized void readAsynch(NodeId nodeId) throws Exception {
@@ -302,7 +307,7 @@ public class UaOpcClient {
 			}
 		});
 
-		clientFuture.complete(opcUaClient);
+		//clientFuture.complete(opcUaClient);
 	}
 
 	public synchronized void readAsynch(List<NodeId> nodeIds) throws Exception {
@@ -315,7 +320,7 @@ public class UaOpcClient {
 			}
 		});
 
-		clientFuture.complete(opcUaClient);
+		//clientFuture.complete(opcUaClient);
 	}
 
 	public UInteger[] getArrayDimensions(NodeId nodeId) throws Exception {
@@ -347,7 +352,7 @@ public class UaOpcClient {
 
 			}
 
-			clientFuture.complete(opcUaClient);
+			//clientFuture.complete(opcUaClient);
 			return value;
 		} catch (Exception e) {
 			throw new Exception(e.getMessage());
@@ -361,7 +366,7 @@ public class UaOpcClient {
 			CompletableFuture<StatusCode> cf = opcUaClient.writeValue(nodeId, new DataValue(newValue, null, null));
 
 			StatusCode statusCode = cf.get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
-			clientFuture.complete(opcUaClient);
+			//clientFuture.complete(opcUaClient);
 			return statusCode;
 
 		} catch (Exception e) {
@@ -384,7 +389,7 @@ public class UaOpcClient {
 					listener.onOpcUaWrite(statusCodes);
 				}
 			});
-			clientFuture.complete(opcUaClient);
+			//clientFuture.complete(opcUaClient);
 		} catch (Exception e) {
 			throw new Exception(e.getMessage());
 		}
@@ -452,7 +457,7 @@ public class UaOpcClient {
 
 			List<ReferenceDescription> referenceDescriptions = toList(browseResult.getReferences());
 
-			clientFuture.complete(opcUaClient);
+			//clientFuture.complete(opcUaClient);
 
 			return referenceDescriptions;
 		} catch (Exception e) {
@@ -474,7 +479,7 @@ public class UaOpcClient {
 			List<BrowseResult> browseResults = opcUaClient.browse(nodesToBrowse).get(REQUEST_TIMEOUT,
 					REQUEST_TIMEOUT_UNIT);
 
-			clientFuture.complete(opcUaClient);
+			//clientFuture.complete(opcUaClient);
 
 			return browseResults;
 
@@ -530,7 +535,7 @@ public class UaOpcClient {
 			}
 		}
 
-		clientFuture.complete(opcUaClient);
+		//clientFuture.complete(opcUaClient);
 
 		return subscription;
 	}
@@ -626,7 +631,7 @@ public class UaOpcClient {
 
 			List<Object> results = cf.get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
 
-			clientFuture.complete(opcUaClient);
+			//clientFuture.complete(opcUaClient);
 
 			return results;
 		} catch (Exception e) {
@@ -662,47 +667,13 @@ public class UaOpcClient {
 			ServerNode serverNode = opcUaClient.getAddressSpace().getObjectNode(Identifiers.Server, ServerNode.class)
 					.get();
 
-			// Read properties of the Server object...
-			// String[] serverArray = serverNode.getServerArray().get();
-			// String[] namespaceArray = serverNode.getNamespaceArray().get();
-
-			// Read the value of attribute the ServerStatus variable component
-			// ServerStatusDataType serverStatusType =
-			// serverNode.getServerStatus().get();
-
 			// Get a typed reference to the ServerStatus variable
 			// component and read value attributes individually
 			ServerStatusNode serverStatusNode = serverNode.getServerStatusNode().get();
 
-			// TODO throws class cast exception
-			// BuildInfo buildInfo = serverStatusNode.getBuildInfo().get();
 			DateTime startTime = serverStatusNode.getStartTime().get();
 			ServerState state = serverStatusNode.getState().get();
 
-			/*
-			 * // synchronous read List<NodeId> nodeIds =
-			 * newArrayList(Identifiers.Server_ServerStatus_State,
-			 * Identifiers.Server_ServerStatus_StartTime,
-			 * Identifiers.Server_ServerStatus_BuildInfo_ManufacturerName,
-			 * Identifiers.Server_ServerStatus_BuildInfo_ProductName);
-			 * 
-			 * List<DataValue> dataValues = readSynch(nodeIds);
-			 * 
-			 * for (DataValue dataValue : dataValues) { StatusCode code =
-			 * dataValue.getStatusCode(); if (!code.isGood()) { throw new
-			 * Exception("Bad read"); }
-			 * 
-			 * Class<?> javaClass =
-			 * Point85OpcUaClient.getJavaDataType(dataValue.getValue());
-			 * logger.info("Synch Read: " + dataValue.getValue().getValue() + " of type: " +
-			 * javaClass); }
-			 * 
-			 * // state Integer i = (Integer) dataValues.get(0).getValue().getValue();
-			 * ServerState state = ServerState.from(i); serverStatus.setState(state);
-			 * 
-			 * // start time DateTime dt = (DateTime)
-			 * dataValues.get(1).getValue().getValue();
-			 */
 			serverStatus.setState(state);
 			serverStatus.setBuildInfo(buildInfo);
 			serverStatus.setStartTime(startTime);
@@ -716,4 +687,22 @@ public class UaOpcClient {
 	public boolean isConnected() {
 		return opcUaClient != null ? true : false;
 	}
+	
+	  @Override
+	  public void onSessionActive(UaSession session) {
+	    logger.info("active session id: {}", session.getSessionId());
+	    BiConsumer<Boolean, Throwable> consumer = listener.get();
+	    if (consumer != null) {
+	      consumer.accept(Boolean.TRUE, null);
+	    }
+	  }
+
+	  @Override
+	  public void onSessionInactive(UaSession session) {
+	    logger.info("inactive session id: {}", session.getSessionId());
+	    BiConsumer<Boolean, Throwable> consumer = listener.get();
+	    if (consumer != null) {
+	      consumer.accept(Boolean.FALSE, null);
+	    }
+	  }
 }

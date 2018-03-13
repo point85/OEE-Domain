@@ -99,25 +99,7 @@ import org.point85.domain.plant.NamedObject;
 @Table(name = "UOM")
 @AttributeOverride(name = "primaryKey", column = @Column(name = "UOM_KEY"))
 
-//@NamedQueries({
-		//@NamedQuery(name = UnitOfMeasure.UOM_CATEGORIES, query = "SELECT DISTINCT uom.category FROM UnitOfMeasure uom"),
-		//@NamedQuery(name = UnitOfMeasure.UOM_SYMBOLS, query = "SELECT uom.symbol, uom.name FROM UnitOfMeasure uom WHERE uom.unit IS NULL AND uom.unitType = :type"),
-		//@NamedQuery(name = UnitOfMeasure.UOM_CAT_SYMBOLS, query = "SELECT uom.symbol, uom.name FROM UnitOfMeasure uom WHERE uom.category = :category"),
-		//@NamedQuery(name = UnitOfMeasure.UOM_BY_SYMBOL, query = "SELECT uom FROM UnitOfMeasure uom WHERE uom.symbol = :symbol"),
-		//@NamedQuery(name = UnitOfMeasure.UOM_BY_UNIT, query = "SELECT uom FROM UnitOfMeasure uom WHERE uom.unit = :unit"),
-		//@NamedQuery(name = UnitOfMeasure.UOM_BY_CATEGORY, query = "SELECT uom FROM UnitOfMeasure uom WHERE uom.category = :category"),
-		//@NamedQuery(name = UnitOfMeasure.UOM_XREF, query = "SELECT uom FROM UnitOfMeasure uom WHERE uom1 = :uom OR uom2 = :uom OR abscissaUnit = :uom OR bridgeAbscissaUnit = :uom"), })
-
 public class UnitOfMeasure extends NamedObject {
-	// named queries
-	//public static final String UOM_CATEGORIES = "UOM.Categories";
-	//public static final String UOM_SYMBOLS = "UOM.Symbols";
-	//public static final String UOM_CAT_SYMBOLS = "UOM.SymbolsInCategory";
-	//public static final String UOM_BY_SYMBOL = "UOM.BySymbol";
-	//public static final String UOM_BY_UNIT = "UOM.ByUnit";
-	//public static final String UOM_BY_CATEGORY = "UOM.ByCategory";
-	//public static final String UOM_XREF = "UOM.CrossRef";
-
 	// root UOM (not persistent)
 	public static final String ROOT_UOM_NAME = "All Units";
 
