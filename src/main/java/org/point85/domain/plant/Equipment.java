@@ -31,7 +31,7 @@ public class Equipment extends PlantEntity {
 
 	// reason resolvers
 	@OneToMany(mappedBy = "equipment", cascade = CascadeType.ALL, orphanRemoval = true)
-	private Set<EventResolver> scriptResolvers = new HashSet<>();
+	private Set<EventResolver> eventResolvers = new HashSet<>();
 
 	public Equipment() {
 		super();
@@ -113,29 +113,29 @@ public class Equipment extends PlantEntity {
 	}
 
 	public Set<EventResolver> getScriptResolvers() {
-		return scriptResolvers;
+		return eventResolvers;
 	}
 
 	public void setScriptResolvers(Set<EventResolver> resolvers) {
-		this.scriptResolvers = resolvers;
+		this.eventResolvers = resolvers;
 	}
 
 	public void addScriptResolver(EventResolver resolver) {
-		if (!scriptResolvers.contains(resolver)) {
-			scriptResolvers.add(resolver);
+		if (!eventResolvers.contains(resolver)) {
+			eventResolvers.add(resolver);
 			resolver.setEquipment(this);
 		}
 	}
 
 	public void removeScriptResolver(EventResolver resolver) {
-		if (scriptResolvers.contains(resolver)) {
-			scriptResolvers.remove(resolver);
+		if (eventResolvers.contains(resolver)) {
+			eventResolvers.remove(resolver);
 			resolver.setEquipment(null);
 		}
 	}
 
 	public boolean hasResolver(EventResolver resolver) {
-		return scriptResolvers.contains(resolver);
+		return eventResolvers.contains(resolver);
 	}
 
 	public boolean hasEquipmentMaterial(EquipmentMaterial equipmentMaterial) {

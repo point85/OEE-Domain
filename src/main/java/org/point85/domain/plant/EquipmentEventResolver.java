@@ -56,7 +56,7 @@ public class EquipmentEventResolver {
 	private void cacheResolvers() {
 		if (resolverCache.size() == 0) {
 			// query db
-			List<EventResolver> resolvers = PersistenceService.instance().fetchScriptResolvers();
+			List<EventResolver> resolvers = PersistenceService.instance().fetchEventResolvers();
 
 			for (EventResolver resolver : resolvers) {
 
@@ -100,16 +100,16 @@ public class EquipmentEventResolver {
 		return configuredResolver;
 	}
 
-	public ResolvedEvent invokeResolver(EventResolver scriptResolver, OeeContext context, Object sourceValue,
+	public ResolvedEvent invokeResolver(EventResolver eventResolver, OeeContext context, Object sourceValue,
 			OffsetDateTime dateTime) throws Exception {
 
-		String sourceId = scriptResolver.getSourceId();
-		EventResolverType type = scriptResolver.getType();
-		String script = scriptResolver.getScript();
+		String sourceId = eventResolver.getSourceId();
+		EventResolverType type = eventResolver.getType();
+		String script = eventResolver.getScript();
 
 		if (script == null) {
 			throw new Exception("The resolver script is not defined for source id " + sourceId + " for equipment "
-					+ scriptResolver.getEquipment().getName());
+					+ eventResolver.getEquipment().getName());
 		}
 
 		if (logger.isInfoEnabled()) {
@@ -120,24 +120,24 @@ public class EquipmentEventResolver {
 		ResolverFunction resolverFunction = new ResolverFunction(script);
 
 		// for production counts
-		if (scriptResolver.getLastValue() == null) {
-			scriptResolver.setLastValue(sourceValue);
+		if (eventResolver.getLastValue() == null) {
+			eventResolver.setLastValue(sourceValue);
 		}
 
 		// result of script
-		Object result = resolverFunction.invoke(getScriptEngine(), context, sourceValue, scriptResolver.getLastValue());
+		Object result = resolverFunction.invoke(getScriptEngine(), context, sourceValue, eventResolver.getLastValue());
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Result: " + result);
 		}
 
-		scriptResolver.setLastValue(sourceValue);
+		eventResolver.setLastValue(sourceValue);
 
 		// fill in resolution
 		ResolvedEvent event = new ResolvedEvent();
-		Equipment equipment = scriptResolver.getEquipment();
+		Equipment equipment = eventResolver.getEquipment();
 		event.setEquipment(equipment);
-		event.setResolverType(scriptResolver.getType());
+		event.setResolverType(eventResolver.getType());
 		event.setItemId(sourceId);
 		event.setTimestamp(dateTime);
 		event.setInputValue(sourceValue);
@@ -145,7 +145,7 @@ public class EquipmentEventResolver {
 
 		// set material
 		Material material = null;
-		if (scriptResolver.getType().equals(EventResolverType.MATERIAL)) {
+		if (eventResolver.getType().equals(EventResolverType.MATERIAL)) {
 			// set material from event
 			material = fetchMaterial((String) sourceValue);
 			context.setMaterial(equipment, material);
@@ -157,7 +157,7 @@ public class EquipmentEventResolver {
 
 		// set job
 		String job = null;
-		if (scriptResolver.getType().equals(EventResolverType.JOB)) {
+		if (eventResolver.getType().equals(EventResolverType.JOB)) {
 			// set job from event
 			job = (String) sourceValue;
 			context.setJob(equipment, job);

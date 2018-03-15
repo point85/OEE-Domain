@@ -165,11 +165,11 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<EventResolver> fetchScriptResolvers() {
+	public List<EventResolver> fetchEventResolvers() {
 		final String RESOLVER_ALL = "RESOLVER.All";
 
 		if (namedQueryMap.get(RESOLVER_ALL) == null) {
-			createNamedQuery(RESOLVER_ALL, "SELECT sr FROM ScriptResolver sr");
+			createNamedQuery(RESOLVER_ALL, "SELECT er FROM EventResolver er");
 		}
 
 		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(RESOLVER_ALL, EventResolver.class);
@@ -181,7 +181,7 @@ public class PersistenceService {
 
 		if (namedQueryMap.get(EQUIPMENT_SOURCE_IDS) == null) {
 			createNamedQuery(EQUIPMENT_SOURCE_IDS,
-					"SELECT sr.sourceId FROM ScriptResolver sr JOIN sr.equipment e JOIN sr.dataSource ds WHERE e.name = :name AND ds.sourceType = :type");
+					"SELECT er.sourceId FROM EventResolver er JOIN er.equipment eq JOIN er.dataSource ds WHERE eq.name = :name AND ds.sourceType = :type");
 		}
 
 		TypedQuery<String> query = getEntityManager().createNamedQuery(EQUIPMENT_SOURCE_IDS, String.class);
@@ -443,13 +443,13 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<EventResolver> fetchScriptResolversByHost(List<String> hostNames, List<CollectorState> states)
+	public List<EventResolver> fetchEventResolversByHost(List<String> hostNames, List<CollectorState> states)
 			throws Exception {
 		final String RESOLVER_BY_HOST = "RESOLVER.ByHost";
 
 		if (namedQueryMap.get(RESOLVER_BY_HOST) == null) {
 			createNamedQuery(RESOLVER_BY_HOST,
-					"SELECT sr FROM ScriptResolver sr WHERE sr.collector.host IN :names AND sr.collector.state IN :states");
+					"SELECT er FROM EventResolver er WHERE er.collector.host IN :names AND er.collector.state IN :states");
 		}
 
 		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(RESOLVER_BY_HOST, EventResolver.class);
@@ -458,12 +458,12 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<EventResolver> fetchScriptResolversByCollector(List<String> definitionNames) throws Exception {
+	public List<EventResolver> fetchEventResolversByCollector(List<String> definitionNames) throws Exception {
 		final String RESOLVER_BY_COLLECTOR = "RESOLVER.ByCollector";
 
 		if (namedQueryMap.get(RESOLVER_BY_COLLECTOR) == null) {
 			createNamedQuery(RESOLVER_BY_COLLECTOR,
-					"SELECT sr FROM ScriptResolver sr WHERE sr.collector.name IN :names");
+					"SELECT er FROM EventResolver er WHERE er.collector.name IN :names");
 		}
 
 		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(RESOLVER_BY_COLLECTOR,
@@ -982,7 +982,7 @@ public class PersistenceService {
 
 		if (namedQueryMap.get(COLLECT_RES_XREF) == null) {
 			createNamedQuery(COLLECT_RES_XREF,
-					"SELECT resolver FROM ScriptResolver resolver WHERE resolver.dataSource = :source");
+					"SELECT resolver FROM EventResolver resolver WHERE resolver.dataSource = :source");
 		}
 
 		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(COLLECT_RES_XREF, EventResolver.class);

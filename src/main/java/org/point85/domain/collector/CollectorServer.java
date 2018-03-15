@@ -50,12 +50,11 @@ import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentEventResolver;
 import org.point85.domain.plant.EquipmentMaterial;
 import org.point85.domain.plant.Material;
-import org.point85.domain.script.OeeContext;
-import org.point85.domain.script.ResolvedEvent;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.EventResolverType;
+import org.point85.domain.script.OeeContext;
+import org.point85.domain.script.ResolvedEvent;
 import org.point85.domain.uom.UnitOfMeasure;
-import org.point85.domain.web.WebSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,7 +105,6 @@ public class CollectorServer
 	private Map<String, OpcDaInfo> opcDaSubscriptionMap = new HashMap<>();
 	private Map<String, OpcUaInfo> opcUaSubscriptionMap = new HashMap<>();
 	private Map<String, HttpServerSource> httpServerMap = new HashMap<>();
-	private Map<String, WebServerSource> webServerMap = new HashMap<>();
 	private Map<String, MessageBrokerSource> messageBrokerMap = new HashMap<>();
 
 	// exception listener
@@ -137,22 +135,6 @@ public class CollectorServer
 			}
 			serverSource = new HttpServerSource(source);
 			httpServerMap.put(id, serverSource);
-		}
-	}
-
-	// collect all HTTP server info
-	private void buildWebServers(EventResolver resolver) throws Exception {
-		WebSource source = (WebSource) resolver.getDataSource();
-		String id = source.getId();
-
-		WebServerSource serverSource = webServerMap.get(id);
-
-		if (serverSource == null) {
-			if (logger.isInfoEnabled()) {
-				logger.info("Found Web server specified for host " + source.getHost() + " on port " + source.getPort());
-			}
-			serverSource = new WebServerSource(source);
-			webServerMap.put(id, serverSource);
 		}
 	}
 
@@ -330,7 +312,7 @@ public class CollectorServer
 				opcDaGroup.startMonitoring();
 			}
 		}
-		
+
 	}
 
 	private void buildDataSources() throws Exception {
@@ -343,7 +325,7 @@ public class CollectorServer
 		List<CollectorState> states = new ArrayList<>();
 		states.add(CollectorState.READY);
 		states.add(CollectorState.RUNNING);
-		List<EventResolver> resolvers = PersistenceService.instance().fetchScriptResolversByHost(hostNames, states);
+		List<EventResolver> resolvers = PersistenceService.instance().fetchEventResolversByHost(hostNames, states);
 
 		if (resolvers.size() == 0) {
 			if (logger.isInfoEnabled()) {
@@ -383,11 +365,6 @@ public class CollectorServer
 
 			case MESSAGING: {
 				buildMessagingBrokers(resolver);
-				break;
-			}
-
-			case WEB: {
-				buildWebServers(resolver);
 				break;
 			}
 
@@ -639,7 +616,7 @@ public class CollectorServer
 		for (UaOpcClient uaClient : appContext.getOpcUaClients()) {
 			uaClient.registerAsynchListener(this);
 		}
-		
+
 		if (logger.isInfoEnabled()) {
 			logger.info("Subscribed to data sources.");
 		}
@@ -882,20 +859,6 @@ public class CollectorServer
 		}
 	}
 
-	// web servers
-	private class WebServerSource {
-		private WebSource source;
-
-		private WebServerSource(WebSource source) {
-			this.source = source;
-		}
-
-		@SuppressWarnings("unused")
-		private WebSource getSource() {
-			return source;
-		}
-	}
-
 	// handle the HTTP callback
 	private class HttpTask implements Runnable {
 		private String sourceId;
@@ -917,9 +880,9 @@ public class CollectorServer
 				}
 
 				// find resolver
-				EventResolver scriptResolver = equipmentResolver.getResolver(sourceId);
+				EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
 
-				ResolvedEvent resolvedDataItem = equipmentResolver.invokeResolver(scriptResolver, getAppContext(),
+				ResolvedEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
 						dataValue, timestamp);
 
 				recordResolution(resolvedDataItem);
@@ -953,9 +916,9 @@ public class CollectorServer
 							"OPC UA subscription, node: " + itemId + ", value: " + javaValue + ", timestamp: " + odt);
 				}
 
-				EventResolver scriptResolver = equipmentResolver.getResolver(itemId);
+				EventResolver eventResolver = equipmentResolver.getResolver(itemId);
 
-				ResolvedEvent resolvedEvent = equipmentResolver.invokeResolver(scriptResolver, getAppContext(),
+				ResolvedEvent resolvedEvent = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
 						javaValue, odt);
 
 				recordResolution(resolvedEvent);
@@ -1059,14 +1022,14 @@ public class CollectorServer
 				}
 
 				// get resolver to process data value
-				EventResolver scriptResolver = equipmentResolver.getResolver(sourceId);
+				EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
 
-				if (scriptResolver == null) {
+				if (eventResolver == null) {
 					throw new Exception("The OPC DA script resolver is undefined for source id " + sourceId);
 				}
 
 				// resolver the data
-				ResolvedEvent resolvedDataItem = equipmentResolver.invokeResolver(scriptResolver, getAppContext(),
+				ResolvedEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
 						dataValue, item.getLocalTimestamp());
 
 				// save resolution
@@ -1108,10 +1071,10 @@ public class CollectorServer
 					}
 
 					// find resolver
-					EventResolver scriptResolver = equipmentResolver.getResolver(sourceId);
+					EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
 
-					if (scriptResolver != null) {
-						ResolvedEvent resolvedDataItem = equipmentResolver.invokeResolver(scriptResolver,
+					if (eventResolver != null) {
+						ResolvedEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver,
 								getAppContext(), dataValue, timestamp);
 
 						recordResolution(resolvedDataItem);
