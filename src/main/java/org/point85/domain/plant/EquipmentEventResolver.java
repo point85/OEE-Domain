@@ -14,8 +14,8 @@ import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.script.OeeContext;
 import org.point85.domain.script.ResolvedEvent;
 import org.point85.domain.script.ResolverFunction;
-import org.point85.domain.script.ScriptResolver;
-import org.point85.domain.script.ScriptResolverType;
+import org.point85.domain.script.EventResolver;
+import org.point85.domain.script.EventResolverType;
 import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.UnitOfMeasure;
 import org.slf4j.Logger;
@@ -35,7 +35,7 @@ public class EquipmentEventResolver {
 	private ConcurrentMap<String, Material> materialCache = new ConcurrentHashMap<>();
 
 	// resolvers by source id
-	private ConcurrentMap<Equipment, List<ScriptResolver>> resolverCache = new ConcurrentHashMap<>();
+	private ConcurrentMap<Equipment, List<EventResolver>> resolverCache = new ConcurrentHashMap<>();
 
 	private ScriptEngine scriptEngine;
 
@@ -56,13 +56,13 @@ public class EquipmentEventResolver {
 	private void cacheResolvers() {
 		if (resolverCache.size() == 0) {
 			// query db
-			List<ScriptResolver> resolvers = PersistenceService.instance().fetchScriptResolvers();
+			List<EventResolver> resolvers = PersistenceService.instance().fetchScriptResolvers();
 
-			for (ScriptResolver resolver : resolvers) {
+			for (EventResolver resolver : resolvers) {
 
 				Equipment equipment = resolver.getEquipment();
 
-				List<ScriptResolver> equipmentResolvers = resolverCache.get(equipment);
+				List<EventResolver> equipmentResolvers = resolverCache.get(equipment);
 
 				if (equipmentResolvers == null) {
 					equipmentResolvers = new ArrayList<>();
@@ -74,22 +74,22 @@ public class EquipmentEventResolver {
 	}
 
 	// find the resolver(s) by type
-	public List<ScriptResolver> getResolvers(Equipment equipment) throws Exception {
+	public List<EventResolver> getResolvers(Equipment equipment) throws Exception {
 		cacheResolvers();
 
 		return resolverCache.get(equipment);
 	}
 
 	// find the resolver by source id (must be unique)
-	public ScriptResolver getResolver(String sourceId) throws Exception {
+	public EventResolver getResolver(String sourceId) throws Exception {
 		cacheResolvers();
 
-		Collection<List<ScriptResolver>> equipmentResolvers = resolverCache.values();
+		Collection<List<EventResolver>> equipmentResolvers = resolverCache.values();
 
-		ScriptResolver configuredResolver = null;
+		EventResolver configuredResolver = null;
 
-		for (List<ScriptResolver> resolvers : equipmentResolvers) {
-			for (ScriptResolver resolver : resolvers) {
+		for (List<EventResolver> resolvers : equipmentResolvers) {
+			for (EventResolver resolver : resolvers) {
 				if (resolver.getSourceId().equals(sourceId)) {
 					configuredResolver = resolver;
 					break;
@@ -100,11 +100,11 @@ public class EquipmentEventResolver {
 		return configuredResolver;
 	}
 
-	public ResolvedEvent invokeResolver(ScriptResolver scriptResolver, OeeContext context, Object sourceValue,
+	public ResolvedEvent invokeResolver(EventResolver scriptResolver, OeeContext context, Object sourceValue,
 			OffsetDateTime dateTime) throws Exception {
 
 		String sourceId = scriptResolver.getSourceId();
-		ScriptResolverType type = scriptResolver.getType();
+		EventResolverType type = scriptResolver.getType();
 		String script = scriptResolver.getScript();
 
 		if (script == null) {
@@ -145,7 +145,7 @@ public class EquipmentEventResolver {
 
 		// set material
 		Material material = null;
-		if (scriptResolver.getType().equals(ScriptResolverType.MATERIAL)) {
+		if (scriptResolver.getType().equals(EventResolverType.MATERIAL)) {
 			// set material from event
 			material = fetchMaterial((String) sourceValue);
 			context.setMaterial(equipment, material);
@@ -157,7 +157,7 @@ public class EquipmentEventResolver {
 
 		// set job
 		String job = null;
-		if (scriptResolver.getType().equals(ScriptResolverType.JOB)) {
+		if (scriptResolver.getType().equals(EventResolverType.JOB)) {
 			// set job from event
 			job = (String) sourceValue;
 			context.setJob(equipment, job);
@@ -203,7 +203,7 @@ public class EquipmentEventResolver {
 	}
 
 	// production counts
-	private void processProductionCount(ResolvedEvent resolvedItem, ScriptResolverType type, OeeContext context) throws Exception {
+	private void processProductionCount(ResolvedEvent resolvedItem, EventResolverType type, OeeContext context) throws Exception {
 		Object outputValue = resolvedItem.getOutputValue();
 		Double amount = null;
 

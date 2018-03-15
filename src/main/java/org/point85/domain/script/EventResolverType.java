@@ -1,6 +1,6 @@
 package org.point85.domain.script;
 
-public enum ScriptResolverType {
+public enum EventResolverType {
 	AVAILABILITY, PROD_GOOD, PROD_REJECT, MATERIAL, JOB, OTHER;
 
 	// database values

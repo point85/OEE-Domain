@@ -52,8 +52,8 @@ import org.point85.domain.schedule.RotationSegment;
 import org.point85.domain.schedule.Shift;
 import org.point85.domain.schedule.Team;
 import org.point85.domain.schedule.WorkSchedule;
-import org.point85.domain.script.ScriptResolver;
-import org.point85.domain.script.ScriptResolverType;
+import org.point85.domain.script.EventResolver;
+import org.point85.domain.script.EventResolverType;
 import org.point85.domain.uom.MeasurementSystem;
 import org.point85.domain.uom.Unit;
 import org.point85.domain.uom.UnitOfMeasure;
@@ -165,14 +165,14 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<ScriptResolver> fetchScriptResolvers() {
+	public List<EventResolver> fetchScriptResolvers() {
 		final String RESOLVER_ALL = "RESOLVER.All";
 
 		if (namedQueryMap.get(RESOLVER_ALL) == null) {
 			createNamedQuery(RESOLVER_ALL, "SELECT sr FROM ScriptResolver sr");
 		}
 
-		TypedQuery<ScriptResolver> query = getEntityManager().createNamedQuery(RESOLVER_ALL, ScriptResolver.class);
+		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(RESOLVER_ALL, EventResolver.class);
 		return query.getResultList();
 	}
 
@@ -288,11 +288,11 @@ public class PersistenceService {
 			CollectorDataSource source = (CollectorDataSource) keyed;
 
 			// check for script resolver references
-			List<ScriptResolver> resolvers = fetchResolverCrossReferences(source);
+			List<EventResolver> resolvers = fetchResolverCrossReferences(source);
 
 			if (resolvers.size() > 0) {
 				String refs = "";
-				for (ScriptResolver resolver : resolvers) {
+				for (EventResolver resolver : resolvers) {
 					if (refs.length() > 0) {
 						refs += ", ";
 					}
@@ -443,7 +443,7 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<ScriptResolver> fetchScriptResolversByHost(List<String> hostNames, List<CollectorState> states)
+	public List<EventResolver> fetchScriptResolversByHost(List<String> hostNames, List<CollectorState> states)
 			throws Exception {
 		final String RESOLVER_BY_HOST = "RESOLVER.ByHost";
 
@@ -452,13 +452,13 @@ public class PersistenceService {
 					"SELECT sr FROM ScriptResolver sr WHERE sr.collector.host IN :names AND sr.collector.state IN :states");
 		}
 
-		TypedQuery<ScriptResolver> query = getEntityManager().createNamedQuery(RESOLVER_BY_HOST, ScriptResolver.class);
+		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(RESOLVER_BY_HOST, EventResolver.class);
 		query.setParameter("names", hostNames);
 		query.setParameter("states", states);
 		return query.getResultList();
 	}
 
-	public List<ScriptResolver> fetchScriptResolversByCollector(List<String> definitionNames) throws Exception {
+	public List<EventResolver> fetchScriptResolversByCollector(List<String> definitionNames) throws Exception {
 		final String RESOLVER_BY_COLLECTOR = "RESOLVER.ByCollector";
 
 		if (namedQueryMap.get(RESOLVER_BY_COLLECTOR) == null) {
@@ -466,8 +466,8 @@ public class PersistenceService {
 					"SELECT sr FROM ScriptResolver sr WHERE sr.collector.name IN :names");
 		}
 
-		TypedQuery<ScriptResolver> query = getEntityManager().createNamedQuery(RESOLVER_BY_COLLECTOR,
-				ScriptResolver.class);
+		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(RESOLVER_BY_COLLECTOR,
+				EventResolver.class);
 		query.setParameter("names", definitionNames);
 		return query.getResultList();
 	}
@@ -909,7 +909,7 @@ public class PersistenceService {
 		}
 	}
 
-	public SetupHistory fetchLastHistory(Equipment equipment, ScriptResolverType type) {
+	public SetupHistory fetchLastHistory(Equipment equipment, EventResolverType type) {
 		final String LAST_RECORD = "Setup.Last";
 
 		if (namedQueryMap.get(LAST_RECORD) == null) {
@@ -977,7 +977,7 @@ public class PersistenceService {
 		return collector;
 	}
 
-	public List<ScriptResolver> fetchResolverCrossReferences(CollectorDataSource source) {
+	public List<EventResolver> fetchResolverCrossReferences(CollectorDataSource source) {
 		final String COLLECT_RES_XREF = "COLLECT.Resolver.CrossRef";
 
 		if (namedQueryMap.get(COLLECT_RES_XREF) == null) {
@@ -985,7 +985,7 @@ public class PersistenceService {
 					"SELECT resolver FROM ScriptResolver resolver WHERE resolver.dataSource = :source");
 		}
 
-		TypedQuery<ScriptResolver> query = getEntityManager().createNamedQuery(COLLECT_RES_XREF, ScriptResolver.class);
+		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(COLLECT_RES_XREF, EventResolver.class);
 		query.setParameter("source", source);
 		return query.getResultList();
 	}
@@ -1024,7 +1024,7 @@ public class PersistenceService {
 				ProductionHistory.class, SetupHistory.class, HttpSource.class, MessagingSource.class, OpcDaSource.class,
 				OpcUaSource.class, WebSource.class, Area.class, Enterprise.class, Equipment.class,
 				EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class, Reason.class,
-				Site.class, WorkCell.class, ScriptResolver.class, UnitOfMeasure.class, NonWorkingPeriod.class,
+				Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class, NonWorkingPeriod.class,
 				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class };
 	}
 

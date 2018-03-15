@@ -12,8 +12,8 @@ import javax.persistence.OneToMany;
 
 import org.point85.domain.collector.SetupHistory;
 import org.point85.domain.persistence.PersistenceService;
-import org.point85.domain.script.ScriptResolver;
-import org.point85.domain.script.ScriptResolverType;
+import org.point85.domain.script.EventResolver;
+import org.point85.domain.script.EventResolverType;
 
 @Entity
 @DiscriminatorValue(Equipment.EQUIP_VALUE)
@@ -31,7 +31,7 @@ public class Equipment extends PlantEntity {
 
 	// reason resolvers
 	@OneToMany(mappedBy = "equipment", cascade = CascadeType.ALL, orphanRemoval = true)
-	private Set<ScriptResolver> scriptResolvers = new HashSet<>();
+	private Set<EventResolver> scriptResolvers = new HashSet<>();
 
 	public Equipment() {
 		super();
@@ -112,29 +112,29 @@ public class Equipment extends PlantEntity {
 
 	}
 
-	public Set<ScriptResolver> getScriptResolvers() {
+	public Set<EventResolver> getScriptResolvers() {
 		return scriptResolvers;
 	}
 
-	public void setScriptResolvers(Set<ScriptResolver> resolvers) {
+	public void setScriptResolvers(Set<EventResolver> resolvers) {
 		this.scriptResolvers = resolvers;
 	}
 
-	public void addScriptResolver(ScriptResolver resolver) {
+	public void addScriptResolver(EventResolver resolver) {
 		if (!scriptResolvers.contains(resolver)) {
 			scriptResolvers.add(resolver);
 			resolver.setEquipment(this);
 		}
 	}
 
-	public void removeScriptResolver(ScriptResolver resolver) {
+	public void removeScriptResolver(EventResolver resolver) {
 		if (scriptResolvers.contains(resolver)) {
 			scriptResolvers.remove(resolver);
 			resolver.setEquipment(null);
 		}
 	}
 
-	public boolean hasResolver(ScriptResolver resolver) {
+	public boolean hasResolver(EventResolver resolver) {
 		return scriptResolvers.contains(resolver);
 	}
 
@@ -145,7 +145,7 @@ public class Equipment extends PlantEntity {
 	public Material getCurrentMaterial() {
 		Material material = null;
 
-		SetupHistory history = PersistenceService.instance().fetchLastHistory(this, ScriptResolverType.MATERIAL);
+		SetupHistory history = PersistenceService.instance().fetchLastHistory(this, EventResolverType.MATERIAL);
 
 		if (history != null) {
 			material = history.getMaterial();
@@ -157,7 +157,7 @@ public class Equipment extends PlantEntity {
 	public String getCurrentJob() {
 		String job = null;
 
-		SetupHistory history = PersistenceService.instance().fetchLastHistory(this, ScriptResolverType.JOB);
+		SetupHistory history = PersistenceService.instance().fetchLastHistory(this, EventResolverType.JOB);
 
 		if (history != null) {
 			job = history.getJob();

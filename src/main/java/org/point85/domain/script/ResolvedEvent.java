@@ -8,7 +8,7 @@ import org.point85.domain.plant.Reason;
 import org.point85.domain.uom.Quantity;
 
 public class ResolvedEvent {
-	private ScriptResolverType resolverType;
+	private EventResolverType resolverType;
 	private Object inputValue;
 	private Object outputValue;
 	private String itemId;
@@ -79,11 +79,11 @@ public class ResolvedEvent {
 		this.material = material;
 	}
 
-	public ScriptResolverType getResolverType() {
+	public EventResolverType getResolverType() {
 		return resolverType;
 	}
 
-	public void setResolverType(ScriptResolverType type) {
+	public void setResolverType(EventResolverType type) {
 		this.resolverType = type;
 	}
 

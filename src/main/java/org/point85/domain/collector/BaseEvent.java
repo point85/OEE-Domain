@@ -12,11 +12,11 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.OneToOne;
 
 import org.point85.domain.persistence.OffsetDateTimeConverter;
-import org.point85.domain.persistence.ScriptResolverTypeConverter;
+import org.point85.domain.persistence.EventResolverTypeConverter;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Material;
 import org.point85.domain.script.ResolvedEvent;
-import org.point85.domain.script.ScriptResolverType;
+import org.point85.domain.script.EventResolverType;
 
 @MappedSuperclass
 public abstract class BaseEvent {
@@ -41,8 +41,8 @@ public abstract class BaseEvent {
 	private OffsetDateTime sourceTimestamp;
 	
 	@Column(name = "TYPE")
-	@Convert(converter = ScriptResolverTypeConverter.class)
-	private ScriptResolverType type;
+	@Convert(converter = EventResolverTypeConverter.class)
+	private EventResolverType type;
 	
 	public BaseEvent() {
 	}
@@ -87,11 +87,11 @@ public abstract class BaseEvent {
 		this.job = job;
 	}
 	
-	public ScriptResolverType getType() {
+	public EventResolverType getType() {
 		return type;
 	}
 
-	public void setType(ScriptResolverType type) {
+	public void setType(EventResolverType type) {
 		this.type = type;
 	}
 

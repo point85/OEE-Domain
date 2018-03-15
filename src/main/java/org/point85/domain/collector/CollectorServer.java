@@ -52,8 +52,8 @@ import org.point85.domain.plant.EquipmentMaterial;
 import org.point85.domain.plant.Material;
 import org.point85.domain.script.OeeContext;
 import org.point85.domain.script.ResolvedEvent;
-import org.point85.domain.script.ScriptResolver;
-import org.point85.domain.script.ScriptResolverType;
+import org.point85.domain.script.EventResolver;
+import org.point85.domain.script.EventResolverType;
 import org.point85.domain.uom.UnitOfMeasure;
 import org.point85.domain.web.WebSource;
 import org.slf4j.Logger;
@@ -124,7 +124,7 @@ public class CollectorServer
 	}
 
 	// collect all HTTP server info
-	private void buildHttpServers(ScriptResolver resolver) throws Exception {
+	private void buildHttpServers(EventResolver resolver) throws Exception {
 		HttpSource source = (HttpSource) resolver.getDataSource();
 		String id = source.getId();
 
@@ -141,7 +141,7 @@ public class CollectorServer
 	}
 
 	// collect all HTTP server info
-	private void buildWebServers(ScriptResolver resolver) throws Exception {
+	private void buildWebServers(EventResolver resolver) throws Exception {
 		WebSource source = (WebSource) resolver.getDataSource();
 		String id = source.getId();
 
@@ -157,7 +157,7 @@ public class CollectorServer
 	}
 
 	// collect all RMQ broker info
-	private void buildMessagingBrokers(ScriptResolver resolver) throws Exception {
+	private void buildMessagingBrokers(EventResolver resolver) throws Exception {
 		MessagingSource source = (MessagingSource) resolver.getDataSource();
 		String id = source.getId();
 
@@ -211,7 +211,7 @@ public class CollectorServer
 		}
 	}
 
-	private void buildOpcUaSubscriptions(ScriptResolver resolver) throws Exception {
+	private void buildOpcUaSubscriptions(EventResolver resolver) throws Exception {
 		OpcUaSource source = (OpcUaSource) resolver.getDataSource();
 		String url = source.getEndpointUrl();
 
@@ -253,7 +253,7 @@ public class CollectorServer
 		}
 	}
 
-	private void buildOpcDaSubscriptions(ScriptResolver resolver) throws Exception {
+	private void buildOpcDaSubscriptions(EventResolver resolver) throws Exception {
 		// equipment (group name)
 		String equipmentName = resolver.getEquipment().getName();
 
@@ -343,7 +343,7 @@ public class CollectorServer
 		List<CollectorState> states = new ArrayList<>();
 		states.add(CollectorState.READY);
 		states.add(CollectorState.RUNNING);
-		List<ScriptResolver> resolvers = PersistenceService.instance().fetchScriptResolversByHost(hostNames, states);
+		List<EventResolver> resolvers = PersistenceService.instance().fetchScriptResolversByHost(hostNames, states);
 
 		if (resolvers.size() == 0) {
 			if (logger.isInfoEnabled()) {
@@ -351,7 +351,7 @@ public class CollectorServer
 			}
 		}
 
-		for (ScriptResolver resolver : resolvers) {
+		for (EventResolver resolver : resolvers) {
 			// build list of runnable collectors
 			DataCollector collector = resolver.getCollector();
 
@@ -917,7 +917,7 @@ public class CollectorServer
 				}
 
 				// find resolver
-				ScriptResolver scriptResolver = equipmentResolver.getResolver(sourceId);
+				EventResolver scriptResolver = equipmentResolver.getResolver(sourceId);
 
 				ResolvedEvent resolvedDataItem = equipmentResolver.invokeResolver(scriptResolver, getAppContext(),
 						dataValue, timestamp);
@@ -953,7 +953,7 @@ public class CollectorServer
 							"OPC UA subscription, node: " + itemId + ", value: " + javaValue + ", timestamp: " + odt);
 				}
 
-				ScriptResolver scriptResolver = equipmentResolver.getResolver(itemId);
+				EventResolver scriptResolver = equipmentResolver.getResolver(itemId);
 
 				ResolvedEvent resolvedEvent = equipmentResolver.invokeResolver(scriptResolver, getAppContext(),
 						javaValue, odt);
@@ -967,7 +967,7 @@ public class CollectorServer
 	}
 
 	private synchronized void recordResolution(ResolvedEvent resolvedEvent) throws Exception {
-		ScriptResolverType type = resolvedEvent.getResolverType();
+		EventResolverType type = resolvedEvent.getResolverType();
 
 		// first in database
 		switch (type) {
@@ -1019,7 +1019,7 @@ public class CollectorServer
 		}
 	}
 
-	public void onWebEquipmentEvent(Equipment equipment, ScriptResolverType resolverType, Object sourceValue,
+	public void onWebEquipmentEvent(Equipment equipment, EventResolverType resolverType, Object sourceValue,
 			OffsetDateTime timestamp) {
 		getExecutorService().execute(new WebTask(equipment, resolverType, sourceValue, timestamp));
 	}
@@ -1059,7 +1059,7 @@ public class CollectorServer
 				}
 
 				// get resolver to process data value
-				ScriptResolver scriptResolver = equipmentResolver.getResolver(sourceId);
+				EventResolver scriptResolver = equipmentResolver.getResolver(sourceId);
 
 				if (scriptResolver == null) {
 					throw new Exception("The OPC DA script resolver is undefined for source id " + sourceId);
@@ -1108,7 +1108,7 @@ public class CollectorServer
 					}
 
 					// find resolver
-					ScriptResolver scriptResolver = equipmentResolver.getResolver(sourceId);
+					EventResolver scriptResolver = equipmentResolver.getResolver(sourceId);
 
 					if (scriptResolver != null) {
 						ResolvedEvent resolvedDataItem = equipmentResolver.invokeResolver(scriptResolver,
@@ -1189,11 +1189,11 @@ public class CollectorServer
 	// data from a manual user interface
 	private class WebTask implements Runnable {
 		private Equipment equipment;
-		private ScriptResolverType resolverType;
+		private EventResolverType resolverType;
 		private Object sourceValue;
 		private OffsetDateTime timestamp;
 
-		private WebTask(Equipment equipment, ScriptResolverType resolverType, Object sourceValue,
+		private WebTask(Equipment equipment, EventResolverType resolverType, Object sourceValue,
 				OffsetDateTime timestamp) {
 			this.equipment = equipment;
 			this.resolverType = resolverType;
@@ -1212,10 +1212,10 @@ public class CollectorServer
 				EquipmentEventResolver equipmentResolver = new EquipmentEventResolver();
 
 				// find resolver by type
-				List<ScriptResolver> resolvers = equipmentResolver.getResolvers(equipment);
+				List<EventResolver> resolvers = equipmentResolver.getResolvers(equipment);
 
-				ScriptResolver configuredResolver = null;
-				for (ScriptResolver resolver : resolvers) {
+				EventResolver configuredResolver = null;
+				for (EventResolver resolver : resolvers) {
 					if (resolver.getType().equals(resolverType)) {
 						configuredResolver = resolver;
 						break;

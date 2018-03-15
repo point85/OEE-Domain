@@ -4,12 +4,12 @@ import org.point85.domain.performance.TimeLoss;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
 import org.point85.domain.script.ResolvedEvent;
-import org.point85.domain.script.ScriptResolverType;
+import org.point85.domain.script.EventResolverType;
 import org.point85.domain.uom.Quantity;
 
 public class CollectorResolvedEventMessage extends ApplicationMessage {
 	private String equipmentName;
-	private ScriptResolverType resolverType;
+	private EventResolverType resolverType;
 	private String reasonName;
 	private String reasonDescription;
 	private TimeLoss loss;
@@ -117,11 +117,11 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		this.equipmentName = equipmentName;
 	}
 
-	public ScriptResolverType getResolverType() {
+	public EventResolverType getResolverType() {
 		return resolverType;
 	}
 
-	public void setResolverType(ScriptResolverType resolverType) {
+	public void setResolverType(EventResolverType resolverType) {
 		this.resolverType = resolverType;
 	}
 

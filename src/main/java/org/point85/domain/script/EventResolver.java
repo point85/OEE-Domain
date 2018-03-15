@@ -14,17 +14,17 @@ import javax.persistence.Table;
 
 import org.point85.domain.collector.DataCollector;
 import org.point85.domain.collector.CollectorDataSource;
-import org.point85.domain.persistence.ScriptResolverTypeConverter;
+import org.point85.domain.persistence.EventResolverTypeConverter;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.KeyedObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Entity
-@Table(name = "SCRIPT_RESOLVER")
+@Table(name = "EVENT_RESOLVER")
 @AttributeOverride(name = "primaryKey", column = @Column(name = "SR_KEY"))
 
-public class ScriptResolver extends KeyedObject {
+public class EventResolver extends KeyedObject {
 	// period between value updates
 	public static final int DEFAULT_UPDATE_PERIOD = 1000;
 
@@ -50,8 +50,8 @@ public class ScriptResolver extends KeyedObject {
 	private Integer updatePeriod = new Integer(DEFAULT_UPDATE_PERIOD);
 
 	@Column(name = "SR_TYPE")
-	@Convert(converter = ScriptResolverTypeConverter.class)
-	private ScriptResolverType type;
+	@Convert(converter = EventResolverTypeConverter.class)
+	private EventResolverType type;
 
 	@Column(name = "DATA_TYPE")
 	private String dataType;
@@ -63,7 +63,7 @@ public class ScriptResolver extends KeyedObject {
 	// last value received
 	private transient Object lastValue;
 
-	public ScriptResolver() {
+	public EventResolver() {
 		super();
 	}
 
@@ -143,11 +143,11 @@ public class ScriptResolver extends KeyedObject {
 		this.updatePeriod = period;
 	}
 
-	public ScriptResolverType getType() {
+	public EventResolverType getType() {
 		return type;
 	}
 
-	public void setType(ScriptResolverType type) {
+	public void setType(EventResolverType type) {
 		this.type = type;
 	}
 
@@ -167,10 +167,10 @@ public class ScriptResolver extends KeyedObject {
 	@Override
 	public boolean equals(Object other) {
 
-		if (other == null || !(other instanceof ScriptResolver)) {
+		if (other == null || !(other instanceof EventResolver)) {
 			return false;
 		}
-		ScriptResolver otherResolver = (ScriptResolver) other;
+		EventResolver otherResolver = (EventResolver) other;
 
 		if (getSourceId() == null) {
 			return true;
