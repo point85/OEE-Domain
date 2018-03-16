@@ -11,17 +11,16 @@ import javax.persistence.Table;
 
 import org.point85.domain.persistence.EventResolverTypeConverter;
 import org.point85.domain.script.EventResolverType;
-import org.point85.domain.script.ResolvedEvent;
 import org.point85.domain.uom.UnitOfMeasure;
 
 @Entity
-@Table(name = "PROD_HISTORY")
+@Table(name = "PROD_SUMMARY")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-public class ProductionHistory extends BaseEvent {
+public class ProductionSummary extends BaseSummary {
 	@Column(name = "TYPE")
 	@Convert(converter = EventResolverTypeConverter.class)
 	private EventResolverType type;
-	
+
 	@Column(name = "AMOUNT")
 	private double amount;
 
@@ -29,20 +28,20 @@ public class ProductionHistory extends BaseEvent {
 	@JoinColumn(name = "UOM_KEY")
 	private UnitOfMeasure uom;
 
-	public ProductionHistory() {
+	public ProductionSummary() {
 		super();
 	}
 
-	public ProductionHistory(ResolvedEvent event) {
-		super(event);
-		this.type = event.getResolverType();
-		
-		if (event.getQuantity() != null) {
-			this.amount = event.getQuantity().getAmount();
-			this.uom = event.getQuantity().getUOM();
+	public ProductionSummary(LossSummary summary) {
+		super(summary);
+		this.type = summary.getResolverType();
+
+		if (summary.getQuantity() != null) {
+			this.amount = summary.getQuantity().getAmount();
+			this.uom = summary.getQuantity().getUOM();
 		}
 	}
-	
+
 	public EventResolverType getType() {
 		return type;
 	}
@@ -66,4 +65,5 @@ public class ProductionHistory extends BaseEvent {
 	public void setUOM(UnitOfMeasure uom) {
 		this.uom = uom;
 	}
+
 }

@@ -8,23 +8,22 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.point85.domain.plant.Reason;
-import org.point85.domain.script.ResolvedEvent;
 
 @Entity
-@Table(name = "EVENT_HISTORY")
+@Table(name = "AVAIL_SUMMARY")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-public class EventHistory extends BaseEvent {
-
+public class AvailabilitySummary extends BaseSummary {
 	@OneToOne
 	@JoinColumn(name = "REASON_KEY")
 	private Reason reason;
 
-	public EventHistory() {
+	public AvailabilitySummary() {
 		super();
 	}
 
-	public EventHistory(ResolvedEvent event) {
-		super(event);
+	public AvailabilitySummary(LossSummary summary) {
+		super(summary);
+		this.reason = summary.getReason();
 	}
 
 	public Reason getReason() {

@@ -14,6 +14,7 @@ import org.point85.domain.collector.SetupHistory;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.EventResolverType;
+import org.point85.domain.uom.UnitOfMeasure;
 
 @Entity
 @DiscriminatorValue(Equipment.EQUIP_VALUE)
@@ -164,6 +165,29 @@ public class Equipment extends PlantEntity {
 		}
 
 		return job;
+	}
+
+	public UnitOfMeasure getUOM(Material material, EventResolverType resolverType) throws Exception {
+		UnitOfMeasure uom = null;
+		if (material == null) {
+			return uom;
+		}
+		EquipmentMaterial equipmentMaterial = getEquipmentMaterial(material);
+
+		if (equipmentMaterial != null) {
+			switch (resolverType) {
+			case PROD_GOOD:
+				// per unit of time
+				uom = equipmentMaterial.getRunRateUOM().getDividend();
+				break;
+			case PROD_REJECT:
+				uom = equipmentMaterial.getRejectUOM();
+				break;
+			default:
+				throw new Exception("Invalid resolver type " + resolverType);
+			}
+		}
+		return uom;
 	}
 
 }

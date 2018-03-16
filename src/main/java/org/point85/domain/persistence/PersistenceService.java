@@ -23,13 +23,15 @@ import javax.persistence.spi.PersistenceUnitInfo;
 import org.hibernate.integrator.spi.Integrator;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.hibernate.jpa.boot.spi.IntegratorProvider;
-import org.point85.domain.collector.BaseEvent;
+import org.point85.domain.collector.AvailabilityHistory;
+import org.point85.domain.collector.AvailabilitySummary;
+import org.point85.domain.collector.BaseRecord;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.CollectorState;
 import org.point85.domain.collector.DataCollector;
 import org.point85.domain.collector.DataSourceType;
-import org.point85.domain.collector.EventHistory;
 import org.point85.domain.collector.ProductionHistory;
+import org.point85.domain.collector.ProductionSummary;
 import org.point85.domain.collector.SetupHistory;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.messaging.MessagingSource;
@@ -239,8 +241,8 @@ public class PersistenceService {
 		}
 	}
 
-	// insert the object into the database
-	public void persist(BaseEvent object) throws Exception {
+	// insert the record into the database
+	public void persist(BaseRecord object) throws Exception {
 		EntityManager em = getEntityManager();
 		EntityTransaction txn = null;
 
@@ -1020,12 +1022,13 @@ public class PersistenceService {
 	}
 
 	private Class<?>[] getEntityClasses() {
-		return new Class<?>[] { DataCollector.class, CollectorDataSource.class, EventHistory.class,
+		return new Class<?>[] { DataCollector.class, CollectorDataSource.class, AvailabilityHistory.class,
 				ProductionHistory.class, SetupHistory.class, HttpSource.class, MessagingSource.class, OpcDaSource.class,
 				OpcUaSource.class, WebSource.class, Area.class, Enterprise.class, Equipment.class,
 				EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class, Reason.class,
 				Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class, NonWorkingPeriod.class,
-				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class };
+				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class,
+				AvailabilitySummary.class, ProductionSummary.class };
 	}
 
 	private List<String> getEntityClassNames() {

@@ -282,6 +282,16 @@ public class Quantity {
 	}
 
 	/**
+	 * Set the unit of measure of this quantity
+	 * 
+	 * @param uom
+	 *            {@link UnitOfMeasure}
+	 */
+	public void setUOM(UnitOfMeasure uom) {
+		this.uom = uom;
+	}
+
+	/**
 	 * Subtract a quantity from this quantity
 	 * 
 	 * @param other

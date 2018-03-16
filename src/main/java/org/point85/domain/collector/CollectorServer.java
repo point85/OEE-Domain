@@ -48,7 +48,6 @@ import org.point85.domain.opc.ua.UaOpcClient;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentEventResolver;
-import org.point85.domain.plant.EquipmentMaterial;
 import org.point85.domain.plant.Material;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.EventResolverType;
@@ -638,59 +637,53 @@ public class CollectorServer
 		getExecutorService().execute(new OpcDaTask(item));
 	}
 
-	private void saveAvailabilityRecord(ResolvedEvent resolvedItem) throws Exception {
+	private void saveAvailabilityRecord(ResolvedEvent event) throws Exception {
 		if (logger.isInfoEnabled()) {
-			logger.info("Availability reason " + resolvedItem.getReason().getName() + ", Loss Category: "
-					+ resolvedItem.getReason().getLossCategory());
+			logger.info("Availability reason " + event.getReason().getName() + ", Loss Category: "
+					+ event.getReason().getLossCategory());
 		}
 
-		EventHistory history = new EventHistory(resolvedItem);
-		history.setReason(resolvedItem.getReason());
+		AvailabilityHistory history = new AvailabilityHistory(event);
+		history.setReason(event.getReason());
 
 		PersistenceService.instance().persist(history);
 	}
 
-	private void saveSetupRecord(ResolvedEvent resolvedItem) throws Exception {
+	private void saveSetupRecord(ResolvedEvent event) throws Exception {
 		if (logger.isInfoEnabled()) {
-			logger.info("Job change " + resolvedItem.getJob());
+			logger.info("Job change " + event.getJob());
 		}
 
-		SetupHistory history = new SetupHistory(resolvedItem);
+		SetupHistory history = new SetupHistory(event);
 
 		PersistenceService.instance().persist(history);
 	}
 
-	private void saveProductionRecord(ResolvedEvent resolvedItem) throws Exception {
+	public void saveProductionHistory(ResolvedEvent event) throws Exception {
 		if (logger.isInfoEnabled()) {
-			logger.info("Production " + resolvedItem.getQuantity() + " for type " + resolvedItem.getResolverType());
+			logger.info("Production " + event.getQuantity() + " for type " + event.getResolverType());
 		}
 
-		Equipment equipment = resolvedItem.getEquipment();
-		Material material = resolvedItem.getMaterial();
-		UnitOfMeasure uom = null;
+		Equipment equipment = event.getEquipment();
+		Material material = event.getMaterial();
+		UnitOfMeasure uom = equipment.getUOM(material, event.getResolverType());
+		event.getQuantity().setUOM(uom);
 
-		if (material != null) {
-			EquipmentMaterial equipmentMaterial = equipment.getEquipmentMaterial(material);
+		ProductionHistory history = new ProductionHistory(event);
+		PersistenceService.instance().persist(history);
+	}
 
-			if (equipmentMaterial != null) {
-				switch (resolvedItem.getResolverType()) {
-				case PROD_GOOD:
-					// per unit of time
-					uom = equipmentMaterial.getRunRateUOM().getDividend();
-					break;
-				case PROD_REJECT:
-					uom = equipmentMaterial.getRejectUOM();
-					break;
-				default:
-					throw new Exception("Invalid resolver type " + resolvedItem.getResolverType());
-				}
-			}
+	public void saveProductionSummary(LossSummary summary) throws Exception {
+		if (logger.isInfoEnabled()) {
+			logger.info("Production " + summary.getQuantity() + " for type " + summary.getResolverType());
 		}
-		ProductionHistory history = new ProductionHistory(resolvedItem);
-		history.setType(resolvedItem.getResolverType());
-		history.setAmount(resolvedItem.getQuantity().getAmount());
-		history.setUOM(uom);
 
+		Equipment equipment = summary.getEquipment();
+		Material material = summary.getMaterial();
+		UnitOfMeasure uom = equipment.getUOM(material, summary.getResolverType());
+		summary.getQuantity().setUOM(uom);
+
+		ProductionSummary history = new ProductionSummary(summary);
 		PersistenceService.instance().persist(history);
 	}
 
@@ -949,7 +942,7 @@ public class CollectorServer
 
 		case PROD_GOOD:
 		case PROD_REJECT:
-			saveProductionRecord(resolvedEvent);
+			saveProductionHistory(resolvedEvent);
 			break;
 
 		default:
@@ -982,10 +975,12 @@ public class CollectorServer
 		}
 	}
 
-	public void onWebEquipmentEvent(Equipment equipment, EventResolverType resolverType, Object sourceValue,
-			OffsetDateTime timestamp) {
-		getExecutorService().execute(new WebTask(equipment, resolverType, sourceValue, timestamp));
-	}
+	/*
+	 * public void onWebEquipmentEvent(Equipment equipment, EventResolverType
+	 * resolverType, Object sourceValue, OffsetDateTime timestamp) {
+	 * getExecutorService().execute(new WebTask(equipment, resolverType,
+	 * sourceValue, timestamp)); }
+	 */
 
 	public void registerExceptionLisener(CollectorExceptionListener listener) {
 		this.exceptionListener = listener;
@@ -1149,55 +1144,39 @@ public class CollectorServer
 		}
 	}
 
-	// data from a manual user interface
-	private class WebTask implements Runnable {
-		private Equipment equipment;
-		private EventResolverType resolverType;
-		private Object sourceValue;
-		private OffsetDateTime timestamp;
-
-		private WebTask(Equipment equipment, EventResolverType resolverType, Object sourceValue,
-				OffsetDateTime timestamp) {
-			this.equipment = equipment;
-			this.resolverType = resolverType;
-			this.sourceValue = sourceValue;
-			this.timestamp = timestamp;
-		}
-
-		@Override
-		public void run() {
-			try {
-				if (logger.isInfoEnabled()) {
-					logger.info("Web event, equipment: " + equipment.getName() + ", type: " + resolverType + ", value: "
-							+ sourceValue + ", timestamp: " + timestamp);
-				}
-
-				EquipmentEventResolver equipmentResolver = new EquipmentEventResolver();
-
-				// find resolver by type
-				List<EventResolver> resolvers = equipmentResolver.getResolvers(equipment);
-
-				EventResolver configuredResolver = null;
-				for (EventResolver resolver : resolvers) {
-					if (resolver.getType().equals(resolverType)) {
-						configuredResolver = resolver;
-						break;
-					}
-				}
-
-				if (configuredResolver == null) {
-					throw new Exception("No script resolver found for equipment " + equipment.getName() + " with type "
-							+ resolverType);
-				}
-
-				ResolvedEvent resolvedDataItem = equipmentResolver.invokeResolver(configuredResolver, appContext,
-						sourceValue, timestamp);
-
-				recordResolution(resolvedDataItem);
-
-			} catch (Exception e) {
-				onException("Unable to invoke script resolver.", e);
-			}
-		}
-	}
+	/*
+	 * // data from a manual user interface private class WebTask implements
+	 * Runnable { private Equipment equipment; private EventResolverType
+	 * resolverType; private Object sourceValue; private OffsetDateTime timestamp;
+	 * 
+	 * private WebTask(Equipment equipment, EventResolverType resolverType, Object
+	 * sourceValue, OffsetDateTime timestamp) { this.equipment = equipment;
+	 * this.resolverType = resolverType; this.sourceValue = sourceValue;
+	 * this.timestamp = timestamp; }
+	 * 
+	 * @Override public void run() { try { if (logger.isInfoEnabled()) {
+	 * logger.info("Web event, equipment: " + equipment.getName() + ", type: " +
+	 * resolverType + ", value: " + sourceValue + ", timestamp: " + timestamp); }
+	 * 
+	 * EquipmentEventResolver equipmentResolver = new EquipmentEventResolver();
+	 * 
+	 * // find resolver by type List<EventResolver> resolvers =
+	 * equipmentResolver.getResolvers(equipment);
+	 * 
+	 * EventResolver configuredResolver = null; for (EventResolver resolver :
+	 * resolvers) { if (resolver.getType().equals(resolverType)) {
+	 * configuredResolver = resolver; break; } }
+	 * 
+	 * if (configuredResolver == null) { throw new
+	 * Exception("No script resolver found for equipment " + equipment.getName() +
+	 * " with type " + resolverType); }
+	 * 
+	 * ResolvedEvent event = equipmentResolver.invokeResolver(configuredResolver,
+	 * appContext, sourceValue, timestamp);
+	 * 
+	 * recordResolution(event);
+	 * 
+	 * } catch (Exception e) { onException("Unable to invoke script resolver.", e);
+	 * } } }
+	 */
 }
