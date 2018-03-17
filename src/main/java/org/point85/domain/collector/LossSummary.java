@@ -1,5 +1,6 @@
 package org.point85.domain.collector;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 
 import org.point85.domain.plant.Equipment;
@@ -16,6 +17,7 @@ public class LossSummary {
 	private Quantity quantity;
 	private Equipment equipment;
 	private Material material;
+	private Duration duration;
 
 	public LossSummary() {
 
@@ -75,6 +77,14 @@ public class LossSummary {
 
 	public void setEquipment(Equipment equipment) {
 		this.equipment = equipment;
+	}
+
+	public Duration getDuration() {
+		return duration;
+	}
+
+	public void setDuration(Duration duration) {
+		this.duration = duration;
 	}
 
 }

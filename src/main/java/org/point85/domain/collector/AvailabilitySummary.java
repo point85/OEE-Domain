@@ -25,12 +25,4 @@ public class AvailabilitySummary extends BaseSummary {
 		super(summary);
 		this.reason = summary.getReason();
 	}
-
-	public Reason getReason() {
-		return reason;
-	}
-
-	public void setReason(Reason reason) {
-		this.reason = reason;
-	}
 }
