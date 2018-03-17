@@ -183,6 +183,7 @@ public class EquipmentEventResolver {
 			break;
 		case PROD_GOOD:
 		case PROD_REJECT:
+		case PROD_STARTUP:
 			processProductionCount(event, type, context);
 			break;
 		default:
@@ -203,7 +204,7 @@ public class EquipmentEventResolver {
 	}
 
 	// production counts
-	private void processProductionCount(ResolvedEvent resolvedItem, EventResolverType type, OeeContext context) throws Exception {
+	private void processProductionCount(ResolvedEvent resolvedItem, EventResolverType resolverType, OeeContext context) throws Exception {
 		Object outputValue = resolvedItem.getOutputValue();
 		Double amount = null;
 
@@ -227,7 +228,6 @@ public class EquipmentEventResolver {
 		}
 
 		// get UOM from material and equipment
-		UnitOfMeasure uom = null;
 		Material material = resolvedItem.getMaterial();
 
 		if (material == null) {
@@ -244,24 +244,8 @@ public class EquipmentEventResolver {
 				}
 			}
 		}
-
-		if (material != null) {
-			EquipmentMaterial eqm = resolvedItem.getEquipment().getEquipmentMaterial(material);
-
-			if (eqm != null) {
-				switch (type) {
-				case PROD_GOOD:
-					uom = eqm.getRunRateUOM();
-					break;
-				case PROD_REJECT:
-					uom = eqm.getRejectUOM();
-					break;
-				default:
-					break;
-				}
-			}
-		}
-
+		
+		UnitOfMeasure uom = resolvedItem.getEquipment().getUOM(material, resolverType);
 		resolvedItem.setQuantity(new Quantity(amount, uom));
 	}
 

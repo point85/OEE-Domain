@@ -942,6 +942,7 @@ public class CollectorServer
 
 		case PROD_GOOD:
 		case PROD_REJECT:
+		case PROD_STARTUP:
 			saveProductionHistory(resolvedEvent);
 			break;
 

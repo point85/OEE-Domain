@@ -177,6 +177,7 @@ public class Equipment extends PlantEntity {
 		if (equipmentMaterial != null) {
 			switch (resolverType) {
 			case PROD_GOOD:
+			case PROD_STARTUP:
 				// per unit of time
 				uom = equipmentMaterial.getRunRateUOM().getDividend();
 				break;

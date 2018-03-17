@@ -23,6 +23,12 @@ public class EventResolverTypeConverter implements AttributeConverter<EventResol
 		case PROD_GOOD:
 			value = EventResolverType.GOOD_PROD_VALUE;
 			break;
+		case PROD_REJECT:
+			value = EventResolverType.REJECT_PROD_VALUE;
+			break;
+		case PROD_STARTUP:
+			value = EventResolverType.STARTUP_PROD_VALUE;
+			break;
 		case JOB:
 			value = EventResolverType.JOB_VALUE;
 			break;
@@ -31,9 +37,6 @@ public class EventResolverTypeConverter implements AttributeConverter<EventResol
 			break;
 		case OTHER:
 			value = EventResolverType.OTHER_VALUE;
-			break;
-		case PROD_REJECT:
-			value = EventResolverType.REJECT_PROD_VALUE;
 			break;
 		default:
 			break;
@@ -58,6 +61,14 @@ public class EventResolverTypeConverter implements AttributeConverter<EventResol
 			type = EventResolverType.PROD_GOOD;
 			break;
 
+		case EventResolverType.REJECT_PROD_VALUE:
+			type = EventResolverType.PROD_REJECT;
+			break;
+
+		case EventResolverType.STARTUP_PROD_VALUE:
+			type = EventResolverType.PROD_STARTUP;
+			break;
+
 		case EventResolverType.JOB_VALUE:
 			type = EventResolverType.JOB;
 			break;
@@ -68,10 +79,6 @@ public class EventResolverTypeConverter implements AttributeConverter<EventResol
 
 		case EventResolverType.OTHER_VALUE:
 			type = EventResolverType.OTHER;
-			break;
-
-		case EventResolverType.REJECT_PROD_VALUE:
-			type = EventResolverType.PROD_REJECT;
 			break;
 
 		default:

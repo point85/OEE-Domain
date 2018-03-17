@@ -1,6 +1,5 @@
 package org.point85.domain.collector;
 
-import java.time.Duration;
 import java.time.OffsetDateTime;
 
 import javax.persistence.Column;
@@ -20,10 +19,6 @@ public class BaseSummary extends BaseRecord {
 	@Convert(converter = OffsetDateTimeConverter.class)
 	private OffsetDateTime endTime;
 
-	// length of event
-	@Column(name = "DURATION")
-	private Duration duration;
-
 	protected BaseSummary() {
 		super();
 	}
@@ -32,14 +27,6 @@ public class BaseSummary extends BaseRecord {
 		super(summary.getEquipment());
 		this.startTime = summary.getStartTime();
 		this.endTime = summary.getEndTime();
-		this.duration = summary.getDuration();
 	}
 
-	public Duration getDuration() {
-		return duration;
-	}
-
-	public void setDuration(Duration duration) {
-		this.duration = duration;
-	}
 }
