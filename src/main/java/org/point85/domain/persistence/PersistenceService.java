@@ -911,17 +911,16 @@ public class PersistenceService {
 		}
 	}
 
-	public SetupHistory fetchLastHistory(Equipment equipment, EventResolverType type) {
+	public SetupHistory fetchLastHistory(Equipment equipment) {
 		final String LAST_RECORD = "Setup.Last";
 
 		if (namedQueryMap.get(LAST_RECORD) == null) {
 			createNamedQuery(LAST_RECORD,
-					"SELECT hist FROM SetupHistory hist WHERE hist.equipment = :equipment AND hist.type = :type ORDER BY hist.sourceTimestamp DESC");
+					"SELECT hist FROM SetupHistory hist WHERE hist.equipment = :equipment ORDER BY hist.sourceTimestamp DESC");
 		}
 
 		TypedQuery<SetupHistory> query = getEntityManager().createNamedQuery(LAST_RECORD, SetupHistory.class);
 		query.setParameter("equipment", equipment);
-		query.setParameter("type", type);
 		query.setMaxResults(1);
 		List<SetupHistory> histories = query.getResultList();
 

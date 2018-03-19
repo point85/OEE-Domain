@@ -143,28 +143,8 @@ public class Equipment extends PlantEntity {
 		return equipmentMaterials.contains(equipmentMaterial);
 	}
 
-	public Material getCurrentMaterial() {
-		Material material = null;
-
-		SetupHistory history = PersistenceService.instance().fetchLastHistory(this, EventResolverType.MATERIAL);
-
-		if (history != null) {
-			material = history.getMaterial();
-		}
-
-		return material;
-	}
-
-	public String getCurrentJob() {
-		String job = null;
-
-		SetupHistory history = PersistenceService.instance().fetchLastHistory(this, EventResolverType.JOB);
-
-		if (history != null) {
-			job = history.getJob();
-		}
-
-		return job;
+	public SetupHistory getLastSetup() {
+		return PersistenceService.instance().fetchLastHistory(this);
 	}
 
 	public UnitOfMeasure getUOM(Material material, EventResolverType resolverType) throws Exception {
