@@ -37,22 +37,8 @@ import org.point85.domain.schedule.WorkSchedule;
 @DiscriminatorColumn(name = "LEVEL", discriminatorType = DiscriminatorType.STRING)
 @AttributeOverride(name = "primaryKey", column = @Column(name = "ENT_KEY"))
 
-//@NamedQueries({ 
-		//@NamedQuery(name = PlantEntity.ENTITY_BY_NAME, query = "SELECT ent FROM PlantEntity ent WHERE ent.name = :name"),
-		//@NamedQuery(name = PlantEntity.ENTITY_NAMES, query = "SELECT ent.name FROM PlantEntity ent"),
-		//@NamedQuery(name = PlantEntity.ENTITY_BY_NAME_LIST, query = "SELECT ent FROM PlantEntity ent WHERE ent.name IN :names"),
-		//@NamedQuery(name = PlantEntity.ENTITY_ROOTS, query = "SELECT ent FROM PlantEntity ent WHERE ent.parent IS NULL"),
-		//@NamedQuery(name = PlantEntity.ENTITY_ALL, query = "SELECT ent FROM PlantEntity ent"), })
-
 public class PlantEntity extends NamedObject {
 	public static final String ROOT_ENTITY_NAME = "All Entities";
-
-	// named queries
-	//public static final String ENTITY_BY_NAME = "ENTITY.ByName";
-	//public static final String ENTITY_NAMES = "ENTITY.Names";
-	//public static final String ENTITY_BY_NAME_LIST = "ENTITY.ByNameList";
-	//public static final String ENTITY_ROOTS = "ENTITY.Roots";
-	//public static final String ENTITY_ALL = "ENTITY.All";
 
 	// parent object in the S95 hierarchy
 	@ManyToOne
@@ -128,15 +114,23 @@ public class PlantEntity extends NamedObject {
 		this.workSchedule = schedule;
 	}
 
-	/*
-	 * @Override public String getFetchQueryName() { return ENTITY_BY_NAME; }
-	 */
 	public Boolean isRoot() {
 		return this.isRoot;
 	}
 
 	public void setIsRoot(Boolean isRoot) {
 		this.isRoot = isRoot;
+	}
+
+	public WorkSchedule findWorkSchedule() {
+		WorkSchedule schedule = workSchedule;
+
+		if (schedule == null) {
+			if (parent != null) {
+				schedule = parent.findWorkSchedule();
+			}
+		}
+		return schedule;
 	}
 
 	@Override

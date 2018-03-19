@@ -154,7 +154,7 @@ public class PublisherSubscriber {
 
 	public void publish(ApplicationMessage message, RoutingKey routingKey) throws Exception {
 		// no TTL
-		this.publish(message, routingKey, null);
+		publish(message, routingKey, null);
 	}
 
 	public void publish(ApplicationMessage message, RoutingKey routingKey, Integer ttl) throws Exception {

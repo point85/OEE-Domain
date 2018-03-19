@@ -737,7 +737,7 @@ public class PersistenceService {
 	}
 
 	// fetch all defined categories
-	public List<String> fetchCategories() {
+	public List<String> fetchUomCategories() {
 		final String UOM_CATEGORIES = "UOM.Categories";
 
 		if (namedQueryMap.get(UOM_CATEGORIES) == null) {
@@ -749,7 +749,7 @@ public class PersistenceService {
 	}
 
 	// query for UOM based on its unique symbol
-	public UnitOfMeasure fetchUOMBySymbol(String symbol) throws Exception {
+	public UnitOfMeasure fetchUomBySymbol(String symbol) throws Exception {
 		final String UOM_BY_SYMBOL = "UOM.BySymbol";
 
 		if (namedQueryMap.get(UOM_BY_SYMBOL) == null) {
@@ -766,7 +766,6 @@ public class PersistenceService {
 		if (uoms.size() == 1) {
 			uom = uoms.get(0);
 		}
-
 		return uom;
 	}
 
@@ -783,7 +782,7 @@ public class PersistenceService {
 	}
 
 	// fetch UOM by its enumeration
-	public UnitOfMeasure fetchUOMByUnit(Unit unit) throws Exception {
+	public UnitOfMeasure fetchUomByUnit(Unit unit) throws Exception {
 		final String UOM_BY_UNIT = "UOM.ByUnit";
 
 		if (namedQueryMap.get(UOM_BY_UNIT) == null) {
@@ -822,7 +821,7 @@ public class PersistenceService {
 		referenced = uom.getAbscissaUnit();
 		if (referenced != null && !uom.isTerminal()) {
 			id = referenced.getSymbol();
-			fetched = fetchUOMBySymbol(id);
+			fetched = fetchUomBySymbol(id);
 
 			if (fetched != null) {
 				// already in database
@@ -837,7 +836,7 @@ public class PersistenceService {
 		referenced = uom.getBridgeAbscissaUnit();
 		if (referenced != null) {
 			id = referenced.getSymbol();
-			fetched = fetchUOMBySymbol(id);
+			fetched = fetchUomBySymbol(id);
 
 			if (fetched != null) {
 				// already in database
@@ -850,7 +849,7 @@ public class PersistenceService {
 			// multiplier
 			UnitOfMeasure uom1 = uom.getMultiplier();
 			id = uom1.getSymbol();
-			fetched = fetchUOMBySymbol(id);
+			fetched = fetchUomBySymbol(id);
 
 			if (fetched != null) {
 				uom1 = fetched;
@@ -859,7 +858,7 @@ public class PersistenceService {
 			// multiplicand
 			UnitOfMeasure uom2 = uom.getMultiplicand();
 			id = uom2.getSymbol();
-			UnitOfMeasure fetched2 = fetchUOMBySymbol(id);
+			UnitOfMeasure fetched2 = fetchUomBySymbol(id);
 
 			if (fetched2 != null) {
 				uom2 = fetched2;
@@ -875,7 +874,7 @@ public class PersistenceService {
 			// dividend
 			UnitOfMeasure uom1 = uom.getDividend();
 			id = uom1.getSymbol();
-			fetched = fetchUOMBySymbol(id);
+			fetched = fetchUomBySymbol(id);
 
 			if (fetched != null) {
 				uom1 = fetched;
@@ -884,7 +883,7 @@ public class PersistenceService {
 			// divisor
 			UnitOfMeasure uom2 = uom.getDivisor();
 			id = uom2.getSymbol();
-			UnitOfMeasure fetched2 = fetchUOMBySymbol(id);
+			UnitOfMeasure fetched2 = fetchUomBySymbol(id);
 
 			if (fetched2 != null) {
 				uom2 = fetched2;
@@ -899,7 +898,7 @@ public class PersistenceService {
 		} else if (uom.getMeasurementType().equals(MeasurementType.POWER)) {
 			referenced = uom.getPowerBase();
 			id = referenced.getSymbol();
-			fetched = fetchUOMBySymbol(id);
+			fetched = fetchUomBySymbol(id);
 
 			if (fetched != null) {
 				// already in database

@@ -203,6 +203,7 @@ public class UnitOfMeasure extends NamedObject {
 		super(name, description);
 		this.symbol = symbol;
 		this.unitType = type;
+		this.category = MeasurementSystem.getUnitString("default.category.text");
 	}
 
 	/**
@@ -457,9 +458,6 @@ public class UnitOfMeasure extends NamedObject {
 	 * @return Category
 	 */
 	public String getCategory() {
-		if (category == null) {
-			category = MeasurementSystem.getUnitString("default.category.text");
-		}
 		return category;
 	}
 

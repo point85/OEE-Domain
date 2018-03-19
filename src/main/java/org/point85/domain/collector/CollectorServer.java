@@ -69,6 +69,9 @@ public class CollectorServer
 	// sec for heartbeat message to live in the queue
 	private static final int HEARTBEAT_TTL_SEC = 3600;
 
+	// sec for a status message to live in the queue
+	private static final int STATUS_TTL_SEC = 3600;
+
 	// logger
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -472,9 +475,15 @@ public class CollectorServer
 		message.setText(text);
 		message.setSeverity(severity);
 
+		Integer ttl = null;
+
+		if (severity.equals(NotificationSeverity.INFO)) {
+			ttl = CollectorServer.STATUS_TTL_SEC;
+		}
+
 		for (PublisherSubscriber pubSub : appContext.getPublisherSubscribers()) {
 			try {
-				pubSub.publish(message, RoutingKey.NOTIFICATION_MESSAGE);
+				pubSub.publish(message, RoutingKey.NOTIFICATION_MESSAGE, ttl);
 			} catch (Exception e) {
 				logger.error("Unable to publish notification.", e);
 			}
