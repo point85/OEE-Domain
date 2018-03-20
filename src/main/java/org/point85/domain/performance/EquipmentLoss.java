@@ -1,7 +1,7 @@
 package org.point85.domain.performance;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,16 +13,21 @@ import org.point85.domain.uom.Unit;
 
 public class EquipmentLoss {
 	// date and time accumulation starts
-	private LocalDateTime startDateTime;
+	private OffsetDateTime startDateTime;
 
-	// all durations at resolution of seconds
-	private Duration totalDuration;
+	// date and time accumulation end
+	private OffsetDateTime endDateTime;
 
+	// map of losses
 	private Map<TimeLoss, Duration> lossMap = new HashMap<>();
 
-	public EquipmentLoss(LocalDateTime startDateTime, Duration duration) {
-		this.startDateTime = startDateTime;
-		this.totalDuration = duration;
+	// quantities produced
+	private Quantity goodQuantity;
+	private Quantity startupQuantity;
+	private Quantity rejectQuantity;
+	private Quantity designSpeedQuantity;
+
+	public EquipmentLoss() {
 		initialize();
 	}
 
@@ -68,12 +73,8 @@ public class EquipmentLoss {
 		return item;
 	}
 
-	public Duration getTotalTime() {
-		return totalDuration;
-	}
-
-	public void setTotalTime(Duration totalTime) {
-		this.totalDuration = totalTime;
+	public Duration getDuration() {
+		return Duration.between(startDateTime, endDateTime);
 	}
 
 	public Duration getLoss(TimeLoss category) {
@@ -90,7 +91,7 @@ public class EquipmentLoss {
 	}
 
 	public Duration getRequiredOperationsTime() {
-		return getTotalTime().minus(getLoss(TimeLoss.NOT_SCHEDULED));
+		return getDuration().minus(getLoss(TimeLoss.NOT_SCHEDULED));
 	}
 
 	public Duration getAvailableTime() {
@@ -125,7 +126,20 @@ public class EquipmentLoss {
 		return getEffectiveNetProductionTime().minus(getLoss(TimeLoss.STARTUP_YIELD));
 	}
 
-	public float calculateOEEPercentage() throws Exception {
+	public float calculateHighLevelOeePercentage() throws Exception {
+		if (getAvailableTime() == null) {
+			throw new Exception("No available time has been recorded.");
+		}
+
+		Quantity numerator = getGoodQuantity();
+		Quantity availableQty = new Quantity(getAvailableTime().getSeconds(), Unit.SECOND);
+		Quantity denominator = availableQty.multiply(designSpeedQuantity);
+		double hloee = numerator.divide(denominator).getAmount();
+
+		return Double.valueOf(hloee).floatValue();
+	}
+
+	public float calculateOeePercentage() throws Exception {
 		if (this.getAvailableTime() == null) {
 			throw new Exception("No available time has been recorded.");
 		}
@@ -191,28 +205,105 @@ public class EquipmentLoss {
 		return duration;
 	}
 
-	public LocalDateTime getStartDateTime() {
+	public OffsetDateTime getStartDateTime() {
 		return startDateTime;
 	}
 
-	public void setStartDateTime(LocalDateTime startDateTime) {
+	public void setStartDateTime(OffsetDateTime startDateTime) {
 		this.startDateTime = startDateTime;
 	}
 
-	public LocalDateTime getEndDateTime() {
-		return startDateTime.plus(totalDuration);
+	public OffsetDateTime getEndDateTime() {
+		return this.endDateTime;
+	}
+
+	public void setEndDateTime(OffsetDateTime endDateTime) {
+		this.endDateTime = endDateTime;
 	}
 
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
-		sb.append("From: ").append(startDateTime.toString()).append(", Duration: ").append(totalDuration.toString());
 
+		if (startDateTime != null && endDateTime != null) {
+			sb.append("From: ").append(startDateTime.toString()).append("To: ").append(endDateTime.toString())
+					.append(", Duration: ").append(getDuration().toString());
+		}
+
+		sb.append('\n').append("Losses");
 		for (Entry<TimeLoss, Duration> entry : lossMap.entrySet()) {
 			sb.append('\n').append(entry.getKey().toString()).append(" = ").append(entry.getValue().toString());
 		}
 
+		sb.append('\n').append("Times");
+		sb.append("\n Required Operations: ").append(getRequiredOperationsTime().toString());
+		sb.append("\n Available: ").append(getAvailableTime().toString());
+		sb.append("\n Scheduled Production: ").append(getScheduledProductionTime().toString());
+		sb.append("\n Production: ").append(getProductionTime().toString());
+		sb.append("\n Reported Production: ").append(getReportedProductionTime().toString());
+		sb.append("\n Net Production: ").append(getNetProductionTime().toString());
+		sb.append("\n Efficient Net Production: ").append(getEfficientNetProductionTime().toString());
+		sb.append("\n Effective Net Production: ").append(getEffectiveNetProductionTime().toString());
+		sb.append("\n Value Adding: ").append(getValueAddingTime().toString());
+
 		return sb.toString();
 	}
 
+	public Quantity getGoodQuantity() {
+		return goodQuantity;
+	}
+
+	private Duration convertQuantity(Quantity quantity) throws Exception {
+		Quantity irr = getDesignSpeedQuantity();
+		Quantity timeQty = quantity.divide(irr).convert(Unit.SECOND);
+		long seconds = Double.valueOf(timeQty.getAmount()).longValue();
+		Duration duration = Duration.ofSeconds(seconds);
+		return duration;
+	}
+
+	public void setGoodQuantity(Quantity quantity) throws Exception {
+		this.goodQuantity = quantity;
+		this.setLoss(TimeLoss.NO_LOSS, convertQuantity(goodQuantity));
+	}
+
+	public Quantity getStartupQuantity() {
+		return startupQuantity;
+	}
+
+	public void setStartupQuantity(Quantity quantity) throws Exception {
+		this.startupQuantity = quantity;
+		this.setLoss(TimeLoss.STARTUP_YIELD, convertQuantity(startupQuantity));
+	}
+
+	public Quantity getRejectQuantity() {
+		return rejectQuantity;
+	}
+
+	public void setRejectQuantity(Quantity quantity) throws Exception {
+		this.rejectQuantity = quantity;
+		this.setLoss(TimeLoss.REJECT_REWORK, convertQuantity(rejectQuantity));
+	}
+
+	public Quantity getDesignSpeedQuantity() {
+		return designSpeedQuantity;
+	}
+
+	public void setDesignSpeedQuantity(Quantity designSpeedQuantity) {
+		this.designSpeedQuantity = designSpeedQuantity;
+	}
+	
+	public Quantity incrementGoodQuantity(double amount) {
+		this.goodQuantity.add(amount);
+		return this.goodQuantity;
+	}
+	
+	public Quantity incrementStartupQuantity(double amount) {
+		this.startupQuantity.add(amount);
+		return this.startupQuantity;
+	}
+	
+	public Quantity incrementRejectQuantity(double amount) {
+		this.rejectQuantity.add(amount);
+		return this.rejectQuantity;
+	}
 }

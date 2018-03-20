@@ -25,8 +25,24 @@ public class BaseSummary extends BaseRecord {
 
 	protected BaseSummary(LossSummary summary) {
 		super(summary.getEquipment());
-		this.startTime = summary.getStartTime();
-		this.endTime = summary.getEndTime();
+		this.setStartTime(summary.getStartTime());
+		this.setEndTime(summary.getEndTime());
+	}
+
+	public OffsetDateTime getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(OffsetDateTime startTime) {
+		this.startTime = startTime;
+	}
+
+	public OffsetDateTime getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(OffsetDateTime endTime) {
+		this.endTime = endTime;
 	}
 
 }

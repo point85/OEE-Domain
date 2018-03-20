@@ -322,6 +322,14 @@ public class Quantity {
 		Quantity quantity = new Quantity(amount, this.getUOM());
 		return quantity;
 	}
+	
+	/**
+	 * Add an amount to this quantity
+	 * @param amount Amount to add
+	 */
+	public void add(double amount) {
+		this.amount += amount;
+	}
 
 	/**
 	 * Divide two quantities to create a third quantity
