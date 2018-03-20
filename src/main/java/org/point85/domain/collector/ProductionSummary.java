@@ -11,6 +11,7 @@ import javax.persistence.Table;
 
 import org.point85.domain.persistence.EventResolverTypeConverter;
 import org.point85.domain.script.EventResolverType;
+import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.UnitOfMeasure;
 
 @Entity
@@ -64,6 +65,10 @@ public class ProductionSummary extends BaseSummary {
 
 	public void setUOM(UnitOfMeasure uom) {
 		this.uom = uom;
+	}
+	
+	public Quantity getQuantity() {
+		return new Quantity(amount, uom);
 	}
 
 }

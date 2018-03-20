@@ -6,7 +6,7 @@ import java.util.List;
 import javafx.scene.paint.Color;
 
 public enum TimeLoss {
-	AVAILABLE("Available"), NOT_SCHEDULED("Not Scheduled"), UNSCHEDULED("Unscheduled"), PLANNED_DOWNTIME(
+	NO_LOSS("No Loss"), NOT_SCHEDULED("Not Scheduled"), UNSCHEDULED("Unscheduled"), PLANNED_DOWNTIME(
 			"Planned Downtime"), SETUP("Setup"), UNPLANNED_DOWNTIME("Unplanned Downtime"), MINOR_STOPPAGES(
 					"Minor Stoppages"), REDUCED_SPEED(
 							"Reduced Speed"), REJECT_REWORK("Reject & Rework"), STARTUP_YIELD("Startup & Yield");

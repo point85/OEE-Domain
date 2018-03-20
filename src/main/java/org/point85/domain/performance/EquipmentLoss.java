@@ -16,24 +16,27 @@ public class EquipmentLoss {
 	private LocalDateTime startDateTime;
 
 	// all durations at resolution of seconds
-	private Duration totalDuration = Duration.ZERO;
+	private Duration totalDuration;
 
 	private Map<TimeLoss, Duration> lossMap = new HashMap<>();
 
-	public EquipmentLoss() {
+	public EquipmentLoss(LocalDateTime startDateTime, Duration duration) {
+		this.startDateTime = startDateTime;
+		this.totalDuration = duration;
 		initialize();
 	}
 
 	private void initialize() {
-		this.setLoss(TimeLoss.UNSCHEDULED, Duration.ZERO);
-		this.setLoss(TimeLoss.MINOR_STOPPAGES, Duration.ZERO);
-		this.setLoss(TimeLoss.PLANNED_DOWNTIME, Duration.ZERO);
-		this.setLoss(TimeLoss.REDUCED_SPEED, Duration.ZERO);
-		this.setLoss(TimeLoss.REJECT_REWORK, Duration.ZERO);
-		this.setLoss(TimeLoss.SETUP, Duration.ZERO);
-		this.setLoss(TimeLoss.UNPLANNED_DOWNTIME, Duration.ZERO);
-		this.setLoss(TimeLoss.NOT_SCHEDULED, Duration.ZERO);
-		this.setLoss(TimeLoss.STARTUP_YIELD, Duration.ZERO);
+		setLoss(TimeLoss.NO_LOSS, Duration.ZERO);
+		setLoss(TimeLoss.UNSCHEDULED, Duration.ZERO);
+		setLoss(TimeLoss.MINOR_STOPPAGES, Duration.ZERO);
+		setLoss(TimeLoss.PLANNED_DOWNTIME, Duration.ZERO);
+		setLoss(TimeLoss.REDUCED_SPEED, Duration.ZERO);
+		setLoss(TimeLoss.REJECT_REWORK, Duration.ZERO);
+		setLoss(TimeLoss.SETUP, Duration.ZERO);
+		setLoss(TimeLoss.UNPLANNED_DOWNTIME, Duration.ZERO);
+		setLoss(TimeLoss.NOT_SCHEDULED, Duration.ZERO);
+		setLoss(TimeLoss.STARTUP_YIELD, Duration.ZERO);
 	}
 
 	public List<ParetoItem> getLossItems(Unit timeUnit) throws Exception {
@@ -162,18 +165,6 @@ public class EquipmentLoss {
 		return (vat / eff) * 100.0f;
 	}
 
-	/*
-	 * private Quantity convertSpeed(Quantity speed) throws Exception {
-	 * MeasurementSystem sys = MeasurementSystem.getSystem();
-	 * 
-	 * Quantity convertedSpeed = speed; UnitOfMeasure divisorUOM =
-	 * speed.getUOM().getDivisor();
-	 * 
-	 * // ideal rate in units/second if (!divisorUOM.equals(sys.getSecond())) {
-	 * BigDecimal factor = divisorUOM.getConversionFactor(sys.getSecond());
-	 * convertedSpeed = speed.divide(factor); } return convertedSpeed; }
-	 */
-
 	public Duration calculateReducedSpeedLoss(Quantity actualSpeed, Quantity idealSpeed) throws Exception {
 		// multiplier on NPT
 		double npt = getNetProductionTime().getSeconds();
@@ -181,6 +172,17 @@ public class EquipmentLoss {
 		Duration duration = Duration.ofSeconds((long) q.getAmount());
 
 		return duration;
+	}
+
+	public void setReducedSpeedLoss() {
+		Duration npt = getNetProductionTime();
+
+		// add up quality losses
+		Duration quality = getLoss(TimeLoss.REJECT_REWORK).plus(getLoss(TimeLoss.STARTUP_YIELD));
+
+		// subtract off good production and quality loss
+		Duration reducedSpeed = npt.minus(quality).minus(getLoss(TimeLoss.NO_LOSS));
+		setLoss(TimeLoss.REDUCED_SPEED, reducedSpeed);
 	}
 
 	public Duration convertUnitCountToTimeLoss(Quantity loss, Quantity idealSpeed) throws Exception {
@@ -199,6 +201,18 @@ public class EquipmentLoss {
 
 	public LocalDateTime getEndDateTime() {
 		return startDateTime.plus(totalDuration);
+	}
+
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("From: ").append(startDateTime.toString()).append(", Duration: ").append(totalDuration.toString());
+
+		for (Entry<TimeLoss, Duration> entry : lossMap.entrySet()) {
+			sb.append('\n').append(entry.getKey().toString()).append(" = ").append(entry.getValue().toString());
+		}
+
+		return sb.toString();
 	}
 
 }

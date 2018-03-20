@@ -1113,4 +1113,23 @@ public class PersistenceService {
 		return summaries;
 	}
 
+	public List<ProductionSummary> fetchProductionSummary(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
+		final String PROD_RECORDS = "Production.FromTo";
+
+		if (namedQueryMap.get(PROD_RECORDS) == null) {
+			createNamedQuery(PROD_RECORDS,
+					"SELECT p FROM ProductionSummary p WHERE p.equipment = :equipment AND (p.startTime BETWEEN :from AND :to)  AND (p.endTime BETWEEN :from AND :to)");
+		}
+
+		TypedQuery<ProductionSummary> query = getEntityManager().createNamedQuery(PROD_RECORDS,
+				ProductionSummary.class);
+		query.setParameter("equipment", equipment);
+		query.setParameter("from", from);
+		query.setParameter("to", to);
+
+		List<ProductionSummary> summaries = query.getResultList();
+
+		return summaries;
+	}
+
 }

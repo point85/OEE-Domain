@@ -30,7 +30,7 @@ public class AvailabilitySummary extends BaseSummary {
 
 	public AvailabilitySummary(LossSummary summary) {
 		super(summary);
-		this.reason = summary.getReason();
+		this.setReason(summary.getReason());
 		this.duration = summary.getDuration();
 	}
 	
@@ -40,5 +40,13 @@ public class AvailabilitySummary extends BaseSummary {
 
 	public void setDuration(Duration duration) {
 		this.duration = duration;
+	}
+
+	public Reason getReason() {
+		return reason;
+	}
+
+	public void setReason(Reason reason) {
+		this.reason = reason;
 	}
 }
