@@ -144,7 +144,7 @@ public class Equipment extends PlantEntity {
 	}
 
 	public SetupHistory getLastSetup() {
-		return PersistenceService.instance().fetchLastHistory(this);
+		return PersistenceService.instance().fetchLastSetupHistory(this);
 	}
 
 	public UnitOfMeasure getUOM(Material material, EventResolverType resolverType) throws Exception {

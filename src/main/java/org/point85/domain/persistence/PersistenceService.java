@@ -55,7 +55,6 @@ import org.point85.domain.schedule.Shift;
 import org.point85.domain.schedule.Team;
 import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.script.EventResolver;
-import org.point85.domain.script.EventResolverType;
 import org.point85.domain.uom.MeasurementSystem;
 import org.point85.domain.uom.Unit;
 import org.point85.domain.uom.UnitOfMeasure;
@@ -910,15 +909,15 @@ public class PersistenceService {
 		}
 	}
 
-	public SetupHistory fetchLastHistory(Equipment equipment) {
-		final String LAST_RECORD = "Setup.Last";
+	public SetupHistory fetchLastSetupHistory(Equipment equipment) {
+		final String LAST_SETUP = "Setup.Last";
 
-		if (namedQueryMap.get(LAST_RECORD) == null) {
-			createNamedQuery(LAST_RECORD,
+		if (namedQueryMap.get(LAST_SETUP) == null) {
+			createNamedQuery(LAST_SETUP,
 					"SELECT hist FROM SetupHistory hist WHERE hist.equipment = :equipment ORDER BY hist.sourceTimestamp DESC");
 		}
 
-		TypedQuery<SetupHistory> query = getEntityManager().createNamedQuery(LAST_RECORD, SetupHistory.class);
+		TypedQuery<SetupHistory> query = getEntityManager().createNamedQuery(LAST_SETUP, SetupHistory.class);
 		query.setParameter("equipment", equipment);
 		query.setMaxResults(1);
 		List<SetupHistory> histories = query.getResultList();
@@ -1092,6 +1091,26 @@ public class PersistenceService {
 
 	private Integrator getIntegrator() {
 		return null;
+	}
+
+	public List<AvailabilitySummary> fetchAvailabilitySummary(Equipment equipment, OffsetDateTime from,
+			OffsetDateTime to) {
+		final String AVAIL_RECORDS = "Availability.FromTo";
+
+		if (namedQueryMap.get(AVAIL_RECORDS) == null) {
+			createNamedQuery(AVAIL_RECORDS,
+					"SELECT a FROM AvailabilitySummary a WHERE a.equipment = :equipment AND (a.startTime BETWEEN :from AND :to)  AND (a.endTime BETWEEN :from AND :to)");
+		}
+
+		TypedQuery<AvailabilitySummary> query = getEntityManager().createNamedQuery(AVAIL_RECORDS,
+				AvailabilitySummary.class);
+		query.setParameter("equipment", equipment);
+		query.setParameter("from", from);
+		query.setParameter("to", to);
+
+		List<AvailabilitySummary> summaries = query.getResultList();
+
+		return summaries;
 	}
 
 }

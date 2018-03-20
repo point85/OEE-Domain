@@ -130,6 +130,7 @@ public class PlantEntity extends NamedObject {
 				schedule = parent.findWorkSchedule();
 			}
 		}
+
 		return schedule;
 	}
 
