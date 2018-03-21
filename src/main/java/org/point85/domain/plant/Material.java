@@ -50,10 +50,12 @@ public class Material extends NamedObject {
 		return super.toString() + ", Category: " + getCategory();
 	}
 
-	/*
-	@Override
-	public String getFetchQueryName() {
-		return MATL_BY_NAME;
+	public String getDisplayString() {
+		String text = getName();
+
+		if (getDescription() != null) {
+			text += " (" + getDescription() + ")";
+		}
+		return text;
 	}
-	*/
 }

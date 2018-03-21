@@ -28,10 +28,6 @@ public class EquipmentLoss {
 	private Quantity designSpeedQuantity;
 
 	public EquipmentLoss() {
-		initialize();
-	}
-
-	private void initialize() {
 		setLoss(TimeLoss.NO_LOSS, Duration.ZERO);
 		setLoss(TimeLoss.UNSCHEDULED, Duration.ZERO);
 		setLoss(TimeLoss.MINOR_STOPPAGES, Duration.ZERO);
@@ -144,43 +140,50 @@ public class EquipmentLoss {
 	}
 
 	public float calculateOeePercentage() throws Exception {
-		if (this.getAvailableTime() == null) {
-			throw new Exception("No available time has been recorded.");
-		}
-
 		float vat = this.getValueAddingTime().getSeconds();
 		float available = this.getAvailableTime().getSeconds();
-		return (vat / available) * 100.0f;
+		float oee = 0.0f;
+
+		if (available != 0.0f) {
+			oee = (vat / available) * 100.0f;
+		}
+		return oee;
 	}
 
 	public float calculatePerformancePercentage() throws Exception {
-		if (this.getReportedProductionTime() == null) {
-			throw new Exception("No reported production time has been recorded.");
-		}
-
 		float eff = this.getEfficientNetProductionTime().getSeconds();
 		float rpt = this.getReportedProductionTime().getSeconds();
-		return (eff / rpt) * 100.0f;
+
+		float pp = 0.0f;
+
+		if (rpt != 0.0f) {
+			pp = (eff / rpt) * 100.0f;
+		}
+		return pp;
 	}
 
 	public float calculateAvailabilityPercentage() throws Exception {
-		if (this.getAvailableTime() == null) {
-			throw new Exception("No available time has been recorded.");
-		}
-
 		float rpt = this.getReportedProductionTime().getSeconds();
 		float available = this.getAvailableTime().getSeconds();
-		return (rpt / available) * 100.0f;
+
+		float ap = 0.0f;
+
+		if (available != 0.0f) {
+			ap = (rpt / available) * 100.0f;
+		}
+		return ap;
 	}
 
 	public float calculateQualityPercentage() throws Exception {
-		if (this.getAvailableTime() == null) {
-			throw new Exception("No efficient net production time has been recorded.");
-		}
-
 		float vat = this.getValueAddingTime().getSeconds();
 		float eff = this.getEfficientNetProductionTime().getSeconds();
-		return (vat / eff) * 100.0f;
+		
+		float qp = 0.0f;
+		
+		if (eff != 0.0f) {
+		qp = (vat / eff) * 100.0f;
+		}
+		return qp;
 	}
 
 	public Duration calculateReducedSpeedLoss(Quantity actualSpeed, Quantity idealSpeed) throws Exception {
@@ -233,7 +236,7 @@ public class EquipmentLoss {
 			sb.append("From: ").append(startDateTime.toString()).append("To: ").append(endDateTime.toString())
 					.append(", Duration: ").append(getDuration().toString());
 		}
-		
+
 		// quantities
 		sb.append("\nGood: ");
 		if (goodQuantity != null) {
@@ -241,14 +244,14 @@ public class EquipmentLoss {
 		} else {
 			sb.append('0');
 		}
-		
+
 		sb.append("\nReject: ");
 		if (rejectQuantity != null) {
 			sb.append(rejectQuantity.getAmount()).append(' ').append(rejectQuantity.getUOM().getSymbol());
 		} else {
 			sb.append('0');
 		}
-		
+
 		sb.append("\nStartup: ");
 		if (startupQuantity != null) {
 			sb.append(startupQuantity.getAmount()).append(' ').append(startupQuantity.getUOM().getSymbol());
