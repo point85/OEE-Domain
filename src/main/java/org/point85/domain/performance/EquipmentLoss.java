@@ -74,7 +74,11 @@ public class EquipmentLoss {
 	}
 
 	public Duration getDuration() {
-		return Duration.between(startDateTime, endDateTime);
+		if (startDateTime == null || endDateTime == null) {
+			return Duration.ZERO;
+		} else {
+			return Duration.between(startDateTime, endDateTime);
+		}
 	}
 
 	public Duration getLoss(TimeLoss category) {
@@ -85,7 +89,7 @@ public class EquipmentLoss {
 		lossMap.put(category, duration);
 	}
 
-	public void addLoss(TimeLoss category, Duration duration) {
+	public void incrementLoss(TimeLoss category, Duration duration) {
 		Duration newDuration = lossMap.get(category).plus(duration);
 		setLoss(category, newDuration);
 	}
@@ -229,13 +233,37 @@ public class EquipmentLoss {
 			sb.append("From: ").append(startDateTime.toString()).append("To: ").append(endDateTime.toString())
 					.append(", Duration: ").append(getDuration().toString());
 		}
+		
+		// quantities
+		sb.append("\nGood: ");
+		if (goodQuantity != null) {
+			sb.append(goodQuantity.getAmount()).append(' ').append(goodQuantity.getUOM().getSymbol());
+		} else {
+			sb.append('0');
+		}
+		
+		sb.append("\nReject: ");
+		if (rejectQuantity != null) {
+			sb.append(rejectQuantity.getAmount()).append(' ').append(rejectQuantity.getUOM().getSymbol());
+		} else {
+			sb.append('0');
+		}
+		
+		sb.append("\nStartup: ");
+		if (startupQuantity != null) {
+			sb.append(startupQuantity.getAmount()).append(' ').append(startupQuantity.getUOM().getSymbol());
+		} else {
+			sb.append('0');
+		}
 
-		sb.append('\n').append("Losses");
+		// losses
+		sb.append("\nLosses");
 		for (Entry<TimeLoss, Duration> entry : lossMap.entrySet()) {
 			sb.append('\n').append(entry.getKey().toString()).append(" = ").append(entry.getValue().toString());
 		}
 
-		sb.append('\n').append("Times");
+		// times
+		sb.append("\nTimes");
 		sb.append("\n Required Operations: ").append(getRequiredOperationsTime().toString());
 		sb.append("\n Available: ").append(getAvailableTime().toString());
 		sb.append("\n Scheduled Production: ").append(getScheduledProductionTime().toString());
@@ -288,22 +316,46 @@ public class EquipmentLoss {
 		return designSpeedQuantity;
 	}
 
-	public void setDesignSpeedQuantity(Quantity designSpeedQuantity) {
+	public void setDesignSpeed(Quantity designSpeedQuantity) {
 		this.designSpeedQuantity = designSpeedQuantity;
 	}
-	
-	public Quantity incrementGoodQuantity(double amount) {
-		this.goodQuantity.add(amount);
-		return this.goodQuantity;
+
+	public Quantity incrementGoodQuantity(Quantity quantity) throws Exception {
+		Quantity total = goodQuantity;
+
+		if (total != null) {
+			total = total.add(quantity);
+		} else {
+			total = quantity;
+		}
+		setGoodQuantity(total);
+
+		return total;
 	}
-	
-	public Quantity incrementStartupQuantity(double amount) {
-		this.startupQuantity.add(amount);
-		return this.startupQuantity;
+
+	public Quantity incrementStartupQuantity(Quantity quantity) throws Exception {
+		Quantity total = startupQuantity;
+
+		if (total != null) {
+			total = total.add(quantity);
+		} else {
+			total = quantity;
+		}
+		setStartupQuantity(total);
+
+		return total;
 	}
-	
-	public Quantity incrementRejectQuantity(double amount) {
-		this.rejectQuantity.add(amount);
-		return this.rejectQuantity;
+
+	public Quantity incrementRejectQuantity(Quantity quantity) throws Exception {
+		Quantity total = rejectQuantity;
+
+		if (total != null) {
+			total = total.add(quantity);
+		} else {
+			total = quantity;
+		}
+		setRejectQuantity(total);
+
+		return total;
 	}
 }
