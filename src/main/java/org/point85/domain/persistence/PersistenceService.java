@@ -1132,4 +1132,26 @@ public class PersistenceService {
 		return summaries;
 	}
 
+	public AvailabilityHistory fetchLastAvailabilityHistory(Equipment equipment) {
+		final String LAST_AVAIL = "Availability.Last";
+
+		if (namedQueryMap.get(LAST_AVAIL) == null) {
+			createNamedQuery(LAST_AVAIL,
+					"SELECT hist FROM AvailabilityHistory hist WHERE hist.equipment = :equipment ORDER BY hist.sourceTimestamp DESC");
+		}
+
+		TypedQuery<AvailabilityHistory> query = getEntityManager().createNamedQuery(LAST_AVAIL,
+				AvailabilityHistory.class);
+		query.setParameter("equipment", equipment);
+		query.setMaxResults(1);
+		List<AvailabilityHistory> histories = query.getResultList();
+
+		AvailabilityHistory history = null;
+		if (histories.size() == 1) {
+			history = histories.get(0);
+		}
+
+		return history;
+	}
+
 }
