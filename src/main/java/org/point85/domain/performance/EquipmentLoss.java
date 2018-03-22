@@ -3,10 +3,10 @@ package org.point85.domain.performance;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.Unit;
@@ -19,13 +19,15 @@ public class EquipmentLoss {
 	private OffsetDateTime endDateTime;
 
 	// map of losses
-	private Map<TimeLoss, Duration> lossMap = new HashMap<>();
+	private ConcurrentMap<TimeLoss, Duration> lossMap = new ConcurrentHashMap<>();
 
 	// quantities produced
 	private Quantity goodQuantity;
 	private Quantity startupQuantity;
 	private Quantity rejectQuantity;
-	private Quantity designSpeedQuantity;
+	
+	// equipment design speed
+	private Quantity designSpeed;
 
 	public EquipmentLoss() {
 		setLoss(TimeLoss.NO_LOSS, Duration.ZERO);
@@ -84,6 +86,11 @@ public class EquipmentLoss {
 	public void setLoss(TimeLoss category, Duration duration) {
 		lossMap.put(category, duration);
 	}
+	
+	public void setLoss(TimeLoss category, Quantity quantity) throws Exception {
+		Duration duration = convertQuantity(quantity);
+		lossMap.put(category, duration);
+	}
 
 	public void incrementLoss(TimeLoss category, Duration duration) {
 		Duration newDuration = lossMap.get(category).plus(duration);
@@ -127,14 +134,13 @@ public class EquipmentLoss {
 	}
 
 	public float calculateHighLevelOeePercentage() throws Exception {
-		if (getAvailableTime() == null) {
+		if (getAvailableTime() == null || goodQuantity == null) {
 			throw new Exception("No available time has been recorded.");
 		}
 
-		Quantity numerator = getGoodQuantity();
 		Quantity availableQty = new Quantity(getAvailableTime().getSeconds(), Unit.SECOND);
-		Quantity denominator = availableQty.multiply(designSpeedQuantity);
-		double hloee = numerator.divide(denominator).getAmount();
+		Quantity denominator = availableQty.multiply(designSpeed);
+		double hloee = goodQuantity.divide(denominator).getAmount();
 
 		return Double.valueOf(hloee).floatValue();
 	}
@@ -177,11 +183,11 @@ public class EquipmentLoss {
 	public float calculateQualityPercentage() throws Exception {
 		float vat = this.getValueAddingTime().getSeconds();
 		float eff = this.getEfficientNetProductionTime().getSeconds();
-		
+
 		float qp = 0.0f;
-		
+
 		if (eff != 0.0f) {
-		qp = (vat / eff) * 100.0f;
+			qp = (vat / eff) * 100.0f;
 		}
 		return qp;
 	}
@@ -195,15 +201,32 @@ public class EquipmentLoss {
 		return duration;
 	}
 
-	public void setReducedSpeedLoss() {
+	public void calculateReducedSpeedLoss() throws Exception {
 		Duration npt = getNetProductionTime();
 
 		// add up quality losses
-		Duration quality = getLoss(TimeLoss.REJECT_REWORK).plus(getLoss(TimeLoss.STARTUP_YIELD));
+		Duration reject = getLoss(TimeLoss.REJECT_REWORK);
+		Duration startup = getLoss(TimeLoss.STARTUP_YIELD);
+		Duration quality = reject.plus(startup);
 
 		// subtract off good production and quality loss
-		Duration reducedSpeed = npt.minus(quality).minus(getLoss(TimeLoss.NO_LOSS));
+		Duration noLoss = getLoss(TimeLoss.NO_LOSS);
+		Duration reducedSpeed = npt.minus(quality).minus(noLoss);
 		setLoss(TimeLoss.REDUCED_SPEED, reducedSpeed);
+		
+		System.out.println("NPT: " + npt);
+		System.out.println("Reject: " + reject);
+		System.out.println("Startup: " + startup);
+		System.out.println("Quality: " + quality);
+		System.out.println("No loss: " + noLoss);
+		System.out.println("Reduced: " + reducedSpeed);
+		
+		System.out.println("Good Qty: " + this.goodQuantity);
+		System.out.println("Reject Qty: " + this.rejectQuantity);
+		System.out.println("Startup Qty: " + this.startupQuantity);
+		
+		Duration gQ = this.convertQuantity(goodQuantity);
+		System.out.println("gQ: " + gQ);
 	}
 
 	public Duration convertUnitCountToTimeLoss(Quantity loss, Quantity idealSpeed) throws Exception {
@@ -236,7 +259,7 @@ public class EquipmentLoss {
 			sb.append("From: ").append(startDateTime.toString()).append("To: ").append(endDateTime.toString())
 					.append(", Duration: ").append(getDuration().toString());
 		}
-
+		
 		// quantities
 		sb.append("\nGood: ");
 		if (goodQuantity != null) {
@@ -280,10 +303,6 @@ public class EquipmentLoss {
 		return sb.toString();
 	}
 
-	public Quantity getGoodQuantity() {
-		return goodQuantity;
-	}
-
 	private Duration convertQuantity(Quantity quantity) throws Exception {
 		Quantity irr = getDesignSpeedQuantity();
 		Quantity timeQty = quantity.divide(irr).convert(Unit.SECOND);
@@ -292,37 +311,38 @@ public class EquipmentLoss {
 		return duration;
 	}
 
-	public void setGoodQuantity(Quantity quantity) throws Exception {
-		this.goodQuantity = quantity;
-		this.setLoss(TimeLoss.NO_LOSS, convertQuantity(goodQuantity));
+	public Quantity getDesignSpeedQuantity() {
+		return designSpeed;
+	}
+
+	public void setDesignSpeed(Quantity designSpeedQuantity) {
+		this.designSpeed = designSpeedQuantity;
+	}
+
+	public Quantity getGoodQuantity() {
+		return goodQuantity;
+	}
+
+	public void setGoodQuantity(Quantity goodQuantity) {
+		this.goodQuantity = goodQuantity;
 	}
 
 	public Quantity getStartupQuantity() {
 		return startupQuantity;
 	}
 
-	public void setStartupQuantity(Quantity quantity) throws Exception {
-		this.startupQuantity = quantity;
-		this.setLoss(TimeLoss.STARTUP_YIELD, convertQuantity(startupQuantity));
+	public void setStartupQuantity(Quantity startupQuantity) {
+		this.startupQuantity = startupQuantity;
 	}
 
 	public Quantity getRejectQuantity() {
 		return rejectQuantity;
 	}
 
-	public void setRejectQuantity(Quantity quantity) throws Exception {
-		this.rejectQuantity = quantity;
-		this.setLoss(TimeLoss.REJECT_REWORK, convertQuantity(rejectQuantity));
+	public void setRejectQuantity(Quantity rejectQuantity) {
+		this.rejectQuantity = rejectQuantity;
 	}
-
-	public Quantity getDesignSpeedQuantity() {
-		return designSpeedQuantity;
-	}
-
-	public void setDesignSpeed(Quantity designSpeedQuantity) {
-		this.designSpeedQuantity = designSpeedQuantity;
-	}
-
+	
 	public Quantity incrementGoodQuantity(Quantity quantity) throws Exception {
 		Quantity total = goodQuantity;
 

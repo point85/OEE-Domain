@@ -17,8 +17,6 @@ import org.point85.domain.uom.Quantity;
 public class EquipmentLossManager {
 	public static EquipmentLoss calculateEquipmentLoss(Equipment equipment, Material material, OffsetDateTime from,
 			OffsetDateTime to) throws Exception {
-		// losses
-		EquipmentLoss equipmentLoss = new EquipmentLoss();
 
 		// from the work schedule
 		WorkSchedule schedule = equipment.findWorkSchedule();
@@ -26,28 +24,20 @@ public class EquipmentLossManager {
 			throw new Exception("A work schedule must be defined for this equipment.");
 		}
 
-		// time from measured availability losses
-		List<AvailabilitySummary> availabilities = PersistenceService.instance().fetchAvailabilitySummary(equipment,
-				from, to);
-
-		for (AvailabilitySummary summary : availabilities) {
-			checkTimePeriod(summary, equipmentLoss);
-
-			TimeLoss loss = summary.getReason().getLossCategory();
-			equipmentLoss.incrementLoss(loss, summary.getDuration());
-		}
-
-		// System.out.println(this.equipmentLoss.toString());
-
-		// time from measured production
 		EquipmentMaterial eqm = equipment.getEquipmentMaterial(material);
 
 		if (eqm == null || eqm.getRunRate() == null) {
 			throw new Exception("The design speed must be defined for equipment " + equipment.getName()
 					+ " and material " + material.getDisplayString());
 		}
+
+		// losses
+		EquipmentLoss equipmentLoss = new EquipmentLoss();
+
+		// IRR
 		equipmentLoss.setDesignSpeed(eqm.getRunRate());
 
+		// time from measured production
 		List<ProductionSummary> productions = PersistenceService.instance().fetchProductionSummary(equipment, from, to);
 
 		for (ProductionSummary summary : productions) {
@@ -72,10 +62,27 @@ public class EquipmentLossManager {
 				break;
 			}
 		}
+		equipmentLoss.setLoss(TimeLoss.NO_LOSS, equipmentLoss.getGoodQuantity());
+		equipmentLoss.setLoss(TimeLoss.REJECT_REWORK, equipmentLoss.getRejectQuantity());
+		equipmentLoss.setLoss(TimeLoss.STARTUP_YIELD, equipmentLoss.getStartupQuantity());
+		
+		System.out.println(equipmentLoss.toString());
+
+		// time from measured availability losses
+		List<AvailabilitySummary> availabilities = PersistenceService.instance().fetchAvailabilitySummary(equipment,
+				from, to);
+
+		for (AvailabilitySummary summary : availabilities) {
+			checkTimePeriod(summary, equipmentLoss);
+
+			TimeLoss loss = summary.getReason().getLossCategory();
+			equipmentLoss.incrementLoss(loss, summary.getDuration());
+		}
 
 		// compute reduced speed from the other losses
-		equipmentLoss.setReducedSpeedLoss();
+		equipmentLoss.calculateReducedSpeedLoss();
 
+		// calculate the non-working time based on the time frame
 		OffsetDateTime odtStart = equipmentLoss.getStartDateTime();
 		OffsetDateTime odtEnd = equipmentLoss.getEndDateTime();
 
@@ -84,6 +91,8 @@ public class EquipmentLossManager {
 					odtEnd.toLocalDateTime());
 			equipmentLoss.setLoss(TimeLoss.NOT_SCHEDULED, notScheduled);
 		}
+		
+		System.out.println(equipmentLoss.toString());
 
 		return equipmentLoss;
 	}
@@ -102,4 +111,5 @@ public class EquipmentLossManager {
 			equipmentLoss.setEndDateTime(end);
 		}
 	}
+
 }
