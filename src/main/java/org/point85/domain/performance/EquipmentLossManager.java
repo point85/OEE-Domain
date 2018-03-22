@@ -12,7 +12,10 @@ import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentMaterial;
 import org.point85.domain.plant.Material;
 import org.point85.domain.schedule.WorkSchedule;
+import org.point85.domain.uom.MeasurementSystem;
 import org.point85.domain.uom.Quantity;
+import org.point85.domain.uom.Unit;
+import org.point85.domain.uom.UnitOfMeasure;
 
 public class EquipmentLossManager {
 	public static EquipmentLoss calculateEquipmentLoss(Equipment equipment, Material material, OffsetDateTime from,
@@ -34,7 +37,7 @@ public class EquipmentLossManager {
 		// losses
 		EquipmentLoss equipmentLoss = new EquipmentLoss();
 
-		// IRR
+		// IRR		
 		equipmentLoss.setDesignSpeed(eqm.getRunRate());
 
 		// time from measured production
@@ -62,9 +65,9 @@ public class EquipmentLossManager {
 				break;
 			}
 		}
-		equipmentLoss.setLoss(TimeLoss.NO_LOSS, equipmentLoss.getGoodQuantity());
-		equipmentLoss.setLoss(TimeLoss.REJECT_REWORK, equipmentLoss.getRejectQuantity());
-		equipmentLoss.setLoss(TimeLoss.STARTUP_YIELD, equipmentLoss.getStartupQuantity());
+		//equipmentLoss.setLoss(TimeLoss.NO_LOSS, equipmentLoss.getGoodQuantity());
+		//equipmentLoss.setLoss(TimeLoss.REJECT_REWORK, equipmentLoss.getRejectQuantity());
+		//equipmentLoss.setLoss(TimeLoss.STARTUP_YIELD, equipmentLoss.getStartupQuantity());
 		
 		System.out.println(equipmentLoss.toString());
 

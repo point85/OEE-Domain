@@ -201,7 +201,7 @@ public class UnitOfMeasure extends NamedObject {
 
 	UnitOfMeasure(UnitType type, String name, String symbol, String description) {
 		super(name, description);
-		this.symbol = symbol;
+		this.symbol = symbol.trim();
 		this.unitType = type;
 		this.category = MeasurementSystem.getUnitString("default.category.text");
 	}

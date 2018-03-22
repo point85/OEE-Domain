@@ -61,7 +61,7 @@ public abstract class NamedObject extends KeyedObject implements Comparable<Name
 	}
 
 	public void setName(String name) {
-		this.name = name;
+		this.name = (name != null) ? name.trim() : name;
 	}
 
 	public String getDescription() {
@@ -69,7 +69,7 @@ public abstract class NamedObject extends KeyedObject implements Comparable<Name
 	}
 
 	public void setDescription(String description) {
-		this.description = description;
+		this.description = (description != null) ? description.trim() : description;
 	}
 
 	@Override

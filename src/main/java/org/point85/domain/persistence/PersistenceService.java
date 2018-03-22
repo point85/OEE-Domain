@@ -92,11 +92,20 @@ public class PersistenceService {
 		emfFuture = CompletableFuture.supplyAsync(() -> {
 			try {
 				createContainerManagedEntityManagerFactory(jdbcUrl, userName, password);
+
+				primeUomCache();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			return emf;
 		});
+	}
+
+	private void primeUomCache() throws Exception {
+		// load cache with fundamental units
+		fetchUomByUnit(Unit.SECOND);
+		fetchUomByUnit(Unit.METRE);
+		fetchUomByUnit(Unit.CELSIUS);
 	}
 
 	public void close() {
@@ -701,7 +710,14 @@ public class PersistenceService {
 	}
 
 	public UnitOfMeasure fetchUomByKey(Long key) throws Exception {
-		return getEntityManager().find(UnitOfMeasure.class, key);
+		UnitOfMeasure uom = getEntityManager().find(UnitOfMeasure.class, key);
+
+		// cache it
+		if (uom != null) {
+			MeasurementSystem.instance().registerUnit(uom);
+		}
+
+		return uom;
 	}
 
 	// get symbols and names in this category
@@ -764,6 +780,9 @@ public class PersistenceService {
 
 		if (uoms.size() == 1) {
 			uom = uoms.get(0);
+
+			// also cache it
+			MeasurementSystem.instance().registerUnit(uom);
 		}
 		return uom;
 	}
@@ -777,7 +796,14 @@ public class PersistenceService {
 
 		TypedQuery<UnitOfMeasure> query = getEntityManager().createNamedQuery(UOM_BY_CATEGORY, UnitOfMeasure.class);
 		query.setParameter("category", category);
-		return query.getResultList();
+		List<UnitOfMeasure> uoms = query.getResultList();
+
+		// cache them
+		for (UnitOfMeasure uom : uoms) {
+			MeasurementSystem.instance().registerUnit(uom);
+		}
+
+		return uoms;
 	}
 
 	// fetch UOM by its enumeration
@@ -798,6 +824,9 @@ public class PersistenceService {
 
 		if (uoms.size() == 1) {
 			uom = uoms.get(0);
+
+			// also cache it
+			MeasurementSystem.instance().registerUnit(uom);
 		} else {
 			// not in db, get from pre-defined units
 			uom = MeasurementSystem.instance().getUOM(unit);

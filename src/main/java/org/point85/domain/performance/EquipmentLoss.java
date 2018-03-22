@@ -86,11 +86,6 @@ public class EquipmentLoss {
 	public void setLoss(TimeLoss category, Duration duration) {
 		lossMap.put(category, duration);
 	}
-	
-	public void setLoss(TimeLoss category, Quantity quantity) throws Exception {
-		Duration duration = convertQuantity(quantity);
-		lossMap.put(category, duration);
-	}
 
 	public void incrementLoss(TimeLoss category, Duration duration) {
 		Duration newDuration = lossMap.get(category).plus(duration);
@@ -202,6 +197,15 @@ public class EquipmentLoss {
 	}
 
 	public void calculateReducedSpeedLoss() throws Exception {
+		Duration goodDur = convertQuantity(goodQuantity);
+		setLoss(TimeLoss.NO_LOSS, goodDur);
+		
+		Duration rejectDur = convertQuantity(rejectQuantity);
+		setLoss(TimeLoss.REJECT_REWORK, rejectDur);
+		
+		Duration startupDur = convertQuantity(startupQuantity);
+		setLoss(TimeLoss.STARTUP_YIELD, startupDur);
+		
 		Duration npt = getNetProductionTime();
 
 		// add up quality losses
@@ -224,16 +228,15 @@ public class EquipmentLoss {
 		System.out.println("Good Qty: " + this.goodQuantity);
 		System.out.println("Reject Qty: " + this.rejectQuantity);
 		System.out.println("Startup Qty: " + this.startupQuantity);
-		
-		Duration gQ = this.convertQuantity(goodQuantity);
-		System.out.println("gQ: " + gQ);
 	}
 
+	/*
 	public Duration convertUnitCountToTimeLoss(Quantity loss, Quantity idealSpeed) throws Exception {
 		Quantity timeLoss = loss.divide(idealSpeed).convert(Unit.SECOND);
 		Duration duration = Duration.ofSeconds((long) timeLoss.getAmount());
 		return duration;
 	}
+	*/
 
 	public OffsetDateTime getStartDateTime() {
 		return startDateTime;
@@ -305,8 +308,13 @@ public class EquipmentLoss {
 
 	private Duration convertQuantity(Quantity quantity) throws Exception {
 		Quantity irr = getDesignSpeedQuantity();
+		
+		//Quantity timeQty1 = quantity.divide(irr);
+		//long seconds1 = Double.valueOf(timeQty1.getAmount()).longValue();
+		
 		Quantity timeQty = quantity.divide(irr).convert(Unit.SECOND);
 		long seconds = Double.valueOf(timeQty.getAmount()).longValue();
+		
 		Duration duration = Duration.ofSeconds(seconds);
 		return duration;
 	}

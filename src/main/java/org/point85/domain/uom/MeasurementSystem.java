@@ -1480,6 +1480,7 @@ public class MeasurementSystem {
 		if (uom == null) {
 			// create a new one
 			uom = new UnitOfMeasure(type, name, symbol, description);
+			uom.setAbscissaUnit(uom);
 		}
 		return uom;
 	}
