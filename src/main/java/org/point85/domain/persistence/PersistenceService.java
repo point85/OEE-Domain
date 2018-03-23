@@ -37,6 +37,7 @@ import org.point85.domain.http.HttpSource;
 import org.point85.domain.messaging.MessagingSource;
 import org.point85.domain.opc.da.OpcDaSource;
 import org.point85.domain.opc.ua.OpcUaSource;
+import org.point85.domain.performance.TimeLoss;
 import org.point85.domain.plant.Area;
 import org.point85.domain.plant.Enterprise;
 import org.point85.domain.plant.Equipment;
@@ -1181,6 +1182,26 @@ public class PersistenceService {
 		}
 
 		return history;
+	}
+	
+	public List<AvailabilityHistory> fetchAvailabilityHistory(Equipment equipment, TimeLoss loss, OffsetDateTime from, OffsetDateTime to) {
+		final String AVAIL_LOSS_HIST = "Availability.LossHistory";
+
+		if (namedQueryMap.get(AVAIL_LOSS_HIST) == null) {
+			createNamedQuery(AVAIL_LOSS_HIST,
+					"SELECT hist FROM AvailabilityHistory hist WHERE hist.equipment = :equipment AND hist.reason.timeLoss = :loss AND (hist.sourceTimestamp  BETWEEN :from AND :to)  ORDER BY hist.sourceTimestamp ASC ");
+		}
+
+		TypedQuery<AvailabilityHistory> query = getEntityManager().createNamedQuery(AVAIL_LOSS_HIST,
+				AvailabilityHistory.class);
+		query.setParameter("equipment", equipment);
+		query.setParameter("loss", loss);
+		query.setParameter("from", from);
+		query.setParameter("to", to);
+
+		List<AvailabilityHistory> histories = query.getResultList();
+
+		return histories;
 	}
 
 }

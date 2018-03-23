@@ -8,10 +8,18 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.point85.domain.plant.Equipment;
+import org.point85.domain.plant.Material;
 import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.Unit;
 
 public class EquipmentLoss {
+	// equipment
+	private Equipment equipment;
+	
+	// material
+	private Material material;
+	
 	// date and time accumulation starts
 	private OffsetDateTime startDateTime;
 
@@ -29,7 +37,9 @@ public class EquipmentLoss {
 	// equipment design speed
 	private Quantity designSpeed;
 
-	public EquipmentLoss() {
+	public EquipmentLoss(Equipment equipment) {
+		this.equipment = equipment;
+		
 		setLoss(TimeLoss.NO_LOSS, Duration.ZERO);
 		setLoss(TimeLoss.UNSCHEDULED, Duration.ZERO);
 		setLoss(TimeLoss.MINOR_STOPPAGES, Duration.ZERO);
@@ -309,9 +319,6 @@ public class EquipmentLoss {
 	private Duration convertQuantity(Quantity quantity) throws Exception {
 		Quantity irr = getDesignSpeedQuantity();
 		
-		//Quantity timeQty1 = quantity.divide(irr);
-		//long seconds1 = Double.valueOf(timeQty1.getAmount()).longValue();
-		
 		Quantity timeQty = quantity.divide(irr).convert(Unit.SECOND);
 		long seconds = Double.valueOf(timeQty.getAmount()).longValue();
 		
@@ -388,5 +395,21 @@ public class EquipmentLoss {
 		setRejectQuantity(total);
 
 		return total;
+	}
+
+	public Equipment getEquipment() {
+		return equipment;
+	}
+
+	public void setEquipment(Equipment equipment) {
+		this.equipment = equipment;
+	}
+
+	public Material getMaterial() {
+		return material;
+	}
+
+	public void setMaterial(Material material) {
+		this.material = material;
 	}
 }
