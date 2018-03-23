@@ -23,21 +23,19 @@ import javax.persistence.spi.PersistenceUnitInfo;
 import org.hibernate.integrator.spi.Integrator;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.hibernate.jpa.boot.spi.IntegratorProvider;
-import org.point85.domain.collector.AvailabilityHistory;
-import org.point85.domain.collector.AvailabilitySummary;
+import org.point85.domain.collector.AvailabilityRecord;
 import org.point85.domain.collector.BaseRecord;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.CollectorState;
 import org.point85.domain.collector.DataCollector;
 import org.point85.domain.collector.DataSourceType;
-import org.point85.domain.collector.ProductionHistory;
-import org.point85.domain.collector.ProductionSummary;
-import org.point85.domain.collector.SetupHistory;
+import org.point85.domain.collector.ProductionRecord;
+import org.point85.domain.collector.SetupRecord;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.messaging.MessagingSource;
+import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.opc.da.OpcDaSource;
 import org.point85.domain.opc.ua.OpcUaSource;
-import org.point85.domain.performance.TimeLoss;
 import org.point85.domain.plant.Area;
 import org.point85.domain.plant.Enterprise;
 import org.point85.domain.plant.Equipment;
@@ -939,25 +937,25 @@ public class PersistenceService {
 		}
 	}
 
-	public SetupHistory fetchLastSetupHistory(Equipment equipment) {
+	public SetupRecord fetchLastSetupRecord(Equipment equipment) {
 		final String LAST_SETUP = "Setup.Last";
 
 		if (namedQueryMap.get(LAST_SETUP) == null) {
 			createNamedQuery(LAST_SETUP,
-					"SELECT hist FROM SetupHistory hist WHERE hist.equipment = :equipment ORDER BY hist.sourceTimestamp DESC");
+					"SELECT s FROM SetupRecord s WHERE s.equipment = :equipment ORDER BY s.startTime DESC");
 		}
 
-		TypedQuery<SetupHistory> query = getEntityManager().createNamedQuery(LAST_SETUP, SetupHistory.class);
+		TypedQuery<SetupRecord> query = getEntityManager().createNamedQuery(LAST_SETUP, SetupRecord.class);
 		query.setParameter("equipment", equipment);
 		query.setMaxResults(1);
-		List<SetupHistory> histories = query.getResultList();
+		List<SetupRecord> records = query.getResultList();
 
-		SetupHistory history = null;
-		if (histories.size() == 1) {
-			history = histories.get(0);
+		SetupRecord record = null;
+		if (records.size() == 1) {
+			record = records.get(0);
 		}
 
-		return history;
+		return record;
 	}
 
 	public List<EquipmentMaterial> fetchEquipmentMaterials(UnitOfMeasure uom) throws Exception {
@@ -1049,13 +1047,12 @@ public class PersistenceService {
 	}
 
 	private Class<?>[] getEntityClasses() {
-		return new Class<?>[] { DataCollector.class, CollectorDataSource.class, AvailabilityHistory.class,
-				ProductionHistory.class, SetupHistory.class, HttpSource.class, MessagingSource.class, OpcDaSource.class,
+		return new Class<?>[] { DataCollector.class, CollectorDataSource.class, AvailabilityRecord.class,
+				ProductionRecord.class, SetupRecord.class, HttpSource.class, MessagingSource.class, OpcDaSource.class,
 				OpcUaSource.class, WebSource.class, Area.class, Enterprise.class, Equipment.class,
 				EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class, Reason.class,
 				Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class, NonWorkingPeriod.class,
-				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class,
-				AvailabilitySummary.class, ProductionSummary.class };
+				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class };
 	}
 
 	private List<String> getEntityClassNames() {
@@ -1123,85 +1120,79 @@ public class PersistenceService {
 		return null;
 	}
 
-	public List<AvailabilitySummary> fetchAvailabilitySummary(Equipment equipment, OffsetDateTime from,
+	public List<AvailabilityRecord> fetchAvailability(Equipment equipment, OffsetDateTime from,
 			OffsetDateTime to) {
 		final String AVAIL_RECORDS = "Availability.FromTo";
 
 		if (namedQueryMap.get(AVAIL_RECORDS) == null) {
 			createNamedQuery(AVAIL_RECORDS,
-					"SELECT a FROM AvailabilitySummary a WHERE a.equipment = :equipment AND (a.startTime BETWEEN :from AND :to)  AND (a.endTime BETWEEN :from AND :to)");
+					"SELECT a FROM AvailabilityRecord a WHERE a.equipment = :equipment AND (a.startTime BETWEEN :from AND :to)  AND (a.endTime BETWEEN :from AND :to)");
 		}
 
-		TypedQuery<AvailabilitySummary> query = getEntityManager().createNamedQuery(AVAIL_RECORDS,
-				AvailabilitySummary.class);
+		TypedQuery<AvailabilityRecord> query = getEntityManager().createNamedQuery(AVAIL_RECORDS,
+				AvailabilityRecord.class);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
 
-		List<AvailabilitySummary> summaries = query.getResultList();
-
-		return summaries;
+		return query.getResultList();
 	}
 
-	public List<ProductionSummary> fetchProductionSummary(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
+	public List<ProductionRecord> fetchProduction(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
 		final String PROD_RECORDS = "Production.FromTo";
 
 		if (namedQueryMap.get(PROD_RECORDS) == null) {
 			createNamedQuery(PROD_RECORDS,
-					"SELECT p FROM ProductionSummary p WHERE p.equipment = :equipment AND (p.startTime BETWEEN :from AND :to)  AND (p.endTime BETWEEN :from AND :to)");
+					"SELECT p FROM ProductionRecord p WHERE p.equipment = :equipment AND (p.startTime BETWEEN :from AND :to)  AND (p.endTime BETWEEN :from AND :to)");
 		}
 
-		TypedQuery<ProductionSummary> query = getEntityManager().createNamedQuery(PROD_RECORDS,
-				ProductionSummary.class);
+		TypedQuery<ProductionRecord> query = getEntityManager().createNamedQuery(PROD_RECORDS,
+				ProductionRecord.class);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
 
-		List<ProductionSummary> summaries = query.getResultList();
-
-		return summaries;
+		return query.getResultList();
 	}
 
-	public AvailabilityHistory fetchLastAvailabilityHistory(Equipment equipment) {
+	public AvailabilityRecord fetchLastAvailabilityRecord(Equipment equipment) {
 		final String LAST_AVAIL = "Availability.Last";
 
 		if (namedQueryMap.get(LAST_AVAIL) == null) {
 			createNamedQuery(LAST_AVAIL,
-					"SELECT hist FROM AvailabilityHistory hist WHERE hist.equipment = :equipment ORDER BY hist.sourceTimestamp DESC");
+					"SELECT a FROM AvailabilityRecord a WHERE a.equipment = :equipment ORDER BY a.startTime DESC");
 		}
 
-		TypedQuery<AvailabilityHistory> query = getEntityManager().createNamedQuery(LAST_AVAIL,
-				AvailabilityHistory.class);
+		TypedQuery<AvailabilityRecord> query = getEntityManager().createNamedQuery(LAST_AVAIL,
+				AvailabilityRecord.class);
 		query.setParameter("equipment", equipment);
 		query.setMaxResults(1);
-		List<AvailabilityHistory> histories = query.getResultList();
+		List<AvailabilityRecord> records = query.getResultList();
 
-		AvailabilityHistory history = null;
-		if (histories.size() == 1) {
-			history = histories.get(0);
+		AvailabilityRecord record = null;
+		if (records.size() == 1) {
+			record = records.get(0);
 		}
 
-		return history;
+		return record;
 	}
 	
-	public List<AvailabilityHistory> fetchAvailabilityHistory(Equipment equipment, TimeLoss loss, OffsetDateTime from, OffsetDateTime to) {
+	public List<AvailabilityRecord> fetchAvailabilityRecords(Equipment equipment, TimeLoss loss, OffsetDateTime from, OffsetDateTime to) {
 		final String AVAIL_LOSS_HIST = "Availability.LossHistory";
 
 		if (namedQueryMap.get(AVAIL_LOSS_HIST) == null) {
 			createNamedQuery(AVAIL_LOSS_HIST,
-					"SELECT hist FROM AvailabilityHistory hist WHERE hist.equipment = :equipment AND hist.reason.timeLoss = :loss AND (hist.sourceTimestamp  BETWEEN :from AND :to)  ORDER BY hist.sourceTimestamp ASC ");
+					"SELECT a FROM AvailabilityRecord a WHERE a.equipment = :equipment AND a.reason.timeLoss = :loss AND (a.startTime  BETWEEN :from AND :to)  ORDER BY a.startTime ASC ");
 		}
 
-		TypedQuery<AvailabilityHistory> query = getEntityManager().createNamedQuery(AVAIL_LOSS_HIST,
-				AvailabilityHistory.class);
+		TypedQuery<AvailabilityRecord> query = getEntityManager().createNamedQuery(AVAIL_LOSS_HIST,
+				AvailabilityRecord.class);
 		query.setParameter("equipment", equipment);
 		query.setParameter("loss", loss);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
 
-		List<AvailabilityHistory> histories = query.getResultList();
-
-		return histories;
+		return query.getResultList();
 	}
 
 }

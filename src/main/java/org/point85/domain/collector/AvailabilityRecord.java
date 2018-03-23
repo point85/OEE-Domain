@@ -2,6 +2,7 @@ package org.point85.domain.collector;
 
 import java.time.Duration;
 
+import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Inheritance;
@@ -11,35 +12,28 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.point85.domain.plant.Reason;
+import org.point85.domain.script.ResolvedEvent;
 
 @Entity
-@Table(name = "AVAIL_SUMMARY")
+@Table(name = "AVAILABILITY")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-public class AvailabilitySummary extends BaseSummary {
+@AttributeOverride(name = "primaryKey", column = @Column(name = "AVAIL_KEY"))
+
+public class AvailabilityRecord extends BaseRecord {
+
 	@OneToOne
 	@JoinColumn(name = "REASON_KEY")
 	private Reason reason;
-	
-	// length of event
+
 	@Column(name = "DURATION")
 	private Duration duration;
 
-	public AvailabilitySummary() {
+	public AvailabilityRecord() {
 		super();
 	}
 
-	public AvailabilitySummary(LossSummary summary) {
-		super(summary);
-		this.setReason(summary.getReason());
-		this.duration = summary.getDuration();
-	}
-	
-	public Duration getDuration() {
-		return duration;
-	}
-
-	public void setDuration(Duration duration) {
-		this.duration = duration;
+	public AvailabilityRecord(ResolvedEvent event) {
+		super(event);
 	}
 
 	public Reason getReason() {
@@ -48,5 +42,13 @@ public class AvailabilitySummary extends BaseSummary {
 
 	public void setReason(Reason reason) {
 		this.reason = reason;
+	}
+
+	public Duration getDuration() {
+		return duration;
+	}
+
+	public void setDuration(Duration duration) {
+		this.duration = duration;
 	}
 }

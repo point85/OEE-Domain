@@ -36,7 +36,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
-import org.point85.domain.performance.TimeLoss;
+import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.persistence.TimeLossConverter;
 
 /**

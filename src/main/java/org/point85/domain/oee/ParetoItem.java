@@ -1,4 +1,4 @@
-package org.point85.domain.performance;
+package org.point85.domain.oee;
 
 import java.math.BigDecimal;
 import java.time.Duration;

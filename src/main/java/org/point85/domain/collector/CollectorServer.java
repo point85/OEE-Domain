@@ -652,7 +652,7 @@ public class CollectorServer
 					+ event.getReason().getLossCategory());
 		}
 
-		AvailabilityHistory history = new AvailabilityHistory(event);
+		AvailabilityRecord history = new AvailabilityRecord(event);
 		history.setReason(event.getReason());
 
 		PersistenceService.instance().persist(history);
@@ -663,12 +663,12 @@ public class CollectorServer
 			logger.info("Job change " + event.getJob());
 		}
 
-		SetupHistory history = new SetupHistory(event);
+		SetupRecord history = new SetupRecord(event);
 
 		PersistenceService.instance().persist(history);
 	}
 
-	public void saveProductionHistory(ResolvedEvent event) throws Exception {
+	public void saveProductionRecord(ResolvedEvent event) throws Exception {
 		if (logger.isInfoEnabled()) {
 			logger.info("Production " + event.getQuantity() + " for type " + event.getResolverType());
 		}
@@ -678,21 +678,7 @@ public class CollectorServer
 		UnitOfMeasure uom = equipment.getUOM(material, event.getResolverType());
 		event.getQuantity().setUOM(uom);
 
-		ProductionHistory history = new ProductionHistory(event);
-		PersistenceService.instance().persist(history);
-	}
-
-	public void saveProductionSummary(LossSummary summary) throws Exception {
-		if (logger.isInfoEnabled()) {
-			logger.info("Production " + summary.getQuantity() + " for type " + summary.getResolverType());
-		}
-
-		Equipment equipment = summary.getEquipment();
-		Material material = summary.getMaterial();
-		UnitOfMeasure uom = equipment.getUOM(material, summary.getResolverType());
-		summary.getQuantity().setUOM(uom);
-
-		ProductionSummary history = new ProductionSummary(summary);
+		ProductionRecord history = new ProductionRecord(event);
 		PersistenceService.instance().persist(history);
 	}
 
@@ -952,7 +938,7 @@ public class CollectorServer
 		case PROD_GOOD:
 		case PROD_REJECT:
 		case PROD_STARTUP:
-			saveProductionHistory(resolvedEvent);
+			saveProductionRecord(resolvedEvent);
 			break;
 
 		default:

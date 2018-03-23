@@ -3,7 +3,7 @@ package org.point85.domain.persistence;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-import org.point85.domain.performance.TimeLoss;
+import org.point85.domain.oee.TimeLoss;
 
 @Converter
 public class TimeLossConverter implements AttributeConverter<TimeLoss, String> {

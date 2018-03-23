@@ -1,4 +1,4 @@
-package org.point85.domain.performance;
+package org.point85.domain.oee;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -317,6 +317,10 @@ public class EquipmentLoss {
 	}
 
 	private Duration convertQuantity(Quantity quantity) throws Exception {
+		if (quantity == null) {
+			return Duration.ZERO;
+		}
+		
 		Quantity irr = getDesignSpeedQuantity();
 		
 		Quantity timeQty = quantity.divide(irr).convert(Unit.SECOND);

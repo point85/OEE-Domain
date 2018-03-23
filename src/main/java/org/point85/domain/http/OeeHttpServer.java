@@ -9,7 +9,7 @@ import java.util.Map;
 import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
-import org.point85.domain.performance.TimeLoss;
+import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.PlantEntity;

@@ -1,4 +1,4 @@
-package org.point85.domain.performance;
+package org.point85.domain.oee;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,20 +6,10 @@ import java.util.List;
 import javafx.scene.paint.Color;
 
 public enum TimeLoss {
-	NO_LOSS("No Loss"), NOT_SCHEDULED("Not Scheduled"), UNSCHEDULED("Unscheduled"), PLANNED_DOWNTIME(
+	NO_LOSS("Running"), NOT_SCHEDULED("Not Scheduled"), UNSCHEDULED("Unscheduled"), PLANNED_DOWNTIME(
 			"Planned Downtime"), SETUP("Setup"), UNPLANNED_DOWNTIME("Unplanned Downtime"), MINOR_STOPPAGES(
-					"Minor Stoppages"), REDUCED_SPEED(
-							"Reduced Speed"), REJECT_REWORK("Reject & Rework"), STARTUP_YIELD("Startup & Yield");
-
-	private String displayString;
-
-	private TimeLoss(String displayString) {
-		this.displayString = displayString;
-	}
-
-	public String getDisplayString() {
-		return displayString;
-	}
+					"Stoppages"), REDUCED_SPEED(
+							"Reduced Speed"), REJECT_REWORK("Reject/Rework"), STARTUP_YIELD("Startup/Yield");
 
 	// database values
 	public static final String NO_LOSS_VALUE = "NLOSS";
@@ -32,6 +22,16 @@ public enum TimeLoss {
 	public static final String REDUCED_SPEED_VALUE = "SPEED";
 	public static final String REJECT_REWORK_VALUE = "REJECT";
 	public static final String STARTUP_YIELD_VALUE = "START";
+	
+	private String displayString;
+
+	private TimeLoss(String displayString) {
+		this.displayString = displayString;
+	}
+
+	public String getDisplayString() {
+		return displayString;
+	}
 
 	public static List<TimeLoss> getAvailabilityLosses() {
 		List<TimeLoss> losses = new ArrayList<>(3);

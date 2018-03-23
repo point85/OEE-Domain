@@ -1,6 +1,6 @@
 package org.point85.domain.messaging;
 
-import org.point85.domain.performance.TimeLoss;
+import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
 import org.point85.domain.script.ResolvedEvent;

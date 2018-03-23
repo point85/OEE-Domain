@@ -1,4 +1,4 @@
-package org.point85.domain.performance;
+package org.point85.domain.oee;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -8,10 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.point85.domain.collector.AvailabilityHistory;
-import org.point85.domain.collector.AvailabilitySummary;
-import org.point85.domain.collector.BaseSummary;
-import org.point85.domain.collector.ProductionSummary;
+import org.point85.domain.collector.AvailabilityRecord;
+import org.point85.domain.collector.BaseRecord;
+import org.point85.domain.collector.ProductionRecord;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentMaterial;
@@ -47,9 +46,9 @@ public class EquipmentLossManager {
 		equipmentLoss.setDesignSpeed(eqm.getRunRate());
 
 		// time from measured production
-		List<ProductionSummary> productions = PersistenceService.instance().fetchProductionSummary(equipment, from, to);
+		List<ProductionRecord> productions = PersistenceService.instance().fetchProduction(equipment, from, to);
 
-		for (ProductionSummary summary : productions) {
+		for (ProductionRecord summary : productions) {
 			checkTimePeriod(summary, equipmentLoss);
 
 			Quantity quantity = summary.getQuantity();
@@ -75,10 +74,10 @@ public class EquipmentLossManager {
 		// System.out.println(equipmentLoss.toString());
 
 		// time from measured availability losses
-		List<AvailabilitySummary> availabilities = PersistenceService.instance().fetchAvailabilitySummary(equipment,
+		List<AvailabilityRecord> availabilities = PersistenceService.instance().fetchAvailability(equipment,
 				from, to);
 
-		for (AvailabilitySummary summary : availabilities) {
+		for (AvailabilityRecord summary : availabilities) {
 			checkTimePeriod(summary, equipmentLoss);
 
 			TimeLoss loss = summary.getReason().getLossCategory();
@@ -101,7 +100,7 @@ public class EquipmentLossManager {
 		// System.out.println(equipmentLoss.toString());
 	}
 
-	private static void checkTimePeriod(BaseSummary summary, EquipmentLoss equipmentLoss) {
+	private static void checkTimePeriod(BaseRecord summary, EquipmentLoss equipmentLoss) {
 		// beginning time
 		OffsetDateTime start = summary.getStartTime();
 		OffsetDateTime end = summary.getEndTime();
@@ -118,17 +117,17 @@ public class EquipmentLossManager {
 
 	public static List<ParetoItem> fetchParetoData(EquipmentLoss equipmentLoss, TimeLoss loss) throws Exception {
 		// query for the history for this loss
-		List<AvailabilityHistory> histories = PersistenceService.instance().fetchAvailabilityHistory(
+		List<AvailabilityRecord> histories = PersistenceService.instance().fetchAvailabilityRecords(
 				equipmentLoss.getEquipment(), loss, equipmentLoss.getStartDateTime(), equipmentLoss.getEndDateTime());
 
 		// get last event
-		AvailabilityHistory lastHistory = PersistenceService.instance()
-				.fetchLastAvailabilityHistory(equipmentLoss.getEquipment());
+		AvailabilityRecord lastHistory = PersistenceService.instance()
+				.fetchLastAvailabilityRecord(equipmentLoss.getEquipment());
 
 		if (lastHistory != null && lastHistory.getReason().getLossCategory().equals(loss)) {
 
 			// still an open event for this loss, add event to this time
-			lastHistory.setSourceTimestamp(equipmentLoss.getEndDateTime());
+			lastHistory.setStartTime(equipmentLoss.getEndDateTime());
 			histories.add(lastHistory);
 		}
 		
@@ -138,9 +137,9 @@ public class EquipmentLossManager {
 
 		OffsetDateTime end = null;
 
-		for (AvailabilityHistory history : histories) {
+		for (AvailabilityRecord history : histories) {
 			Reason reason = history.getReason();
-			OffsetDateTime start = history.getSourceTimestamp();
+			OffsetDateTime start = history.getStartTime();
 			
 			if (start == null) {
 				continue;

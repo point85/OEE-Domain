@@ -17,6 +17,11 @@ public class OffsetDateTimeConverter implements AttributeConverter<OffsetDateTim
 
 	@Override
 	public OffsetDateTime convertToEntityAttribute(String timestamp) {
+		OffsetDateTime odt = null;
+		if (timestamp == null) {
+			return odt;
+		}
+		
 		String toConvert = timestamp;
 		if (timestamp.indexOf('T') == -1) {
 			// missing T
@@ -33,7 +38,6 @@ public class OffsetDateTimeConverter implements AttributeConverter<OffsetDateTim
 				toConvert = sb.toString();
 			}
 		}
-		OffsetDateTime odt = null;
 
 		try {
 			odt = DomainUtils.offsetDateTimeFromString(toConvert);
