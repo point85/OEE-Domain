@@ -39,7 +39,10 @@ public class EquipmentLoss {
 
 	public EquipmentLoss(Equipment equipment) {
 		this.equipment = equipment;
-		
+		resetLosses();
+	}
+	
+	private void resetLosses() {
 		setLoss(TimeLoss.NO_LOSS, Duration.ZERO);
 		setLoss(TimeLoss.UNSCHEDULED, Duration.ZERO);
 		setLoss(TimeLoss.MINOR_STOPPAGES, Duration.ZERO);
@@ -50,6 +53,20 @@ public class EquipmentLoss {
 		setLoss(TimeLoss.UNPLANNED_DOWNTIME, Duration.ZERO);
 		setLoss(TimeLoss.NOT_SCHEDULED, Duration.ZERO);
 		setLoss(TimeLoss.STARTUP_YIELD, Duration.ZERO);
+	}
+	
+	public void reset() {
+		resetLosses();
+		
+		material = null;
+		startDateTime = null;
+		endDateTime = null;
+		
+		goodQuantity = null;
+		startupQuantity = null;
+		rejectQuantity = null;
+		
+		designSpeed = null;
 	}
 
 	public List<ParetoItem> getLossItems(Unit timeUnit) throws Exception {

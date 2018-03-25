@@ -937,27 +937,6 @@ public class PersistenceService {
 		}
 	}
 
-	public SetupRecord fetchLastSetupRecord(Equipment equipment) {
-		final String LAST_SETUP = "Setup.Last";
-
-		if (namedQueryMap.get(LAST_SETUP) == null) {
-			createNamedQuery(LAST_SETUP,
-					"SELECT s FROM SetupRecord s WHERE s.equipment = :equipment ORDER BY s.startTime DESC");
-		}
-
-		TypedQuery<SetupRecord> query = getEntityManager().createNamedQuery(LAST_SETUP, SetupRecord.class);
-		query.setParameter("equipment", equipment);
-		query.setMaxResults(1);
-		List<SetupRecord> records = query.getResultList();
-
-		SetupRecord record = null;
-		if (records.size() == 1) {
-			record = records.get(0);
-		}
-
-		return record;
-	}
-
 	public List<EquipmentMaterial> fetchEquipmentMaterials(UnitOfMeasure uom) throws Exception {
 		final String EQM_XREF = "EQM.XRef";
 
@@ -1120,13 +1099,11 @@ public class PersistenceService {
 		return null;
 	}
 
-	public List<AvailabilityRecord> fetchAvailability(Equipment equipment, OffsetDateTime from,
-			OffsetDateTime to) {
+	public List<AvailabilityRecord> fetchAvailability(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
 		final String AVAIL_RECORDS = "Availability.FromTo";
 
 		if (namedQueryMap.get(AVAIL_RECORDS) == null) {
-			createNamedQuery(AVAIL_RECORDS,
-					"SELECT a FROM AvailabilityRecord a WHERE a.equipment = :equipment AND (a.startTime BETWEEN :from AND :to)  AND (a.endTime BETWEEN :from AND :to)");
+			createNamedQuery(AVAIL_RECORDS, composeAvailabilityQuery());
 		}
 
 		TypedQuery<AvailabilityRecord> query = getEntityManager().createNamedQuery(AVAIL_RECORDS,
@@ -1143,11 +1120,10 @@ public class PersistenceService {
 
 		if (namedQueryMap.get(PROD_RECORDS) == null) {
 			createNamedQuery(PROD_RECORDS,
-					"SELECT p FROM ProductionRecord p WHERE p.equipment = :equipment AND (p.startTime BETWEEN :from AND :to)  AND (p.endTime BETWEEN :from AND :to)");
+					"SELECT p FROM ProductionRecord p WHERE p.equipment = :equipment AND ((p.startTime  BETWEEN :from AND :to) OR (p.endTime  BETWEEN :from AND :to))");
 		}
 
-		TypedQuery<ProductionRecord> query = getEntityManager().createNamedQuery(PROD_RECORDS,
-				ProductionRecord.class);
+		TypedQuery<ProductionRecord> query = getEntityManager().createNamedQuery(PROD_RECORDS, ProductionRecord.class);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
@@ -1155,7 +1131,7 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public AvailabilityRecord fetchLastAvailabilityRecord(Equipment equipment) {
+	public AvailabilityRecord fetchLastAvailability(Equipment equipment) {
 		final String LAST_AVAIL = "Availability.Last";
 
 		if (namedQueryMap.get(LAST_AVAIL) == null) {
@@ -1176,13 +1152,18 @@ public class PersistenceService {
 
 		return record;
 	}
-	
-	public List<AvailabilityRecord> fetchAvailabilityRecords(Equipment equipment, TimeLoss loss, OffsetDateTime from, OffsetDateTime to) {
+
+	private String composeAvailabilityQuery() {
+		return "SELECT a FROM AvailabilityRecord a WHERE a.equipment = :equipment AND ((a.startTime  BETWEEN :from AND :to) OR (a.endTime  BETWEEN :from AND :to))";
+	}
+
+	public List<AvailabilityRecord> fetchAvailability(Equipment equipment, TimeLoss loss, OffsetDateTime from,
+			OffsetDateTime to) {
 		final String AVAIL_LOSS_HIST = "Availability.LossHistory";
 
 		if (namedQueryMap.get(AVAIL_LOSS_HIST) == null) {
 			createNamedQuery(AVAIL_LOSS_HIST,
-					"SELECT a FROM AvailabilityRecord a WHERE a.equipment = :equipment AND a.reason.timeLoss = :loss AND (a.startTime  BETWEEN :from AND :to)  ORDER BY a.startTime ASC ");
+					composeAvailabilityQuery() + " AND a.reason.timeLoss = :loss ORDER BY a.startTime ASC ");
 		}
 
 		TypedQuery<AvailabilityRecord> query = getEntityManager().createNamedQuery(AVAIL_LOSS_HIST,
@@ -1192,6 +1173,22 @@ public class PersistenceService {
 		query.setParameter("from", from);
 		query.setParameter("to", to);
 
+		return query.getResultList();
+	}
+	
+	public List<SetupRecord> fetchSetupForPeriod(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
+		final String SETUP_PERIOD = "Setup.Period";
+
+		if (namedQueryMap.get(SETUP_PERIOD) == null) {
+			createNamedQuery(SETUP_PERIOD,
+					"SELECT s FROM SetupRecord s WHERE s.equipment = :equipment AND s.startTime  <= :from AND (s.endTime  >= :to OR s.endTime IS NULL)");
+		}
+
+		TypedQuery<SetupRecord> query = getEntityManager().createNamedQuery(SETUP_PERIOD, SetupRecord.class);
+		query.setParameter("equipment", equipment);
+		query.setParameter("from", from);
+		query.setParameter("to", to);
+		
 		return query.getResultList();
 	}
 

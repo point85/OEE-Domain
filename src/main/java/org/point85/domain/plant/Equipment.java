@@ -10,8 +10,6 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 
-import org.point85.domain.collector.SetupRecord;
-import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.EventResolverType;
 import org.point85.domain.uom.UnitOfMeasure;
@@ -141,10 +139,6 @@ public class Equipment extends PlantEntity {
 
 	public boolean hasEquipmentMaterial(EquipmentMaterial equipmentMaterial) {
 		return equipmentMaterials.contains(equipmentMaterial);
-	}
-
-	public SetupRecord getLastSetup() {
-		return PersistenceService.instance().fetchLastSetupRecord(this);
 	}
 
 	public UnitOfMeasure getUOM(Material material, EventResolverType resolverType) throws Exception {

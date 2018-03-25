@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
+import org.point85.domain.schedule.Shift;
 import org.point85.domain.uom.Quantity;
 
 public class ResolvedEvent {
@@ -18,6 +19,7 @@ public class ResolvedEvent {
 	private Material material;
 	private Quantity quantity;
 	private Equipment equipment;
+	private Shift shift;
 
 	public ResolvedEvent() {
 
@@ -114,5 +116,13 @@ public class ResolvedEvent {
 		sb.append(quantity != null ? quantity.toString() : "");
 
 		return sb.toString();
+	}
+
+	public Shift getShift() {
+		return shift;
+	}
+
+	public void setShift(Shift shift) {
+		this.shift = shift;
 	}
 }

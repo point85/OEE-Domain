@@ -20,14 +20,14 @@ import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.uom.Quantity;
 
 public class EquipmentLossManager {
-	public static void calculateEquipmentLoss(EquipmentLoss equipmentLoss) throws Exception {
+	public static void calculateEquipmentLoss(EquipmentLoss equipmentLoss, OffsetDateTime from, OffsetDateTime to) throws Exception {
 
 		Equipment equipment = equipmentLoss.getEquipment();
 
 		Material material = equipmentLoss.getMaterial();
 
-		OffsetDateTime from = equipmentLoss.getStartDateTime();
-		OffsetDateTime to = equipmentLoss.getEndDateTime();
+		//OffsetDateTime from = equipmentLoss.getStartDateTime();
+		//OffsetDateTime to = equipmentLoss.getEndDateTime();
 
 		// from the work schedule
 		WorkSchedule schedule = equipment.findWorkSchedule();
@@ -100,29 +100,55 @@ public class EquipmentLossManager {
 		// System.out.println(equipmentLoss.toString());
 	}
 
-	private static void checkTimePeriod(BaseRecord summary, EquipmentLoss equipmentLoss) {
+	private static void checkTimePeriod(BaseRecord record, EquipmentLoss equipmentLoss) {
 		// beginning time
-		OffsetDateTime start = summary.getStartTime();
-		OffsetDateTime end = summary.getEndTime();
+		OffsetDateTime recordStart = record.getStartTime();
+		OffsetDateTime recordEnd = record.getEndTime();
+		
+		OffsetDateTime lossStart = equipmentLoss.getStartDateTime();
+		OffsetDateTime lossEnd = equipmentLoss.getEndDateTime();
+		
+		if (lossStart == null) {
+			equipmentLoss.setStartDateTime(recordStart);
+		} else {
+			if (recordStart.isBefore(lossStart)) {
+				equipmentLoss.setStartDateTime(recordStart);
+			}
+		}
+		
+		if (lossEnd == null) {
+			equipmentLoss.setEndDateTime(recordEnd);
+		} else {
+			if (recordEnd.isAfter(lossEnd)) {
+				equipmentLoss.setEndDateTime(recordEnd);
+			}
+		}
+		/*
 
-		if (equipmentLoss.getStartDateTime() == null || start.compareTo(equipmentLoss.getStartDateTime()) == -1) {
-			equipmentLoss.setStartDateTime(start);
+
+		if (lossStart == null || recordStart.compareTo(lossStart) == -1) {
+			equipmentLoss.setStartDateTime(recordStart);
 		}
 
 		// ending time
-		if (equipmentLoss.getEndDateTime() == null || end.compareTo(equipmentLoss.getEndDateTime()) == 1) {
-			equipmentLoss.setEndDateTime(end);
+		if (lossEnd== null || recordEnd.compareTo(lossEnd) == 1) {
+			equipmentLoss.setEndDateTime(recordEnd);
 		}
+		*/
 	}
 
 	public static List<ParetoItem> fetchParetoData(EquipmentLoss equipmentLoss, TimeLoss loss) throws Exception {
 		// query for the history for this loss
-		List<AvailabilityRecord> histories = PersistenceService.instance().fetchAvailabilityRecords(
-				equipmentLoss.getEquipment(), loss, equipmentLoss.getStartDateTime(), equipmentLoss.getEndDateTime());
+		OffsetDateTime startTime = equipmentLoss.getStartDateTime();
+		OffsetDateTime endTime = equipmentLoss.getEndDateTime();
+		
+		List<AvailabilityRecord> records = PersistenceService.instance().fetchAvailability(
+				equipmentLoss.getEquipment(), loss, startTime, endTime);
 
 		// get last event
+		/*
 		AvailabilityRecord lastHistory = PersistenceService.instance()
-				.fetchLastAvailabilityRecord(equipmentLoss.getEquipment());
+				.fetchLastAvailability(equipmentLoss.getEquipment());
 
 		if (lastHistory != null && lastHistory.getReason().getLossCategory().equals(loss)) {
 
@@ -130,27 +156,36 @@ public class EquipmentLossManager {
 			lastHistory.setStartTime(equipmentLoss.getEndDateTime());
 			histories.add(lastHistory);
 		}
-		
-		// TODO event previous to the startDateTime
+		*/
 
+		// build up event durations
 		Map<Reason, Duration> paretoMap = new HashMap<>();
 
-		OffsetDateTime end = null;
-
-		for (AvailabilityRecord history : histories) {
-			Reason reason = history.getReason();
-			OffsetDateTime start = history.getStartTime();
+		for (int i = 0; i <  records.size(); i++) {
+			AvailabilityRecord record = records.get(i);
 			
-			if (start == null) {
-				continue;
+			Reason reason = record.getReason();
+			OffsetDateTime start = record.getStartTime();
+			Duration eventDuration = record.getDuration();
+			
+			Duration duration = eventDuration;
+			
+			// check first record for edge time
+			if (i == 0) {
+				// first record
+				if (reason.getLossCategory().equals(loss)) {
+					// get time in interval
+					Duration edge = Duration.between(start, startTime);
+					duration = eventDuration.minus(edge);
+				}
+			}  else if(i == (records.size() - 1)) {
+				// last record
+				if (reason.getLossCategory().equals(loss)) {
+					// get time in interval
+					duration = Duration.between(start, endTime);
+				}
 			}
-
-			if (end == null) {
-				end = start;
-			}
-
-			Duration duration = Duration.between(end, start);
-
+			
 			Duration sum = paretoMap.get(reason);
 			if (sum == null) {
 				// new reason
@@ -159,10 +194,9 @@ public class EquipmentLossManager {
 				// add time to existing reason
 				paretoMap.put(reason, sum.plus(duration));
 			}
-
-			end = start;
 		}
 
+		// create the items to chart
 		List<ParetoItem> items = new ArrayList<>(paretoMap.entrySet().size());
 
 		for (Entry<Reason, Duration> entry : paretoMap.entrySet()) {

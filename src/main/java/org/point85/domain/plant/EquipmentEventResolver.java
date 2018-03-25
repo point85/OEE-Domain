@@ -11,11 +11,14 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.point85.domain.persistence.PersistenceService;
+import org.point85.domain.schedule.Shift;
+import org.point85.domain.schedule.ShiftInstance;
+import org.point85.domain.schedule.WorkSchedule;
+import org.point85.domain.script.EventResolver;
+import org.point85.domain.script.EventResolverType;
 import org.point85.domain.script.OeeContext;
 import org.point85.domain.script.ResolvedEvent;
 import org.point85.domain.script.ResolverFunction;
-import org.point85.domain.script.EventResolver;
-import org.point85.domain.script.EventResolverType;
 import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.UnitOfMeasure;
 import org.slf4j.Logger;
@@ -142,6 +145,19 @@ public class EquipmentEventResolver {
 		event.setTimestamp(dateTime);
 		event.setInputValue(sourceValue);
 		event.setOutputValue(result);
+		
+		// set shift
+		WorkSchedule schedule = equipment.findWorkSchedule();
+		
+		if (schedule != null) {
+			List<ShiftInstance> shiftInstances = schedule.getShiftInstancesForTime(dateTime.toLocalDateTime());
+			
+			if (shiftInstances.size() > 0) {
+				// pick first one
+				Shift shift = shiftInstances.get(0).getShift();
+				event.setShift(shift);
+			}
+		}
 
 		// set material
 		Material material = null;
