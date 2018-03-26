@@ -3,23 +3,24 @@ package org.point85.domain.oee;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Material;
+import org.point85.domain.plant.Reason;
 import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.Unit;
 
 public class EquipmentLoss {
 	// equipment
 	private Equipment equipment;
-	
+
 	// material
 	private Material material;
-	
+
 	// date and time accumulation starts
 	private OffsetDateTime startDateTime;
 
@@ -27,13 +28,16 @@ public class EquipmentLoss {
 	private OffsetDateTime endDateTime;
 
 	// map of losses
-	private ConcurrentMap<TimeLoss, Duration> lossMap = new ConcurrentHashMap<>();
+	private Map<TimeLoss, Duration> lossMap = new HashMap<>();
+
+	// map of reasons
+	private Map<TimeLoss, Map<Reason, Duration>> reasonMap = new HashMap<>();
 
 	// quantities produced
 	private Quantity goodQuantity;
 	private Quantity startupQuantity;
 	private Quantity rejectQuantity;
-	
+
 	// equipment design speed
 	private Quantity designSpeed;
 
@@ -41,8 +45,9 @@ public class EquipmentLoss {
 		this.equipment = equipment;
 		resetLosses();
 	}
-	
+
 	private void resetLosses() {
+		// summary losses
 		setLoss(TimeLoss.NO_LOSS, Duration.ZERO);
 		setLoss(TimeLoss.UNSCHEDULED, Duration.ZERO);
 		setLoss(TimeLoss.MINOR_STOPPAGES, Duration.ZERO);
@@ -53,19 +58,31 @@ public class EquipmentLoss {
 		setLoss(TimeLoss.UNPLANNED_DOWNTIME, Duration.ZERO);
 		setLoss(TimeLoss.NOT_SCHEDULED, Duration.ZERO);
 		setLoss(TimeLoss.STARTUP_YIELD, Duration.ZERO);
+
+		// reason losses
+		reasonMap.put(TimeLoss.NO_LOSS, new HashMap<>());
+		reasonMap.put(TimeLoss.UNSCHEDULED, new HashMap<>());
+		reasonMap.put(TimeLoss.MINOR_STOPPAGES, new HashMap<>());
+		reasonMap.put(TimeLoss.PLANNED_DOWNTIME, new HashMap<>());
+		reasonMap.put(TimeLoss.REDUCED_SPEED, new HashMap<>());
+		reasonMap.put(TimeLoss.REJECT_REWORK, new HashMap<>());
+		reasonMap.put(TimeLoss.SETUP, new HashMap<>());
+		reasonMap.put(TimeLoss.UNPLANNED_DOWNTIME, new HashMap<>());
+		reasonMap.put(TimeLoss.NOT_SCHEDULED, new HashMap<>());
+		reasonMap.put(TimeLoss.STARTUP_YIELD, new HashMap<>());
 	}
-	
+
 	public void reset() {
 		resetLosses();
-		
+
 		material = null;
 		startDateTime = null;
 		endDateTime = null;
-		
+
 		goodQuantity = null;
 		startupQuantity = null;
 		rejectQuantity = null;
-		
+
 		designSpeed = null;
 	}
 
@@ -114,9 +131,38 @@ public class EquipmentLoss {
 		lossMap.put(category, duration);
 	}
 
-	public void incrementLoss(TimeLoss category, Duration duration) {
+	public void incrementReasonLoss(Reason reason, Duration duration) {
+		TimeLoss loss = reason.getLossCategory();
+		Map<Reason, Duration> losses = reasonMap.get(loss);
+
+		Duration reasonDuration = losses.get(reason);
+
+		if (reasonDuration == null) {
+			reasonDuration = Duration.ZERO;
+		}
+
+		Duration newDuration = reasonDuration.plus(duration);
+		losses.put(reason, newDuration);
+	}
+
+	public void incrementLoss(Reason reason, Duration duration) {
+		TimeLoss category = reason.getLossCategory();
+
+		// summary map
 		Duration newDuration = lossMap.get(category).plus(duration);
 		setLoss(category, newDuration);
+
+		// reason map too
+		incrementReasonLoss(reason, duration);
+	}
+
+	public Map<Reason, Duration> getLossReasonsByCategory(TimeLoss loss) {
+		Map<Reason, Duration> losses = reasonMap.get(loss);
+
+		if (losses == null) {
+			losses = new HashMap<>();
+		}
+		return losses;
 	}
 
 	public Duration getRequiredOperationsTime() {
@@ -226,13 +272,13 @@ public class EquipmentLoss {
 	public void calculateReducedSpeedLoss() throws Exception {
 		Duration goodDur = convertQuantity(goodQuantity);
 		setLoss(TimeLoss.NO_LOSS, goodDur);
-		
+
 		Duration rejectDur = convertQuantity(rejectQuantity);
 		setLoss(TimeLoss.REJECT_REWORK, rejectDur);
-		
+
 		Duration startupDur = convertQuantity(startupQuantity);
 		setLoss(TimeLoss.STARTUP_YIELD, startupDur);
-		
+
 		Duration npt = getNetProductionTime();
 
 		// add up quality losses
@@ -244,26 +290,25 @@ public class EquipmentLoss {
 		Duration noLoss = getLoss(TimeLoss.NO_LOSS);
 		Duration reducedSpeed = npt.minus(quality).minus(noLoss);
 		setLoss(TimeLoss.REDUCED_SPEED, reducedSpeed);
-		
+
 		System.out.println("NPT: " + npt);
 		System.out.println("Reject: " + reject);
 		System.out.println("Startup: " + startup);
 		System.out.println("Quality: " + quality);
 		System.out.println("No loss: " + noLoss);
 		System.out.println("Reduced: " + reducedSpeed);
-		
+
 		System.out.println("Good Qty: " + this.goodQuantity);
 		System.out.println("Reject Qty: " + this.rejectQuantity);
 		System.out.println("Startup Qty: " + this.startupQuantity);
 	}
 
 	/*
-	public Duration convertUnitCountToTimeLoss(Quantity loss, Quantity idealSpeed) throws Exception {
-		Quantity timeLoss = loss.divide(idealSpeed).convert(Unit.SECOND);
-		Duration duration = Duration.ofSeconds((long) timeLoss.getAmount());
-		return duration;
-	}
-	*/
+	 * public Duration convertUnitCountToTimeLoss(Quantity loss, Quantity
+	 * idealSpeed) throws Exception { Quantity timeLoss =
+	 * loss.divide(idealSpeed).convert(Unit.SECOND); Duration duration =
+	 * Duration.ofSeconds((long) timeLoss.getAmount()); return duration; }
+	 */
 
 	public OffsetDateTime getStartDateTime() {
 		return startDateTime;
@@ -289,7 +334,7 @@ public class EquipmentLoss {
 			sb.append("From: ").append(startDateTime.toString()).append("To: ").append(endDateTime.toString())
 					.append(", Duration: ").append(getDuration().toString());
 		}
-		
+
 		// quantities
 		sb.append("\nGood: ");
 		if (goodQuantity != null) {
@@ -337,12 +382,12 @@ public class EquipmentLoss {
 		if (quantity == null) {
 			return Duration.ZERO;
 		}
-		
+
 		Quantity irr = getDesignSpeedQuantity();
-		
+
 		Quantity timeQty = quantity.divide(irr).convert(Unit.SECOND);
 		long seconds = Double.valueOf(timeQty.getAmount()).longValue();
-		
+
 		Duration duration = Duration.ofSeconds(seconds);
 		return duration;
 	}
@@ -378,7 +423,7 @@ public class EquipmentLoss {
 	public void setRejectQuantity(Quantity rejectQuantity) {
 		this.rejectQuantity = rejectQuantity;
 	}
-	
+
 	public Quantity incrementGoodQuantity(Quantity quantity) throws Exception {
 		Quantity total = goodQuantity;
 

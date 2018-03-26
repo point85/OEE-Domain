@@ -1157,6 +1157,7 @@ public class PersistenceService {
 		return "SELECT a FROM AvailabilityRecord a WHERE a.equipment = :equipment AND ((a.startTime  BETWEEN :from AND :to) OR (a.endTime  BETWEEN :from AND :to))";
 	}
 
+	/*
 	public List<AvailabilityRecord> fetchAvailability(Equipment equipment, TimeLoss loss, OffsetDateTime from,
 			OffsetDateTime to) {
 		final String AVAIL_LOSS_HIST = "Availability.LossHistory";
@@ -1175,6 +1176,7 @@ public class PersistenceService {
 
 		return query.getResultList();
 	}
+	*/
 	
 	public List<SetupRecord> fetchSetupForPeriod(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
 		final String SETUP_PERIOD = "Setup.Period";
