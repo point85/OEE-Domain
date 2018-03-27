@@ -3,7 +3,6 @@ package org.point85.domain.oee;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -46,7 +45,7 @@ public class EquipmentLossManager {
 		List<ProductionRecord> productions = PersistenceService.instance().fetchProduction(equipment, from, to);
 
 		for (ProductionRecord summary : productions) {
-			checkTimePeriod(summary, equipmentLoss);
+			checkTimePeriod(summary, equipmentLoss, from, to);
 
 			Quantity quantity = summary.getQuantity();
 
@@ -69,16 +68,40 @@ public class EquipmentLossManager {
 		}
 
 		// time from measured availability losses
-		List<AvailabilityRecord> availabilities = PersistenceService.instance().fetchAvailability(equipment, from, to);
+		List<AvailabilityRecord> records = PersistenceService.instance().fetchAvailability(equipment, from, to);
 
-		for (AvailabilityRecord record : availabilities) {
-			checkTimePeriod(record, equipmentLoss);
+		for (int i = 0; i < records.size(); i++) {
+			AvailabilityRecord record = records.get(i);
+
+			checkTimePeriod(record, equipmentLoss, from, to);
+
+			Duration eventDuration = record.getDuration();
+
+			Duration duration = eventDuration;
+			OffsetDateTime start = record.getStartTime();
+			OffsetDateTime end = record.getEndTime();
+
+			// check first record for edge time
+			if (i == 0) {
+				// first record
+				if (from.isAfter(start)) {
+					// get time in interval
+					Duration edge = Duration.between(start, from);
+					duration = eventDuration.minus(edge);
+				}
+			} else if (i == (records.size() - 1)) {
+				// last record
+				if (end == null || to.isBefore(end)) {
+					// get time in interval
+					duration = Duration.between(start, to);
+				}
+			}
 
 			TimeLoss loss = record.getReason().getLossCategory();
-			equipmentLoss.incrementLoss(record.getReason(), record.getDuration());
-			
-			System.out.println("Reason: " + record.getReason().getName() + ", loss: " + loss + ", duration: "
-					+ record.getDuration());
+			equipmentLoss.incrementLoss(record.getReason(), duration);
+
+			System.out
+					.println("Reason: " + record.getReason().getName() + ", loss: " + loss + ", duration: " + duration);
 		}
 
 		// compute reduced speed from the other losses
@@ -95,10 +118,18 @@ public class EquipmentLossManager {
 		}
 	}
 
-	private static void checkTimePeriod(BaseRecord record, EquipmentLoss equipmentLoss) {
+	private static void checkTimePeriod(BaseRecord record, EquipmentLoss equipmentLoss, OffsetDateTime from, OffsetDateTime to) {
 		// beginning time
 		OffsetDateTime recordStart = record.getStartTime();
 		OffsetDateTime recordEnd = record.getEndTime();
+		
+		if (recordStart.isBefore(from)) {
+			recordStart = from;
+		}
+		
+		if (recordEnd == null || recordEnd.isAfter(to)) {
+			recordEnd = to;
+		}
 
 		OffsetDateTime lossStart = equipmentLoss.getStartDateTime();
 		OffsetDateTime lossEnd = equipmentLoss.getEndDateTime();
@@ -114,69 +145,22 @@ public class EquipmentLossManager {
 		if (lossEnd == null) {
 			equipmentLoss.setEndDateTime(recordEnd);
 		} else {
-			if (recordEnd.isAfter(lossEnd)) {
+			if (recordEnd != null && recordEnd.isAfter(lossEnd)) {
 				equipmentLoss.setEndDateTime(recordEnd);
 			}
 		}
 	}
 
-	
 	public static List<ParetoItem> getParetoData(EquipmentLoss equipmentLoss, TimeLoss loss) throws Exception {
-		/*
-		// query for the history for this loss
-		OffsetDateTime startTime = equipmentLoss.getStartDateTime();
-		OffsetDateTime endTime = equipmentLoss.getEndDateTime();
-
-		List<AvailabilityRecord> records = PersistenceService.instance().fetchAvailability(equipmentLoss.getEquipment(),
-				loss, startTime, endTime);
-
-		// build up event durations
-		Map<Reason, Duration> paretoMap = new HashMap<>();
-
-		for (int i = 0; i < records.size(); i++) {
-			AvailabilityRecord record = records.get(i);
-
-			Reason reason = record.getReason();
-			OffsetDateTime start = record.getStartTime();
-			Duration eventDuration = record.getDuration();
-
-			Duration duration = eventDuration;
-
-			// check first record for edge time
-			if (i == 0) {
-				// first record
-				if (reason.getLossCategory().equals(loss)) {
-					// get time in interval
-					Duration edge = Duration.between(start, startTime);
-					duration = eventDuration.minus(edge);
-				}
-			} else if (i == (records.size() - 1)) {
-				// last record
-				if (reason.getLossCategory().equals(loss)) {
-					// get time in interval
-					duration = Duration.between(start, endTime);
-				}
-			}
-
-			Duration sum = paretoMap.get(reason);
-			if (sum == null) {
-				// new reason
-				paretoMap.put(reason, duration);
-			} else {
-				// add time to existing reason
-				paretoMap.put(reason, sum.plus(duration));
-			}
-		}
-*/
 		// create the items to chart
 		Map<Reason, Duration> reasonMap = equipmentLoss.getLossReasonsByCategory(loss);
-		
+
 		List<ParetoItem> items = new ArrayList<>(reasonMap.entrySet().size());
 
 		for (Entry<Reason, Duration> entry : reasonMap.entrySet()) {
 			ParetoItem item = new ParetoItem(entry.getKey().getName(), entry.getValue());
 			items.add(item);
-			
+
 			System.out.println("Pareto Reason: " + entry.getKey().getName() + ", duration: " + entry.getValue());
 		}
 

@@ -146,6 +146,9 @@ public class EquipmentLoss {
 	}
 
 	public void incrementLoss(Reason reason, Duration duration) {
+		if (duration == null) {
+			return;
+		}
 		TimeLoss category = reason.getLossCategory();
 
 		// summary map

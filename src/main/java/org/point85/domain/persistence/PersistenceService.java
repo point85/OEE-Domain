@@ -33,7 +33,6 @@ import org.point85.domain.collector.ProductionRecord;
 import org.point85.domain.collector.SetupRecord;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.messaging.MessagingSource;
-import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.opc.da.OpcDaSource;
 import org.point85.domain.opc.ua.OpcUaSource;
 import org.point85.domain.plant.Area;
@@ -1103,7 +1102,8 @@ public class PersistenceService {
 		final String AVAIL_RECORDS = "Availability.FromTo";
 
 		if (namedQueryMap.get(AVAIL_RECORDS) == null) {
-			createNamedQuery(AVAIL_RECORDS, composeAvailabilityQuery());
+			createNamedQuery(AVAIL_RECORDS,
+					"SELECT a FROM AvailabilityRecord a WHERE a.equipment = :equipment AND ((a.startTime  BETWEEN :from AND :to) OR (a.endTime  BETWEEN :from AND :to)) ORDER BY a.startTime ASC");
 		}
 
 		TypedQuery<AvailabilityRecord> query = getEntityManager().createNamedQuery(AVAIL_RECORDS,
@@ -1120,7 +1120,7 @@ public class PersistenceService {
 
 		if (namedQueryMap.get(PROD_RECORDS) == null) {
 			createNamedQuery(PROD_RECORDS,
-					"SELECT p FROM ProductionRecord p WHERE p.equipment = :equipment AND ((p.startTime  BETWEEN :from AND :to) OR (p.endTime  BETWEEN :from AND :to))");
+					"SELECT p FROM ProductionRecord p WHERE p.equipment = :equipment AND ((p.startTime  BETWEEN :from AND :to) OR (p.endTime  BETWEEN :from AND :to)) ORDER BY p.startTime ASC");
 		}
 
 		TypedQuery<ProductionRecord> query = getEntityManager().createNamedQuery(PROD_RECORDS, ProductionRecord.class);
@@ -1153,31 +1153,6 @@ public class PersistenceService {
 		return record;
 	}
 
-	private String composeAvailabilityQuery() {
-		return "SELECT a FROM AvailabilityRecord a WHERE a.equipment = :equipment AND ((a.startTime  BETWEEN :from AND :to) OR (a.endTime  BETWEEN :from AND :to))";
-	}
-
-	/*
-	public List<AvailabilityRecord> fetchAvailability(Equipment equipment, TimeLoss loss, OffsetDateTime from,
-			OffsetDateTime to) {
-		final String AVAIL_LOSS_HIST = "Availability.LossHistory";
-
-		if (namedQueryMap.get(AVAIL_LOSS_HIST) == null) {
-			createNamedQuery(AVAIL_LOSS_HIST,
-					composeAvailabilityQuery() + " AND a.reason.timeLoss = :loss ORDER BY a.startTime ASC ");
-		}
-
-		TypedQuery<AvailabilityRecord> query = getEntityManager().createNamedQuery(AVAIL_LOSS_HIST,
-				AvailabilityRecord.class);
-		query.setParameter("equipment", equipment);
-		query.setParameter("loss", loss);
-		query.setParameter("from", from);
-		query.setParameter("to", to);
-
-		return query.getResultList();
-	}
-	*/
-	
 	public List<SetupRecord> fetchSetupForPeriod(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
 		final String SETUP_PERIOD = "Setup.Period";
 
@@ -1190,7 +1165,7 @@ public class PersistenceService {
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
-		
+
 		return query.getResultList();
 	}
 
