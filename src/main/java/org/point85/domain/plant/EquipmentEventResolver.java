@@ -137,12 +137,12 @@ public class EquipmentEventResolver {
 		eventResolver.setLastValue(sourceValue);
 
 		// fill in resolution
-		ResolvedEvent event = new ResolvedEvent();
 		Equipment equipment = eventResolver.getEquipment();
-		event.setEquipment(equipment);
+		
+		ResolvedEvent event = new ResolvedEvent(equipment);
 		event.setResolverType(eventResolver.getType());
 		event.setItemId(sourceId);
-		event.setTimestamp(dateTime);
+		event.setStartTime(dateTime);
 		event.setInputValue(sourceValue);
 		event.setOutputValue(result);
 		

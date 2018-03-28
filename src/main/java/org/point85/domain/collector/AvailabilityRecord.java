@@ -34,6 +34,8 @@ public class AvailabilityRecord extends BaseRecord {
 
 	public AvailabilityRecord(ResolvedEvent event) {
 		super(event);
+		setReason(event.getReason());
+		setDuration(event.getDuration());
 	}
 
 	public Reason getReason() {

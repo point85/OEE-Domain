@@ -35,11 +35,11 @@ public class DomainUtils {
 	}
 
 	public static String zonedDateTimeToString(ZonedDateTime zdt) {
-		return (zdt != null) ? zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME) : "";
+		return (zdt != null) ? zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME) : null;
 	}
 
 	public static String offsetDateTimeToString(OffsetDateTime odt) {
-		return (odt != null) ? odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME) : "";
+		return (odt != null) ? odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME) : null;
 	}
 
 	public static OffsetDateTime offsetDateTimeFromString(String timestamp) throws Exception {

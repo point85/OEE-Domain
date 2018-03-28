@@ -24,7 +24,7 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 	}
 
 	public void fromResolvedEvent(ResolvedEvent event) {
-		this.setTimestamp(event.getTimestamp());
+		this.setTimestamp(event.getStartTime());
 		this.setResolverType(event.getResolverType());
 
 		// equipment

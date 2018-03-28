@@ -46,14 +46,11 @@ import org.point85.domain.opc.ua.OpcUaAsynchListener;
 import org.point85.domain.opc.ua.OpcUaSource;
 import org.point85.domain.opc.ua.UaOpcClient;
 import org.point85.domain.persistence.PersistenceService;
-import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentEventResolver;
-import org.point85.domain.plant.Material;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.EventResolverType;
 import org.point85.domain.script.OeeContext;
 import org.point85.domain.script.ResolvedEvent;
-import org.point85.domain.uom.UnitOfMeasure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -646,26 +643,41 @@ public class CollectorServer
 		getExecutorService().execute(new OpcDaTask(item));
 	}
 
-	private void saveAvailabilityRecord(ResolvedEvent event) throws Exception {
+	public void saveAvailabilityRecord(ResolvedEvent event) throws Exception {
 		if (logger.isInfoEnabled()) {
 			logger.info("Availability reason " + event.getReason().getName() + ", Loss Category: "
 					+ event.getReason().getLossCategory());
 		}
 
-		AvailabilityRecord history = new AvailabilityRecord(event);
-		history.setReason(event.getReason());
+		// next availability
+		AvailabilityRecord nextRecord = new AvailabilityRecord(event);
 
-		PersistenceService.instance().persist(history);
+		// close off last availability
+		AvailabilityRecord lastRecord = PersistenceService.instance().fetchLastAvailability(event.getEquipment());
+
+		if (lastRecord != null) {
+			lastRecord.setEndTime(nextRecord.getStartTime());
+		}
+
+		PersistenceService.instance().save(lastRecord, nextRecord);
 	}
 
-	private void saveSetupRecord(ResolvedEvent event) throws Exception {
+	public void saveSetupRecord(ResolvedEvent event) throws Exception {
 		if (logger.isInfoEnabled()) {
 			logger.info("Job change " + event.getJob());
 		}
 
-		SetupRecord history = new SetupRecord(event);
+		// next setup
+		SetupRecord nextRecord = new SetupRecord(event);
 
-		PersistenceService.instance().persist(history);
+		// close off last setup
+		SetupRecord lastRecord = PersistenceService.instance().fetchLastSetup(event.getEquipment());
+
+		if (lastRecord != null) {
+			lastRecord.setEndTime(nextRecord.getStartTime());
+		}
+
+		PersistenceService.instance().save(lastRecord, nextRecord);
 	}
 
 	public void saveProductionRecord(ResolvedEvent event) throws Exception {
@@ -673,13 +685,17 @@ public class CollectorServer
 			logger.info("Production " + event.getQuantity() + " for type " + event.getResolverType());
 		}
 
-		Equipment equipment = event.getEquipment();
-		Material material = event.getMaterial();
-		UnitOfMeasure uom = equipment.getUOM(material, event.getResolverType());
-		event.getQuantity().setUOM(uom);
+		// next production
+		ProductionRecord nextRecord = new ProductionRecord(event);
 
-		ProductionRecord history = new ProductionRecord(event);
-		PersistenceService.instance().persist(history);
+		// close off last production
+		ProductionRecord lastRecord = PersistenceService.instance().fetchLastProduction(event.getEquipment());
+
+		if (lastRecord != null) {
+			lastRecord.setEndTime(nextRecord.getStartTime());
+		}
+
+		PersistenceService.instance().save(lastRecord, nextRecord);
 	}
 
 	protected void onOtherResolution(ResolvedEvent resolvedItem) {

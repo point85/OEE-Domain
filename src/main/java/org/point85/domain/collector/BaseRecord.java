@@ -61,7 +61,8 @@ public class BaseRecord {
 		this.equipment = event.getEquipment();
 		this.material = event.getMaterial();
 		this.job = event.getJob();
-		this.startTime = event.getTimestamp();
+		this.startTime = event.getStartTime();
+		this.endTime = event.getEndTime();
 		this.resolverType = event.getResolverType();
 		this.shift = event.getShift();
 	}

@@ -1,5 +1,6 @@
 package org.point85.domain.script;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 
 import org.point85.domain.plant.Equipment;
@@ -13,7 +14,9 @@ public class ResolvedEvent {
 	private Object inputValue;
 	private Object outputValue;
 	private String itemId;
-	private OffsetDateTime timestamp;
+	private OffsetDateTime startTime;
+	private OffsetDateTime endTime;
+	private Duration duration;
 	private Reason reason;
 	private String job;
 	private Material material;
@@ -21,8 +24,8 @@ public class ResolvedEvent {
 	private Equipment equipment;
 	private Shift shift;
 
-	public ResolvedEvent() {
-
+	public ResolvedEvent(Equipment equipment) {
+		this.equipment = equipment;
 	}
 
 	public String getItemId() {
@@ -33,12 +36,20 @@ public class ResolvedEvent {
 		this.itemId = itemId;
 	}
 
-	public OffsetDateTime getTimestamp() {
-		return timestamp;
+	public OffsetDateTime getStartTime() {
+		return startTime;
 	}
 
-	public void setTimestamp(OffsetDateTime timestamp) {
-		this.timestamp = timestamp;
+	public void setStartTime(OffsetDateTime odt) {
+		this.startTime = odt;
+	}
+	
+	public OffsetDateTime getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(OffsetDateTime odt) {
+		this.endTime = odt;
 	}
 
 	public Reason getReason() {
@@ -108,7 +119,7 @@ public class ResolvedEvent {
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
-		sb.append("Timestamp: ").append(timestamp.toString()).append(", Equipment: ");
+		sb.append("Timestamp: ").append(startTime.toString()).append(", Equipment: ");
 		sb.append(equipment.getName()).append(", Reason: ");
 		sb.append((reason != null) ? reason.getName() : "").append(", Material: ");
 		sb.append((material != null) ? material.getName() : "").append(", Job: ");
@@ -124,5 +135,13 @@ public class ResolvedEvent {
 
 	public void setShift(Shift shift) {
 		this.shift = shift;
+	}
+
+	public Duration getDuration() {
+		return duration;
+	}
+
+	public void setDuration(Duration duration) {
+		this.duration = duration;
 	}
 }

@@ -247,6 +247,33 @@ public class PersistenceService {
 		}
 	}
 
+	// save the Persistent Object to the database
+	public void save(BaseRecord lastRecord, BaseRecord nextRecord) throws Exception {
+		EntityManager em = getEntityManager();
+		EntityTransaction txn = null;
+
+		try {
+			txn = em.getTransaction();
+			txn.begin();
+
+			// merge these entities into the PU and save
+			em.merge(lastRecord);
+			em.merge(nextRecord);
+
+			// commit transaction
+			txn.commit();
+		} catch (Exception e) {
+			// roll back transaction
+			if (txn != null && txn.isActive()) {
+				txn.rollback();
+				e.printStackTrace();
+			}
+			throw new Exception(e.getMessage());
+		} finally {
+			em.close();
+		}
+	}
+
 	// insert the record into the database
 	public void persist(BaseRecord object) throws Exception {
 		EntityManager em = getEntityManager();
@@ -1131,6 +1158,27 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
+	public ProductionRecord fetchLastProduction(Equipment equipment) {
+		final String LAST_PROD = "Production.Last";
+
+		if (namedQueryMap.get(LAST_PROD) == null) {
+			createNamedQuery(LAST_PROD,
+					"SELECT p FROM ProductionRecord p WHERE p.equipment = :equipment ORDER BY p.startTime DESC");
+		}
+
+		TypedQuery<ProductionRecord> query = getEntityManager().createNamedQuery(LAST_PROD, ProductionRecord.class);
+		query.setParameter("equipment", equipment);
+		query.setMaxResults(1);
+		List<ProductionRecord> records = query.getResultList();
+
+		ProductionRecord record = null;
+		if (records.size() == 1) {
+			record = records.get(0);
+		}
+
+		return record;
+	}
+
 	public AvailabilityRecord fetchLastAvailability(Equipment equipment) {
 		final String LAST_AVAIL = "Availability.Last";
 
@@ -1167,6 +1215,27 @@ public class PersistenceService {
 		query.setParameter("to", to);
 
 		return query.getResultList();
+	}
+
+	public SetupRecord fetchLastSetup(Equipment equipment) {
+		final String LAST_SETUP = "Setup.Last";
+
+		if (namedQueryMap.get(LAST_SETUP) == null) {
+			createNamedQuery(LAST_SETUP,
+					"SELECT s FROM SetupRecord s WHERE s.equipment = :equipment ORDER BY s.startTime DESC");
+		}
+
+		TypedQuery<SetupRecord> query = getEntityManager().createNamedQuery(LAST_SETUP, SetupRecord.class);
+		query.setParameter("equipment", equipment);
+		query.setMaxResults(1);
+		List<SetupRecord> records = query.getResultList();
+
+		SetupRecord record = null;
+		if (records.size() == 1) {
+			record = records.get(0);
+		}
+
+		return record;
 	}
 
 }
