@@ -2,6 +2,7 @@ package org.point85.domain.script;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 
 import org.point85.domain.collector.AvailabilityRecord;
 import org.point85.domain.collector.BaseRecord;
@@ -31,19 +32,26 @@ public class ResolvedEvent {
 		this.equipment = equipment;
 	}
 
-	public ResolvedEvent(BaseRecord record) {
-		this.resolverType = record.getType();
-		this.equipment = record.getEquipment();
-		this.startTime = record.getStartTime();
-		this.endTime = record.getEndTime();
-		this.job = record.getJob();
-		this.material = record.getMaterial();
-		this.shift = record.getShift();
+	public ResolvedEvent(BaseRecord reason) {
+		this.resolverType = reason.getType();
+		this.equipment = reason.getEquipment();
+		this.startTime = reason.getStartTime();
+		this.endTime = reason.getEndTime();
+		this.job = reason.getJob();
+		this.material = reason.getMaterial();
+		this.shift = reason.getShift();
 
-		if (record instanceof AvailabilityRecord) {
-			this.reason = ((AvailabilityRecord) record).getReason();
-		} else if (record instanceof ProductionRecord) {
-			this.quantity = ((ProductionRecord) record).getQuantity();
+		if (reason instanceof AvailabilityRecord) {
+			AvailabilityRecord availability = ((AvailabilityRecord) reason);
+			this.reason = availability.getReason();
+
+			if (endTime != null) {
+				this.duration = availability.getDuration();
+			} else {
+				this.duration = Duration.between(startTime, OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+			}
+		} else if (reason instanceof ProductionRecord) {
+			this.quantity = ((ProductionRecord) reason).getQuantity();
 		}
 	}
 
