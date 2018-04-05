@@ -3,6 +3,9 @@ package org.point85.domain.script;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 
+import org.point85.domain.collector.AvailabilityRecord;
+import org.point85.domain.collector.BaseRecord;
+import org.point85.domain.collector.ProductionRecord;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
@@ -28,6 +31,22 @@ public class ResolvedEvent {
 		this.equipment = equipment;
 	}
 
+	public ResolvedEvent(BaseRecord record) {
+		this.resolverType = record.getType();
+		this.equipment = record.getEquipment();
+		this.startTime = record.getStartTime();
+		this.endTime = record.getEndTime();
+		this.job = record.getJob();
+		this.material = record.getMaterial();
+		this.shift = record.getShift();
+
+		if (record instanceof AvailabilityRecord) {
+			this.reason = ((AvailabilityRecord) record).getReason();
+		} else if (record instanceof ProductionRecord) {
+			this.quantity = ((ProductionRecord) record).getQuantity();
+		}
+	}
+
 	public String getItemId() {
 		return itemId;
 	}
@@ -43,7 +62,7 @@ public class ResolvedEvent {
 	public void setStartTime(OffsetDateTime odt) {
 		this.startTime = odt;
 	}
-	
+
 	public OffsetDateTime getEndTime() {
 		return endTime;
 	}

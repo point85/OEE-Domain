@@ -127,4 +127,9 @@ public class BaseRecord {
 		this.shift = shift;
 	}
 	
+	@Override
+	public String toString() {
+		return "Start: " + startTime + ", End: " + endTime;
+	}
+	
 }

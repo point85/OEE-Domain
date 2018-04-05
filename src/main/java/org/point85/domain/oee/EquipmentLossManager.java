@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import org.point85.domain.collector.AvailabilityRecord;
 import org.point85.domain.collector.BaseRecord;
 import org.point85.domain.collector.ProductionRecord;
+import org.point85.domain.collector.SetupRecord;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentMaterial;
@@ -40,16 +41,21 @@ public class EquipmentLossManager {
 
 		// IRR
 		equipmentLoss.setDesignSpeed(eqm.getRunRate());
+		
+		// history of availability, production and setups
+		List<BaseRecord> historyRecords = new ArrayList<>();
 
 		// time from measured production
 		List<ProductionRecord> productions = PersistenceService.instance().fetchProduction(equipment, from, to);
 
-		for (ProductionRecord summary : productions) {
-			checkTimePeriod(summary, equipmentLoss, from, to);
+		for (ProductionRecord record : productions) {
+			historyRecords.add(record);
+			
+			checkTimePeriod(record, equipmentLoss, from, to);
 
-			Quantity quantity = summary.getQuantity();
+			Quantity quantity = record.getQuantity();
 
-			switch (summary.getType()) {
+			switch (record.getType()) {
 			case PROD_GOOD:
 				equipmentLoss.incrementGoodQuantity(quantity);
 				break;
@@ -70,8 +76,10 @@ public class EquipmentLossManager {
 		// time from measured availability losses
 		List<AvailabilityRecord> records = PersistenceService.instance().fetchAvailability(equipment, from, to);
 
-		for (int i = 0; i < records.size(); i++) {
+		for (int i = 0; i < records.size(); i++) {			
 			AvailabilityRecord record = records.get(i);
+			
+			historyRecords.add(record);
 
 			checkTimePeriod(record, equipmentLoss, from, to);
 
@@ -100,9 +108,11 @@ public class EquipmentLossManager {
 			TimeLoss loss = record.getReason().getLossCategory();
 			equipmentLoss.incrementLoss(record.getReason(), duration);
 
-			System.out
-					.println("Reason: " + record.getReason().getName() + ", loss: " + loss + ", duration: " + duration);
+			//System.out
+				//	.println("Reason: " + record.getReason().getName() + ", loss: " + loss + ", duration: " + duration);
 		}
+		
+		equipmentLoss.setEventRecords(historyRecords);
 
 		// compute reduced speed from the other losses
 		equipmentLoss.calculateReducedSpeedLoss();
@@ -165,6 +175,32 @@ public class EquipmentLossManager {
 		}
 
 		return items;
+	}
+	
+	private class HistoryRecord {
+		private AvailabilityRecord availabilityRecord;
+		private ProductionRecord productionRecord;
+		private SetupRecord setupRecord;
+		public AvailabilityRecord getAvailabilityRecord() {
+			return availabilityRecord;
+		}
+		public void setAvailabilityRecord(AvailabilityRecord availabilityRecord) {
+			this.availabilityRecord = availabilityRecord;
+		}
+		public ProductionRecord getProductionRecord() {
+			return productionRecord;
+		}
+		public void setProductionRecord(ProductionRecord productionRecord) {
+			this.productionRecord = productionRecord;
+		}
+		public SetupRecord getSetupRecord() {
+			return setupRecord;
+		}
+		public void setSetupRecord(SetupRecord setupRecord) {
+			this.setupRecord = setupRecord;
+		}
+		
+		
 	}
 
 }

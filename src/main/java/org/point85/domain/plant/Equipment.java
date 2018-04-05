@@ -79,9 +79,10 @@ public class Equipment extends PlantEntity {
 			equipmentMaterial = eqms.iterator().next();
 		} else {
 			for (EquipmentMaterial eqm : eqms) {
-				// TODO check a default flag
-				equipmentMaterial = eqm;
-				break;
+				if (eqm.isDefault()) {
+					equipmentMaterial = eqm;
+					break;
+				}
 			}
 		}
 		return equipmentMaterial;

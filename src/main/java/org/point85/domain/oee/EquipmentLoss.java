@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.point85.domain.collector.BaseRecord;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
@@ -40,6 +41,9 @@ public class EquipmentLoss {
 
 	// equipment design speed
 	private Quantity designSpeed;
+
+	// history
+	private List<BaseRecord> eventRecords;
 
 	public EquipmentLoss(Equipment equipment) {
 		this.equipment = equipment;
@@ -480,5 +484,13 @@ public class EquipmentLoss {
 
 	public void setMaterial(Material material) {
 		this.material = material;
+	}
+
+	public List<BaseRecord> getEventRecords() {
+		return eventRecords;
+	}
+
+	public void setEventRecords(List<BaseRecord> historyRecords) {
+		this.eventRecords = historyRecords;
 	}
 }
