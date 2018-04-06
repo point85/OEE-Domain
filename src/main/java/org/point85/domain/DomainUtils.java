@@ -1,6 +1,7 @@
 package org.point85.domain;
 
 import java.text.DecimalFormatSymbols;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -12,6 +13,12 @@ import java.time.format.DateTimeFormatter;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 
 public class DomainUtils {
+	
+	// format a Duration
+	public static String formatDuration(Duration duration) {
+		// remove the "PT" prefix
+		return duration.toString().substring(2);
+	}
 
 	public static String[] parseDomainAndUser(String user) {
 

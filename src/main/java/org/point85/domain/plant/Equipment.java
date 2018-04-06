@@ -1,5 +1,6 @@
 package org.point85.domain.plant;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -21,6 +22,7 @@ public class Equipment extends PlantEntity {
 	public static final String EQUIP_VALUE = "EQ";
 	public static final String DEFAULT_NAME = "Equipment";
 	public static final String DEFAULT_DESC = "Default equipment";
+	public static final Duration MIN_DURATION = Duration.ofSeconds(5);
 
 	// map by Material
 	transient private Map<Material, EquipmentMaterial> equipmentMaterialsMap = new HashMap<>();
@@ -165,5 +167,4 @@ public class Equipment extends PlantEntity {
 		}
 		return uom;
 	}
-
 }

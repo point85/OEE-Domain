@@ -1,5 +1,6 @@
 package org.point85.domain.script;
 
+import java.time.OffsetDateTime;
 import java.util.Objects;
 
 import javax.persistence.AttributeOverride;
@@ -12,8 +13,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import org.point85.domain.collector.DataCollector;
 import org.point85.domain.collector.CollectorDataSource;
+import org.point85.domain.collector.DataCollector;
 import org.point85.domain.persistence.EventResolverTypeConverter;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.KeyedObject;
@@ -26,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 public class EventResolver extends KeyedObject {
 	// period between value updates
-	public static final int DEFAULT_UPDATE_PERIOD = 1000;
+	public static final int DEFAULT_UPDATE_PERIOD = 5000;
 
 	// logger
 	private transient final Logger logger = LoggerFactory.getLogger(getClass());
@@ -47,7 +48,7 @@ public class EventResolver extends KeyedObject {
 	private String functionScript;
 
 	@Column(name = "PERIOD")
-	private Integer updatePeriod = new Integer(DEFAULT_UPDATE_PERIOD);
+	private Integer updatePeriod;
 
 	@Column(name = "SR_TYPE")
 	@Convert(converter = EventResolverTypeConverter.class)
@@ -62,6 +63,9 @@ public class EventResolver extends KeyedObject {
 
 	// last value received
 	private transient Object lastValue;
+	
+	// time last received
+	private transient OffsetDateTime lastTimestamp;
 
 	public EventResolver() {
 		super();
@@ -135,10 +139,10 @@ public class EventResolver extends KeyedObject {
 		return this.updatePeriod;
 	}
 
-	public void setUpdatePeriod(Integer period) {
-		if (period < DEFAULT_UPDATE_PERIOD) {
-			logger.warn("Specified update period of " + period + " msec() is less than the default of "
-					+ DEFAULT_UPDATE_PERIOD);
+	public void setUpdatePeriod(Integer period) throws Exception {
+		if (period < 0) {
+			throw new Exception(
+					"The specified update period of " + period + " msec() must be greater than or equal to zero");
 		}
 		this.updatePeriod = period;
 	}
@@ -202,5 +206,13 @@ public class EventResolver extends KeyedObject {
 	@Override
 	public String toString() {
 		return "Data source: " + dataSource + ", source id: " + sourceId;
+	}
+
+	public OffsetDateTime getLastTimestamp() {
+		return lastTimestamp;
+	}
+
+	public void setLastTimestamp(OffsetDateTime lastTimestamp) {
+		this.lastTimestamp = lastTimestamp;
 	}
 }

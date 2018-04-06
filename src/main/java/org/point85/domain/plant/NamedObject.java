@@ -97,4 +97,8 @@ public abstract class NamedObject extends KeyedObject implements Comparable<Name
 	public String toString() {
 		return name + ", " + description;
 	}
+	
+	public String getDisplayString() {
+		return name + " (" + description + ")";
+	}
 }

@@ -1,5 +1,6 @@
 package org.point85.domain.plant;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,6 +11,8 @@ import java.util.concurrent.ConcurrentMap;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.point85.domain.DomainUtils;
+import org.point85.domain.collector.DataSourceType;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.schedule.Shift;
 import org.point85.domain.schedule.ShiftInstance;
@@ -106,17 +109,34 @@ public class EquipmentEventResolver {
 	public ResolvedEvent invokeResolver(EventResolver eventResolver, OeeContext context, Object sourceValue,
 			OffsetDateTime dateTime) throws Exception {
 
+		Equipment equipment = eventResolver.getEquipment();
 		String sourceId = eventResolver.getSourceId();
-		EventResolverType type = eventResolver.getType();
+		EventResolverType resolverType = eventResolver.getType();
 		String script = eventResolver.getScript();
+
+		// event durations must exceed the update period
+		if (eventResolver.getLastTimestamp() != null) {
+			DataSourceType fromSource = eventResolver.getDataSource().getDataSourceType();
+
+			if (!fromSource.equals(DataSourceType.OPC_UA) && !fromSource.equals(DataSourceType.OPC_DA)) {
+				Duration delta = Duration.between(eventResolver.getLastTimestamp(), dateTime);
+				Duration threshold = Duration.ofMillis(eventResolver.getUpdatePeriod());
+
+				if (delta.compareTo(threshold) != 1) {
+					throw new Exception("The event duration of " + DomainUtils.formatDuration(delta) + " for source id "
+							+ sourceId + " for equipment " + equipment.getName() + " must exceed the threshold of "
+							+ DomainUtils.formatDuration(threshold));
+				}
+			}
+		}
 
 		if (script == null) {
 			throw new Exception("The resolver script is not defined for source id " + sourceId + " for equipment "
-					+ eventResolver.getEquipment().getName());
+					+ equipment.getName());
 		}
 
 		if (logger.isInfoEnabled()) {
-			logger.info("Invoking script resolver for source id " + sourceId + " and type " + type
+			logger.info("Invoking script resolver for source id " + sourceId + " and type " + resolverType
 					+ " with source value " + sourceValue + " for script \n" + script);
 		}
 
@@ -134,24 +154,24 @@ public class EquipmentEventResolver {
 			logger.info("Result: " + result);
 		}
 
+		// save last value
 		eventResolver.setLastValue(sourceValue);
+		eventResolver.setLastTimestamp(dateTime);
 
 		// fill in resolution
-		Equipment equipment = eventResolver.getEquipment();
-		
 		ResolvedEvent event = new ResolvedEvent(equipment);
-		event.setResolverType(eventResolver.getType());
+		event.setResolverType(resolverType);
 		event.setItemId(sourceId);
 		event.setStartTime(dateTime);
 		event.setInputValue(sourceValue);
 		event.setOutputValue(result);
-		
+
 		// set shift
 		WorkSchedule schedule = equipment.findWorkSchedule();
-		
+
 		if (schedule != null) {
 			List<ShiftInstance> shiftInstances = schedule.getShiftInstancesForTime(dateTime.toLocalDateTime());
-			
+
 			if (shiftInstances.size() > 0) {
 				// pick first one
 				Shift shift = shiftInstances.get(0).getShift();
@@ -184,7 +204,7 @@ public class EquipmentEventResolver {
 		event.setJob(job);
 
 		// specific processing
-		switch (type) {
+		switch (resolverType) {
 		case AVAILABILITY:
 			processReason(event);
 			break;
@@ -200,7 +220,7 @@ public class EquipmentEventResolver {
 		case PROD_GOOD:
 		case PROD_REJECT:
 		case PROD_STARTUP:
-			processProductionCount(event, type, context);
+			processProductionCount(event, resolverType, context);
 			break;
 		default:
 			break;
@@ -220,7 +240,8 @@ public class EquipmentEventResolver {
 	}
 
 	// production counts
-	private void processProductionCount(ResolvedEvent resolvedItem, EventResolverType resolverType, OeeContext context) throws Exception {
+	private void processProductionCount(ResolvedEvent resolvedItem, EventResolverType resolverType, OeeContext context)
+			throws Exception {
 		Object outputValue = resolvedItem.getOutputValue();
 		Double amount = null;
 
@@ -251,16 +272,16 @@ public class EquipmentEventResolver {
 
 			if (eqm != null) {
 				material = eqm.getMaterial();
-				
+
 				// set material into context too
 				context.setMaterial(eqm.getEquipment(), material);
-				
+
 				if (logger.isInfoEnabled()) {
 					logger.info("Produced material is not defined.  Using default of " + material.getName());
 				}
 			}
 		}
-		
+
 		UnitOfMeasure uom = resolvedItem.getEquipment().getUOM(material, resolverType);
 		resolvedItem.setQuantity(new Quantity(amount, uom));
 	}
