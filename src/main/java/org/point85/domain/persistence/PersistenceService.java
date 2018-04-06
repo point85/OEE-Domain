@@ -1201,12 +1201,12 @@ public class PersistenceService {
 		return record;
 	}
 
-	public List<SetupRecord> fetchSetupForPeriod(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
+	public List<SetupRecord> fetchSetupsForPeriod(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
 		final String SETUP_PERIOD = "Setup.Period";
 
 		if (namedQueryMap.get(SETUP_PERIOD) == null) {
 			createNamedQuery(SETUP_PERIOD,
-					"SELECT s FROM SetupRecord s WHERE s.equipment = :equipment AND s.startTime  <= :from AND (s.endTime  >= :to OR s.endTime IS NULL)");
+					"SELECT s FROM SetupRecord s WHERE s.equipment = :equipment AND s.startTime  <= :to AND (s.endTime  >= :from OR s.endTime IS NULL)");
 		}
 
 		TypedQuery<SetupRecord> query = getEntityManager().createNamedQuery(SETUP_PERIOD, SetupRecord.class);

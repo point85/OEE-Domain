@@ -78,6 +78,8 @@ public class EquipmentLoss {
 
 	public void reset() {
 		resetLosses();
+		
+		eventRecords = new ArrayList<>();
 
 		material = null;
 		startDateTime = null;
@@ -277,13 +279,13 @@ public class EquipmentLoss {
 	}
 
 	public void calculateReducedSpeedLoss() throws Exception {
-		Duration goodDur = convertQuantity(goodQuantity);
+		Duration goodDur = convertToLostTime(goodQuantity);
 		setLoss(TimeLoss.NO_LOSS, goodDur);
 
-		Duration rejectDur = convertQuantity(rejectQuantity);
+		Duration rejectDur = convertToLostTime(rejectQuantity);
 		setLoss(TimeLoss.REJECT_REWORK, rejectDur);
 
-		Duration startupDur = convertQuantity(startupQuantity);
+		Duration startupDur = convertToLostTime(startupQuantity);
 		setLoss(TimeLoss.STARTUP_YIELD, startupDur);
 
 		Duration npt = getNetProductionTime();
@@ -309,14 +311,7 @@ public class EquipmentLoss {
 		System.out.println("Reject Qty: " + this.rejectQuantity);
 		System.out.println("Startup Qty: " + this.startupQuantity);
 	}
-
-	/*
-	 * public Duration convertUnitCountToTimeLoss(Quantity loss, Quantity
-	 * idealSpeed) throws Exception { Quantity timeLoss =
-	 * loss.divide(idealSpeed).convert(Unit.SECOND); Duration duration =
-	 * Duration.ofSeconds((long) timeLoss.getAmount()); return duration; }
-	 */
-
+	
 	public OffsetDateTime getStartDateTime() {
 		return startDateTime;
 	}
@@ -385,7 +380,7 @@ public class EquipmentLoss {
 		return sb.toString();
 	}
 
-	private Duration convertQuantity(Quantity quantity) throws Exception {
+	Duration convertToLostTime(Quantity quantity) throws Exception {
 		if (quantity == null) {
 			return Duration.ZERO;
 		}
@@ -490,7 +485,7 @@ public class EquipmentLoss {
 		return eventRecords;
 	}
 
-	public void setEventRecords(List<BaseRecord> historyRecords) {
-		this.eventRecords = historyRecords;
+	public void setEventRecords(List<BaseRecord> records) {
+		this.eventRecords = records;
 	}
 }

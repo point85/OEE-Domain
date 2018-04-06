@@ -13,11 +13,21 @@ import java.time.format.DateTimeFormatter;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 
 public class DomainUtils {
-	
+
 	// format a Duration
 	public static String formatDuration(Duration duration) {
-		// remove the "PT" prefix
-		return duration.toString().substring(2);
+		if (duration == null) {
+			return "";
+		} else {
+			// remove the "PT" prefix
+			long seconds = duration.getSeconds();
+			
+			if (duration.getNano() > 500000000l) {
+				seconds += 1;
+			}
+			Duration rounded =  Duration.ofSeconds(seconds);
+			return rounded.toString().substring(2);
+		}
 	}
 
 	public static String[] parseDomainAndUser(String user) {
@@ -85,7 +95,7 @@ public class DomainUtils {
 		ZoneOffset offset = OffsetDateTime.now().getOffset();
 		return OffsetDateTime.of(ldt, offset);
 	}
-	
+
 	// removed formatting from decimal string
 	public static String removeThousandsSeparator(String formattedString) {
 		if (formattedString == null) {

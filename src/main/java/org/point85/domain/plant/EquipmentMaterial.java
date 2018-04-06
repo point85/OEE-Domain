@@ -144,7 +144,7 @@ public class EquipmentMaterial extends KeyedObject {
 
 	@Override
 	public String toString() {
-		String text = "Matl: " + this.getMaterial().getName() + ", OEE: " + getOeeTarget();
+		String text = "Matl: " + getMaterial().getName() + ", Speed: " + getRunRate();
 		return text;
 	}
 

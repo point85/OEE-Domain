@@ -10,7 +10,6 @@ import java.util.Map.Entry;
 import org.point85.domain.collector.AvailabilityRecord;
 import org.point85.domain.collector.BaseRecord;
 import org.point85.domain.collector.ProductionRecord;
-import org.point85.domain.collector.SetupRecord;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentMaterial;
@@ -41,8 +40,8 @@ public class EquipmentLossManager {
 
 		// IRR
 		equipmentLoss.setDesignSpeed(eqm.getRunRate());
-		
-		// history of availability, production and setups
+
+		// history of availability and production
 		List<BaseRecord> historyRecords = new ArrayList<>();
 
 		// time from measured production
@@ -50,23 +49,34 @@ public class EquipmentLossManager {
 
 		for (ProductionRecord record : productions) {
 			historyRecords.add(record);
-			
+
 			checkTimePeriod(record, equipmentLoss, from, to);
 
 			Quantity quantity = record.getQuantity();
 
 			switch (record.getType()) {
-			case PROD_GOOD:
+			case PROD_GOOD: {
 				equipmentLoss.incrementGoodQuantity(quantity);
 				break;
+			}
 
-			case PROD_REJECT:
+			case PROD_REJECT: {
 				equipmentLoss.incrementRejectQuantity(quantity);
-				break;
 
-			case PROD_STARTUP:
-				equipmentLoss.incrementStartupQuantity(quantity);
+				// convert to a time loss
+				Duration lostTime = equipmentLoss.convertToLostTime(quantity);
+				record.setLostTime(lostTime);
 				break;
+			}
+
+			case PROD_STARTUP: {
+				equipmentLoss.incrementStartupQuantity(quantity);
+
+				// convert to a time loss
+				Duration lostTime = equipmentLoss.convertToLostTime(quantity);
+				record.setLostTime(lostTime);
+				break;
+			}
 
 			default:
 				break;
@@ -76,16 +86,15 @@ public class EquipmentLossManager {
 		// time from measured availability losses
 		List<AvailabilityRecord> records = PersistenceService.instance().fetchAvailability(equipment, from, to);
 
-		for (int i = 0; i < records.size(); i++) {			
+		for (int i = 0; i < records.size(); i++) {
 			AvailabilityRecord record = records.get(i);
-			
 			historyRecords.add(record);
 
 			checkTimePeriod(record, equipmentLoss, from, to);
 
 			Duration eventDuration = record.getDuration();
-
 			Duration duration = eventDuration;
+			
 			OffsetDateTime start = record.getStartTime();
 			OffsetDateTime end = record.getEndTime();
 
@@ -101,18 +110,22 @@ public class EquipmentLossManager {
 				// last record
 				if (end == null || to.isBefore(end)) {
 					// get time in interval
-					duration = Duration.between(start, to);
+					Duration edge = Duration.between(start, to);
+					
+					// clip to event duration
+					if (edge.compareTo(eventDuration) < 0) {
+						duration = edge;
+					}
 				}
 			}
-
-			TimeLoss loss = record.getReason().getLossCategory();
+			
 			equipmentLoss.incrementLoss(record.getReason(), duration);
 
-			//System.out
-				//	.println("Reason: " + record.getReason().getName() + ", loss: " + loss + ", duration: " + duration);
+			// save in event record
+			record.setLostTime(duration);
 		}
-		
-		equipmentLoss.setEventRecords(historyRecords);
+
+		equipmentLoss.getEventRecords().addAll(historyRecords);
 
 		// compute reduced speed from the other losses
 		equipmentLoss.calculateReducedSpeedLoss();
@@ -126,17 +139,20 @@ public class EquipmentLossManager {
 					odtEnd.toLocalDateTime());
 			equipmentLoss.setLoss(TimeLoss.NOT_SCHEDULED, notScheduled);
 		}
+		
+		System.out.println(equipmentLoss.toString());
 	}
 
-	private static void checkTimePeriod(BaseRecord record, EquipmentLoss equipmentLoss, OffsetDateTime from, OffsetDateTime to) {
+	private static void checkTimePeriod(BaseRecord record, EquipmentLoss equipmentLoss, OffsetDateTime from,
+			OffsetDateTime to) {
 		// beginning time
 		OffsetDateTime recordStart = record.getStartTime();
 		OffsetDateTime recordEnd = record.getEndTime();
-		
+
 		if (recordStart.isBefore(from)) {
 			recordStart = from;
 		}
-		
+
 		if (recordEnd == null || recordEnd.isAfter(to)) {
 			recordEnd = to;
 		}
@@ -176,31 +192,4 @@ public class EquipmentLossManager {
 
 		return items;
 	}
-	
-	private class HistoryRecord {
-		private AvailabilityRecord availabilityRecord;
-		private ProductionRecord productionRecord;
-		private SetupRecord setupRecord;
-		public AvailabilityRecord getAvailabilityRecord() {
-			return availabilityRecord;
-		}
-		public void setAvailabilityRecord(AvailabilityRecord availabilityRecord) {
-			this.availabilityRecord = availabilityRecord;
-		}
-		public ProductionRecord getProductionRecord() {
-			return productionRecord;
-		}
-		public void setProductionRecord(ProductionRecord productionRecord) {
-			this.productionRecord = productionRecord;
-		}
-		public SetupRecord getSetupRecord() {
-			return setupRecord;
-		}
-		public void setSetupRecord(SetupRecord setupRecord) {
-			this.setupRecord = setupRecord;
-		}
-		
-		
-	}
-
 }

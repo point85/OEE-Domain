@@ -27,22 +27,24 @@ public class ResolvedEvent {
 	private Quantity quantity;
 	private Equipment equipment;
 	private Shift shift;
+	private Duration lostTime;
 
 	public ResolvedEvent(Equipment equipment) {
 		this.equipment = equipment;
 	}
 
-	public ResolvedEvent(BaseRecord reason) {
-		this.resolverType = reason.getType();
-		this.equipment = reason.getEquipment();
-		this.startTime = reason.getStartTime();
-		this.endTime = reason.getEndTime();
-		this.job = reason.getJob();
-		this.material = reason.getMaterial();
-		this.shift = reason.getShift();
+	public ResolvedEvent(BaseRecord baseRecord) {
+		this.resolverType = baseRecord.getType();
+		this.equipment = baseRecord.getEquipment();
+		this.startTime = baseRecord.getStartTime();
+		this.endTime = baseRecord.getEndTime();
+		this.job = baseRecord.getJob();
+		this.material = baseRecord.getMaterial();
+		this.shift = baseRecord.getShift();
+		this.lostTime = baseRecord.getLostTime();
 
-		if (reason instanceof AvailabilityRecord) {
-			AvailabilityRecord availability = ((AvailabilityRecord) reason);
+		if (baseRecord instanceof AvailabilityRecord) {
+			AvailabilityRecord availability = ((AvailabilityRecord) baseRecord);
 			this.reason = availability.getReason();
 
 			if (endTime != null) {
@@ -50,8 +52,8 @@ public class ResolvedEvent {
 			} else {
 				this.duration = Duration.between(startTime, OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS));
 			}
-		} else if (reason instanceof ProductionRecord) {
-			this.quantity = ((ProductionRecord) reason).getQuantity();
+		} else if (baseRecord instanceof ProductionRecord) {
+			this.quantity = ((ProductionRecord) baseRecord).getQuantity();
 		}
 	}
 
@@ -170,5 +172,13 @@ public class ResolvedEvent {
 
 	public void setDuration(Duration duration) {
 		this.duration = duration;
+	}
+
+	public Duration getLostTime() {
+		return lostTime;
+	}
+
+	public void setLostTime(Duration lostTime) {
+		this.lostTime = lostTime;
 	}
 }

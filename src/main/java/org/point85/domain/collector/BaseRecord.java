@@ -1,5 +1,6 @@
 package org.point85.domain.collector;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 
 import javax.persistence.Column;
@@ -52,6 +53,9 @@ public class BaseRecord {
 	@OneToOne
 	@JoinColumn(name = "SHIFT_KEY")
 	private Shift shift;
+	
+	// computed lost time
+	private transient Duration lostTime;
 	
 	protected BaseRecord() {
 		
@@ -127,9 +131,16 @@ public class BaseRecord {
 		this.shift = shift;
 	}
 	
+	public Duration getLostTime() {
+		return lostTime;
+	}
+
+	public void setLostTime(Duration lostTime) {
+		this.lostTime = lostTime;
+	}
+	
 	@Override
 	public String toString() {
 		return "Start: " + startTime + ", End: " + endTime;
-	}
-	
+	}	
 }
