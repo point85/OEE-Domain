@@ -41,15 +41,12 @@ public class EquipmentLossManager {
 		// IRR
 		equipmentLoss.setDesignSpeed(eqm.getRunRate());
 
-		// history of availability and production
-		List<BaseRecord> historyRecords = new ArrayList<>();
-
 		// time from measured production
 		List<ProductionRecord> productions = PersistenceService.instance().fetchProduction(equipment, from, to);
+		
+		equipmentLoss.getEventRecords().addAll(productions);
 
 		for (ProductionRecord record : productions) {
-			historyRecords.add(record);
-
 			checkTimePeriod(record, equipmentLoss, from, to);
 
 			Quantity quantity = record.getQuantity();
@@ -85,10 +82,10 @@ public class EquipmentLossManager {
 
 		// time from measured availability losses
 		List<AvailabilityRecord> records = PersistenceService.instance().fetchAvailability(equipment, from, to);
+		equipmentLoss.getEventRecords().addAll(records);
 
 		for (int i = 0; i < records.size(); i++) {
 			AvailabilityRecord record = records.get(i);
-			historyRecords.add(record);
 
 			checkTimePeriod(record, equipmentLoss, from, to);
 
@@ -124,8 +121,6 @@ public class EquipmentLossManager {
 			// save in event record
 			record.setLostTime(duration);
 		}
-
-		equipmentLoss.getEventRecords().addAll(historyRecords);
 
 		// compute reduced speed from the other losses
 		equipmentLoss.calculateReducedSpeedLoss();

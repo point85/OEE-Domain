@@ -1130,7 +1130,7 @@ public class PersistenceService {
 
 		if (namedQueryMap.get(AVAIL_RECORDS) == null) {
 			createNamedQuery(AVAIL_RECORDS,
-					"SELECT a FROM AvailabilityRecord a WHERE a.equipment = :equipment AND ((a.startTime  BETWEEN :from AND :to) OR (a.endTime  BETWEEN :from AND :to)) ORDER BY a.startTime ASC");
+					"SELECT a FROM AvailabilityRecord a WHERE a.equipment = :equipment AND (a.startTime >= :from AND a.startTime < :to) ORDER BY a.startTime ASC");
 		}
 
 		TypedQuery<AvailabilityRecord> query = getEntityManager().createNamedQuery(AVAIL_RECORDS,
@@ -1147,7 +1147,7 @@ public class PersistenceService {
 
 		if (namedQueryMap.get(PROD_RECORDS) == null) {
 			createNamedQuery(PROD_RECORDS,
-					"SELECT p FROM ProductionRecord p WHERE p.equipment = :equipment AND ((p.startTime  BETWEEN :from AND :to) OR (p.endTime  BETWEEN :from AND :to)) ORDER BY p.startTime ASC");
+					"SELECT p FROM ProductionRecord p WHERE p.equipment = :equipment AND (p.startTime >= :from AND p.startTime < :to) ORDER BY p.startTime ASC");
 		}
 
 		TypedQuery<ProductionRecord> query = getEntityManager().createNamedQuery(PROD_RECORDS, ProductionRecord.class);
