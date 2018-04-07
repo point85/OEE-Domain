@@ -1,6 +1,7 @@
 package org.point85.domain.collector;
 
 import java.net.InetAddress;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -657,6 +658,8 @@ public class CollectorServer
 
 		if (lastRecord != null) {
 			lastRecord.setEndTime(nextRecord.getStartTime());
+			Duration duration = Duration.between(lastRecord.getStartTime(), lastRecord.getEndTime());
+			lastRecord.setDuration(duration);
 		}
 
 		PersistenceService.instance().save(lastRecord, nextRecord);
@@ -942,8 +945,8 @@ public class CollectorServer
 			saveAvailabilityRecord(resolvedEvent);
 			break;
 
-		case JOB:
-		case MATERIAL:
+		case JOB_CHANGE:
+		case MATL_CHANGE:
 			saveSetupRecord(resolvedEvent);
 			break;
 

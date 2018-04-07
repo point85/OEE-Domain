@@ -15,7 +15,6 @@ import javax.persistence.OneToOne;
 import org.point85.domain.persistence.EventResolverTypeConverter;
 import org.point85.domain.persistence.OffsetDateTimeConverter;
 import org.point85.domain.plant.Equipment;
-import org.point85.domain.plant.Material;
 import org.point85.domain.schedule.Shift;
 import org.point85.domain.script.EventResolverType;
 import org.point85.domain.script.ResolvedEvent;
@@ -26,17 +25,10 @@ public class BaseRecord {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "EVENT_KEY")
 	private Long primaryKey;
-	
+
 	@OneToOne
 	@JoinColumn(name = "ENT_KEY")
 	private Equipment equipment;
-	
-	@OneToOne
-	@JoinColumn(name = "MATL_KEY")
-	private Material material;
-
-	@Column(name = "JOB")
-	private String job;
 
 	@Column(name = "START_TIME")
 	@Convert(converter = OffsetDateTimeConverter.class)
@@ -45,36 +37,34 @@ public class BaseRecord {
 	@Column(name = "END_TIME")
 	@Convert(converter = OffsetDateTimeConverter.class)
 	private OffsetDateTime endTime;
-	
+
 	@Column(name = "EVENT_TYPE")
 	@Convert(converter = EventResolverTypeConverter.class)
 	private EventResolverType resolverType;
-	
+
 	@OneToOne
 	@JoinColumn(name = "SHIFT_KEY")
 	private Shift shift;
-	
+
 	// computed lost time
 	private transient Duration lostTime;
-	
+
 	protected BaseRecord() {
-		
+
 	}
-	
+
 	protected BaseRecord(ResolvedEvent event) {
 		this.equipment = event.getEquipment();
-		this.material = event.getMaterial();
-		this.job = event.getJob();
 		this.startTime = event.getStartTime();
 		this.endTime = event.getEndTime();
 		this.resolverType = event.getResolverType();
 		this.shift = event.getShift();
 	}
-	
+
 	protected BaseRecord(Equipment equipment) {
 		this.equipment = equipment;
 	}
-	
+
 	public Equipment getEquipment() {
 		return equipment;
 	}
@@ -82,7 +72,7 @@ public class BaseRecord {
 	public void setEquipment(Equipment equipment) {
 		this.equipment = equipment;
 	}
-	
+
 	public OffsetDateTime getStartTime() {
 		return startTime;
 	}
@@ -98,29 +88,13 @@ public class BaseRecord {
 	public void setEndTime(OffsetDateTime endTime) {
 		this.endTime = endTime;
 	}
-	
+
 	public EventResolverType getType() {
 		return resolverType;
 	}
 
 	public void setType(EventResolverType type) {
 		this.resolverType = type;
-	}
-	
-	public Material getMaterial() {
-		return material;
-	}
-
-	public void setMaterial(Material material) {
-		this.material = material;
-	}
-
-	public String getJob() {
-		return job;
-	}
-
-	public void setJob(String job) {
-		this.job = job;
 	}
 
 	public Shift getShift() {
@@ -130,7 +104,7 @@ public class BaseRecord {
 	public void setShift(Shift shift) {
 		this.shift = shift;
 	}
-	
+
 	public Duration getLostTime() {
 		return lostTime;
 	}
@@ -138,9 +112,9 @@ public class BaseRecord {
 	public void setLostTime(Duration lostTime) {
 		this.lostTime = lostTime;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "Start: " + startTime + ", End: " + endTime;
-	}	
+	}
 }

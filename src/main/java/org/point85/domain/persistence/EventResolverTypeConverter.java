@@ -29,10 +29,10 @@ public class EventResolverTypeConverter implements AttributeConverter<EventResol
 		case PROD_STARTUP:
 			value = EventResolverType.STARTUP_PROD_VALUE;
 			break;
-		case JOB:
+		case JOB_CHANGE:
 			value = EventResolverType.JOB_VALUE;
 			break;
-		case MATERIAL:
+		case MATL_CHANGE:
 			value = EventResolverType.MATERIAL_VALUE;
 			break;
 		case OTHER:
@@ -70,11 +70,11 @@ public class EventResolverTypeConverter implements AttributeConverter<EventResol
 			break;
 
 		case EventResolverType.JOB_VALUE:
-			type = EventResolverType.JOB;
+			type = EventResolverType.JOB_CHANGE;
 			break;
 
 		case EventResolverType.MATERIAL_VALUE:
-			type = EventResolverType.MATERIAL;
+			type = EventResolverType.MATL_CHANGE;
 			break;
 
 		case EventResolverType.OTHER_VALUE:

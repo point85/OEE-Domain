@@ -9,8 +9,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import org.point85.domain.plant.Equipment;
-import org.point85.domain.plant.Material;
 import org.point85.domain.script.ResolvedEvent;
 import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.UnitOfMeasure;
@@ -38,10 +36,7 @@ public class ProductionRecord extends BaseRecord {
 
 		if (event.getQuantity() != null) {
 			this.amount = event.getQuantity().getAmount();
-
-			Equipment equipment = event.getEquipment();
-			Material material = event.getMaterial();
-			this.uom = equipment.getUOM(material, event.getResolverType());
+			this.uom = event.getQuantity().getUOM();
 		}
 
 	}

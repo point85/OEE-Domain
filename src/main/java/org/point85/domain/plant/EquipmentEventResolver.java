@@ -181,7 +181,7 @@ public class EquipmentEventResolver {
 
 		// set material
 		Material material = null;
-		if (eventResolver.getType().equals(EventResolverType.MATERIAL)) {
+		if (eventResolver.getType().equals(EventResolverType.MATL_CHANGE)) {
 			// set material from event
 			material = fetchMaterial((String) sourceValue);
 			context.setMaterial(equipment, material);
@@ -193,7 +193,7 @@ public class EquipmentEventResolver {
 
 		// set job
 		String job = null;
-		if (eventResolver.getType().equals(EventResolverType.JOB)) {
+		if (eventResolver.getType().equals(EventResolverType.JOB_CHANGE)) {
 			// set job from event
 			job = (String) sourceValue;
 			context.setJob(equipment, job);
@@ -208,10 +208,10 @@ public class EquipmentEventResolver {
 		case AVAILABILITY:
 			processReason(event);
 			break;
-		case JOB:
+		case JOB_CHANGE:
 			processJob(event);
 			break;
-		case MATERIAL:
+		case MATL_CHANGE:
 			processMaterial(event);
 			break;
 		case OTHER:

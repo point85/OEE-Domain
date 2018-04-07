@@ -18,8 +18,6 @@ import org.point85.domain.collector.DataCollector;
 import org.point85.domain.persistence.EventResolverTypeConverter;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.KeyedObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Entity
 @Table(name = "EVENT_RESOLVER")
@@ -28,9 +26,6 @@ import org.slf4j.LoggerFactory;
 public class EventResolver extends KeyedObject {
 	// period between value updates
 	public static final int DEFAULT_UPDATE_PERIOD = 5000;
-
-	// logger
-	private transient final Logger logger = LoggerFactory.getLogger(getClass());
 
 	// owning plant entity
 	@ManyToOne
@@ -63,7 +58,7 @@ public class EventResolver extends KeyedObject {
 
 	// last value received
 	private transient Object lastValue;
-	
+
 	// time last received
 	private transient OffsetDateTime lastTimestamp;
 

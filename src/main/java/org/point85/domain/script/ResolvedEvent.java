@@ -7,6 +7,7 @@ import java.time.temporal.ChronoUnit;
 import org.point85.domain.collector.AvailabilityRecord;
 import org.point85.domain.collector.BaseRecord;
 import org.point85.domain.collector.ProductionRecord;
+import org.point85.domain.collector.SetupRecord;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
@@ -38,8 +39,6 @@ public class ResolvedEvent {
 		this.equipment = baseRecord.getEquipment();
 		this.startTime = baseRecord.getStartTime();
 		this.endTime = baseRecord.getEndTime();
-		this.job = baseRecord.getJob();
-		this.material = baseRecord.getMaterial();
 		this.shift = baseRecord.getShift();
 		this.lostTime = baseRecord.getLostTime();
 
@@ -54,6 +53,9 @@ public class ResolvedEvent {
 			}
 		} else if (baseRecord instanceof ProductionRecord) {
 			this.quantity = ((ProductionRecord) baseRecord).getQuantity();
+		} else if (baseRecord instanceof SetupRecord) {
+			this.material = ((SetupRecord) baseRecord).getMaterial();
+			this.job = ((SetupRecord) baseRecord).getJob();
 		}
 	}
 

@@ -1,7 +1,7 @@
 package org.point85.domain.script;
 
 public enum EventResolverType {
-	AVAILABILITY, PROD_GOOD, PROD_REJECT, PROD_STARTUP, MATERIAL, JOB, OTHER;
+	AVAILABILITY, PROD_GOOD, PROD_REJECT, PROD_STARTUP, MATL_CHANGE, JOB_CHANGE, OTHER;
 
 	// database values
 	public static final String AVAILABILITY_VALUE = "AVAIL";
@@ -21,10 +21,10 @@ public enum EventResolverType {
 	}
 
 	public boolean isMaterial() {
-		return this.equals(MATERIAL) ? true : false;
+		return this.equals(MATL_CHANGE) ? true : false;
 	}
 
 	public boolean isJob() {
-		return this.equals(JOB) ? true : false;
+		return this.equals(JOB_CHANGE) ? true : false;
 	}
 }

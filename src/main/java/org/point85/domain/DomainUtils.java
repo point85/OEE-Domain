@@ -21,11 +21,11 @@ public class DomainUtils {
 		} else {
 			// remove the "PT" prefix
 			long seconds = duration.getSeconds();
-			
+
 			if (duration.getNano() > 500000000l) {
 				seconds += 1;
 			}
-			Duration rounded =  Duration.ofSeconds(seconds);
+			Duration rounded = Duration.ofSeconds(seconds);
 			return rounded.toString().substring(2);
 		}
 	}
@@ -92,8 +92,12 @@ public class DomainUtils {
 	}
 
 	public static OffsetDateTime fromLocalDateTime(LocalDateTime ldt) {
-		ZoneOffset offset = OffsetDateTime.now().getOffset();
-		return OffsetDateTime.of(ldt, offset);
+		OffsetDateTime odt = null;
+		if (ldt != null) {
+			ZoneOffset offset = OffsetDateTime.now().getOffset();
+			odt = OffsetDateTime.of(ldt, offset);
+		}
+		return odt;
 	}
 
 	// removed formatting from decimal string
