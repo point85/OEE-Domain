@@ -1216,6 +1216,23 @@ public class PersistenceService {
 
 		return query.getResultList();
 	}
+	
+	public List<SetupRecord> fetchSetupsForPeriodAndMaterial(Equipment equipment, OffsetDateTime from, OffsetDateTime to, Material material) {
+		final String SETUP_PERIOD_MATL = "Setup.Period.Material";
+
+		if (namedQueryMap.get(SETUP_PERIOD_MATL) == null) {
+			createNamedQuery(SETUP_PERIOD_MATL,
+					"SELECT s FROM SetupRecord s WHERE s.equipment = :equipment AND s.startTime  <= :to AND (s.endTime  >= :from OR s.endTime IS NULL) AND s.material = :matl");
+		}
+
+		TypedQuery<SetupRecord> query = getEntityManager().createNamedQuery(SETUP_PERIOD_MATL, SetupRecord.class);
+		query.setParameter("equipment", equipment);
+		query.setParameter("from", from);
+		query.setParameter("to", to);
+		query.setParameter("matl", material);
+
+		return query.getResultList();
+	}
 
 	public SetupRecord fetchLastSetup(Equipment equipment) {
 		final String LAST_SETUP = "Setup.Last";
