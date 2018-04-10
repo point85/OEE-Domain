@@ -257,7 +257,9 @@ public class PersistenceService {
 			txn.begin();
 
 			// merge these entities into the PU and save
-			em.merge(lastRecord);
+			if (lastRecord != null) {
+				em.merge(lastRecord);
+			}
 			em.merge(nextRecord);
 
 			// commit transaction
@@ -1216,8 +1218,9 @@ public class PersistenceService {
 
 		return query.getResultList();
 	}
-	
-	public List<SetupRecord> fetchSetupsForPeriodAndMaterial(Equipment equipment, OffsetDateTime from, OffsetDateTime to, Material material) {
+
+	public List<SetupRecord> fetchSetupsForPeriodAndMaterial(Equipment equipment, OffsetDateTime from,
+			OffsetDateTime to, Material material) {
 		final String SETUP_PERIOD_MATL = "Setup.Period.Material";
 
 		if (namedQueryMap.get(SETUP_PERIOD_MATL) == null) {

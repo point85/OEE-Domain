@@ -43,7 +43,7 @@ public class EquipmentLoss {
 	private Quantity designSpeed;
 
 	// history
-	private List<BaseRecord> eventRecords;
+	private List<BaseRecord> eventRecords = new ArrayList<>();
 
 	public EquipmentLoss(Equipment equipment) {
 		this.equipment = equipment;

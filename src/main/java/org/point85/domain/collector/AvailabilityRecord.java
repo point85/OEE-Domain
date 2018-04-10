@@ -12,6 +12,7 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.point85.domain.plant.Reason;
+import org.point85.domain.script.EventResolverType;
 import org.point85.domain.script.ResolvedEvent;
 
 @Entity
@@ -30,6 +31,7 @@ public class AvailabilityRecord extends BaseRecord {
 
 	public AvailabilityRecord() {
 		super();
+		setType(EventResolverType.AVAILABILITY);
 	}
 
 	public AvailabilityRecord(ResolvedEvent event) {
