@@ -9,7 +9,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import org.point85.domain.script.ResolvedEvent;
+import org.point85.domain.plant.Equipment;
 import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.UnitOfMeasure;
 
@@ -27,18 +27,12 @@ public class ProductionRecord extends BaseRecord {
 	@JoinColumn(name = "UOM_KEY")
 	private UnitOfMeasure uom;
 
-	public ProductionRecord() {
-		super();
+	public ProductionRecord(Equipment equipment) {
+		super(equipment);
 	}
 
-	public ProductionRecord(ResolvedEvent event) throws Exception {
-		super(event);
-
-		if (event.getQuantity() != null) {
-			this.amount = event.getQuantity().getAmount();
-			this.uom = event.getQuantity().getUOM();
-		}
-
+	public ProductionRecord() {
+		super();
 	}
 
 	public double getAmount() {

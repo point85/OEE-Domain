@@ -11,9 +11,9 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Reason;
 import org.point85.domain.script.EventResolverType;
-import org.point85.domain.script.ResolvedEvent;
 
 @Entity
 @Table(name = "AVAILABILITY")
@@ -31,13 +31,11 @@ public class AvailabilityRecord extends BaseRecord {
 
 	public AvailabilityRecord() {
 		super();
-		setType(EventResolverType.AVAILABILITY);
 	}
 
-	public AvailabilityRecord(ResolvedEvent event) {
-		super(event);
-		setReason(event.getReason());
-		setDuration(event.getDuration());
+	public AvailabilityRecord(Equipment equipment) {
+		super(equipment);
+		setResolverType(EventResolverType.AVAILABILITY);
 	}
 
 	public Reason getReason() {

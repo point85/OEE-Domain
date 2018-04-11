@@ -9,8 +9,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Material;
-import org.point85.domain.script.ResolvedEvent;
 
 @Entity
 @Table(name = "SETUP")
@@ -25,14 +25,12 @@ public class SetupRecord extends BaseRecord {
 	@Column(name = "JOB")
 	private String job;
 
-	public SetupRecord() {
-		super();
+	public SetupRecord(Equipment equipment) {
+		super(equipment);
 	}
 
-	public SetupRecord(ResolvedEvent event) {
-		super(event);
-		this.material = event.getMaterial();
-		this.job = event.getJob();
+	public SetupRecord() {
+		super();
 	}
 
 	public Material getMaterial() {

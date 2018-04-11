@@ -51,7 +51,7 @@ public class EquipmentLossManager {
 
 			Quantity quantity = record.getQuantity();
 
-			switch (record.getType()) {
+			switch (record.getResolverType()) {
 			case PROD_GOOD: {
 				equipmentLoss.incrementGoodQuantity(quantity);
 				break;

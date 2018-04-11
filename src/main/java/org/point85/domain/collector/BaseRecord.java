@@ -15,16 +15,16 @@ import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.schedule.Shift;
 import org.point85.domain.script.EventResolverType;
-import org.point85.domain.script.ResolvedEvent;
 
 @MappedSuperclass
 public class BaseRecord extends KeyedObject {
 	/*
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "EVENT_KEY")
-	private Long primaryKey;
-	*/
+	 * @Id
+	 * 
+	 * @GeneratedValue(strategy = GenerationType.IDENTITY)
+	 * 
+	 * @Column(name = "EVENT_KEY") private Long primaryKey;
+	 */
 
 	@OneToOne
 	@JoinColumn(name = "ENT_KEY")
@@ -49,16 +49,13 @@ public class BaseRecord extends KeyedObject {
 	// computed lost time
 	private transient Duration lostTime;
 
-	protected BaseRecord() {
+	private transient String itemId;
 
-	}
+	private transient Object inputValue;
+	private transient Object outputValue;
 
-	protected BaseRecord(ResolvedEvent event) {
-		this.equipment = event.getEquipment();
-		this.startTime = event.getStartTime();
-		this.endTime = event.getEndTime();
-		this.resolverType = event.getResolverType();
-		this.shift = event.getShift();
+	public BaseRecord() {
+
 	}
 
 	protected BaseRecord(Equipment equipment) {
@@ -89,11 +86,11 @@ public class BaseRecord extends KeyedObject {
 		this.endTime = endTime;
 	}
 
-	public EventResolverType getType() {
+	public EventResolverType getResolverType() {
 		return resolverType;
 	}
 
-	public void setType(EventResolverType type) {
+	public void setResolverType(EventResolverType type) {
 		this.resolverType = type;
 	}
 
@@ -111,6 +108,30 @@ public class BaseRecord extends KeyedObject {
 
 	public void setLostTime(Duration lostTime) {
 		this.lostTime = lostTime;
+	}
+
+	public String getItemId() {
+		return itemId;
+	}
+
+	public void setItemId(String itemId) {
+		this.itemId = itemId;
+	}
+
+	public Object getInputValue() {
+		return inputValue;
+	}
+
+	public void setInputValue(Object sourceValue) {
+		this.inputValue = sourceValue;
+	}
+
+	public Object getOutputValue() {
+		return outputValue;
+	}
+
+	public void setOutputValue(Object result) {
+		this.outputValue = result;
 	}
 
 	@Override

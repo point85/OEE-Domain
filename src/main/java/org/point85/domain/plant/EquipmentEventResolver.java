@@ -12,7 +12,11 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.point85.domain.DomainUtils;
+import org.point85.domain.collector.AvailabilityRecord;
+import org.point85.domain.collector.BaseRecord;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.collector.ProductionRecord;
+import org.point85.domain.collector.SetupRecord;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.schedule.Shift;
 import org.point85.domain.schedule.ShiftInstance;
@@ -20,9 +24,7 @@ import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.EventResolverType;
 import org.point85.domain.script.OeeContext;
-import org.point85.domain.script.ResolvedEvent;
 import org.point85.domain.script.ResolverFunction;
-import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.UnitOfMeasure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,7 +108,7 @@ public class EquipmentEventResolver {
 		return configuredResolver;
 	}
 
-	public ResolvedEvent invokeResolver(EventResolver eventResolver, OeeContext context, Object sourceValue,
+	public BaseRecord invokeResolver(EventResolver eventResolver, OeeContext context, Object sourceValue,
 			OffsetDateTime dateTime) throws Exception {
 
 		Equipment equipment = eventResolver.getEquipment();
@@ -158,24 +160,16 @@ public class EquipmentEventResolver {
 		eventResolver.setLastValue(sourceValue);
 		eventResolver.setLastTimestamp(dateTime);
 
-		// fill in resolution
-		ResolvedEvent event = new ResolvedEvent(equipment);
-		event.setResolverType(resolverType);
-		event.setItemId(sourceId);
-		event.setStartTime(dateTime);
-		event.setInputValue(sourceValue);
-		event.setOutputValue(result);
-
 		// set shift
 		WorkSchedule schedule = equipment.findWorkSchedule();
+		Shift shift = null;
 
 		if (schedule != null) {
 			List<ShiftInstance> shiftInstances = schedule.getShiftInstancesForTime(dateTime.toLocalDateTime());
 
 			if (shiftInstances.size() > 0) {
 				// pick first one
-				Shift shift = shiftInstances.get(0).getShift();
-				event.setShift(shift);
+				shift = shiftInstances.get(0).getShift();
 			}
 		}
 
@@ -189,7 +183,6 @@ public class EquipmentEventResolver {
 			// set material from context
 			material = context.getMaterial(equipment);
 		}
-		event.setMaterial(material);
 
 		// set job
 		String job = null;
@@ -201,27 +194,36 @@ public class EquipmentEventResolver {
 			// set job from context
 			job = context.getJob(equipment);
 		}
-		event.setJob(job);
+
+		// fill in resolution
+		BaseRecord event = null;
 
 		// specific processing
 		switch (resolverType) {
-		case AVAILABILITY:
-			processReason(event);
+		case AVAILABILITY: {
+			event = new AvailabilityRecord(equipment);
+			processReason((AvailabilityRecord) event);
 			break;
-		case JOB_CHANGE:
-			processJob(event);
+		}
+		case JOB_CHANGE: {
+			event = new SetupRecord(equipment);
+			processJob((SetupRecord) event);
 			break;
-		case MATL_CHANGE:
-			processMaterial(event);
+		}
+		case MATL_CHANGE: {
+			event = new SetupRecord(equipment);
+			processMaterial((SetupRecord) event);
 			break;
+		}
 		case OTHER:
-			processOther(event);
 			break;
 		case PROD_GOOD:
 		case PROD_REJECT:
-		case PROD_STARTUP:
-			processProductionCount(event, resolverType, context);
+		case PROD_STARTUP: {
+			event = new ProductionRecord(equipment);
+			processProduction((ProductionRecord)event, resolverType, material, context);
 			break;
+		}
 		default:
 			break;
 		}
@@ -230,17 +232,19 @@ public class EquipmentEventResolver {
 			logger.info(event.toString());
 		}
 
+		// common attributes
+		event.setResolverType(resolverType);
+		event.setItemId(sourceId);
+		event.setStartTime(dateTime);
+		event.setInputValue(sourceValue);
+		event.setOutputValue(result);
+		event.setShift(shift);
+
 		return event;
 	}
 
-	// generic
-	private Object processOther(ResolvedEvent resolvedItem) throws Exception {
-		Object outputValue = resolvedItem.getOutputValue();
-		return outputValue;
-	}
-
 	// production counts
-	private void processProductionCount(ResolvedEvent resolvedItem, EventResolverType resolverType, OeeContext context)
+	private void processProduction(ProductionRecord resolvedItem, EventResolverType resolverType, Material material, OeeContext context)
 			throws Exception {
 		Object outputValue = resolvedItem.getOutputValue();
 		Double amount = null;
@@ -265,8 +269,6 @@ public class EquipmentEventResolver {
 		}
 
 		// get UOM from material and equipment
-		Material material = resolvedItem.getMaterial();
-
 		if (material == null) {
 			EquipmentMaterial eqm = resolvedItem.getEquipment().getDefaultEquipmentMaterial();
 
@@ -283,11 +285,12 @@ public class EquipmentEventResolver {
 		}
 
 		UnitOfMeasure uom = resolvedItem.getEquipment().getUOM(material, resolverType);
-		resolvedItem.setQuantity(new Quantity(amount, uom));
+		resolvedItem.setAmount(amount);
+		resolvedItem.setUOM(uom);
 	}
 
 	// availability
-	private Reason processReason(ResolvedEvent resolvedItem) throws Exception {
+	private Reason processReason(AvailabilityRecord resolvedItem) throws Exception {
 		if (!(resolvedItem.getOutputValue() instanceof String)) {
 			throw new Exception("The result " + resolvedItem.getOutputValue() + " is not a reason code.");
 		}
@@ -314,7 +317,7 @@ public class EquipmentEventResolver {
 	}
 
 	// job
-	private String processJob(ResolvedEvent resolvedItem) throws Exception {
+	private String processJob(SetupRecord resolvedItem) throws Exception {
 		if (!(resolvedItem.getOutputValue() instanceof String)) {
 			throw new Exception("The result " + resolvedItem.getOutputValue() + " is not a job identifier.");
 		}
@@ -347,7 +350,7 @@ public class EquipmentEventResolver {
 	}
 
 	// material
-	private Material processMaterial(ResolvedEvent resolvedItem) throws Exception {
+	private Material processMaterial(SetupRecord resolvedItem) throws Exception {
 
 		if (!(resolvedItem.getOutputValue() instanceof String)) {
 			throw new Exception(resolvedItem.getOutputValue() + " is not the name of a material.");

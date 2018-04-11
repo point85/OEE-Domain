@@ -1,11 +1,13 @@
 package org.point85.domain.messaging;
 
+import org.point85.domain.collector.AvailabilityRecord;
+import org.point85.domain.collector.BaseRecord;
+import org.point85.domain.collector.ProductionRecord;
+import org.point85.domain.collector.SetupRecord;
 import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
-import org.point85.domain.script.ResolvedEvent;
 import org.point85.domain.script.EventResolverType;
-import org.point85.domain.uom.Quantity;
 
 public class CollectorResolvedEventMessage extends ApplicationMessage {
 	private String equipmentName;
@@ -23,7 +25,7 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		super(senderHostName, senderHostAddress, MessageType.RESOLVED_EVENT);
 	}
 
-	public void fromResolvedEvent(ResolvedEvent event) {
+	public void fromResolvedEvent(BaseRecord event) {
 		this.setTimestamp(event.getStartTime());
 		this.setResolverType(event.getResolverType());
 
@@ -31,34 +33,52 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		this.setEquipmentName(event.getEquipment().getName());
 
 		// reason
-		Reason reason = event.getReason();
-		if (reason != null) {
-			this.setReasonName(reason.getName());
-			this.setReasonDescription(reason.getDescription());
-			this.setLoss(reason.getLossCategory());
-		}
-
-		// job
-		this.setJob(event.getJob());
-
-		// material
-		Material material = event.getMaterial();
-
-		if (material != null) {
-			this.setMaterialName(material.getName());
-			this.setMaterialDescription(material.getDescription());
-		}
-
-		// production quantity
-		Quantity qty = event.getQuantity();
-
-		if (qty != null) {
-			this.setAmount(qty.getAmount());
-
-			if (qty.getUOM() != null) {
-				this.setUom(qty.getUOM().getName());
+		switch (event.getResolverType()) {
+		case AVAILABILITY: {
+			Reason reason = ((AvailabilityRecord) event).getReason();
+			if (reason != null) {
+				this.setReasonName(reason.getName());
+				this.setReasonDescription(reason.getDescription());
+				this.setLoss(reason.getLossCategory());
 			}
+			break;
 		}
+		case JOB_CHANGE: {
+			// job
+			String job = ((SetupRecord) event).getJob();
+			this.setJob(job);
+			break;
+		}
+		case MATL_CHANGE: {
+			// material
+			Material material = ((SetupRecord) event).getMaterial();
+
+			if (material != null) {
+				this.setMaterialName(material.getName());
+				this.setMaterialDescription(material.getDescription());
+			}
+			break;
+		}
+		case OTHER:
+			break;
+
+		case PROD_GOOD:
+		case PROD_REJECT:
+		case PROD_STARTUP: {
+			// production quantity
+			this.setAmount(((ProductionRecord) event).getAmount());
+
+			if (((ProductionRecord) event).getUOM() != null) {
+				this.setUom(((ProductionRecord) event).getUOM().getName());
+			}
+
+			break;
+		}
+		default:
+			break;
+
+		}
+
 	}
 
 	public String getReasonName() {
