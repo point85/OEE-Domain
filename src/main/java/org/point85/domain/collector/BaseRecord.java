@@ -5,9 +5,6 @@ import java.time.OffsetDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.OneToOne;
@@ -15,16 +12,19 @@ import javax.persistence.OneToOne;
 import org.point85.domain.persistence.EventResolverTypeConverter;
 import org.point85.domain.persistence.OffsetDateTimeConverter;
 import org.point85.domain.plant.Equipment;
+import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.schedule.Shift;
 import org.point85.domain.script.EventResolverType;
 import org.point85.domain.script.ResolvedEvent;
 
 @MappedSuperclass
-public class BaseRecord {
+public class BaseRecord extends KeyedObject {
+	/*
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "EVENT_KEY")
 	private Long primaryKey;
+	*/
 
 	@OneToOne
 	@JoinColumn(name = "ENT_KEY")

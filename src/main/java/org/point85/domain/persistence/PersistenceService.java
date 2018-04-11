@@ -2,6 +2,7 @@ package org.point85.domain.persistence;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,7 +25,6 @@ import org.hibernate.integrator.spi.Integrator;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.hibernate.jpa.boot.spi.IntegratorProvider;
 import org.point85.domain.collector.AvailabilityRecord;
-import org.point85.domain.collector.BaseRecord;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.CollectorState;
 import org.point85.domain.collector.DataCollector;
@@ -220,7 +220,7 @@ public class PersistenceService {
 	}
 
 	// save the Persistent Object to the database
-	public Object save(KeyedObject object) throws Exception {
+	public KeyedObject save(KeyedObject object) throws Exception {
 		EntityManager em = getEntityManager();
 		EntityTransaction txn = null;
 
@@ -229,7 +229,7 @@ public class PersistenceService {
 			txn.begin();
 
 			// merge this entity into the PU and save
-			Object merged = em.merge(object);
+			KeyedObject merged = em.merge(object);
 
 			// commit transaction
 			txn.commit();
@@ -248,22 +248,25 @@ public class PersistenceService {
 	}
 
 	// save the Persistent Object to the database
-	public void save(BaseRecord lastRecord, BaseRecord nextRecord) throws Exception {
+	public List<KeyedObject> save(List<KeyedObject> objects) throws Exception {
 		EntityManager em = getEntityManager();
 		EntityTransaction txn = null;
+		List<KeyedObject> mergedObjects = new ArrayList<>();
 
 		try {
 			txn = em.getTransaction();
 			txn.begin();
 
-			// merge these entities into the PU and save
-			if (lastRecord != null) {
-				em.merge(lastRecord);
+			// merge this entity into the PU and save
+			for (KeyedObject object : objects) {
+				KeyedObject merged = em.merge(object);
+				mergedObjects.add(merged);
 			}
-			em.merge(nextRecord);
 
 			// commit transaction
 			txn.commit();
+
+			return mergedObjects;
 		} catch (Exception e) {
 			// roll back transaction
 			if (txn != null && txn.isActive()) {
@@ -275,32 +278,38 @@ public class PersistenceService {
 			em.close();
 		}
 	}
+
+	// save the Persistent Object to the database
+	/*
+	 * public void save(BaseRecord lastRecord, BaseRecord nextRecord) throws
+	 * Exception { EntityManager em = getEntityManager(); EntityTransaction txn =
+	 * null;
+	 * 
+	 * try { txn = em.getTransaction(); txn.begin();
+	 * 
+	 * // merge these entities into the PU and save if (lastRecord != null) {
+	 * em.merge(lastRecord); } em.merge(nextRecord);
+	 * 
+	 * // commit transaction txn.commit(); } catch (Exception e) { // roll back
+	 * transaction if (txn != null && txn.isActive()) { txn.rollback();
+	 * e.printStackTrace(); } throw new Exception(e.getMessage()); } finally {
+	 * em.close(); } }
+	 */
 
 	// insert the record into the database
-	public void persist(BaseRecord object) throws Exception {
-		EntityManager em = getEntityManager();
-		EntityTransaction txn = null;
-
-		try {
-			txn = em.getTransaction();
-			txn.begin();
-
-			// insert object
-			em.persist(object);
-
-			// commit transaction
-			txn.commit();
-		} catch (Exception e) {
-			// roll back transaction
-			if (txn != null && txn.isActive()) {
-				txn.rollback();
-				e.printStackTrace();
-			}
-			throw new Exception(e.getMessage());
-		} finally {
-			em.close();
-		}
-	}
+	/*
+	 * public void persist(BaseRecord object) throws Exception { EntityManager em =
+	 * getEntityManager(); EntityTransaction txn = null;
+	 * 
+	 * try { txn = em.getTransaction(); txn.begin();
+	 * 
+	 * // insert object em.persist(object);
+	 * 
+	 * // commit transaction txn.commit(); } catch (Exception e) { // roll back
+	 * transaction if (txn != null && txn.isActive()) { txn.rollback();
+	 * e.printStackTrace(); } throw new Exception(e.getMessage()); } finally {
+	 * em.close(); } }
+	 */
 
 	public void checkReferences(KeyedObject keyed) throws Exception {
 		if (keyed instanceof Rotation) {
@@ -1256,6 +1265,10 @@ public class PersistenceService {
 		}
 
 		return record;
+	}
+	
+	public AvailabilityRecord fetchAvailabilityByKey(Long key) throws Exception {
+		return getEntityManager().find(AvailabilityRecord.class, key);
 	}
 
 }

@@ -29,12 +29,15 @@ public class ResolvedEvent {
 	private Equipment equipment;
 	private Shift shift;
 	private Duration lostTime;
+	private Long recordKey;
 
 	public ResolvedEvent(Equipment equipment) {
 		this.equipment = equipment;
 	}
 
 	public ResolvedEvent(BaseRecord baseRecord) {
+		this.setRecordKey(baseRecord.getKey());
+		
 		this.resolverType = baseRecord.getType();
 		this.equipment = baseRecord.getEquipment();
 		this.startTime = baseRecord.getStartTime();
@@ -182,5 +185,13 @@ public class ResolvedEvent {
 
 	public void setLostTime(Duration lostTime) {
 		this.lostTime = lostTime;
+	}
+
+	public Long getRecordKey() {
+		return recordKey;
+	}
+
+	public void setRecordKey(Long recordKey) {
+		this.recordKey = recordKey;
 	}
 }

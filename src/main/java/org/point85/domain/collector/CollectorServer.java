@@ -48,6 +48,7 @@ import org.point85.domain.opc.ua.OpcUaSource;
 import org.point85.domain.opc.ua.UaOpcClient;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.EquipmentEventResolver;
+import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.EventResolverType;
 import org.point85.domain.script.OeeContext;
@@ -653,6 +654,9 @@ public class CollectorServer
 		// next availability
 		AvailabilityRecord nextRecord = new AvailabilityRecord(event);
 
+		List<KeyedObject> records = new ArrayList<>();
+		records.add(nextRecord);
+
 		// close off last availability
 		AvailabilityRecord lastRecord = PersistenceService.instance().fetchLastAvailability(event.getEquipment());
 
@@ -660,9 +664,10 @@ public class CollectorServer
 			lastRecord.setEndTime(nextRecord.getStartTime());
 			Duration duration = Duration.between(lastRecord.getStartTime(), lastRecord.getEndTime());
 			lastRecord.setDuration(duration);
-		}
 
-		PersistenceService.instance().save(lastRecord, nextRecord);
+			records.add(lastRecord);
+		}
+		PersistenceService.instance().save(records);
 	}
 
 	public void saveSetupRecord(ResolvedEvent event) throws Exception {
@@ -673,14 +678,18 @@ public class CollectorServer
 		// next setup
 		SetupRecord nextRecord = new SetupRecord(event);
 
+		List<KeyedObject> records = new ArrayList<>();
+		records.add(nextRecord);
+
 		// close off last setup
 		SetupRecord lastRecord = PersistenceService.instance().fetchLastSetup(event.getEquipment());
 
 		if (lastRecord != null) {
 			lastRecord.setEndTime(nextRecord.getStartTime());
+			records.add(lastRecord);
 		}
 
-		PersistenceService.instance().save(lastRecord, nextRecord);
+		PersistenceService.instance().save(records);
 	}
 
 	public void saveProductionRecord(ResolvedEvent event) throws Exception {
@@ -691,14 +700,18 @@ public class CollectorServer
 		// next production
 		ProductionRecord nextRecord = new ProductionRecord(event);
 
+		List<KeyedObject> records = new ArrayList<>();
+		records.add(nextRecord);
+
 		// close off last production
 		ProductionRecord lastRecord = PersistenceService.instance().fetchLastProduction(event.getEquipment());
 
 		if (lastRecord != null) {
 			lastRecord.setEndTime(nextRecord.getStartTime());
+			records.add(lastRecord);
 		}
 
-		PersistenceService.instance().save(lastRecord, nextRecord);
+		PersistenceService.instance().save(records);
 	}
 
 	protected void onOtherResolution(ResolvedEvent resolvedItem) {
