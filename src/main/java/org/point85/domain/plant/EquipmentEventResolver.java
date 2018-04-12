@@ -12,11 +12,11 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.point85.domain.DomainUtils;
-import org.point85.domain.collector.AvailabilityRecord;
-import org.point85.domain.collector.BaseRecord;
+import org.point85.domain.collector.AvailabilityEvent;
+import org.point85.domain.collector.BaseEvent;
 import org.point85.domain.collector.DataSourceType;
-import org.point85.domain.collector.ProductionRecord;
-import org.point85.domain.collector.SetupRecord;
+import org.point85.domain.collector.ProductionEvent;
+import org.point85.domain.collector.SetupEvent;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.schedule.Shift;
 import org.point85.domain.schedule.ShiftInstance;
@@ -108,7 +108,7 @@ public class EquipmentEventResolver {
 		return configuredResolver;
 	}
 
-	public BaseRecord invokeResolver(EventResolver eventResolver, OeeContext context, Object sourceValue,
+	public BaseEvent invokeResolver(EventResolver eventResolver, OeeContext context, Object sourceValue,
 			OffsetDateTime dateTime) throws Exception {
 
 		Equipment equipment = eventResolver.getEquipment();
@@ -196,23 +196,23 @@ public class EquipmentEventResolver {
 		}
 
 		// fill in resolution
-		BaseRecord event = null;
+		BaseEvent event = null;
 
 		// specific processing
 		switch (resolverType) {
 		case AVAILABILITY: {
-			event = new AvailabilityRecord(equipment);
-			processReason((AvailabilityRecord) event);
+			event = new AvailabilityEvent(equipment);
+			processReason((AvailabilityEvent) event);
 			break;
 		}
 		case JOB_CHANGE: {
-			event = new SetupRecord(equipment);
-			processJob((SetupRecord) event);
+			event = new SetupEvent(equipment);
+			processJob((SetupEvent) event);
 			break;
 		}
 		case MATL_CHANGE: {
-			event = new SetupRecord(equipment);
-			processMaterial((SetupRecord) event);
+			event = new SetupEvent(equipment);
+			processMaterial((SetupEvent) event);
 			break;
 		}
 		case OTHER:
@@ -220,8 +220,8 @@ public class EquipmentEventResolver {
 		case PROD_GOOD:
 		case PROD_REJECT:
 		case PROD_STARTUP: {
-			event = new ProductionRecord(equipment);
-			processProduction((ProductionRecord)event, resolverType, material, context);
+			event = new ProductionEvent(equipment);
+			processProduction((ProductionEvent)event, resolverType, material, context);
 			break;
 		}
 		default:
@@ -244,7 +244,7 @@ public class EquipmentEventResolver {
 	}
 
 	// production counts
-	private void processProduction(ProductionRecord resolvedItem, EventResolverType resolverType, Material material, OeeContext context)
+	private void processProduction(ProductionEvent resolvedItem, EventResolverType resolverType, Material material, OeeContext context)
 			throws Exception {
 		Object outputValue = resolvedItem.getOutputValue();
 		Double amount = null;
@@ -290,7 +290,7 @@ public class EquipmentEventResolver {
 	}
 
 	// availability
-	private Reason processReason(AvailabilityRecord resolvedItem) throws Exception {
+	private Reason processReason(AvailabilityEvent resolvedItem) throws Exception {
 		if (!(resolvedItem.getOutputValue() instanceof String)) {
 			throw new Exception("The result " + resolvedItem.getOutputValue() + " is not a reason code.");
 		}
@@ -317,7 +317,7 @@ public class EquipmentEventResolver {
 	}
 
 	// job
-	private String processJob(SetupRecord resolvedItem) throws Exception {
+	private String processJob(SetupEvent resolvedItem) throws Exception {
 		if (!(resolvedItem.getOutputValue() instanceof String)) {
 			throw new Exception("The result " + resolvedItem.getOutputValue() + " is not a job identifier.");
 		}
@@ -350,7 +350,7 @@ public class EquipmentEventResolver {
 	}
 
 	// material
-	private Material processMaterial(SetupRecord resolvedItem) throws Exception {
+	private Material processMaterial(SetupEvent resolvedItem) throws Exception {
 
 		if (!(resolvedItem.getOutputValue() instanceof String)) {
 			throw new Exception(resolvedItem.getOutputValue() + " is not the name of a material.");

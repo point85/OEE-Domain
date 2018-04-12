@@ -1,9 +1,9 @@
 package org.point85.domain.messaging;
 
-import org.point85.domain.collector.AvailabilityRecord;
-import org.point85.domain.collector.BaseRecord;
-import org.point85.domain.collector.ProductionRecord;
-import org.point85.domain.collector.SetupRecord;
+import org.point85.domain.collector.AvailabilityEvent;
+import org.point85.domain.collector.BaseEvent;
+import org.point85.domain.collector.ProductionEvent;
+import org.point85.domain.collector.SetupEvent;
 import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
@@ -25,7 +25,7 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		super(senderHostName, senderHostAddress, MessageType.RESOLVED_EVENT);
 	}
 
-	public void fromResolvedEvent(BaseRecord event) {
+	public void fromResolvedEvent(BaseEvent event) {
 		this.setTimestamp(event.getStartTime());
 		this.setResolverType(event.getResolverType());
 
@@ -35,7 +35,7 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		// reason
 		switch (event.getResolverType()) {
 		case AVAILABILITY: {
-			Reason reason = ((AvailabilityRecord) event).getReason();
+			Reason reason = ((AvailabilityEvent) event).getReason();
 			if (reason != null) {
 				this.setReasonName(reason.getName());
 				this.setReasonDescription(reason.getDescription());
@@ -45,13 +45,13 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		}
 		case JOB_CHANGE: {
 			// job
-			String job = ((SetupRecord) event).getJob();
+			String job = ((SetupEvent) event).getJob();
 			this.setJob(job);
 			break;
 		}
 		case MATL_CHANGE: {
 			// material
-			Material material = ((SetupRecord) event).getMaterial();
+			Material material = ((SetupEvent) event).getMaterial();
 
 			if (material != null) {
 				this.setMaterialName(material.getName());
@@ -66,10 +66,10 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		case PROD_REJECT:
 		case PROD_STARTUP: {
 			// production quantity
-			this.setAmount(((ProductionRecord) event).getAmount());
+			this.setAmount(((ProductionEvent) event).getAmount());
 
-			if (((ProductionRecord) event).getUOM() != null) {
-				this.setUom(((ProductionRecord) event).getUOM().getName());
+			if (((ProductionEvent) event).getUOM() != null) {
+				this.setUom(((ProductionEvent) event).getUOM().getName());
 			}
 
 			break;

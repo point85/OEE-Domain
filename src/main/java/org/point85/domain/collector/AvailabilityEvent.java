@@ -20,8 +20,7 @@ import org.point85.domain.script.EventResolverType;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @AttributeOverride(name = "primaryKey", column = @Column(name = "AVAIL_KEY"))
 
-public class AvailabilityRecord extends BaseRecord {
-
+public class AvailabilityEvent extends BaseEvent {
 	@OneToOne
 	@JoinColumn(name = "REASON_KEY")
 	private Reason reason;
@@ -29,11 +28,11 @@ public class AvailabilityRecord extends BaseRecord {
 	@Column(name = "DURATION")
 	private Duration duration;
 
-	public AvailabilityRecord() {
+	public AvailabilityEvent() {
 		super();
 	}
 
-	public AvailabilityRecord(Equipment equipment) {
+	public AvailabilityEvent(Equipment equipment) {
 		super(equipment);
 		setResolverType(EventResolverType.AVAILABILITY);
 	}

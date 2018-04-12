@@ -17,15 +17,7 @@ import org.point85.domain.schedule.Shift;
 import org.point85.domain.script.EventResolverType;
 
 @MappedSuperclass
-public class BaseRecord extends KeyedObject {
-	/*
-	 * @Id
-	 * 
-	 * @GeneratedValue(strategy = GenerationType.IDENTITY)
-	 * 
-	 * @Column(name = "EVENT_KEY") private Long primaryKey;
-	 */
-
+public class BaseEvent extends KeyedObject {
 	@OneToOne
 	@JoinColumn(name = "ENT_KEY")
 	private Equipment equipment;
@@ -54,11 +46,11 @@ public class BaseRecord extends KeyedObject {
 	private transient Object inputValue;
 	private transient Object outputValue;
 
-	public BaseRecord() {
+	public BaseEvent() {
 
 	}
 
-	protected BaseRecord(Equipment equipment) {
+	protected BaseEvent(Equipment equipment) {
 		this.equipment = equipment;
 	}
 

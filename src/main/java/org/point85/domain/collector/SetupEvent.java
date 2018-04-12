@@ -17,7 +17,7 @@ import org.point85.domain.plant.Material;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @AttributeOverride(name = "primaryKey", column = @Column(name = "SETUP_KEY"))
 
-public class SetupRecord extends BaseRecord {
+public class SetupEvent extends BaseEvent {
 	@OneToOne
 	@JoinColumn(name = "MATL_KEY")
 	private Material material;
@@ -25,11 +25,11 @@ public class SetupRecord extends BaseRecord {
 	@Column(name = "JOB")
 	private String job;
 
-	public SetupRecord(Equipment equipment) {
+	public SetupEvent(Equipment equipment) {
 		super(equipment);
 	}
 
-	public SetupRecord() {
+	public SetupEvent() {
 		super();
 	}
 

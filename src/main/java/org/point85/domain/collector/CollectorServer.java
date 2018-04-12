@@ -644,7 +644,7 @@ public class CollectorServer
 		getExecutorService().execute(new OpcDaTask(item));
 	}
 
-	public void saveAvailabilityRecord(AvailabilityRecord nextRecord) throws Exception {
+	public void saveAvailabilityRecord(AvailabilityEvent nextRecord) throws Exception {
 		if (logger.isInfoEnabled()) {
 			logger.info("Availability reason " + nextRecord.getReason().getName() + ", Loss Category: "
 					+ nextRecord.getReason().getLossCategory());
@@ -657,7 +657,7 @@ public class CollectorServer
 		records.add(nextRecord);
 
 		// close off last availability
-		AvailabilityRecord lastRecord = PersistenceService.instance().fetchLastAvailability(nextRecord.getEquipment());
+		AvailabilityEvent lastRecord = PersistenceService.instance().fetchLastAvailability(nextRecord.getEquipment());
 
 		if (lastRecord != null) {
 			lastRecord.setEndTime(nextRecord.getStartTime());
@@ -669,7 +669,7 @@ public class CollectorServer
 		PersistenceService.instance().save(records);
 	}
 
-	public void saveSetupRecord(SetupRecord nextRecord) throws Exception {
+	public void saveSetupRecord(SetupEvent nextRecord) throws Exception {
 		if (logger.isInfoEnabled()) {
 			logger.info("Job change " + nextRecord.getJob());
 		}
@@ -681,7 +681,7 @@ public class CollectorServer
 		records.add(nextRecord);
 
 		// close off last setup
-		SetupRecord lastRecord = PersistenceService.instance().fetchLastSetup(nextRecord.getEquipment());
+		SetupEvent lastRecord = PersistenceService.instance().fetchLastSetup(nextRecord.getEquipment());
 
 		if (lastRecord != null) {
 			lastRecord.setEndTime(nextRecord.getStartTime());
@@ -691,7 +691,7 @@ public class CollectorServer
 		PersistenceService.instance().save(records);
 	}
 
-	public void saveProductionRecord(ProductionRecord nextRecord) throws Exception {
+	public void saveProductionRecord(ProductionEvent nextRecord) throws Exception {
 		if (logger.isInfoEnabled()) {
 			logger.info("Production " + nextRecord.getAmount() + " for type " + nextRecord.getResolverType());
 		}
@@ -703,7 +703,7 @@ public class CollectorServer
 		records.add(nextRecord);
 
 		// close off last production
-		ProductionRecord lastRecord = PersistenceService.instance().fetchLastProduction(nextRecord.getEquipment());
+		ProductionEvent lastRecord = PersistenceService.instance().fetchLastProduction(nextRecord.getEquipment());
 
 		if (lastRecord != null) {
 			lastRecord.setEndTime(nextRecord.getStartTime());
@@ -895,7 +895,7 @@ public class CollectorServer
 				// find resolver
 				EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
 
-				BaseRecord resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
+				BaseEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
 						dataValue, timestamp);
 
 				recordResolution(resolvedDataItem);
@@ -931,7 +931,7 @@ public class CollectorServer
 
 				EventResolver eventResolver = equipmentResolver.getResolver(itemId);
 
-				BaseRecord resolvedEvent = equipmentResolver.invokeResolver(eventResolver, getAppContext(), javaValue,
+				BaseEvent resolvedEvent = equipmentResolver.invokeResolver(eventResolver, getAppContext(), javaValue,
 						odt);
 
 				recordResolution(resolvedEvent);
@@ -942,18 +942,18 @@ public class CollectorServer
 		}
 	}
 
-	private synchronized void recordResolution(BaseRecord resolvedEvent) throws Exception {
+	private synchronized void recordResolution(BaseEvent resolvedEvent) throws Exception {
 		EventResolverType type = resolvedEvent.getResolverType();
 
 		// first in database
 		switch (type) {
 		case AVAILABILITY:
-			saveAvailabilityRecord((AvailabilityRecord) resolvedEvent);
+			saveAvailabilityRecord((AvailabilityEvent) resolvedEvent);
 			break;
 
 		case JOB_CHANGE:
 		case MATL_CHANGE:
-			saveSetupRecord((SetupRecord) resolvedEvent);
+			saveSetupRecord((SetupEvent) resolvedEvent);
 			break;
 
 		case OTHER:
@@ -962,7 +962,7 @@ public class CollectorServer
 		case PROD_GOOD:
 		case PROD_REJECT:
 		case PROD_STARTUP:
-			saveProductionRecord((ProductionRecord) resolvedEvent);
+			saveProductionRecord((ProductionEvent) resolvedEvent);
 			break;
 
 		default:
@@ -973,7 +973,7 @@ public class CollectorServer
 		sendResolutionMessage(resolvedEvent);
 	}
 
-	private void sendResolutionMessage(BaseRecord resolvedEvent) {
+	private void sendResolutionMessage(BaseEvent resolvedEvent) {
 		try {
 			if (appContext.getPublisherSubscribers().size() == 0) {
 				return;
@@ -1044,7 +1044,7 @@ public class CollectorServer
 				}
 
 				// resolver the data
-				BaseRecord resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
+				BaseEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
 						dataValue, item.getLocalTimestamp());
 
 				// save resolution
@@ -1089,7 +1089,7 @@ public class CollectorServer
 					EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
 
 					if (eventResolver != null) {
-						BaseRecord resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
+						BaseEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
 								dataValue, timestamp);
 
 						recordResolution(resolvedDataItem);

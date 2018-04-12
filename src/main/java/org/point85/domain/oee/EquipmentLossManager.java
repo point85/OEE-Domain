@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.point85.domain.collector.AvailabilityRecord;
-import org.point85.domain.collector.BaseRecord;
-import org.point85.domain.collector.ProductionRecord;
+import org.point85.domain.collector.AvailabilityEvent;
+import org.point85.domain.collector.BaseEvent;
+import org.point85.domain.collector.ProductionEvent;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentMaterial;
@@ -42,11 +42,11 @@ public class EquipmentLossManager {
 		equipmentLoss.setDesignSpeed(eqm.getRunRate());
 
 		// time from measured production
-		List<ProductionRecord> productions = PersistenceService.instance().fetchProduction(equipment, from, to);
+		List<ProductionEvent> productions = PersistenceService.instance().fetchProduction(equipment, from, to);
 		
 		equipmentLoss.getEventRecords().addAll(productions);
 
-		for (ProductionRecord record : productions) {
+		for (ProductionEvent record : productions) {
 			checkTimePeriod(record, equipmentLoss, from, to);
 
 			Quantity quantity = record.getQuantity();
@@ -81,11 +81,11 @@ public class EquipmentLossManager {
 		}
 
 		// time from measured availability losses
-		List<AvailabilityRecord> records = PersistenceService.instance().fetchAvailability(equipment, from, to);
+		List<AvailabilityEvent> records = PersistenceService.instance().fetchAvailability(equipment, from, to);
 		equipmentLoss.getEventRecords().addAll(records);
 
 		for (int i = 0; i < records.size(); i++) {
-			AvailabilityRecord record = records.get(i);
+			AvailabilityEvent record = records.get(i);
 
 			checkTimePeriod(record, equipmentLoss, from, to);
 
@@ -138,7 +138,7 @@ public class EquipmentLossManager {
 		System.out.println(equipmentLoss.toString());
 	}
 
-	private static void checkTimePeriod(BaseRecord record, EquipmentLoss equipmentLoss, OffsetDateTime from,
+	private static void checkTimePeriod(BaseEvent record, EquipmentLoss equipmentLoss, OffsetDateTime from,
 			OffsetDateTime to) {
 		// beginning time
 		OffsetDateTime recordStart = record.getStartTime();

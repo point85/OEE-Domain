@@ -18,8 +18,7 @@ import org.point85.domain.uom.UnitOfMeasure;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @AttributeOverride(name = "primaryKey", column = @Column(name = "PROD_KEY"))
 
-public class ProductionRecord extends BaseRecord {
-
+public class ProductionEvent extends BaseEvent {
 	@Column(name = "AMOUNT")
 	private double amount;
 
@@ -27,11 +26,11 @@ public class ProductionRecord extends BaseRecord {
 	@JoinColumn(name = "UOM_KEY")
 	private UnitOfMeasure uom;
 
-	public ProductionRecord(Equipment equipment) {
+	public ProductionEvent(Equipment equipment) {
 		super(equipment);
 	}
 
-	public ProductionRecord() {
+	public ProductionEvent() {
 		super();
 	}
 
