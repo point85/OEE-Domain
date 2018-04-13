@@ -47,6 +47,7 @@ import org.point85.domain.opc.ua.OpcUaAsynchListener;
 import org.point85.domain.opc.ua.OpcUaSource;
 import org.point85.domain.opc.ua.UaOpcClient;
 import org.point85.domain.persistence.PersistenceService;
+import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentEventResolver;
 import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.script.EventResolver;
@@ -643,74 +644,89 @@ public class CollectorServer
 		// execute on separate thread
 		getExecutorService().execute(new OpcDaTask(item));
 	}
+	
+	private void purgeRecords(BaseEvent event) throws Exception {
+		Equipment equipment= event.getEquipment();
+		
+		Duration days = equipment.findDurationPeriod();
+		
+		if (days == null) {
+			days = Equipment.DEFAULT_RETENTION_PERIOD;
+		}
+		
+		OffsetDateTime cutoff = OffsetDateTime.now().minusDays(days.toDays());
+		
+		// purge database tables
+		PersistenceService.instance().purge(equipment, cutoff);
+	}
 
-	public void saveAvailabilityRecord(AvailabilityEvent nextRecord) throws Exception {
+	public void saveAvailabilityEvent(AvailabilityEvent event) throws Exception {
 		if (logger.isInfoEnabled()) {
-			logger.info("Availability reason " + nextRecord.getReason().getName() + ", Loss Category: "
-					+ nextRecord.getReason().getLossCategory());
+			logger.info("Availability reason " + event.getReason().getName() + ", Loss Category: "
+					+ event.getReason().getLossCategory());
 		}
 
-		// next availability
-		// AvailabilityRecord nextRecord = new AvailabilityRecord(event);
-
 		List<KeyedObject> records = new ArrayList<>();
-		records.add(nextRecord);
+		records.add(event);
 
 		// close off last availability
-		AvailabilityEvent lastRecord = PersistenceService.instance().fetchLastAvailability(nextRecord.getEquipment());
+		AvailabilityEvent lastRecord = PersistenceService.instance().fetchLastAvailability(event.getEquipment());
 
 		if (lastRecord != null) {
-			lastRecord.setEndTime(nextRecord.getStartTime());
+			lastRecord.setEndTime(event.getStartTime());
 			Duration duration = Duration.between(lastRecord.getStartTime(), lastRecord.getEndTime());
 			lastRecord.setDuration(duration);
 
 			records.add(lastRecord);
 		}
+		
+		// save records
 		PersistenceService.instance().save(records);
+		
+		// purge old data
+		purgeRecords(event);
 	}
 
-	public void saveSetupRecord(SetupEvent nextRecord) throws Exception {
+	public void saveSetupEvent(SetupEvent event) throws Exception {
 		if (logger.isInfoEnabled()) {
-			logger.info("Job change " + nextRecord.getJob());
+			logger.info("Job change " + event.getJob());
 		}
 
-		// next setup
-		// SetupRecord nextRecord = new SetupRecord(event);
-
 		List<KeyedObject> records = new ArrayList<>();
-		records.add(nextRecord);
+		records.add(event);
 
 		// close off last setup
-		SetupEvent lastRecord = PersistenceService.instance().fetchLastSetup(nextRecord.getEquipment());
+		SetupEvent lastRecord = PersistenceService.instance().fetchLastSetup(event.getEquipment());
 
 		if (lastRecord != null) {
-			lastRecord.setEndTime(nextRecord.getStartTime());
+			lastRecord.setEndTime(event.getStartTime());
 			records.add(lastRecord);
 		}
 
 		PersistenceService.instance().save(records);
 	}
 
-	public void saveProductionRecord(ProductionEvent nextRecord) throws Exception {
+	public void saveProductionEvent(ProductionEvent event) throws Exception {
 		if (logger.isInfoEnabled()) {
-			logger.info("Production " + nextRecord.getAmount() + " for type " + nextRecord.getResolverType());
+			logger.info("Production " + event.getAmount() + " for type " + event.getResolverType());
 		}
 
-		// next production
-		// ProductionRecord nextRecord = new ProductionRecord(event);
-
 		List<KeyedObject> records = new ArrayList<>();
-		records.add(nextRecord);
+		records.add(event);
 
 		// close off last production
-		ProductionEvent lastRecord = PersistenceService.instance().fetchLastProduction(nextRecord.getEquipment());
+		ProductionEvent lastRecord = PersistenceService.instance().fetchLastProduction(event.getEquipment());
 
 		if (lastRecord != null) {
-			lastRecord.setEndTime(nextRecord.getStartTime());
+			lastRecord.setEndTime(event.getStartTime());
 			records.add(lastRecord);
 		}
 
+		// save data
 		PersistenceService.instance().save(records);
+		
+		// purge old data
+		purgeRecords(event);
 	}
 
 	@Override
@@ -948,12 +964,12 @@ public class CollectorServer
 		// first in database
 		switch (type) {
 		case AVAILABILITY:
-			saveAvailabilityRecord((AvailabilityEvent) resolvedEvent);
+			saveAvailabilityEvent((AvailabilityEvent) resolvedEvent);
 			break;
 
 		case JOB_CHANGE:
 		case MATL_CHANGE:
-			saveSetupRecord((SetupEvent) resolvedEvent);
+			saveSetupEvent((SetupEvent) resolvedEvent);
 			break;
 
 		case OTHER:
@@ -962,7 +978,7 @@ public class CollectorServer
 		case PROD_GOOD:
 		case PROD_REJECT:
 		case PROD_STARTUP:
-			saveProductionRecord((ProductionEvent) resolvedEvent);
+			saveProductionEvent((ProductionEvent) resolvedEvent);
 			break;
 
 		default:

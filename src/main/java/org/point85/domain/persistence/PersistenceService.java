@@ -160,19 +160,6 @@ public class PersistenceService {
 		return entity;
 	}
 
-	// fetch list of PersistentObjects by names
-	public List<PlantEntity> fetchEntitiesByName(List<String> names) throws Exception {
-		final String ENTITY_BY_NAME_LIST = "ENTITY.ByNameList";
-
-		if (namedQueryMap.get(ENTITY_BY_NAME_LIST) == null) {
-			createNamedQuery(ENTITY_BY_NAME_LIST, "SELECT ent FROM PlantEntity ent WHERE ent.name IN :names");
-		}
-
-		TypedQuery<PlantEntity> query = getEntityManager().createNamedQuery(ENTITY_BY_NAME_LIST, PlantEntity.class);
-		query.setParameter("names", names);
-		return query.getResultList();
-	}
-
 	public List<EventResolver> fetchEventResolvers() {
 		final String RESOLVER_ALL = "RESOLVER.All";
 
@@ -278,38 +265,6 @@ public class PersistenceService {
 			em.close();
 		}
 	}
-
-	// save the Persistent Object to the database
-	/*
-	 * public void save(BaseRecord lastRecord, BaseRecord nextRecord) throws
-	 * Exception { EntityManager em = getEntityManager(); EntityTransaction txn =
-	 * null;
-	 * 
-	 * try { txn = em.getTransaction(); txn.begin();
-	 * 
-	 * // merge these entities into the PU and save if (lastRecord != null) {
-	 * em.merge(lastRecord); } em.merge(nextRecord);
-	 * 
-	 * // commit transaction txn.commit(); } catch (Exception e) { // roll back
-	 * transaction if (txn != null && txn.isActive()) { txn.rollback();
-	 * e.printStackTrace(); } throw new Exception(e.getMessage()); } finally {
-	 * em.close(); } }
-	 */
-
-	// insert the record into the database
-	/*
-	 * public void persist(BaseRecord object) throws Exception { EntityManager em =
-	 * getEntityManager(); EntityTransaction txn = null;
-	 * 
-	 * try { txn = em.getTransaction(); txn.begin();
-	 * 
-	 * // insert object em.persist(object);
-	 * 
-	 * // commit transaction txn.commit(); } catch (Exception e) { // roll back
-	 * transaction if (txn != null && txn.isActive()) { txn.rollback();
-	 * e.printStackTrace(); } throw new Exception(e.getMessage()); } finally {
-	 * em.close(); } }
-	 */
 
 	public void checkReferences(KeyedObject keyed) throws Exception {
 		if (keyed instanceof Rotation) {
@@ -1198,8 +1153,7 @@ public class PersistenceService {
 					"SELECT a FROM AvailabilityEvent a WHERE a.equipment = :equipment ORDER BY a.startTime DESC");
 		}
 
-		TypedQuery<AvailabilityEvent> query = getEntityManager().createNamedQuery(LAST_AVAIL,
-				AvailabilityEvent.class);
+		TypedQuery<AvailabilityEvent> query = getEntityManager().createNamedQuery(LAST_AVAIL, AvailabilityEvent.class);
 		query.setParameter("equipment", equipment);
 		query.setMaxResults(1);
 		List<AvailabilityEvent> records = query.getResultList();
@@ -1228,8 +1182,8 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<SetupEvent> fetchSetupsForPeriodAndMaterial(Equipment equipment, OffsetDateTime from,
-			OffsetDateTime to, Material material) {
+	public List<SetupEvent> fetchSetupsForPeriodAndMaterial(Equipment equipment, OffsetDateTime from, OffsetDateTime to,
+			Material material) {
 		final String SETUP_PERIOD_MATL = "Setup.Period.Material";
 
 		if (namedQueryMap.get(SETUP_PERIOD_MATL) == null) {
@@ -1266,9 +1220,62 @@ public class PersistenceService {
 
 		return record;
 	}
-	
+
 	public AvailabilityEvent fetchAvailabilityByKey(Long key) throws Exception {
 		return getEntityManager().find(AvailabilityEvent.class, key);
 	}
 
+	public int purge(Equipment equipment, OffsetDateTime cutoff) throws Exception {
+		// availability
+		final String PURGE_AVAIL = "Avail.Purge";
+
+		if (namedQueryMap.get(PURGE_AVAIL) == null) {
+			createNamedQuery(PURGE_AVAIL,
+					"DELETE FROM AvailabilityEvent e WHERE e.equipment = :equipment AND e.startTime < :cutoff");
+		}
+
+		Query purgeAvail = getEntityManager().createNamedQuery(PURGE_AVAIL);
+		purgeAvail.setParameter("equipment", equipment);
+		purgeAvail.setParameter("cutoff", cutoff);
+
+		// production
+		final String PURGE_PROD = "Prod.Purge";
+
+		if (namedQueryMap.get(PURGE_PROD) == null) {
+			createNamedQuery(PURGE_PROD,
+					"DELETE FROM ProductionEvent e WHERE e.equipment = :equipment AND e.startTime < :cutoff");
+		}
+
+		Query purgeProd = getEntityManager().createNamedQuery(PURGE_PROD);
+		purgeProd.setParameter("equipment", equipment);
+		purgeProd.setParameter("cutoff", cutoff);
+
+		// execute in transaction
+		EntityManager em = getEntityManager();
+		EntityTransaction txn = null;
+
+		try {
+			// start transaction
+			txn = em.getTransaction();
+			txn.begin();
+
+			// execute the delete
+			int deletedCount = purgeAvail.executeUpdate();
+			deletedCount += purgeProd.executeUpdate();
+
+			// commit transaction
+			txn.commit();
+
+			return deletedCount;
+		} catch (Exception e) {
+			// roll back transaction
+			if (txn != null && txn.isActive()) {
+				txn.rollback();
+				e.printStackTrace();
+			}
+			throw new Exception(e.getMessage());
+		} finally {
+			em.close();
+		}
+	}
 }

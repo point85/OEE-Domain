@@ -202,16 +202,25 @@ public class EquipmentEventResolver {
 		switch (resolverType) {
 		case AVAILABILITY: {
 			event = new AvailabilityEvent(equipment);
+			event.setInputValue(sourceValue);
+			event.setOutputValue(result);
+			
 			processReason((AvailabilityEvent) event);
 			break;
 		}
 		case JOB_CHANGE: {
 			event = new SetupEvent(equipment);
+			event.setInputValue(sourceValue);
+			event.setOutputValue(result);
+			
 			processJob((SetupEvent) event);
 			break;
 		}
 		case MATL_CHANGE: {
 			event = new SetupEvent(equipment);
+			event.setInputValue(sourceValue);
+			event.setOutputValue(result);
+			
 			processMaterial((SetupEvent) event);
 			break;
 		}
@@ -221,6 +230,9 @@ public class EquipmentEventResolver {
 		case PROD_REJECT:
 		case PROD_STARTUP: {
 			event = new ProductionEvent(equipment);
+			event.setInputValue(sourceValue);
+			event.setOutputValue(result);
+			
 			processProduction((ProductionEvent)event, resolverType, material, context);
 			break;
 		}
@@ -236,8 +248,6 @@ public class EquipmentEventResolver {
 		event.setResolverType(resolverType);
 		event.setItemId(sourceId);
 		event.setStartTime(dateTime);
-		event.setInputValue(sourceValue);
-		event.setOutputValue(result);
 		event.setShift(shift);
 
 		return event;
@@ -265,7 +275,7 @@ public class EquipmentEventResolver {
 		} else if (outputValue instanceof Byte) {
 			amount = Double.valueOf((Byte) outputValue);
 		} else {
-			throw new Exception("The result " + resolvedItem.getOutputValue() + " cannot be converted to a number.");
+			throw new Exception("The result " + outputValue + " cannot be converted to a number.");
 		}
 
 		// get UOM from material and equipment

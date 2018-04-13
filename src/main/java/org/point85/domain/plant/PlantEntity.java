@@ -1,5 +1,6 @@
 package org.point85.domain.plant;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -59,9 +60,9 @@ public class PlantEntity extends NamedObject {
 	@JoinColumn(name = "WS_KEY")
 	private WorkSchedule workSchedule;
 
-	// flag for root entity in the hierarchy
-	@Column(name = "IS_ROOT")
-	private Boolean isRoot = false;
+	// retention period for database records
+	@Column(name = "RETENTION")
+	private Duration retentionDuration;
 
 	public PlantEntity() {
 		super();
@@ -114,14 +115,6 @@ public class PlantEntity extends NamedObject {
 		this.workSchedule = schedule;
 	}
 
-	public Boolean isRoot() {
-		return this.isRoot;
-	}
-
-	public void setIsRoot(Boolean isRoot) {
-		this.isRoot = isRoot;
-	}
-
 	public WorkSchedule findWorkSchedule() {
 		WorkSchedule schedule = workSchedule;
 
@@ -130,8 +123,26 @@ public class PlantEntity extends NamedObject {
 				schedule = parent.findWorkSchedule();
 			}
 		}
-
 		return schedule;
+	}
+
+	public Duration getRetentionDuration() {
+		return retentionDuration;
+	}
+
+	public void setRetentionDuration(Duration retentionDuration) {
+		this.retentionDuration = retentionDuration;
+	}
+
+	public Duration findDurationPeriod() {
+		Duration duration = retentionDuration;
+
+		if (duration == null) {
+			if (parent != null) {
+				duration = parent.findDurationPeriod();
+			}
+		}
+		return duration;
 	}
 
 	@Override

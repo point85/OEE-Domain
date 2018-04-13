@@ -173,6 +173,12 @@ public class Team extends Named implements Comparable<Team> {
 			String msg = MessageFormat.format(WorkSchedule.getMessage("end.earlier.than.start"), rotationStart, date);
 			throw new Exception(msg);
 		}
+		
+		if (getRotation().getDuration().equals(Duration.ZERO)) {
+			// TODO
+			String msg = "Rotation duration is zero for team " + getName() + " in schedule " + getWorkSchedule().getName() + " for date " + date;
+			throw new Exception(msg);
+		}
 
 		int dayInRotation = (int) (deltaDays % getRotation().getDuration().toDays()) + 1;
 		return dayInRotation;
