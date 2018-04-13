@@ -1226,6 +1226,8 @@ public class PersistenceService {
 	}
 
 	public int purge(Equipment equipment, OffsetDateTime cutoff) throws Exception {
+		EntityManager em = getEntityManager();
+
 		// availability
 		final String PURGE_AVAIL = "Avail.Purge";
 
@@ -1234,9 +1236,8 @@ public class PersistenceService {
 					"DELETE FROM AvailabilityEvent e WHERE e.equipment = :equipment AND e.startTime < :cutoff");
 		}
 
-		Query purgeAvail = getEntityManager().createNamedQuery(PURGE_AVAIL);
-		purgeAvail.setParameter("equipment", equipment);
-		purgeAvail.setParameter("cutoff", cutoff);
+		Query purgeAvail = em.createNamedQuery(PURGE_AVAIL).setParameter("equipment", equipment).setParameter("cutoff",
+				cutoff);
 
 		// production
 		final String PURGE_PROD = "Prod.Purge";
@@ -1246,12 +1247,9 @@ public class PersistenceService {
 					"DELETE FROM ProductionEvent e WHERE e.equipment = :equipment AND e.startTime < :cutoff");
 		}
 
-		Query purgeProd = getEntityManager().createNamedQuery(PURGE_PROD);
-		purgeProd.setParameter("equipment", equipment);
-		purgeProd.setParameter("cutoff", cutoff);
+		Query purgeProd = em.createNamedQuery(PURGE_PROD).setParameter("equipment", equipment).setParameter("cutoff",
+				cutoff);
 
-		// execute in transaction
-		EntityManager em = getEntityManager();
 		EntityTransaction txn = null;
 
 		try {

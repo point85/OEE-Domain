@@ -173,12 +173,6 @@ public class Team extends Named implements Comparable<Team> {
 			String msg = MessageFormat.format(WorkSchedule.getMessage("end.earlier.than.start"), rotationStart, date);
 			throw new Exception(msg);
 		}
-		
-		if (getRotation().getDuration().equals(Duration.ZERO)) {
-			// TODO
-			String msg = "Rotation duration is zero for team " + getName() + " in schedule " + getWorkSchedule().getName() + " for date " + date;
-			throw new Exception(msg);
-		}
 
 		int dayInRotation = (int) (deltaDays % getRotation().getDuration().toDays()) + 1;
 		return dayInRotation;
@@ -197,12 +191,18 @@ public class Team extends Named implements Comparable<Team> {
 		ShiftInstance instance = null;
 
 		Rotation shiftRotation = getRotation();
+		
+		if (shiftRotation.getDuration().equals(Duration.ZERO)) {
+			// no instance for that day
+			return instance;
+		}
+		
 		int dayInRotation = getDayInRotation(day);
 
 		// shift or off shift
 		TimePeriod period = shiftRotation.getPeriods().get(dayInRotation - 1);
 
-		if (period.isWorkingPeriod()) {
+		if (period != null && period.isWorkingPeriod()) {
 			LocalDateTime startDateTime = LocalDateTime.of(day, period.getStart());
 			instance = new ShiftInstance((Shift) period, startDateTime, this);
 		}

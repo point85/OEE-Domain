@@ -24,7 +24,7 @@ public class Equipment extends PlantEntity {
 	public static final String DEFAULT_DESC = "Default equipment";
 	public static final Duration MIN_DURATION = Duration.ofSeconds(5);
 	
-	// default period for retaining OEE records in the database
+	// default and minimum periods for retaining OEE records in the database
 	public static final Duration DEFAULT_RETENTION_PERIOD = Duration.ofDays(30);
 
 	// map by Material

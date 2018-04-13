@@ -644,18 +644,20 @@ public class CollectorServer
 		// execute on separate thread
 		getExecutorService().execute(new OpcDaTask(item));
 	}
-	
+
 	private void purgeRecords(BaseEvent event) throws Exception {
-		Equipment equipment= event.getEquipment();
-		
+		Equipment equipment = event.getEquipment();
+
 		Duration days = equipment.findDurationPeriod();
-		
+
 		if (days == null) {
 			days = Equipment.DEFAULT_RETENTION_PERIOD;
 		}
-		
+
 		OffsetDateTime cutoff = OffsetDateTime.now().minusDays(days.toDays());
-		
+
+		logger.info("Purging records for equipment " + equipment.getName() + " older than " + cutoff);
+
 		// purge database tables
 		PersistenceService.instance().purge(equipment, cutoff);
 	}
@@ -679,10 +681,10 @@ public class CollectorServer
 
 			records.add(lastRecord);
 		}
-		
+
 		// save records
 		PersistenceService.instance().save(records);
-		
+
 		// purge old data
 		purgeRecords(event);
 	}
@@ -724,7 +726,7 @@ public class CollectorServer
 
 		// save data
 		PersistenceService.instance().save(records);
-		
+
 		// purge old data
 		purgeRecords(event);
 	}
@@ -911,8 +913,8 @@ public class CollectorServer
 				// find resolver
 				EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
 
-				BaseEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
-						dataValue, timestamp);
+				BaseEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue,
+						timestamp);
 
 				recordResolution(resolvedDataItem);
 
@@ -1060,8 +1062,8 @@ public class CollectorServer
 				}
 
 				// resolver the data
-				BaseEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
-						dataValue, item.getLocalTimestamp());
+				BaseEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue,
+						item.getLocalTimestamp());
 
 				// save resolution
 				recordResolution(resolvedDataItem);
