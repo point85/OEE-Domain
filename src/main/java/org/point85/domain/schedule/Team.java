@@ -202,7 +202,7 @@ public class Team extends Named implements Comparable<Team> {
 		// shift or off shift
 		TimePeriod period = shiftRotation.getPeriods().get(dayInRotation - 1);
 
-		if (period != null && period.isWorkingPeriod()) {
+		if (period.isWorkingPeriod()) {
 			LocalDateTime startDateTime = LocalDateTime.of(day, period.getStart());
 			instance = new ShiftInstance((Shift) period, startDateTime, this);
 		}

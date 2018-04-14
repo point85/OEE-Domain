@@ -58,20 +58,8 @@ import org.point85.domain.plant.NamedObject;
 @Table(name = "WORK_SCHEDULE")
 @AttributeOverride(name = "primaryKey", column = @Column(name = "WS_KEY"))
 
-//@NamedQueries({ @NamedQuery(name = WorkSchedule.WS_SCHEDULES, query = "SELECT ws FROM WorkSchedule ws"),
-		//@NamedQuery(name = WorkSchedule.WS_NAMES, query = "SELECT ws.name FROM WorkSchedule ws"),
-		//@NamedQuery(name = WorkSchedule.WS_BY_NAME, query = "SELECT ws FROM WorkSchedule ws WHERE ws.name = :name"),
-		//@NamedQuery(name = WorkSchedule.WS_ENT_XREF, query = "SELECT ent FROM PlantEntity ent WHERE ent.workSchedule = :schedule"),
-		//@NamedQuery(name = WorkSchedule.WS_ROT_XREF, query = "SELECT team FROM Team team WHERE rotation = :rotation"), })
-
 public class WorkSchedule extends NamedObject {
-	// named queries
-	//public static final String WS_SCHEDULES = "WS.Schedules";
-	//public static final String WS_NAMES = "WS.Names";
-	//public static final String WS_BY_NAME = "WS.ByName";
-	//public static final String WS_ROT_XREF = "WS.ROT.CrossRef";
-	//public static final String WS_ENT_XREF = "WS.ENT.CrossRef";
-
+	
 	// name of resource bundle with translatable strings for exception messages
 	private static final String MESSAGES_BUNDLE_NAME = "WorkScheduleMessage";
 
@@ -574,7 +562,4 @@ public class WorkSchedule extends NamedObject {
 
 		return text;
 	}
-	/*
-	 * @Override public String getFetchQueryName() { return WS_BY_NAME; }
-	 */
 }
