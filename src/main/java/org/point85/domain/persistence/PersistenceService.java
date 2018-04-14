@@ -61,6 +61,9 @@ import org.point85.domain.uom.UnitType;
 import org.point85.domain.web.WebSource;
 
 public class PersistenceService {
+	// persistence unit name for
+	private static final String PU_NAME = "OEE";
+
 	// time in sec to wait for EntityManagerFactory creation to complete
 	private static final int EMF_CREATION_TO_SEC = 15;
 
@@ -991,7 +994,7 @@ public class PersistenceService {
 	private void createContainerManagedEntityManagerFactory(String jdbcUrl, String userName, String password)
 			throws Exception {
 		// create the PU info
-		PersistenceUnitInfo persistenceUnitInfo = new PersistenceUnitInfoImpl("OEE", getEntityClassNames(),
+		PersistenceUnitInfo persistenceUnitInfo = new PersistenceUnitInfoImpl(PU_NAME, getEntityClassNames(),
 				createProperties(jdbcUrl, userName, password));
 
 		// add any mapping files

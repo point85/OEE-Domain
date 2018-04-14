@@ -41,9 +41,13 @@ public class BaseEvent extends KeyedObject {
 	// computed lost time
 	private transient Duration lostTime;
 
+	// source identifier
 	private transient String itemId;
 
+	// input value
 	private transient Object inputValue;
+	
+	// output value
 	private transient Object outputValue;
 
 	public BaseEvent() {
