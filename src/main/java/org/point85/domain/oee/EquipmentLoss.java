@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.point85.domain.collector.BaseEvent;
+import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
@@ -43,7 +43,7 @@ public class EquipmentLoss {
 	private Quantity designSpeed;
 
 	// history
-	private List<BaseEvent> eventRecords = new ArrayList<>();
+	private List<OeeEvent> eventRecords = new ArrayList<>();
 
 	public EquipmentLoss(Equipment equipment) {
 		this.equipment = equipment;
@@ -481,11 +481,11 @@ public class EquipmentLoss {
 		this.material = material;
 	}
 
-	public List<BaseEvent> getEventRecords() {
+	public List<OeeEvent> getEventRecords() {
 		return eventRecords;
 	}
 
-	public void setEventRecords(List<BaseEvent> records) {
+	public void setEventRecords(List<OeeEvent> records) {
 		this.eventRecords = records;
 	}
 }

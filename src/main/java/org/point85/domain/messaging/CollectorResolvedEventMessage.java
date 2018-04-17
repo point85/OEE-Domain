@@ -1,17 +1,14 @@
 package org.point85.domain.messaging;
 
-import org.point85.domain.collector.AvailabilityEvent;
-import org.point85.domain.collector.BaseEvent;
-import org.point85.domain.collector.ProductionEvent;
-import org.point85.domain.collector.SetupEvent;
+import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
-import org.point85.domain.script.EventResolverType;
+import org.point85.domain.script.EventType;
 
 public class CollectorResolvedEventMessage extends ApplicationMessage {
 	private String equipmentName;
-	private EventResolverType resolverType;
+	private EventType resolverType;
 	private String reasonName;
 	private String reasonDescription;
 	private TimeLoss loss;
@@ -25,7 +22,7 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		super(senderHostName, senderHostAddress, MessageType.RESOLVED_EVENT);
 	}
 
-	public void fromResolvedEvent(BaseEvent event) {
+	public void fromResolvedEvent(OeeEvent event) {
 		this.setTimestamp(event.getStartTime());
 		this.setResolverType(event.getResolverType());
 
@@ -35,7 +32,7 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		// reason
 		switch (event.getResolverType()) {
 		case AVAILABILITY: {
-			Reason reason = ((AvailabilityEvent) event).getReason();
+			Reason reason = event.getReason();
 			if (reason != null) {
 				this.setReasonName(reason.getName());
 				this.setReasonDescription(reason.getDescription());
@@ -45,13 +42,13 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		}
 		case JOB_CHANGE: {
 			// job
-			String job = ((SetupEvent) event).getJob();
+			String job = event.getJob();
 			this.setJob(job);
 			break;
 		}
 		case MATL_CHANGE: {
 			// material
-			Material material = ((SetupEvent) event).getMaterial();
+			Material material = event.getMaterial();
 
 			if (material != null) {
 				this.setMaterialName(material.getName());
@@ -66,17 +63,15 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		case PROD_REJECT:
 		case PROD_STARTUP: {
 			// production quantity
-			this.setAmount(((ProductionEvent) event).getAmount());
+			this.setAmount(event.getAmount());
 
-			if (((ProductionEvent) event).getUOM() != null) {
-				this.setUom(((ProductionEvent) event).getUOM().getName());
+			if (event.getUOM() != null) {
+				this.setUom(event.getUOM().getName());
 			}
-
 			break;
 		}
 		default:
 			break;
-
 		}
 
 	}
@@ -137,11 +132,11 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		this.equipmentName = equipmentName;
 	}
 
-	public EventResolverType getResolverType() {
+	public EventType getResolverType() {
 		return resolverType;
 	}
 
-	public void setResolverType(EventResolverType resolverType) {
+	public void setResolverType(EventType resolverType) {
 		this.resolverType = resolverType;
 	}
 

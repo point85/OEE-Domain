@@ -12,7 +12,7 @@ import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 
 import org.point85.domain.script.EventResolver;
-import org.point85.domain.script.EventResolverType;
+import org.point85.domain.script.EventType;
 import org.point85.domain.uom.UnitOfMeasure;
 
 @Entity
@@ -147,7 +147,7 @@ public class Equipment extends PlantEntity {
 		return equipmentMaterials.contains(equipmentMaterial);
 	}
 
-	public UnitOfMeasure getUOM(Material material, EventResolverType resolverType) throws Exception {
+	public UnitOfMeasure getUOM(Material material, EventType resolverType) throws Exception {
 		UnitOfMeasure uom = null;
 		if (material == null) {
 			return uom;

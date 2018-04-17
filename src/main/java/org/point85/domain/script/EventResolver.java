@@ -15,7 +15,7 @@ import javax.persistence.Table;
 
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataCollector;
-import org.point85.domain.persistence.EventResolverTypeConverter;
+import org.point85.domain.persistence.EventTypeConverter;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.KeyedObject;
 
@@ -46,8 +46,8 @@ public class EventResolver extends KeyedObject {
 	private Integer updatePeriod;
 
 	@Column(name = "SR_TYPE")
-	@Convert(converter = EventResolverTypeConverter.class)
-	private EventResolverType type;
+	@Convert(converter = EventTypeConverter.class)
+	private EventType type;
 
 	@Column(name = "DATA_TYPE")
 	private String dataType;
@@ -142,11 +142,11 @@ public class EventResolver extends KeyedObject {
 		this.updatePeriod = period;
 	}
 
-	public EventResolverType getType() {
+	public EventType getType() {
 		return type;
 	}
 
-	public void setType(EventResolverType type) {
+	public void setType(EventType type) {
 		this.type = type;
 	}
 

@@ -1,6 +1,6 @@
 package org.point85.domain.script;
 
-public enum EventResolverType {
+public enum EventType {
 	AVAILABILITY, PROD_GOOD, PROD_REJECT, PROD_STARTUP, MATL_CHANGE, JOB_CHANGE, OTHER;
 
 	// database values

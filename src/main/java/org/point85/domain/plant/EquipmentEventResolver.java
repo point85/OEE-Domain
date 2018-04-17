@@ -12,17 +12,14 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.point85.domain.DomainUtils;
-import org.point85.domain.collector.AvailabilityEvent;
-import org.point85.domain.collector.BaseEvent;
 import org.point85.domain.collector.DataSourceType;
-import org.point85.domain.collector.ProductionEvent;
-import org.point85.domain.collector.SetupEvent;
+import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.schedule.Shift;
 import org.point85.domain.schedule.ShiftInstance;
 import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.script.EventResolver;
-import org.point85.domain.script.EventResolverType;
+import org.point85.domain.script.EventType;
 import org.point85.domain.script.OeeContext;
 import org.point85.domain.script.ResolverFunction;
 import org.point85.domain.uom.UnitOfMeasure;
@@ -108,12 +105,12 @@ public class EquipmentEventResolver {
 		return configuredResolver;
 	}
 
-	public BaseEvent invokeResolver(EventResolver eventResolver, OeeContext context, Object sourceValue,
+	public OeeEvent invokeResolver(EventResolver eventResolver, OeeContext context, Object sourceValue,
 			OffsetDateTime dateTime) throws Exception {
 
 		Equipment equipment = eventResolver.getEquipment();
 		String sourceId = eventResolver.getSourceId();
-		EventResolverType resolverType = eventResolver.getType();
+		EventType resolverType = eventResolver.getType();
 		String script = eventResolver.getScript();
 
 		// event durations must exceed the update period
@@ -175,7 +172,7 @@ public class EquipmentEventResolver {
 
 		// set material
 		Material material = null;
-		if (eventResolver.getType().equals(EventResolverType.MATL_CHANGE)) {
+		if (eventResolver.getType().equals(EventType.MATL_CHANGE)) {
 			// set material from event
 			material = fetchMaterial((String) sourceValue);
 			context.setMaterial(equipment, material);
@@ -186,7 +183,7 @@ public class EquipmentEventResolver {
 
 		// set job
 		String job = null;
-		if (eventResolver.getType().equals(EventResolverType.JOB_CHANGE)) {
+		if (eventResolver.getType().equals(EventType.JOB_CHANGE)) {
 			// set job from event
 			job = (String) sourceValue;
 			context.setJob(equipment, job);
@@ -196,32 +193,32 @@ public class EquipmentEventResolver {
 		}
 
 		// fill in resolution
-		BaseEvent event = null;
+		OeeEvent event = null;
 
 		// specific processing
 		switch (resolverType) {
 		case AVAILABILITY: {
-			event = new AvailabilityEvent(equipment);
+			event = new OeeEvent(equipment);
 			event.setInputValue(sourceValue);
 			event.setOutputValue(result);
-			
-			processReason((AvailabilityEvent) event);
+
+			processReason((OeeEvent) event);
 			break;
 		}
 		case JOB_CHANGE: {
-			event = new SetupEvent(equipment);
+			event = new OeeEvent(equipment);
 			event.setInputValue(sourceValue);
 			event.setOutputValue(result);
-			
-			processJob((SetupEvent) event);
+
+			processJob((OeeEvent) event);
 			break;
 		}
 		case MATL_CHANGE: {
-			event = new SetupEvent(equipment);
+			event = new OeeEvent(equipment);
 			event.setInputValue(sourceValue);
 			event.setOutputValue(result);
-			
-			processMaterial((SetupEvent) event);
+
+			processMaterial((OeeEvent) event);
 			break;
 		}
 		case OTHER:
@@ -229,11 +226,11 @@ public class EquipmentEventResolver {
 		case PROD_GOOD:
 		case PROD_REJECT:
 		case PROD_STARTUP: {
-			event = new ProductionEvent(equipment);
+			event = new OeeEvent(equipment);
 			event.setInputValue(sourceValue);
 			event.setOutputValue(result);
-			
-			processProduction((ProductionEvent)event, resolverType, material, context);
+
+			processProduction((OeeEvent) event, resolverType, material, context);
 			break;
 		}
 		default:
@@ -254,8 +251,8 @@ public class EquipmentEventResolver {
 	}
 
 	// production counts
-	private void processProduction(ProductionEvent resolvedItem, EventResolverType resolverType, Material material, OeeContext context)
-			throws Exception {
+	private void processProduction(OeeEvent resolvedItem, EventType resolverType, Material material,
+			OeeContext context) throws Exception {
 		Object outputValue = resolvedItem.getOutputValue();
 		Double amount = null;
 
@@ -300,7 +297,7 @@ public class EquipmentEventResolver {
 	}
 
 	// availability
-	private Reason processReason(AvailabilityEvent resolvedItem) throws Exception {
+	private Reason processReason(OeeEvent resolvedItem) throws Exception {
 		if (!(resolvedItem.getOutputValue() instanceof String)) {
 			throw new Exception("The result " + resolvedItem.getOutputValue() + " is not a reason code.");
 		}
@@ -327,7 +324,7 @@ public class EquipmentEventResolver {
 	}
 
 	// job
-	private String processJob(SetupEvent resolvedItem) throws Exception {
+	private String processJob(OeeEvent resolvedItem) throws Exception {
 		if (!(resolvedItem.getOutputValue() instanceof String)) {
 			throw new Exception("The result " + resolvedItem.getOutputValue() + " is not a job identifier.");
 		}
@@ -360,7 +357,7 @@ public class EquipmentEventResolver {
 	}
 
 	// material
-	private Material processMaterial(SetupEvent resolvedItem) throws Exception {
+	private Material processMaterial(OeeEvent resolvedItem) throws Exception {
 
 		if (!(resolvedItem.getOutputValue() instanceof String)) {
 			throw new Exception(resolvedItem.getOutputValue() + " is not the name of a material.");

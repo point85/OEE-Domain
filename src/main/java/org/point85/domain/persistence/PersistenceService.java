@@ -24,13 +24,11 @@ import javax.persistence.spi.PersistenceUnitInfo;
 import org.hibernate.integrator.spi.Integrator;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import org.hibernate.jpa.boot.spi.IntegratorProvider;
-import org.point85.domain.collector.AvailabilityEvent;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.CollectorState;
 import org.point85.domain.collector.DataCollector;
 import org.point85.domain.collector.DataSourceType;
-import org.point85.domain.collector.ProductionEvent;
-import org.point85.domain.collector.SetupEvent;
+import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.messaging.MessagingSource;
 import org.point85.domain.opc.da.OpcDaSource;
@@ -1021,12 +1019,12 @@ public class PersistenceService {
 	}
 
 	private Class<?>[] getEntityClasses() {
-		return new Class<?>[] { DataCollector.class, CollectorDataSource.class, AvailabilityEvent.class,
-				ProductionEvent.class, SetupEvent.class, HttpSource.class, MessagingSource.class, OpcDaSource.class,
-				OpcUaSource.class, WebSource.class, Area.class, Enterprise.class, Equipment.class,
-				EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class, Reason.class,
-				Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class, NonWorkingPeriod.class,
-				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class };
+		return new Class<?>[] { DataCollector.class, CollectorDataSource.class, OeeEvent.class, HttpSource.class,
+				MessagingSource.class, OpcDaSource.class, OpcUaSource.class, WebSource.class, Area.class,
+				Enterprise.class, Equipment.class, EquipmentMaterial.class, Material.class, PlantEntity.class,
+				ProductionLine.class, Reason.class, Site.class, WorkCell.class, EventResolver.class,
+				UnitOfMeasure.class, NonWorkingPeriod.class, Rotation.class, RotationSegment.class, Shift.class,
+				Team.class, WorkSchedule.class };
 	}
 
 	private List<String> getEntityClassNames() {
@@ -1094,16 +1092,16 @@ public class PersistenceService {
 		return null;
 	}
 
-	public List<AvailabilityEvent> fetchAvailability(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
+	public List<OeeEvent> fetchAvailability(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
 		final String AVAIL_RECORDS = "Availability.FromTo";
 
 		if (namedQueryMap.get(AVAIL_RECORDS) == null) {
 			createNamedQuery(AVAIL_RECORDS,
-					"SELECT a FROM AvailabilityEvent a WHERE a.equipment = :equipment AND (a.startTime >= :from AND a.startTime < :to) ORDER BY a.startTime ASC");
+					"SELECT a FROM OeeEvent a WHERE a.equipment = :equipment AND a.eventType = EventType.AVAILABILITY "
+					+ "AND (a.startTime >= :from AND a.startTime < :to) ORDER BY a.startTime ASC");
 		}
 
-		TypedQuery<AvailabilityEvent> query = getEntityManager().createNamedQuery(AVAIL_RECORDS,
-				AvailabilityEvent.class);
+		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(AVAIL_RECORDS, OeeEvent.class);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
@@ -1111,15 +1109,16 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<ProductionEvent> fetchProduction(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
+	public List<OeeEvent> fetchProduction(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
 		final String PROD_RECORDS = "Production.FromTo";
 
 		if (namedQueryMap.get(PROD_RECORDS) == null) {
 			createNamedQuery(PROD_RECORDS,
-					"SELECT p FROM ProductionEvent p WHERE p.equipment = :equipment AND (p.startTime >= :from AND p.startTime < :to) ORDER BY p.startTime ASC");
+					"SELECT p FROM OeeEvent p WHERE p.equipment = :equipment "
+					+ "AND p.eventType IN (EventType.PROD_GOOD, EventType.PROD_REJECT, EventType.PROD_STARTUP) AND (p.startTime >= :from AND p.startTime < :to) ORDER BY p.startTime ASC");
 		}
 
-		TypedQuery<ProductionEvent> query = getEntityManager().createNamedQuery(PROD_RECORDS, ProductionEvent.class);
+		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(PROD_RECORDS, OeeEvent.class);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
@@ -1127,20 +1126,21 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public ProductionEvent fetchLastProduction(Equipment equipment) {
+	public OeeEvent fetchLastProduction(Equipment equipment) {
 		final String LAST_PROD = "Production.Last";
 
 		if (namedQueryMap.get(LAST_PROD) == null) {
 			createNamedQuery(LAST_PROD,
-					"SELECT p FROM ProductionEvent p WHERE p.equipment = :equipment ORDER BY p.startTime DESC");
+					"SELECT p FROM OeeEvent p WHERE p.equipment = :equipment "
+					+ "AND p.eventType IN (EventType.PROD_GOOD, EventType.PROD_REJECT, EventType.PROD_STARTUP) ORDER BY p.startTime DESC");
 		}
 
-		TypedQuery<ProductionEvent> query = getEntityManager().createNamedQuery(LAST_PROD, ProductionEvent.class);
+		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(LAST_PROD, OeeEvent.class);
 		query.setParameter("equipment", equipment);
 		query.setMaxResults(1);
-		List<ProductionEvent> records = query.getResultList();
+		List<OeeEvent> records = query.getResultList();
 
-		ProductionEvent record = null;
+		OeeEvent record = null;
 		if (records.size() == 1) {
 			record = records.get(0);
 		}
@@ -1148,20 +1148,20 @@ public class PersistenceService {
 		return record;
 	}
 
-	public AvailabilityEvent fetchLastAvailability(Equipment equipment) {
+	public OeeEvent fetchLastAvailability(Equipment equipment) {
 		final String LAST_AVAIL = "Availability.Last";
 
 		if (namedQueryMap.get(LAST_AVAIL) == null) {
 			createNamedQuery(LAST_AVAIL,
-					"SELECT a FROM AvailabilityEvent a WHERE a.equipment = :equipment ORDER BY a.startTime DESC");
+					"SELECT a FROM OeeEvent a WHERE a.equipment = :equipment AND s.eventType = EventType.AVAILABILITY ORDER BY a.startTime DESC");
 		}
 
-		TypedQuery<AvailabilityEvent> query = getEntityManager().createNamedQuery(LAST_AVAIL, AvailabilityEvent.class);
+		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(LAST_AVAIL, OeeEvent.class);
 		query.setParameter("equipment", equipment);
 		query.setMaxResults(1);
-		List<AvailabilityEvent> records = query.getResultList();
+		List<OeeEvent> records = query.getResultList();
 
-		AvailabilityEvent record = null;
+		OeeEvent record = null;
 		if (records.size() == 1) {
 			record = records.get(0);
 		}
@@ -1169,15 +1169,16 @@ public class PersistenceService {
 		return record;
 	}
 
-	public List<SetupEvent> fetchSetupsForPeriod(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
+	public List<OeeEvent> fetchSetupsForPeriod(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
 		final String SETUP_PERIOD = "Setup.Period";
 
 		if (namedQueryMap.get(SETUP_PERIOD) == null) {
 			createNamedQuery(SETUP_PERIOD,
-					"SELECT s FROM SetupEvent s WHERE s.equipment = :equipment AND s.startTime  <= :to AND (s.endTime  >= :from OR s.endTime IS NULL)");
+					"SELECT s FROM OeeEvent s WHERE s.equipment = :equipment AND s.eventType = EventType.MATL_CHANGE "
+					+ "AND s.startTime  <= :to AND (s.endTime  >= :from OR s.endTime IS NULL)");
 		}
 
-		TypedQuery<SetupEvent> query = getEntityManager().createNamedQuery(SETUP_PERIOD, SetupEvent.class);
+		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(SETUP_PERIOD, OeeEvent.class);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
@@ -1185,16 +1186,17 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<SetupEvent> fetchSetupsForPeriodAndMaterial(Equipment equipment, OffsetDateTime from, OffsetDateTime to,
+	public List<OeeEvent> fetchSetupsForPeriodAndMaterial(Equipment equipment, OffsetDateTime from, OffsetDateTime to,
 			Material material) {
 		final String SETUP_PERIOD_MATL = "Setup.Period.Material";
 
 		if (namedQueryMap.get(SETUP_PERIOD_MATL) == null) {
 			createNamedQuery(SETUP_PERIOD_MATL,
-					"SELECT s FROM SetupEvent s WHERE s.equipment = :equipment AND s.startTime  <= :to AND (s.endTime  >= :from OR s.endTime IS NULL) AND s.material = :matl");
+					"SELECT s FROM OeeEvent s WHERE s.equipment = :equipment AND s.eventType = EventType.MATL_CHANGE "
+							+ "AND s.startTime  <= :to AND (s.endTime  >= :from OR s.endTime IS NULL) AND s.material = :matl");
 		}
 
-		TypedQuery<SetupEvent> query = getEntityManager().createNamedQuery(SETUP_PERIOD_MATL, SetupEvent.class);
+		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(SETUP_PERIOD_MATL, OeeEvent.class);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
@@ -1203,20 +1205,20 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public SetupEvent fetchLastSetup(Equipment equipment) {
+	public OeeEvent fetchLastSetup(Equipment equipment) {
 		final String LAST_SETUP = "Setup.Last";
 
 		if (namedQueryMap.get(LAST_SETUP) == null) {
 			createNamedQuery(LAST_SETUP,
-					"SELECT s FROM SetupEvent s WHERE s.equipment = :equipment ORDER BY s.startTime DESC");
+					"SELECT s FROM OeeEvent s WHERE s.equipment = :equipment AND s.eventType = EventType.MATL_CHANGE ORDER BY s.startTime DESC");
 		}
 
-		TypedQuery<SetupEvent> query = getEntityManager().createNamedQuery(LAST_SETUP, SetupEvent.class);
+		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(LAST_SETUP, OeeEvent.class);
 		query.setParameter("equipment", equipment);
 		query.setMaxResults(1);
-		List<SetupEvent> records = query.getResultList();
+		List<OeeEvent> records = query.getResultList();
 
-		SetupEvent record = null;
+		OeeEvent record = null;
 		if (records.size() == 1) {
 			record = records.get(0);
 		}
@@ -1224,33 +1226,22 @@ public class PersistenceService {
 		return record;
 	}
 
-	public AvailabilityEvent fetchAvailabilityByKey(Long key) throws Exception {
-		return getEntityManager().find(AvailabilityEvent.class, key);
+	public OeeEvent fetchAvailabilityByKey(Long key) throws Exception {
+		return getEntityManager().find(OeeEvent.class, key);
 	}
 
 	public int purge(Equipment equipment, OffsetDateTime cutoff) throws Exception {
 		EntityManager em = getEntityManager();
 
 		// availability
-		final String PURGE_AVAIL = "Avail.Purge";
+		final String PURGE_OEE = "Oee.Purge";
 
-		if (namedQueryMap.get(PURGE_AVAIL) == null) {
-			createNamedQuery(PURGE_AVAIL,
-					"DELETE FROM AvailabilityEvent e WHERE e.equipment = :equipment AND e.startTime < :cutoff");
+		if (namedQueryMap.get(PURGE_OEE) == null) {
+			createNamedQuery(PURGE_OEE,
+					"DELETE FROM OeeEvent e WHERE e.equipment = :equipment AND e.startTime < :cutoff");
 		}
 
-		Query purgeAvail = em.createNamedQuery(PURGE_AVAIL).setParameter("equipment", equipment).setParameter("cutoff",
-				cutoff);
-
-		// production
-		final String PURGE_PROD = "Prod.Purge";
-
-		if (namedQueryMap.get(PURGE_PROD) == null) {
-			createNamedQuery(PURGE_PROD,
-					"DELETE FROM ProductionEvent e WHERE e.equipment = :equipment AND e.startTime < :cutoff");
-		}
-
-		Query purgeProd = em.createNamedQuery(PURGE_PROD).setParameter("equipment", equipment).setParameter("cutoff",
+		Query purgeOee = em.createNamedQuery(PURGE_OEE).setParameter("equipment", equipment).setParameter("cutoff",
 				cutoff);
 
 		EntityTransaction txn = null;
@@ -1261,8 +1252,7 @@ public class PersistenceService {
 			txn.begin();
 
 			// execute the delete
-			int deletedCount = purgeAvail.executeUpdate();
-			deletedCount += purgeProd.executeUpdate();
+			int deletedCount = purgeOee.executeUpdate();
 
 			// commit transaction
 			txn.commit();

@@ -51,7 +51,7 @@ import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentEventResolver;
 import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.script.EventResolver;
-import org.point85.domain.script.EventResolverType;
+import org.point85.domain.script.EventType;
 import org.point85.domain.script.OeeContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -645,7 +645,7 @@ public class CollectorServer
 		getExecutorService().execute(new OpcDaTask(item));
 	}
 
-	private void purgeRecords(BaseEvent event) throws Exception {
+	private void purgeRecords(OeeEvent event) throws Exception {
 		Equipment equipment = event.getEquipment();
 
 		Duration days = equipment.findDurationPeriod();
@@ -662,7 +662,7 @@ public class CollectorServer
 		PersistenceService.instance().purge(equipment, cutoff);
 	}
 
-	public void saveAvailabilityEvent(AvailabilityEvent event) throws Exception {
+	public void saveOeeEvent(OeeEvent event) throws Exception {
 		if (logger.isInfoEnabled()) {
 			logger.info("Availability reason " + event.getReason().getName() + ", Loss Category: "
 					+ event.getReason().getLossCategory());
@@ -672,7 +672,7 @@ public class CollectorServer
 		records.add(event);
 
 		// close off last availability
-		AvailabilityEvent lastRecord = PersistenceService.instance().fetchLastAvailability(event.getEquipment());
+		OeeEvent lastRecord = PersistenceService.instance().fetchLastAvailability(event.getEquipment());
 
 		if (lastRecord != null) {
 			lastRecord.setEndTime(event.getStartTime());
@@ -683,48 +683,6 @@ public class CollectorServer
 		}
 
 		// save records
-		PersistenceService.instance().save(records);
-
-		// purge old data
-		purgeRecords(event);
-	}
-
-	public void saveSetupEvent(SetupEvent event) throws Exception {
-		if (logger.isInfoEnabled()) {
-			logger.info("Job change " + event.getJob());
-		}
-
-		List<KeyedObject> records = new ArrayList<>();
-		records.add(event);
-
-		// close off last setup
-		SetupEvent lastRecord = PersistenceService.instance().fetchLastSetup(event.getEquipment());
-
-		if (lastRecord != null) {
-			lastRecord.setEndTime(event.getStartTime());
-			records.add(lastRecord);
-		}
-
-		PersistenceService.instance().save(records);
-	}
-
-	public void saveProductionEvent(ProductionEvent event) throws Exception {
-		if (logger.isInfoEnabled()) {
-			logger.info("Production " + event.getAmount() + " for type " + event.getResolverType());
-		}
-
-		List<KeyedObject> records = new ArrayList<>();
-		records.add(event);
-
-		// close off last production
-		ProductionEvent lastRecord = PersistenceService.instance().fetchLastProduction(event.getEquipment());
-
-		if (lastRecord != null) {
-			lastRecord.setEndTime(event.getStartTime());
-			records.add(lastRecord);
-		}
-
-		// save data
 		PersistenceService.instance().save(records);
 
 		// purge old data
@@ -913,7 +871,7 @@ public class CollectorServer
 				// find resolver
 				EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
 
-				BaseEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue,
+				OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue,
 						timestamp);
 
 				recordResolution(resolvedDataItem);
@@ -949,7 +907,7 @@ public class CollectorServer
 
 				EventResolver eventResolver = equipmentResolver.getResolver(itemId);
 
-				BaseEvent resolvedEvent = equipmentResolver.invokeResolver(eventResolver, getAppContext(), javaValue,
+				OeeEvent resolvedEvent = equipmentResolver.invokeResolver(eventResolver, getAppContext(), javaValue,
 						odt);
 
 				recordResolution(resolvedEvent);
@@ -960,18 +918,18 @@ public class CollectorServer
 		}
 	}
 
-	private synchronized void recordResolution(BaseEvent resolvedEvent) throws Exception {
-		EventResolverType type = resolvedEvent.getResolverType();
+	private synchronized void recordResolution(OeeEvent resolvedEvent) throws Exception {
+		EventType type = resolvedEvent.getResolverType();
 
 		// first in database
 		switch (type) {
 		case AVAILABILITY:
-			saveAvailabilityEvent((AvailabilityEvent) resolvedEvent);
+			saveOeeEvent((OeeEvent) resolvedEvent);
 			break;
 
 		case JOB_CHANGE:
 		case MATL_CHANGE:
-			saveSetupEvent((SetupEvent) resolvedEvent);
+			saveOeeEvent((OeeEvent) resolvedEvent);
 			break;
 
 		case OTHER:
@@ -980,7 +938,7 @@ public class CollectorServer
 		case PROD_GOOD:
 		case PROD_REJECT:
 		case PROD_STARTUP:
-			saveProductionEvent((ProductionEvent) resolvedEvent);
+			saveOeeEvent((OeeEvent) resolvedEvent);
 			break;
 
 		default:
@@ -991,7 +949,7 @@ public class CollectorServer
 		sendResolutionMessage(resolvedEvent);
 	}
 
-	private void sendResolutionMessage(BaseEvent resolvedEvent) {
+	private void sendResolutionMessage(OeeEvent resolvedEvent) {
 		try {
 			if (appContext.getPublisherSubscribers().size() == 0) {
 				return;
@@ -1062,7 +1020,7 @@ public class CollectorServer
 				}
 
 				// resolver the data
-				BaseEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue,
+				OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue,
 						item.getLocalTimestamp());
 
 				// save resolution
@@ -1107,7 +1065,7 @@ public class CollectorServer
 					EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
 
 					if (eventResolver != null) {
-						BaseEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
+						OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
 								dataValue, timestamp);
 
 						recordResolution(resolvedDataItem);

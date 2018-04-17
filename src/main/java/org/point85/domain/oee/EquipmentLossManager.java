@@ -7,9 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.point85.domain.collector.AvailabilityEvent;
-import org.point85.domain.collector.BaseEvent;
-import org.point85.domain.collector.ProductionEvent;
+import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentMaterial;
@@ -42,11 +40,11 @@ public class EquipmentLossManager {
 		equipmentLoss.setDesignSpeed(eqm.getRunRate());
 
 		// time from measured production
-		List<ProductionEvent> productions = PersistenceService.instance().fetchProduction(equipment, from, to);
-		
+		List<OeeEvent> productions = PersistenceService.instance().fetchProduction(equipment, from, to);
+
 		equipmentLoss.getEventRecords().addAll(productions);
 
-		for (ProductionEvent record : productions) {
+		for (OeeEvent record : productions) {
 			checkTimePeriod(record, equipmentLoss, from, to);
 
 			Quantity quantity = record.getQuantity();
@@ -81,17 +79,17 @@ public class EquipmentLossManager {
 		}
 
 		// time from measured availability losses
-		List<AvailabilityEvent> records = PersistenceService.instance().fetchAvailability(equipment, from, to);
+		List<OeeEvent> records = PersistenceService.instance().fetchAvailability(equipment, from, to);
 		equipmentLoss.getEventRecords().addAll(records);
 
 		for (int i = 0; i < records.size(); i++) {
-			AvailabilityEvent record = records.get(i);
+			OeeEvent record = records.get(i);
 
 			checkTimePeriod(record, equipmentLoss, from, to);
 
 			Duration eventDuration = record.getDuration();
 			Duration duration = eventDuration;
-			
+
 			OffsetDateTime start = record.getStartTime();
 			OffsetDateTime end = record.getEndTime();
 
@@ -108,14 +106,14 @@ public class EquipmentLossManager {
 				if (end == null || to.isBefore(end)) {
 					// get time in interval
 					Duration edge = Duration.between(start, to);
-					
+
 					// clip to event duration
 					if (edge.compareTo(eventDuration) < 0) {
 						duration = edge;
 					}
 				}
 			}
-			
+
 			equipmentLoss.incrementLoss(record.getReason(), duration);
 
 			// save in event record
@@ -134,11 +132,11 @@ public class EquipmentLossManager {
 					odtEnd.toLocalDateTime());
 			equipmentLoss.setLoss(TimeLoss.NOT_SCHEDULED, notScheduled);
 		}
-		
+
 		System.out.println(equipmentLoss.toString());
 	}
 
-	private static void checkTimePeriod(BaseEvent record, EquipmentLoss equipmentLoss, OffsetDateTime from,
+	private static void checkTimePeriod(OeeEvent record, EquipmentLoss equipmentLoss, OffsetDateTime from,
 			OffsetDateTime to) {
 		// beginning time
 		OffsetDateTime recordStart = record.getStartTime();
