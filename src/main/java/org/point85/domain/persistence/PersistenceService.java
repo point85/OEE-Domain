@@ -51,6 +51,7 @@ import org.point85.domain.schedule.Shift;
 import org.point85.domain.schedule.Team;
 import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.script.EventResolver;
+import org.point85.domain.script.EventType;
 import org.point85.domain.uom.MeasurementSystem;
 import org.point85.domain.uom.Unit;
 import org.point85.domain.uom.UnitOfMeasure;
@@ -1097,11 +1098,12 @@ public class PersistenceService {
 
 		if (namedQueryMap.get(AVAIL_RECORDS) == null) {
 			createNamedQuery(AVAIL_RECORDS,
-					"SELECT a FROM OeeEvent a WHERE a.equipment = :equipment AND a.eventType = EventType.AVAILABILITY "
-					+ "AND (a.startTime >= :from AND a.startTime < :to) ORDER BY a.startTime ASC");
+					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type "
+							+ "AND (e.startTime >= :from AND e.startTime < :to) ORDER BY e.startTime ASC");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(AVAIL_RECORDS, OeeEvent.class);
+		query.setParameter("type", EventType.AVAILABILITY);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
@@ -1113,12 +1115,13 @@ public class PersistenceService {
 		final String PROD_RECORDS = "Production.FromTo";
 
 		if (namedQueryMap.get(PROD_RECORDS) == null) {
-			createNamedQuery(PROD_RECORDS,
-					"SELECT p FROM OeeEvent p WHERE p.equipment = :equipment "
-					+ "AND p.eventType IN (EventType.PROD_GOOD, EventType.PROD_REJECT, EventType.PROD_STARTUP) AND (p.startTime >= :from AND p.startTime < :to) ORDER BY p.startTime ASC");
+			createNamedQuery(PROD_RECORDS, "SELECT e FROM OeeEvent e WHERE e.equipment = :equipment "
+					+ "AND e.eventType IN :types AND (e.startTime >= :from AND e.startTime < :to) ORDER BY e.startTime ASC");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(PROD_RECORDS, OeeEvent.class);
+
+		query.setParameter("types", EventType.getProductionTypes());
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
@@ -1130,12 +1133,12 @@ public class PersistenceService {
 		final String LAST_PROD = "Production.Last";
 
 		if (namedQueryMap.get(LAST_PROD) == null) {
-			createNamedQuery(LAST_PROD,
-					"SELECT p FROM OeeEvent p WHERE p.equipment = :equipment "
-					+ "AND p.eventType IN (EventType.PROD_GOOD, EventType.PROD_REJECT, EventType.PROD_STARTUP) ORDER BY p.startTime DESC");
+			createNamedQuery(LAST_PROD, "SELECT e FROM OeeEvent e WHERE e.equipment = :equipment "
+					+ "AND e.eventType IN :types ORDER BY e.startTime DESC");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(LAST_PROD, OeeEvent.class);
+		query.setParameter("types", EventType.getProductionTypes());
 		query.setParameter("equipment", equipment);
 		query.setMaxResults(1);
 		List<OeeEvent> records = query.getResultList();
@@ -1153,10 +1156,11 @@ public class PersistenceService {
 
 		if (namedQueryMap.get(LAST_AVAIL) == null) {
 			createNamedQuery(LAST_AVAIL,
-					"SELECT a FROM OeeEvent a WHERE a.equipment = :equipment AND s.eventType = EventType.AVAILABILITY ORDER BY a.startTime DESC");
+					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type ORDER BY e.startTime DESC");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(LAST_AVAIL, OeeEvent.class);
+		query.setParameter("type", EventType.AVAILABILITY);
 		query.setParameter("equipment", equipment);
 		query.setMaxResults(1);
 		List<OeeEvent> records = query.getResultList();
@@ -1174,11 +1178,12 @@ public class PersistenceService {
 
 		if (namedQueryMap.get(SETUP_PERIOD) == null) {
 			createNamedQuery(SETUP_PERIOD,
-					"SELECT s FROM OeeEvent s WHERE s.equipment = :equipment AND s.eventType = EventType.MATL_CHANGE "
-					+ "AND s.startTime  <= :to AND (s.endTime  >= :from OR s.endTime IS NULL)");
+					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type "
+							+ "AND e.startTime  <= :to AND (e.endTime  >= :from OR e.endTime IS NULL)");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(SETUP_PERIOD, OeeEvent.class);
+		query.setParameter("type", EventType.MATL_CHANGE);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
@@ -1192,11 +1197,12 @@ public class PersistenceService {
 
 		if (namedQueryMap.get(SETUP_PERIOD_MATL) == null) {
 			createNamedQuery(SETUP_PERIOD_MATL,
-					"SELECT s FROM OeeEvent s WHERE s.equipment = :equipment AND s.eventType = EventType.MATL_CHANGE "
-							+ "AND s.startTime  <= :to AND (s.endTime  >= :from OR s.endTime IS NULL) AND s.material = :matl");
+					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type "
+							+ "AND e.startTime  <= :to AND (e.endTime  >= :from OR e.endTime IS NULL) AND e.material = :matl");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(SETUP_PERIOD_MATL, OeeEvent.class);
+		query.setParameter("type", EventType.MATL_CHANGE);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
@@ -1210,10 +1216,11 @@ public class PersistenceService {
 
 		if (namedQueryMap.get(LAST_SETUP) == null) {
 			createNamedQuery(LAST_SETUP,
-					"SELECT s FROM OeeEvent s WHERE s.equipment = :equipment AND s.eventType = EventType.MATL_CHANGE ORDER BY s.startTime DESC");
+					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type ORDER BY e.startTime DESC");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(LAST_SETUP, OeeEvent.class);
+		query.setParameter("type", EventType.MATL_CHANGE);
 		query.setParameter("equipment", equipment);
 		query.setMaxResults(1);
 		List<OeeEvent> records = query.getResultList();
@@ -1224,10 +1231,6 @@ public class PersistenceService {
 		}
 
 		return record;
-	}
-
-	public OeeEvent fetchAvailabilityByKey(Long key) throws Exception {
-		return getEntityManager().find(OeeEvent.class, key);
 	}
 
 	public int purge(Equipment equipment, OffsetDateTime cutoff) throws Exception {

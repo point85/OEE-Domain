@@ -6,11 +6,7 @@ import java.time.OffsetDateTime;
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
 import javax.persistence.Convert;
-import javax.persistence.DiscriminatorColumn;
-import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -28,11 +24,16 @@ import org.point85.domain.uom.UnitOfMeasure;
 
 @Entity
 @Table(name = "OEE_EVENT")
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "EVENT_TYPE", discriminatorType = DiscriminatorType.STRING)
+// @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+// @DiscriminatorColumn(name = "EVENT_TYPE", discriminatorType =
+// DiscriminatorType.STRING)
 @AttributeOverride(name = "primaryKey", column = @Column(name = "EVENT_KEY"))
 
 public class OeeEvent extends KeyedObject {
+	@Column(name = "EVENT_TYPE")
+	@Convert(converter = EventTypeConverter.class)
+	private EventType eventType;
+
 	@OneToOne
 	@JoinColumn(name = "ENT_KEY")
 	private Equipment equipment;
@@ -45,20 +46,16 @@ public class OeeEvent extends KeyedObject {
 	@Convert(converter = OffsetDateTimeConverter.class)
 	private OffsetDateTime endTime;
 
-	@Column(name = "EVENT_TYPE")
-	@Convert(converter = EventTypeConverter.class)
-	private EventType eventType;
-
 	@OneToOne
 	@JoinColumn(name = "SHIFT_KEY")
 	private Shift shift;
 
+	@Column(name = "DURATION")
+	private Duration duration;
+
 	@OneToOne
 	@JoinColumn(name = "REASON_KEY")
 	private Reason reason;
-
-	@Column(name = "DURATION")
-	private Duration duration;
 
 	@Column(name = "AMOUNT")
 	private Double amount;

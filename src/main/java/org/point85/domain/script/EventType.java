@@ -1,5 +1,8 @@
 package org.point85.domain.script;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public enum EventType {
 	AVAILABILITY, PROD_GOOD, PROD_REJECT, PROD_STARTUP, MATL_CHANGE, JOB_CHANGE, OTHER;
 
@@ -26,5 +29,13 @@ public enum EventType {
 
 	public boolean isJob() {
 		return this.equals(JOB_CHANGE) ? true : false;
+	}
+
+	public static List<EventType> getProductionTypes() {
+		List<EventType> types = new ArrayList<>();
+		types.add(EventType.PROD_GOOD);
+		types.add(EventType.PROD_REJECT);
+		types.add(EventType.PROD_STARTUP);
+		return types;
 	}
 }
