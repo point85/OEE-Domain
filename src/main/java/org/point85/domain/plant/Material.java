@@ -1,15 +1,13 @@
 package org.point85.domain.plant;
 
 import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
 @Entity
 @Table(name = "MATERIAL")
-@AttributeOverrides({ @AttributeOverride(name = "primaryKey", column = @Column(name = "MAT_KEY")),
-		@AttributeOverride(name = "name", column = @Column(name = "ID")) })
+@AttributeOverride(name = "primaryKey", column = @Column(name = "MAT_KEY"))
 
 public class Material extends NamedObject {
 	// the one and only root material in the hierarchy

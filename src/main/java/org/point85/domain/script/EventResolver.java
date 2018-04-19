@@ -21,7 +21,7 @@ import org.point85.domain.plant.KeyedObject;
 
 @Entity
 @Table(name = "EVENT_RESOLVER")
-@AttributeOverride(name = "primaryKey", column = @Column(name = "SR_KEY"))
+@AttributeOverride(name = "primaryKey", column = @Column(name = "ER_KEY"))
 
 public class EventResolver extends KeyedObject {
 	// period between value updates
@@ -45,7 +45,7 @@ public class EventResolver extends KeyedObject {
 	@Column(name = "PERIOD")
 	private Integer updatePeriod;
 
-	@Column(name = "SR_TYPE")
+	@Column(name = "ER_TYPE")
 	@Convert(converter = EventTypeConverter.class)
 	private EventType type;
 

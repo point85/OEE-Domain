@@ -35,7 +35,7 @@ import org.point85.domain.schedule.WorkSchedule;
 @Entity
 @Table(name = "PLANT_ENTITY")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "LEVEL", discriminatorType = DiscriminatorType.STRING)
+@DiscriminatorColumn(name = "HIER_LEVEL", discriminatorType = DiscriminatorType.STRING)
 @AttributeOverride(name = "primaryKey", column = @Column(name = "ENT_KEY"))
 
 public class PlantEntity extends NamedObject {
@@ -51,7 +51,7 @@ public class PlantEntity extends NamedObject {
 	private Set<PlantEntity> children = new HashSet<>();
 
 	// level in the hierarchy
-	@Column(name = "LEVEL", insertable = false, updatable = false)
+	@Column(name = "HIER_LEVEL", insertable = false, updatable = false)
 	@Convert(converter = EntityLevelConverter.class)
 	private EntityLevel level;
 
