@@ -209,7 +209,7 @@ public class PersistenceService {
 	}
 
 	// save the Persistent Object to the database
-	public KeyedObject save(KeyedObject object) throws Exception {
+	public KeyedObject save(KeyedObject keyed) throws Exception {
 		EntityManager em = getEntityManager();
 		EntityTransaction txn = null;
 
@@ -218,7 +218,7 @@ public class PersistenceService {
 			txn.begin();
 
 			// merge this entity into the PU and save
-			KeyedObject merged = em.merge(object);
+			KeyedObject merged = em.merge(keyed);
 
 			// commit transaction
 			txn.commit();
