@@ -9,14 +9,7 @@ import org.point85.domain.collector.DataSourceType;
 @Entity
 @DiscriminatorValue(DataSourceType.HTTP_VALUE)
 
-//@NamedQueries({
-		//@NamedQuery(name = HttpSource.HTTP_SRC_BY_TYPE, query = "SELECT source FROM HttpSource source WHERE source.sourceType = '"
-				//+ DataSourceType.HTTP_VALUE + "'"), })
-
 public class HttpSource extends CollectorDataSource {
-	// queries
-	//public static final String HTTP_SRC_BY_TYPE = "HTTP.ByType";
-
 	public HttpSource() {
 		super();
 		setDataSourceType(DataSourceType.HTTP);

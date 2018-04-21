@@ -10,13 +10,7 @@ import org.point85.domain.collector.DataSourceType;
 @Entity
 @DiscriminatorValue(DataSourceType.OPC_UA_VALUE)
 
-//@NamedQueries({
-		//@NamedQuery(name = OpcUaSource.UA_SRC_BY_NAME, query = "SELECT source FROM OpcUaSource source WHERE source.name = :name"), })
-
 public class OpcUaSource extends CollectorDataSource {
-
-	// queries
-	//public static final String UA_SRC_BY_NAME = "OPCUA.ByName";
 
 	private transient SecurityPolicy policy;
 

@@ -61,6 +61,9 @@ public class EventResolver extends KeyedObject {
 
 	// time last received
 	private transient OffsetDateTime lastTimestamp;
+	
+	// mode
+	private transient boolean watchMode = false;
 
 	public EventResolver() {
 		super();
@@ -209,5 +212,13 @@ public class EventResolver extends KeyedObject {
 
 	public void setLastTimestamp(OffsetDateTime lastTimestamp) {
 		this.lastTimestamp = lastTimestamp;
+	}
+
+	public boolean isWatchMode() {
+		return watchMode;
+	}
+
+	public void setWatchMode(boolean watchMode) {
+		this.watchMode = watchMode;
 	}
 }

@@ -24,13 +24,13 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 
 	public void fromResolvedEvent(OeeEvent event) {
 		this.setTimestamp(event.getStartTime());
-		this.setResolverType(event.getResolverType());
+		this.setResolverType(event.getEventType());
 
 		// equipment
 		this.setEquipmentName(event.getEquipment().getName());
 
 		// reason
-		switch (event.getResolverType()) {
+		switch (event.getEventType()) {
 		case AVAILABILITY: {
 			Reason reason = event.getReason();
 			if (reason != null) {

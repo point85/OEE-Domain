@@ -31,13 +31,12 @@ public class DomainUtils {
 	}
 
 	public static String[] parseDomainAndUser(String user) {
-
+		String[] info = new String[2];
 		if (user == null) {
-			return null;
+			return info;
 		}
 
 		String delimeters = "[/" + "\\Q\\\\E" + "]+";
-		String[] info = new String[2];
 		String[] tokens = user.split(delimeters);
 
 		info[0] = "localhost";

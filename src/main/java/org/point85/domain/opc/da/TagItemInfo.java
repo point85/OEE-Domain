@@ -1,12 +1,13 @@
 package org.point85.domain.opc.da;
 
-public class TagItemInfo {
-	//public static final int DEFAULT_UPDATE_PERIOD = 1000;
+import org.point85.domain.collector.CollectorDataSource;
 
+public class TagItemInfo {
 	// path to tag leaf node
 	private String pathName;
+	
 	// requested update period
-	private int updatePeriod;
+	private int updatePeriod = CollectorDataSource.DEFAULT_UPDATE_PERIOD_MSEC;
 
 	public TagItemInfo(String pathName) {
 		this.pathName = pathName;

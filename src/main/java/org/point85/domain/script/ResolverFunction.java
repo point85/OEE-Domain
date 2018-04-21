@@ -17,8 +17,7 @@ public class ResolverFunction {
 		if (script == null) {
 			return;
 		}
-		// prep for execution
-		//engine.eval(script);
+
 		setScriptFunction(script);
 	}
 
@@ -94,6 +93,11 @@ public class ResolverFunction {
 	}
 
 	public Object invoke(ScriptEngine engine, Object... args) throws Exception {
+		if (scriptFunction == null || scriptFunction.length() == 0) {
+			return null;
+		}
+		
+		// invoke the function
 		engine.eval(scriptFunction);
 		return ((Invocable) engine).invokeFunction(getName(), args);
 	}

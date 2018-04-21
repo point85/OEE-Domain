@@ -130,7 +130,7 @@ public class EquipmentEventResolver {
 		}
 
 		if (script == null) {
-			throw new Exception("The resolver script is not defined for source id " + sourceId + " for equipment "
+			logger.warn("The event script is not defined for source id " + sourceId + " for equipment "
 					+ equipment.getName());
 		}
 
@@ -193,66 +193,52 @@ public class EquipmentEventResolver {
 		}
 
 		// fill in resolution
-		OeeEvent event = null;
+		OeeEvent event = new OeeEvent(equipment, sourceValue, result);
 
 		// specific processing
-		switch (resolverType) {
-		case AVAILABILITY: {
-			event = new OeeEvent(equipment);
-			event.setInputValue(sourceValue);
-			event.setOutputValue(result);
+		if (result != null) {
+			switch (resolverType) {
+			case AVAILABILITY: {
+				processReason(event);
+				break;
+			}
+			case JOB_CHANGE: {
+				processJob(event);
+				break;
+			}
+			case MATL_CHANGE: {
+				processMaterial(event);
+				break;
+			}
+			case OTHER:
+				break;
+			case PROD_GOOD:
+			case PROD_REJECT:
+			case PROD_STARTUP: {
+				processProduction(event, resolverType, material, context);
+				break;
+			}
+			default:
+				break;
+			}
+		}
 
-			processReason((OeeEvent) event);
-			break;
-		}
-		case JOB_CHANGE: {
-			event = new OeeEvent(equipment);
-			event.setInputValue(sourceValue);
-			event.setOutputValue(result);
-
-			processJob((OeeEvent) event);
-			break;
-		}
-		case MATL_CHANGE: {
-			event = new OeeEvent(equipment);
-			event.setInputValue(sourceValue);
-			event.setOutputValue(result);
-
-			processMaterial((OeeEvent) event);
-			break;
-		}
-		case OTHER:
-			break;
-		case PROD_GOOD:
-		case PROD_REJECT:
-		case PROD_STARTUP: {
-			event = new OeeEvent(equipment);
-			event.setInputValue(sourceValue);
-			event.setOutputValue(result);
-
-			processProduction((OeeEvent) event, resolverType, material, context);
-			break;
-		}
-		default:
-			break;
-		}
+		// common attributes
+		event.setEventType(resolverType);
+		event.setItemId(sourceId);
+		event.setStartTime(dateTime);
+		event.setShift(shift);
 
 		if (logger.isInfoEnabled()) {
 			logger.info(event.toString());
 		}
 
-		// common attributes
-		event.setResolverType(resolverType);
-		event.setItemId(sourceId);
-		event.setStartTime(dateTime);
-		event.setShift(shift);
-
 		return event;
 	}
 
 	// production counts
-	private void processProduction(OeeEvent resolvedItem, EventType resolverType, Material material,
-			OeeContext context) throws Exception {
+	private void processProduction(OeeEvent resolvedItem, EventType resolverType, Material material, OeeContext context)
+			throws Exception {
 		Object outputValue = resolvedItem.getOutputValue();
 		Double amount = null;
 

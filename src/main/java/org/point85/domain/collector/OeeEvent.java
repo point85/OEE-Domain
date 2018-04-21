@@ -24,9 +24,7 @@ import org.point85.domain.uom.UnitOfMeasure;
 
 @Entity
 @Table(name = "OEE_EVENT")
-// @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-// @DiscriminatorColumn(name = "EVENT_TYPE", discriminatorType =
-// DiscriminatorType.STRING)
+
 @AttributeOverride(name = "primaryKey", column = @Column(name = "EVENT_KEY"))
 
 public class OeeEvent extends KeyedObject {
@@ -90,6 +88,12 @@ public class OeeEvent extends KeyedObject {
 	public OeeEvent(Equipment equipment) {
 		this.equipment = equipment;
 	}
+	
+	public OeeEvent(Equipment equipment, Object inputValue, Object outputValue) {
+		this.equipment = equipment;
+		this.inputValue = inputValue;
+		this.outputValue = outputValue;
+	}
 
 	public Equipment getEquipment() {
 		return equipment;
@@ -115,11 +119,11 @@ public class OeeEvent extends KeyedObject {
 		this.endTime = endTime;
 	}
 
-	public EventType getResolverType() {
+	public EventType getEventType() {
 		return eventType;
 	}
 
-	public void setResolverType(EventType type) {
+	public void setEventType(EventType type) {
 		this.eventType = type;
 	}
 

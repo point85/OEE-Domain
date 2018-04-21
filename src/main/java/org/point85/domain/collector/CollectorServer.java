@@ -51,7 +51,6 @@ import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentEventResolver;
 import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.script.EventResolver;
-import org.point85.domain.script.EventType;
 import org.point85.domain.script.OeeContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -874,7 +873,9 @@ public class CollectorServer
 				OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue,
 						timestamp);
 
-				recordResolution(resolvedDataItem);
+				if (!eventResolver.isWatchMode()) {
+					recordResolution(resolvedDataItem);
+				}
 
 			} catch (Exception e) {
 				onException("Unable to invoke script resolver.", e);
@@ -910,7 +911,9 @@ public class CollectorServer
 				OeeEvent resolvedEvent = equipmentResolver.invokeResolver(eventResolver, getAppContext(), javaValue,
 						odt);
 
-				recordResolution(resolvedEvent);
+				if (!eventResolver.isWatchMode()) {
+					recordResolution(resolvedEvent);
+				}
 
 			} catch (Exception e) {
 				onException("Unable to invoke OPC UA script resolver.", e);
@@ -919,31 +922,12 @@ public class CollectorServer
 	}
 
 	private synchronized void recordResolution(OeeEvent resolvedEvent) throws Exception {
-		EventType type = resolvedEvent.getResolverType();
-
-		// first in database
-		switch (type) {
-		case AVAILABILITY:
-			saveOeeEvent((OeeEvent) resolvedEvent);
-			break;
-
-		case JOB_CHANGE:
-		case MATL_CHANGE:
-			saveOeeEvent((OeeEvent) resolvedEvent);
-			break;
-
-		case OTHER:
-			break;
-
-		case PROD_GOOD:
-		case PROD_REJECT:
-		case PROD_STARTUP:
-			saveOeeEvent((OeeEvent) resolvedEvent);
-			break;
-
-		default:
-			throw new Exception("Invalid resolver type " + type);
+		if (resolvedEvent.getOutputValue() == null) {
+			return;
 		}
+
+		// save in database
+		saveOeeEvent(resolvedEvent);
 
 		// send event message
 		sendResolutionMessage(resolvedEvent);
@@ -970,13 +954,6 @@ public class CollectorServer
 			onException("Sending resolved event message failed.", e);
 		}
 	}
-
-	/*
-	 * public void onWebEquipmentEvent(Equipment equipment, EventResolverType
-	 * resolverType, Object sourceValue, OffsetDateTime timestamp) {
-	 * getExecutorService().execute(new WebTask(equipment, resolverType,
-	 * sourceValue, timestamp)); }
-	 */
 
 	public void registerExceptionLisener(CollectorExceptionListener listener) {
 		this.exceptionListener = listener;
@@ -1024,7 +1001,9 @@ public class CollectorServer
 						item.getLocalTimestamp());
 
 				// save resolution
-				recordResolution(resolvedDataItem);
+				if (!eventResolver.isWatchMode()) {
+					recordResolution(resolvedDataItem);
+				}
 
 			} catch (Exception e) {
 				onException("Unable to invoke OPC DA script resolver.", e);
@@ -1068,7 +1047,9 @@ public class CollectorServer
 						OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
 								dataValue, timestamp);
 
-						recordResolution(resolvedDataItem);
+						if (!eventResolver.isWatchMode()) {
+							recordResolution(resolvedDataItem);
+						}
 					}
 				}
 			} catch (Exception e) {

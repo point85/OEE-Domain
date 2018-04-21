@@ -346,14 +346,19 @@ public class PersistenceService {
 			if (uoms.size() != 0) {
 				String refs = "";
 				for (int i = 0; i < uoms.size(); i++) {
-					if (i > 0) {
-						refs += ", ";
-					}
+					if (!uom.equals(uoms.get(i))) {
+						if (i > 0) {
+							refs += ", ";
+						}
 
-					refs += uoms.get(i).getSymbol();
+						refs += uoms.get(i).getSymbol();
+					}
 				}
-				throw new Exception("Unit of measure " + uom.getSymbol()
-						+ " cannot be deleted.  It is being referenced by these units of measure: " + refs);
+
+				if (refs.length() > 0) {
+					throw new Exception("Unit of measure " + uom.getSymbol()
+							+ " cannot be deleted.  It is being referenced by these units of measure: " + refs);
+				}
 			}
 		}
 	}
