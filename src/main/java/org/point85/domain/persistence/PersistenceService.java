@@ -31,6 +31,7 @@ import org.point85.domain.collector.DataSourceType;
 import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.messaging.MessagingSource;
+import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.opc.da.OpcDaSource;
 import org.point85.domain.opc.ua.OpcUaSource;
 import org.point85.domain.plant.Area;
@@ -1103,12 +1104,13 @@ public class PersistenceService {
 
 		if (namedQueryMap.get(AVAIL_RECORDS) == null) {
 			createNamedQuery(AVAIL_RECORDS,
-					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type "
+					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type AND e.reason.timeLoss != :loss "
 							+ "AND (e.startTime >= :from AND e.startTime < :to) ORDER BY e.startTime ASC");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(AVAIL_RECORDS, OeeEvent.class);
 		query.setParameter("type", EventType.AVAILABILITY);
+		query.setParameter("loss", TimeLoss.NO_LOSS);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);

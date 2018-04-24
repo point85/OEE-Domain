@@ -37,11 +37,13 @@ public class OeeEvent extends KeyedObject {
 	private Equipment equipment;
 
 	@Column(name = "START_TIME")
-	@Convert(converter = OffsetDateTimeConverter.class)
+	// TODO removed for Oracle
+	// @Convert(converter = OffsetDateTimeConverter.class)
 	private OffsetDateTime startTime;
 
 	@Column(name = "END_TIME")
-	@Convert(converter = OffsetDateTimeConverter.class)
+	// TODO removed for Oracle
+	// @Convert(converter = OffsetDateTimeConverter.class)
 	private OffsetDateTime endTime;
 
 	@OneToOne
@@ -88,7 +90,7 @@ public class OeeEvent extends KeyedObject {
 	public OeeEvent(Equipment equipment) {
 		this.equipment = equipment;
 	}
-	
+
 	public OeeEvent(Equipment equipment, Object inputValue, Object outputValue) {
 		this.equipment = equipment;
 		this.inputValue = inputValue;

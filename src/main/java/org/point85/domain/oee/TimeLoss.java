@@ -66,11 +66,15 @@ public enum TimeLoss {
 		losses.add(UNSCHEDULED);
 		return losses;
 	}
+	
+	public static TimeLoss getNoLoss() {
+		return NO_LOSS;
+	}
 
 	public boolean isLoss() {
 		boolean isLoss = true;
 
-		if (this.equals(NOT_SCHEDULED) || this.equals(UNSCHEDULED)) {
+		if (this.equals(NO_LOSS) || this.equals(NOT_SCHEDULED) || this.equals(UNSCHEDULED)) {
 			isLoss = false;
 		}
 		return isLoss;
