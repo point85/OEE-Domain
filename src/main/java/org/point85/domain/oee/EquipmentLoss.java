@@ -330,7 +330,7 @@ public class EquipmentLoss {
 
 	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 
 		if (startDateTime != null && endDateTime != null) {
 			sb.append("From: ").append(startDateTime.toString()).append("To: ").append(endDateTime.toString())

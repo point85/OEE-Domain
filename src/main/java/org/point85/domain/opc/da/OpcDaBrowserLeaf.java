@@ -72,7 +72,7 @@ public class OpcDaBrowserLeaf {
 	}
 
 	public String getPathName() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 
 		LinkedList<String> path = getAccesspath();
 

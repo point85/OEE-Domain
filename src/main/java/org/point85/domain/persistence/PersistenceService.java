@@ -65,7 +65,7 @@ public class PersistenceService {
 	private static final String PU_NAME = "OEE";
 
 	// time in sec to wait for EntityManagerFactory creation to complete
-	private static final int EMF_CREATION_TO_SEC = 15;
+	private static final int EMF_CREATION_TO_SEC = 60;
 
 	// entity manager factory
 	private EntityManagerFactory emf;

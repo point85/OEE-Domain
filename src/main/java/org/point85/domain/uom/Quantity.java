@@ -523,7 +523,7 @@ public class Quantity {
 	 */
 	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(this.getAmount());
 
 		if (getUOM() != null) {

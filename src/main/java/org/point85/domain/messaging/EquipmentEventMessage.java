@@ -48,7 +48,7 @@ public class EquipmentEventMessage extends ApplicationMessage {
 
 	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString()).append('\n');
 		sb.append("Source: ").append(sourceId).append(", Value: ").append(value).append(", Timestamp: ")
 				.append(getTimestamp().toString());

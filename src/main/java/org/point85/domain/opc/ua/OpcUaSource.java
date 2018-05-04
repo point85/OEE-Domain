@@ -4,6 +4,7 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 
@@ -12,9 +13,11 @@ import org.point85.domain.collector.DataSourceType;
 
 public class OpcUaSource extends CollectorDataSource {
 
-	private transient SecurityPolicy policy;
+	private transient SecurityPolicy policy = SecurityPolicy.None;
 
 	private transient String endpointUrl;
+	
+	private transient MessageSecurityMode messageSecurityMode = MessageSecurityMode.None;
 
 	public OpcUaSource() {
 		super();
@@ -66,5 +69,13 @@ public class OpcUaSource extends CollectorDataSource {
 
 	public void setSecurityPolicy(SecurityPolicy policy) {
 		this.policy = policy;
+	}
+
+	public MessageSecurityMode getMessageSecurityMode() {
+		return messageSecurityMode;
+	}
+
+	public void setMessageSecurityMode(MessageSecurityMode messageSecurityMode) {
+		this.messageSecurityMode = messageSecurityMode;
 	}
 }

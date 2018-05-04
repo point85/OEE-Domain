@@ -28,7 +28,7 @@ public class OffsetDateTimeConverter implements AttributeConverter<OffsetDateTim
 			String[] tokens = timestamp.split(" ");
 
 			if (tokens.length > 0) {
-				StringBuffer sb = new StringBuffer();
+				StringBuilder sb = new StringBuilder();
 
 				// date + T + time + offset
 				sb.append(tokens[0]).append('T').append(tokens[1]);

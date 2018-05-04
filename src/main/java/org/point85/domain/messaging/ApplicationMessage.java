@@ -53,7 +53,7 @@ public class ApplicationMessage {
 
 	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("Type: ").append(messageType.toString()).append(", Sender Host: ").append(senderHostName);
 
 		return sb.toString();

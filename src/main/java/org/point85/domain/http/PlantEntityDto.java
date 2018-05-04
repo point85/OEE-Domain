@@ -45,7 +45,7 @@ public class PlantEntityDto extends NamedDto {
 
 	@Override
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString()).append(", Level: " + level + ", Parent: " + parent);
 		sb.append('\n');
 

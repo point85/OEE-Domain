@@ -209,7 +209,7 @@ public class OpcDaVariant {
 
 		case JIVariant.VT_I1:
 			char c = jiVariant.getObjectAsChar();
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append(c);
 			byte[] bytes = sb.toString().getBytes();
 

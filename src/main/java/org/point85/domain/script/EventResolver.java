@@ -108,7 +108,7 @@ public class EventResolver extends KeyedObject {
 	}
 
 	public static String getDefaultProductionScript() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("var ROLLOVER = 0;");
 		sb.append('\n').append("var delta = value - lastValue;");
 		sb.append('\n').append("if (value < lastValue) {");
@@ -120,14 +120,14 @@ public class EventResolver extends KeyedObject {
 	}
 
 	public static String getDefaultMaterialScript() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("return value;");
 
 		return ResolverFunction.functionFromBody(sb.toString());
 	}
 
 	public static String getDefaultJobScript() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("return value;");
 
 		return ResolverFunction.functionFromBody(sb.toString());

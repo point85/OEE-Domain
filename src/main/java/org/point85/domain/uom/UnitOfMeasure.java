@@ -1007,7 +1007,7 @@ public class UnitOfMeasure extends NamedObject {
 	 * @return String representation
 	 */
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		ResourceBundle symbolBundle = MeasurementSystem.instance().getSymbols();
 
 		// type
@@ -1217,7 +1217,7 @@ public class UnitOfMeasure extends NamedObject {
 	 * @return String representation
 	 */
 	public String toDisplayString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(getSymbol()).append(" (").append(getName()).append(')');
 		return sb.toString();
 	}

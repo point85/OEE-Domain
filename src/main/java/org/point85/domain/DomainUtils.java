@@ -106,13 +106,13 @@ public class DomainUtils {
 		}
 		DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols();
 
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(decimalFormatSymbols.getGroupingSeparator());
 		String separator = sb.toString();
 
 		String[] thousands = formattedString.split(separator);
 
-		sb = new StringBuffer();
+		sb = new StringBuilder();
 
 		for (String thousand : thousands) {
 			sb.append(thousand);
