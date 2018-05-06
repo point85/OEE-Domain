@@ -29,11 +29,11 @@ public class OpcDaSource extends CollectorDataSource {
 	}
 
 	public String getClassId() {
-		return param1;
+		return null;
 	}
 
 	public void setClassId(String classId) {
-		this.param1 = classId;
+
 	}
 
 	@Override

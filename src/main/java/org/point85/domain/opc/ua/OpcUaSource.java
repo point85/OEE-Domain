@@ -1,5 +1,9 @@
 package org.point85.domain.opc.ua;
 
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
+
+import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
@@ -18,6 +22,22 @@ public class OpcUaSource extends CollectorDataSource {
 	private transient String endpointUrl;
 	
 	private transient MessageSecurityMode messageSecurityMode = MessageSecurityMode.None;
+	
+	private transient KeyPair keyPair;
+	
+	//private transient X509Certificate certificate;
+	
+	@Column(name = "END_PATH")
+	private String endpointPath;
+	
+	@Column(name = "SEC_POLICY")
+	private String securityPolicy;
+	
+	@Column(name = "MSG_MODE")
+	private String messageMode;
+	
+	@Column(name = "CERT_PATH")
+	private String certificatePath;
 
 	public OpcUaSource() {
 		super();
@@ -43,12 +63,12 @@ public class OpcUaSource extends CollectorDataSource {
 		}
 	}
 
-	public String getPath() {
-		return param1;
+	public String getEndpointPath() {
+		return endpointPath;
 	}
 
 	public void setPath(String path) {
-		this.param1 = path;
+		this.endpointPath = path;
 	}
 
 	public String getEndpointUrl() {
@@ -56,26 +76,51 @@ public class OpcUaSource extends CollectorDataSource {
 			// only TCP is supported
 			endpointUrl = String.format("opc.tcp://%s:%s", getHost(), getPort());
 
-			if (getPath() != null && getPath().length() > 0) {
-				endpointUrl += "/" + getPath();
+			if (getEndpointPath() != null && getEndpointPath().length() > 0) {
+				endpointUrl += "/" + getEndpointPath();
 			}
 		}
 		return endpointUrl;
 	}
 
 	public SecurityPolicy getSecurityPolicy() {
+		if (securityPolicy != null) {
+			policy = SecurityPolicy.valueOf(securityPolicy);
+		}
 		return policy;
 	}
 
 	public void setSecurityPolicy(SecurityPolicy policy) {
+		this.securityPolicy = policy.name();
 		this.policy = policy;
 	}
 
 	public MessageSecurityMode getMessageSecurityMode() {
+		if (messageMode != null) {
+			messageSecurityMode = MessageSecurityMode.valueOf(messageMode);
+		}
 		return messageSecurityMode;
 	}
 
 	public void setMessageSecurityMode(MessageSecurityMode messageSecurityMode) {
+		this.messageMode = messageSecurityMode.name();
 		this.messageSecurityMode = messageSecurityMode;
 	}
+
+	public KeyPair getKeyPair() {
+		return keyPair;
+	}
+
+	public void setKeyPair(KeyPair keyPair) {
+		this.keyPair = keyPair;
+	}
+
+	public String getCertificatePath() {
+		return certificatePath;
+	}
+
+	public void setCertificatePath(String certificatePath) {
+		this.certificatePath = certificatePath;
+	}
+	
 }

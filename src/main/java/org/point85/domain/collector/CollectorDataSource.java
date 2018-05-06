@@ -21,7 +21,7 @@ import org.point85.domain.plant.NamedObject;
 
 public abstract class CollectorDataSource extends NamedObject {
 	public static final int DEFAULT_UPDATE_PERIOD_MSEC = 5000;
-	
+
 	@Column(name = "HOST")
 	private String host;
 
@@ -38,9 +38,6 @@ public abstract class CollectorDataSource extends NamedObject {
 
 	@Column(name = "PORT")
 	private Integer port;
-
-	@Column(name = "PARAM1")
-	protected String param1;
 
 	public CollectorDataSource() {
 		super();

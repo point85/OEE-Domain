@@ -4,9 +4,10 @@ import static com.google.common.collect.Lists.newArrayList;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 import static org.eclipse.milo.opcua.stack.core.util.ConversionUtil.toList;
 
+import java.io.File;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -21,10 +22,8 @@ import java.util.function.BiConsumer;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
 import org.eclipse.milo.opcua.sdk.client.api.UaSession;
-import org.eclipse.milo.opcua.sdk.client.api.config.OpcUaClientConfig;
 import org.eclipse.milo.opcua.sdk.client.api.config.OpcUaClientConfigBuilder;
 import org.eclipse.milo.opcua.sdk.client.api.identity.AnonymousProvider;
-import org.eclipse.milo.opcua.sdk.client.api.identity.CompositeProvider;
 import org.eclipse.milo.opcua.sdk.client.api.identity.IdentityProvider;
 import org.eclipse.milo.opcua.sdk.client.api.identity.UsernameProvider;
 import org.eclipse.milo.opcua.sdk.client.api.nodes.VariableNode;
@@ -37,7 +36,6 @@ import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.Stack;
-import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -70,8 +68,6 @@ import org.eclipse.milo.opcua.stack.core.types.structured.MonitoredItemCreateReq
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoringParameters;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
-import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateBuilder;
-import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,19 +77,19 @@ public class UaOpcClient implements SessionActivityListener {
 	// logging utility
 	private static Logger logger = LoggerFactory.getLogger(UaOpcClient.class);
 
-	private static final String APP_NAME = "Point85 OEE OPC UA Client";
-	private static final String APP_URI = "urn:point85:oee:client";
-	private static final String APP_ORG = "Point85";
-	private static final String APP_UNIT = "dev";
-	private static final String APP_CITY = "Los Altos";
-	private static final String APP_STATE = "CA";
-	private static final String APP_COUNTRY = "US";
+	static final String APP_NAME = "Point85 OEE OPC UA Client";
+	static final String APP_URI = "urn:point85:oee:client";
+	static final String APP_ORG = "Point85";
+	static final String APP_UNIT = "dev";
+	static final String APP_CITY = "Los Altos";
+	static final String APP_STATE = "CA";
+	static final String APP_COUNTRY = "US";
 
-	private KeyPair keyPair;
-	private X509Certificate certificate;
+	// private KeyPair keyPair;
+	// private X509Certificate certificate;
 
 	// request timeout (msec)
-	private static final int REQUEST_TIMEOUT = 5000;
+	private static final int REQUEST_TIMEOUT = 10000;
 
 	private static final TimeUnit REQUEST_TIMEOUT_UNIT = TimeUnit.MILLISECONDS;
 
@@ -106,14 +102,8 @@ public class UaOpcClient implements SessionActivityListener {
 	// wrapped UA client
 	private OpcUaClient opcUaClient;
 
-	// security policy
-	private SecurityPolicy securityPolicy;
-
-	// message security mode
-	private MessageSecurityMode messageSecurityMode;
-
 	// identity provider
-	private IdentityProvider identityProvider;
+	// private IdentityProvider identityProvider;
 
 	// loader for certificates
 	private final KeyStoreLoader keyStoreLoader = new KeyStoreLoader();
@@ -162,202 +152,137 @@ public class UaOpcClient implements SessionActivityListener {
 		asynchListeners.remove(listener);
 	}
 
-	private EndpointDescription chooseEndpoint(EndpointDescription[] endpoints, SecurityPolicy minSecurityPolicy,
-			MessageSecurityMode minMessageSecurityMode) {
-		EndpointDescription bestFound = null;
-		SecurityPolicy bestFoundSecurityPolicy = null;
-		for (EndpointDescription endpoint : endpoints) {
-			SecurityPolicy endpointSecurityPolicy;
-			try {
-				endpointSecurityPolicy = SecurityPolicy.fromUri(endpoint.getSecurityPolicyUri());
-			} catch (UaException e) {
-				continue;
-			}
-			if (minSecurityPolicy.compareTo(endpointSecurityPolicy) <= 0) {
-				if (minMessageSecurityMode.compareTo(endpoint.getSecurityMode()) <= 0) {
-					// Found endpoint which fulfills minimum requirements
-					if (bestFound == null) {
-						bestFound = endpoint;
-						bestFoundSecurityPolicy = endpointSecurityPolicy;
-					} else {
-						if (bestFoundSecurityPolicy.compareTo(endpointSecurityPolicy) < 0) {
-							// Found endpoint that has higher security than previously found one
-							bestFound = endpoint;
-							bestFoundSecurityPolicy = endpointSecurityPolicy;
-						}
-					}
-				}
-			}
-		}
-		if (bestFound == null) {
-			throw new RuntimeException("no desired endpoints returned");
-		} else {
-			return bestFound;
-		}
-	}
+	/*
+	 * private X509Certificate getClientCertificate() throws Exception { if
+	 * (certificate == null) { generateSelfSignedCertificate(); } return
+	 * certificate; }
+	 * 
+	 * KeyPair getClientKeyPair() throws Exception { if (keyPair == null) {
+	 * generateSelfSignedCertificate(); } return keyPair; }
+	 */
 
-	private IdentityProvider getIdentityProvider() {
-		return new AnonymousProvider();
-	}
-
-	private X509Certificate getClientCertificate() {
-		if (certificate == null) {
-			generateSelfSignedCertificate();
-		}
-		return certificate;
-	}
-
-	KeyPair getKeyPair() {
-		if (keyPair == null) {
-			generateSelfSignedCertificate();
-		}
-		return keyPair;
-	}
-
-	protected void generateSelfSignedCertificate() {
-		// Generate self-signed certificate
-		try {
-			keyPair = SelfSignedCertificateGenerator.generateRsaKeyPair(2048);
-		} catch (NoSuchAlgorithmException n) {
-			logger.error("Could not generate RSA Key Pair.", n);
-			System.exit(1);
-		}
-
-		SelfSignedCertificateBuilder builder = new SelfSignedCertificateBuilder(keyPair).setCommonName(APP_NAME)
-				.setOrganization(APP_ORG).setOrganizationalUnit(APP_UNIT).setLocalityName(APP_CITY)
-				.setStateName(APP_STATE).setCountryCode(APP_COUNTRY).setApplicationUri(APP_URI);
-
-		try {
-			certificate = builder.build();
-		} catch (Exception e) {
-			logger.error("Could not build certificate.", e);
-			System.exit(1);
-		}
-	}
+	/*
+	 * private void generateSelfSignedCertificate() throws Exception { // Generate
+	 * self-signed certificate keyPair =
+	 * SelfSignedCertificateGenerator.generateRsaKeyPair(2048);
+	 * 
+	 * certificate = new
+	 * SelfSignedCertificateBuilder(keyPair).setCommonName(APP_NAME).setOrganization
+	 * (APP_ORG)
+	 * .setOrganizationalUnit(APP_UNIT).setLocalityName(APP_CITY).setStateName(
+	 * APP_STATE) .setCountryCode(APP_COUNTRY).setApplicationUri(APP_URI).build(); }
+	 */
 
 	// log into the server and connect
-	public synchronized void connect(OpcUaSource source)
-			// String protocol, String host, int port, String path, String user,
-			// String password, SecurityPolicy policy)
-			throws Exception {
+	public synchronized void connect(OpcUaSource source) throws Exception {
 		String endpointUrl = source.getEndpointUrl();
 		logger.info("Connecting to: " + endpointUrl);
 
 		try {
 			// identity provider
 			String user = source.getUserName();
-			String password = source.getPassword();
+
+			IdentityProvider identityProvider = null;
+
 			if (user != null && user.length() > 0) {
 				/*
 				 * Authentication is handled by setting an appropriate IdentityProvider when
 				 * building the UaTcpStackClientConfig.
 				 */
-				identityProvider = new CompositeProvider(new UsernameProvider(user, password), new AnonymousProvider());
+				// identityProvider = new CompositeProvider(new UsernameProvider(user,
+				// source.getPassword()),
+				// new AnonymousProvider());
+				identityProvider = new UsernameProvider(user, source.getPassword());
 			} else {
 				identityProvider = new AnonymousProvider();
 			}
 
-			securityPolicy = source.getSecurityPolicy();
-			messageSecurityMode = source.getMessageSecurityMode();
-
-			// create the OpcUaClient
+			// get the server's endpoints
 			EndpointDescription[] endpointDescriptions = UaTcpStackClient.getEndpoints(endpointUrl).get();
 
+			// security settings
+			String policyUri = source.getSecurityPolicy().getSecurityPolicyUri();
+			MessageSecurityMode messageSecurityMode = source.getMessageSecurityMode();
+
 			logger.info("Available endpoints:");
-			for (EndpointDescription endpointDescription : endpointDescriptions) {
-				logger.info("URL: " + endpointDescription.getEndpointUrl() + ",  Policy: "
-						+ endpointDescription.getSecurityPolicyUri() + ", Mode: "
-						+ endpointDescription.getSecurityMode());
-			}
-
 			EndpointDescription endpointDescription = null;
-			OpcUaClientConfig config = null;
 
-			final boolean simpleConnect = false;
-			final OpcUaClientConfigBuilder cfg = new OpcUaClientConfigBuilder();
-			
-			securityPolicy = SecurityPolicy.Basic256Sha256;
-			messageSecurityMode = MessageSecurityMode.Sign;
+			for (EndpointDescription description : endpointDescriptions) {
+				String uri = description.getSecurityPolicyUri();
+				MessageSecurityMode mode = description.getSecurityMode();
 
-			if (simpleConnect) {
-				endpointDescription = endpointDescriptions[1];
+				logger.info("URL: " + description.getEndpointUrl() + ",  Policy: " + uri + ", Mode: " + mode);
 
-				// just one endpoint
-				cfg.setEndpoint(endpointDescriptions[0]);
-
-				config = cfg.build();
-			} else {
-				/*
-				 * endpoint = Arrays.stream(endpoints) .filter(e ->
-				 * e.getSecurityPolicyUri().equals(securityPolicy.getSecurityPolicyUri())).
-				 * findFirst() .orElseThrow(() -> new
-				 * Exception("no desired endpoints returned"));
-				 */
-
-				/*
-				 * endpoint = Arrays.stream(endpoints) .sorted((e1, e2) ->
-				 * e2.getSecurityLevel().intValue() - e1.getSecurityLevel().intValue())
-				 * .findFirst().orElseThrow(() -> new Exception("no endpoints returned"));
-				 */
-
-
-				// endpoint = chooseEndpoint(endpoints, securityPolicy, messageSecurityMode);
-				for (EndpointDescription description : endpointDescriptions) {
-					String uri = description.getSecurityPolicyUri();
-					MessageSecurityMode mode = description.getSecurityMode();
-
-					if (uri.equals(securityPolicy.getSecurityPolicyUri()) && mode.equals(messageSecurityMode)) {
-						endpointDescription = description;
-						break;
-					}
+				if (uri.equals(policyUri) && mode.equals(messageSecurityMode)) {
+					endpointDescription = description;
+					break;
 				}
-
-				if (endpointDescription == null) {
-					String msg = "Unable to find a matching endpoint for security policy " + securityPolicy
-							+ " and mode " + messageSecurityMode;
-					logger.error(msg);
-					throw new Exception(msg);
-				}
-
-				cfg.setApplicationName(LocalizedText.english(APP_NAME)).setApplicationUri(APP_URI)
-						.setEndpoint(endpointDescription).setIdentityProvider(getIdentityProvider())
-						.setRequestTimeout(uint(REQUEST_TIMEOUT));
-
-				if (!securityPolicy.equals(SecurityPolicy.None)) {
-					cfg.setCertificate(getClientCertificate()).setKeyPair(getKeyPair());
-				}
-
-				// logger.info("Using endpoint: " + endpoint.getEndpointUrl() + ", Security
-				// Policy: " + securityPolicy);
-
-				// keyStoreLoader.load();
-				/*
-				 * config = OpcUaClientConfig.builder()
-				 * .setApplicationName(LocalizedText.english("Point85 OEE OPC UA Client"))
-				 * .setApplicationUri(APP_URI)
-				 * .setCertificate(keyStoreLoader.getClientCertificate())
-				 * .setKeyPair(keyStoreLoader.getClientKeyPair()).setEndpoint(endpoint)
-				 * .setIdentityProvider(identityProvider).setRequestTimeout(uint(REQUEST_TIMEOUT
-				 * )).build();
-				 */
 			}
+
+			if (endpointDescription == null) {
+				String msg = "Unable to find a matching endpoint for security policy " + policyUri + " and mode "
+						+ messageSecurityMode;
+				logger.error(msg);
+				throw new Exception(msg);
+			}
+
 			logger.info("Using endpoint: {} [{}, {}]", endpointDescription.getEndpointUrl(),
 					endpointDescription.getSecurityPolicyUri(), endpointDescription.getSecurityMode());
 
-			config = cfg.build();
+			// build the configuration
+			OpcUaClientConfigBuilder configBuilder = new OpcUaClientConfigBuilder();
 
-			opcUaClient = new OpcUaClient(config);
+			configBuilder.setApplicationName(LocalizedText.english(APP_NAME)).setApplicationUri(APP_URI)
+					.setEndpoint(endpointDescription).setIdentityProvider(identityProvider)
+					.setRequestTimeout(uint(REQUEST_TIMEOUT));
+
+			if (source.getSecurityPolicy() != SecurityPolicy.None) {
+				if (source.getCertificatePath() != null) {
+					// get configured certificate
+					File certFile = new File(source.getCertificatePath());
+
+					KeyStoreLoader loader = new KeyStoreLoader().load(certFile);
+					
+					KeyPair keyPair = loader.getClientKeyPair();
+					PrivateKey key = keyPair.getPrivate();
+					String alg = key.getAlgorithm();
+					String fmt = key.getFormat();
+					
+					PublicKey pKey = keyPair.getPublic();
+					 alg = pKey.getAlgorithm();
+					 fmt = pKey.getFormat();
+					
+
+					// get the configured certificate
+					configBuilder.setCertificate(loader.getClientCertificate()).setKeyPair(loader.getClientKeyPair());
+				}
+			}
+
+			// create the client
+			opcUaClient = new OpcUaClient(configBuilder.build());
 
 			// synchronous connect
 			opcUaClient.connect().get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
-			
+
 			if (logger.isInfoEnabled()) {
 				logger.info("Connected to server.");
 			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new Exception("Unable to log in to server " + endpointUrl + ": " + e.getMessage());
+
+			String msg = e.getMessage();
+
+			if (msg == null) {
+				if (e.getCause() != null) {
+					msg = e.getCause().getMessage();
+				}
+
+				if (msg == null) {
+					msg = e.getClass().getSimpleName();
+				}
+			}
+			throw new Exception("Unable to log in to server " + endpointUrl + ": " + msg);
 		}
 	}
 
