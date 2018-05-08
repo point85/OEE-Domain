@@ -4,10 +4,6 @@ import static com.google.common.collect.Lists.newArrayList;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 import static org.eclipse.milo.opcua.stack.core.util.ConversionUtil.toList;
 
-import java.io.File;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +22,7 @@ import org.eclipse.milo.opcua.sdk.client.api.config.OpcUaClientConfigBuilder;
 import org.eclipse.milo.opcua.sdk.client.api.identity.AnonymousProvider;
 import org.eclipse.milo.opcua.sdk.client.api.identity.IdentityProvider;
 import org.eclipse.milo.opcua.sdk.client.api.identity.UsernameProvider;
+import org.eclipse.milo.opcua.sdk.client.api.identity.X509IdentityProvider;
 import org.eclipse.milo.opcua.sdk.client.api.nodes.VariableNode;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
@@ -36,7 +33,6 @@ import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.Stack;
-import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -80,13 +76,10 @@ public class UaOpcClient implements SessionActivityListener {
 	static final String APP_NAME = "Point85 OEE OPC UA Client";
 	static final String APP_URI = "urn:point85:oee:client";
 	static final String APP_ORG = "Point85";
-	static final String APP_UNIT = "dev";
+	static final String APP_UNIT = "OEE";
 	static final String APP_CITY = "Los Altos";
 	static final String APP_STATE = "CA";
 	static final String APP_COUNTRY = "US";
-
-	// private KeyPair keyPair;
-	// private X509Certificate certificate;
 
 	// request timeout (msec)
 	private static final int REQUEST_TIMEOUT = 10000;
@@ -101,12 +94,6 @@ public class UaOpcClient implements SessionActivityListener {
 
 	// wrapped UA client
 	private OpcUaClient opcUaClient;
-
-	// identity provider
-	// private IdentityProvider identityProvider;
-
-	// loader for certificates
-	private final KeyStoreLoader keyStoreLoader = new KeyStoreLoader();
 
 	// asynch callback listeners
 	private List<OpcUaAsynchListener> asynchListeners = new ArrayList<>();
@@ -152,27 +139,6 @@ public class UaOpcClient implements SessionActivityListener {
 		asynchListeners.remove(listener);
 	}
 
-	/*
-	 * private X509Certificate getClientCertificate() throws Exception { if
-	 * (certificate == null) { generateSelfSignedCertificate(); } return
-	 * certificate; }
-	 * 
-	 * KeyPair getClientKeyPair() throws Exception { if (keyPair == null) {
-	 * generateSelfSignedCertificate(); } return keyPair; }
-	 */
-
-	/*
-	 * private void generateSelfSignedCertificate() throws Exception { // Generate
-	 * self-signed certificate keyPair =
-	 * SelfSignedCertificateGenerator.generateRsaKeyPair(2048);
-	 * 
-	 * certificate = new
-	 * SelfSignedCertificateBuilder(keyPair).setCommonName(APP_NAME).setOrganization
-	 * (APP_ORG)
-	 * .setOrganizationalUnit(APP_UNIT).setLocalityName(APP_CITY).setStateName(
-	 * APP_STATE) .setCountryCode(APP_COUNTRY).setApplicationUri(APP_URI).build(); }
-	 */
-
 	// log into the server and connect
 	public synchronized void connect(OpcUaSource source) throws Exception {
 		String endpointUrl = source.getEndpointUrl();
@@ -180,19 +146,18 @@ public class UaOpcClient implements SessionActivityListener {
 
 		try {
 			// identity provider
-			String user = source.getUserName();
-
 			IdentityProvider identityProvider = null;
+			X509KeyStoreLoader loader = null;
 
-			if (user != null && user.length() > 0) {
-				/*
-				 * Authentication is handled by setting an appropriate IdentityProvider when
-				 * building the UaTcpStackClientConfig.
-				 */
-				// identityProvider = new CompositeProvider(new UsernameProvider(user,
-				// source.getPassword()),
-				// new AnonymousProvider());
-				identityProvider = new UsernameProvider(user, source.getPassword());
+			if (source.getUserName() != null) {
+				// user name and password authentication
+				identityProvider = new UsernameProvider(source.getUserName(), source.getPassword());
+			} else if (source.getKeystore() != null) {
+				// load X509 certificate from a keystore
+				loader = new X509KeyStoreLoader();
+				loader.load(source.getKeystore(), source.getPassword());
+				identityProvider = new X509IdentityProvider(loader.getClientCertificate(),
+						loader.getClientKeyPair().getPrivate());
 			} else {
 				identityProvider = new AnonymousProvider();
 			}
@@ -236,26 +201,9 @@ public class UaOpcClient implements SessionActivityListener {
 					.setEndpoint(endpointDescription).setIdentityProvider(identityProvider)
 					.setRequestTimeout(uint(REQUEST_TIMEOUT));
 
-			if (source.getSecurityPolicy() != SecurityPolicy.None) {
-				if (source.getCertificatePath() != null) {
-					// get configured certificate
-					File certFile = new File(source.getCertificatePath());
-
-					KeyStoreLoader loader = new KeyStoreLoader().load(certFile);
-					
-					KeyPair keyPair = loader.getClientKeyPair();
-					PrivateKey key = keyPair.getPrivate();
-					String alg = key.getAlgorithm();
-					String fmt = key.getFormat();
-					
-					PublicKey pKey = keyPair.getPublic();
-					 alg = pKey.getAlgorithm();
-					 fmt = pKey.getFormat();
-					
-
-					// get the configured certificate
-					configBuilder.setCertificate(loader.getClientCertificate()).setKeyPair(loader.getClientKeyPair());
-				}
+			if (loader != null) {
+				// get the configured certificate
+				configBuilder.setCertificate(loader.getClientCertificate()).setKeyPair(loader.getClientKeyPair());
 			}
 
 			// create the client

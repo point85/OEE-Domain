@@ -1,8 +1,5 @@
 package org.point85.domain.opc.ua;
 
-import java.security.KeyPair;
-import java.security.cert.X509Certificate;
-
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -23,10 +20,6 @@ public class OpcUaSource extends CollectorDataSource {
 	
 	private transient MessageSecurityMode messageSecurityMode = MessageSecurityMode.None;
 	
-	private transient KeyPair keyPair;
-	
-	//private transient X509Certificate certificate;
-	
 	@Column(name = "END_PATH")
 	private String endpointPath;
 	
@@ -36,8 +29,8 @@ public class OpcUaSource extends CollectorDataSource {
 	@Column(name = "MSG_MODE")
 	private String messageMode;
 	
-	@Column(name = "CERT_PATH")
-	private String certificatePath;
+	@Column(name = "KEYSTORE")
+	private String keystore;
 
 	public OpcUaSource() {
 		super();
@@ -107,20 +100,12 @@ public class OpcUaSource extends CollectorDataSource {
 		this.messageSecurityMode = messageSecurityMode;
 	}
 
-	public KeyPair getKeyPair() {
-		return keyPair;
+	public String getKeystore() {
+		return keystore;
 	}
 
-	public void setKeyPair(KeyPair keyPair) {
-		this.keyPair = keyPair;
-	}
-
-	public String getCertificatePath() {
-		return certificatePath;
-	}
-
-	public void setCertificatePath(String certificatePath) {
-		this.certificatePath = certificatePath;
+	public void setKeystore(String fileName) {
+		this.keystore = fileName;
 	}
 	
 }
