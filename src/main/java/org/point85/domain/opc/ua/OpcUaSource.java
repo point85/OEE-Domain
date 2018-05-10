@@ -31,6 +31,9 @@ public class OpcUaSource extends CollectorDataSource {
 	
 	@Column(name = "KEYSTORE")
 	private String keystore;
+	
+	@Column(name = "KEYSTORE_PWD")
+	private String keystorePassword;
 
 	public OpcUaSource() {
 		super();
@@ -106,6 +109,14 @@ public class OpcUaSource extends CollectorDataSource {
 
 	public void setKeystore(String fileName) {
 		this.keystore = fileName;
+	}
+
+	public String getKeystorePassword() {
+		return keystorePassword;
+	}
+
+	public void setKeystorePassword(String keystorePassword) {
+		this.keystorePassword = keystorePassword;
 	}
 	
 }

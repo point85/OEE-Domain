@@ -98,7 +98,7 @@ public class DaOpcClient {
 	}
 
 	public void connect(OpcDaSource opcDaSource) throws Exception {
-		this.connect(opcDaSource.getHost(), opcDaSource.getUserName(), opcDaSource.getPassword(),
+		this.connect(opcDaSource.getHost(), opcDaSource.getUserName(), opcDaSource.getUserPassword(),
 				opcDaSource.getProgId(), opcDaSource.getClassId());
 	}
 

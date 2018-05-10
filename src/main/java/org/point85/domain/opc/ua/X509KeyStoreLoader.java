@@ -2,7 +2,7 @@ package org.point85.domain.opc.ua;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
+import java.net.URL;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyStore;
@@ -14,10 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class X509KeyStoreLoader {
-	private static final String path = "/ssl/";
+	// input to java keytool command
+	private static final String KEYSTORE_ALIAS = "opcua";
 
-	private static final String CLIENT_ALIAS = "client-ai";
-	// private static final char[] PASSWORD = "password".toCharArray();
 	private static final String KEY_STORE_TYPE = "PKCS12";
 
 	private static final Logger logger = LoggerFactory.getLogger(X509KeyStoreLoader.class);
@@ -26,27 +25,30 @@ public class X509KeyStoreLoader {
 	private KeyPair clientKeyPair;
 
 	X509KeyStoreLoader load(String keystoreName, String password) throws Exception {
-		// get the key store
+		// get the keystore
 		KeyStore keyStore = KeyStore.getInstance(KEY_STORE_TYPE);
 		logger.info("Reading keystore " + keystoreName);
-		
-		InputStream fis = getClass().getClassLoader().getResourceAsStream(path + keystoreName);
-		
-		File serverKeyStore = new File(path + keystoreName);
+
+		URL url = getClass().getResource(keystoreName);
+		File serverKeyStore = new File(url.getPath());
 
 		logger.info("Loading KeyStore at {}", serverKeyStore);
 
 		if (!serverKeyStore.exists()) {
-			throw new Exception("KeyStore does not exist.");
+			throw new Exception("KeyStore " + serverKeyStore + " does not exist.");
 		}
 
 		// read existing file
 		keyStore.load(new FileInputStream(serverKeyStore), password.toCharArray());
 
-		Key serverPrivateKey = keyStore.getKey(CLIENT_ALIAS, password.toCharArray());
+		Key serverPrivateKey = keyStore.getKey(KEYSTORE_ALIAS, password.toCharArray());
+
+		if (serverPrivateKey == null) {
+			throw new Exception("Private key not found with alias " + KEYSTORE_ALIAS);
+		}
 
 		if (serverPrivateKey instanceof PrivateKey) {
-			clientCertificate = (X509Certificate) keyStore.getCertificate(CLIENT_ALIAS);
+			clientCertificate = (X509Certificate) keyStore.getCertificate(KEYSTORE_ALIAS);
 			PublicKey serverPublicKey = clientCertificate.getPublicKey();
 			clientKeyPair = new KeyPair(serverPublicKey, (PrivateKey) serverPrivateKey);
 		}

@@ -75,14 +75,9 @@ public class UaOpcClient implements SessionActivityListener {
 
 	static final String APP_NAME = "Point85 OEE OPC UA Client";
 	static final String APP_URI = "urn:point85:oee:client";
-	static final String APP_ORG = "Point85";
-	static final String APP_UNIT = "OEE";
-	static final String APP_CITY = "Los Altos";
-	static final String APP_STATE = "CA";
-	static final String APP_COUNTRY = "US";
 
 	// request timeout (msec)
-	private static final int REQUEST_TIMEOUT = 10000;
+	private static final int REQUEST_TIMEOUT = 20000;
 
 	private static final TimeUnit REQUEST_TIMEOUT_UNIT = TimeUnit.MILLISECONDS;
 
@@ -146,20 +141,20 @@ public class UaOpcClient implements SessionActivityListener {
 
 		try {
 			// identity provider
-			IdentityProvider identityProvider = null;
+			IdentityProvider identityProvider = new AnonymousProvider();
 			X509KeyStoreLoader loader = null;
 
-			if (source.getUserName() != null) {
+			if (source.getUserName() != null && source.getUserName().length() > 0) {
 				// user name and password authentication
-				identityProvider = new UsernameProvider(source.getUserName(), source.getPassword());
-			} else if (source.getKeystore() != null) {
+				identityProvider = new UsernameProvider(source.getUserName(), source.getUserPassword());
+			}
+
+			if (source.getKeystore() != null && source.getKeystore().length() > 0) {
 				// load X509 certificate from a keystore
 				loader = new X509KeyStoreLoader();
-				loader.load(source.getKeystore(), source.getPassword());
+				loader.load(source.getKeystore(), source.getKeystorePassword());
 				identityProvider = new X509IdentityProvider(loader.getClientCertificate(),
 						loader.getClientKeyPair().getPrivate());
-			} else {
-				identityProvider = new AnonymousProvider();
 			}
 
 			// get the server's endpoints
@@ -169,14 +164,15 @@ public class UaOpcClient implements SessionActivityListener {
 			String policyUri = source.getSecurityPolicy().getSecurityPolicyUri();
 			MessageSecurityMode messageSecurityMode = source.getMessageSecurityMode();
 
-			logger.info("Available endpoints:");
+			logger.info("Configured policy: " + policyUri + ", mode: " + messageSecurityMode);
+
 			EndpointDescription endpointDescription = null;
 
 			for (EndpointDescription description : endpointDescriptions) {
 				String uri = description.getSecurityPolicyUri();
 				MessageSecurityMode mode = description.getSecurityMode();
 
-				logger.info("URL: " + description.getEndpointUrl() + ",  Policy: " + uri + ", Mode: " + mode);
+				logger.info("Checking URL: " + description.getEndpointUrl() + ",  Policy: " + uri + ", Mode: " + mode);
 
 				if (uri.equals(policyUri) && mode.equals(messageSecurityMode)) {
 					endpointDescription = description;

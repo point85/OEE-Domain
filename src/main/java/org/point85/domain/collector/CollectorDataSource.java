@@ -67,7 +67,7 @@ public abstract class CollectorDataSource extends NamedObject {
 		this.userName = userName;
 	}
 
-	public String getPassword() {
+	public String getUserPassword() {
 		return password;
 	}
 
