@@ -33,6 +33,8 @@ import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.Stack;
+import org.eclipse.milo.opcua.stack.core.UaException;
+import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -157,6 +159,8 @@ public class UaOpcClient implements SessionActivityListener {
 						loader.getClientKeyPair().getPrivate());
 			}
 
+			logger.info("Identity provider: " + identityProvider.getClass().getSimpleName());
+
 			// get the server's endpoints
 			EndpointDescription[] endpointDescriptions = UaTcpStackClient.getEndpoints(endpointUrl).get();
 
@@ -197,9 +201,12 @@ public class UaOpcClient implements SessionActivityListener {
 					.setEndpoint(endpointDescription).setIdentityProvider(identityProvider)
 					.setRequestTimeout(uint(REQUEST_TIMEOUT));
 
+			logger.info("App name: " + APP_NAME + ", app URI: " + APP_URI);
+
 			if (loader != null) {
 				// get the configured certificate
 				configBuilder.setCertificate(loader.getClientCertificate()).setKeyPair(loader.getClientKeyPair());
+				logger.info("Client certificate alg " + loader.getClientCertificate().getSigAlgName());
 			}
 
 			// create the client
