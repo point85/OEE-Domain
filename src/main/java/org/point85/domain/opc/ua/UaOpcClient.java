@@ -33,8 +33,6 @@ import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.Stack;
-import org.eclipse.milo.opcua.stack.core.UaException;
-import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -57,6 +55,7 @@ import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.NodeClass;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.ServerState;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.UserTokenType;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.BuildInfo;
@@ -66,6 +65,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.MonitoredItemCreateReq
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoringParameters;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
+import org.eclipse.milo.opcua.stack.core.types.structured.UserTokenPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -189,6 +189,21 @@ public class UaOpcClient implements SessionActivityListener {
 						+ messageSecurityMode;
 				logger.error(msg);
 				throw new Exception(msg);
+			}
+			
+			UserTokenType certificateType = null;
+			
+			for (UserTokenPolicy tokenPolicy : endpointDescription.getUserIdentityTokens()) {
+				UserTokenType utt = tokenPolicy.getTokenType();
+				
+				if (utt.equals(UserTokenType.Certificate)) {
+					certificateType = utt;
+					break;
+				}
+			}
+			
+			if (certificateType == null) {
+				logger.error("The endpoint does not have a Certificate user token type.");
 			}
 
 			logger.info("Using endpoint: {} [{}, {}]", endpointDescription.getEndpointUrl(),

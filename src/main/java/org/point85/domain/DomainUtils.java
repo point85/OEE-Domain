@@ -13,7 +13,8 @@ import java.time.format.DateTimeFormatter;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 
 public class DomainUtils {
-
+	public static final String CONFIG_DIR = "config_dir";
+	
 	// format a Duration
 	public static String formatDuration(Duration duration) {
 		if (duration == null) {

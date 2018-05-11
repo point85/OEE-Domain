@@ -2,7 +2,6 @@ package org.point85.domain.opc.ua;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.net.URL;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyStore;
@@ -10,6 +9,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
+import org.point85.domain.DomainUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,8 +29,10 @@ public class X509KeyStoreLoader {
 		KeyStore keyStore = KeyStore.getInstance(KEY_STORE_TYPE);
 		logger.info("Reading keystore " + keystoreName);
 
-		URL url = getClass().getResource(keystoreName);
-		File serverKeyStore = new File(url.getPath());
+		//URL url = getClass().getResource(keystoreName);
+		//File serverKeyStore = new File(url.getPath());
+		String configDir = System.getProperty(DomainUtils.CONFIG_DIR);
+		File serverKeyStore = new File(configDir + "/ssl/" + keystoreName);
 
 		logger.info("Loading KeyStore at {}", serverKeyStore);
 
