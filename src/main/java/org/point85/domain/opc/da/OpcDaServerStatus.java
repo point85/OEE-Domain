@@ -7,10 +7,11 @@ package org.point85.domain.opc.da;
 import java.time.ZonedDateTime;
 
 import org.openscada.opc.dcom.da.OPCSERVERSTATUS;
+import org.point85.domain.DomainUtils;
 
 /**
  *
- * @author krandall
+ * @author Kent Randall
  */
 public class OpcDaServerStatus {
 
@@ -47,14 +48,14 @@ public class OpcDaServerStatus {
 	}
 
 	public ZonedDateTime getStartTime() {
-		return (serverStatus != null) ? DaOpcClient.fromFiletime(serverStatus.getStartTime()) : null;
+		return (serverStatus != null) ? DomainUtils.fromFiletime(serverStatus.getStartTime()) : null;
 	}
 
 	public ZonedDateTime getCurrentTime() {
-		return (serverStatus != null) ? DaOpcClient.fromFiletime(serverStatus.getCurrentTime()) : null;
+		return (serverStatus != null) ? DomainUtils.fromFiletime(serverStatus.getCurrentTime()) : null;
 	}
 
 	public ZonedDateTime getLastUpdateTime() {
-		return (serverStatus != null) ? DaOpcClient.fromFiletime(serverStatus.getLastUpdateTime()) : null;
+		return (serverStatus != null) ? DomainUtils.fromFiletime(serverStatus.getLastUpdateTime()) : null;
 	}
 }

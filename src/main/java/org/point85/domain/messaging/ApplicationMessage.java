@@ -78,5 +78,4 @@ public class ApplicationMessage {
 	public void setTimestamp(OffsetDateTime odt) {
 		this.timestamp = DomainUtils.offsetDateTimeToString(odt);
 	}
-	
 }

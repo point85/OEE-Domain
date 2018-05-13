@@ -14,8 +14,13 @@ import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
 import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.Unit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EquipmentLoss {
+	// logger
+	private static final Logger logger = LoggerFactory.getLogger(EquipmentLoss.class);
+
 	// equipment
 	private Equipment equipment;
 
@@ -78,7 +83,7 @@ public class EquipmentLoss {
 
 	public void reset() {
 		resetLosses();
-		
+
 		eventRecords = new ArrayList<>();
 
 		material = null;
@@ -300,18 +305,18 @@ public class EquipmentLoss {
 		Duration reducedSpeed = npt.minus(quality).minus(noLoss);
 		setLoss(TimeLoss.REDUCED_SPEED, reducedSpeed);
 
-		System.out.println("NPT: " + npt);
-		System.out.println("Reject: " + reject);
-		System.out.println("Startup: " + startup);
-		System.out.println("Quality: " + quality);
-		System.out.println("No loss: " + noLoss);
-		System.out.println("Reduced: " + reducedSpeed);
+		logger.info("NPT: " + npt);
+		logger.info("Reject: " + reject);
+		logger.info("Startup: " + startup);
+		logger.info("Quality: " + quality);
+		logger.info("No loss: " + noLoss);
+		logger.info("Reduced: " + reducedSpeed);
 
-		System.out.println("Good Qty: " + this.goodQuantity);
-		System.out.println("Reject Qty: " + this.rejectQuantity);
-		System.out.println("Startup Qty: " + this.startupQuantity);
+		logger.info("Good Qty: " + this.goodQuantity);
+		logger.info("Reject Qty: " + this.rejectQuantity);
+		logger.info("Startup Qty: " + this.startupQuantity);
 	}
-	
+
 	public OffsetDateTime getStartDateTime() {
 		return startDateTime;
 	}

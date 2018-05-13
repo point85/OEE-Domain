@@ -71,7 +71,7 @@ public class CollectorServer
 	private static final int STATUS_TTL_SEC = 3600;
 
 	// logger
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private static final Logger logger = LoggerFactory.getLogger(CollectorServer.class);
 
 	// thread pool service
 	private ExecutorService executorService = Executors.newCachedThreadPool();
@@ -312,7 +312,6 @@ public class CollectorServer
 				opcDaGroup.startMonitoring();
 			}
 		}
-
 	}
 
 	private void buildDataSources() throws Exception {
@@ -557,7 +556,7 @@ public class CollectorServer
 			// stop RMQ notifications
 			stopNotifications();
 		} catch (Exception e) {
-			logger.error(e.getMessage());
+			onException("Unable to stop data collection.", e);
 		}
 
 		// shutdown executor service
@@ -708,6 +707,7 @@ public class CollectorServer
 	}
 
 	public void onException(String preface, Exception any) {
+		// stack trace
 		any.printStackTrace();
 
 		// notify monitors
@@ -1120,40 +1120,4 @@ public class CollectorServer
 			}
 		}
 	}
-
-	/*
-	 * // data from a manual user interface private class WebTask implements
-	 * Runnable { private Equipment equipment; private EventResolverType
-	 * resolverType; private Object sourceValue; private OffsetDateTime timestamp;
-	 * 
-	 * private WebTask(Equipment equipment, EventResolverType resolverType, Object
-	 * sourceValue, OffsetDateTime timestamp) { this.equipment = equipment;
-	 * this.resolverType = resolverType; this.sourceValue = sourceValue;
-	 * this.timestamp = timestamp; }
-	 * 
-	 * @Override public void run() { try { if (logger.isInfoEnabled()) {
-	 * logger.info("Web event, equipment: " + equipment.getName() + ", type: " +
-	 * resolverType + ", value: " + sourceValue + ", timestamp: " + timestamp); }
-	 * 
-	 * EquipmentEventResolver equipmentResolver = new EquipmentEventResolver();
-	 * 
-	 * // find resolver by type List<EventResolver> resolvers =
-	 * equipmentResolver.getResolvers(equipment);
-	 * 
-	 * EventResolver configuredResolver = null; for (EventResolver resolver :
-	 * resolvers) { if (resolver.getType().equals(resolverType)) {
-	 * configuredResolver = resolver; break; } }
-	 * 
-	 * if (configuredResolver == null) { throw new
-	 * Exception("No script resolver found for equipment " + equipment.getName() +
-	 * " with type " + resolverType); }
-	 * 
-	 * ResolvedEvent event = equipmentResolver.invokeResolver(configuredResolver,
-	 * appContext, sourceValue, timestamp);
-	 * 
-	 * recordResolution(event);
-	 * 
-	 * } catch (Exception e) { onException("Unable to invoke script resolver.", e);
-	 * } } }
-	 */
 }

@@ -6,7 +6,7 @@ package org.point85.domain.opc.da;
 
 /**
  *
- * @author krandal
+ * @author Kent Randall
  */
 public enum OpcDaVariantType {
 

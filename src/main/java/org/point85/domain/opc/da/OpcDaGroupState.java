@@ -8,7 +8,7 @@ import org.openscada.opc.dcom.da.OPCGroupState;
 
 /**
  *
- * @author krandal
+ * @author Kent Randall
  */
 public class OpcDaGroupState {
 

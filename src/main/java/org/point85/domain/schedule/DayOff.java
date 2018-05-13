@@ -29,7 +29,7 @@ import java.time.LocalTime;
 
 /**
  * Class DayOff represents a scheduled non-working period
- * @author Kent
+ * @author Kent Randall
  *
  */
 class DayOff extends TimePeriod {

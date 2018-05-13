@@ -22,7 +22,7 @@ import com.rabbitmq.client.Envelope;
 //connect to RMQ, publish and subscribe to message
 public class PublisherSubscriber {
 	// logger
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private static final Logger logger = LoggerFactory.getLogger(PublisherSubscriber.class);
 
 	// user name and password
 	public static final String RMQ_USER_NAME = "point85";
@@ -100,7 +100,6 @@ public class PublisherSubscriber {
 		factory = new ConnectionFactory();
 		factory.setHost(brokerHostName);
 		factory.setPort(port);
-		// TODO
 		factory.setUsername(RMQ_USER_NAME);
 		factory.setPassword(RMQ_PASSWORD);
 
@@ -268,8 +267,6 @@ public class PublisherSubscriber {
 		// use type field to ID the message, reply on the reply queue
 		BasicProperties properties = new BasicProperties.Builder().type(message.getMessageType().toString())
 				.correlationId(correlationId).replyTo(replyQueueName).build();
-
-		// message.setSenderIdentity(replyQueueName);
 
 		// send the message with these properties
 		sendMessage(message, routingKey, properties);

@@ -64,5 +64,4 @@ public class X509KeyStoreLoader {
 	KeyPair getClientKeyPair() {
 		return clientKeyPair;
 	}
-
 }

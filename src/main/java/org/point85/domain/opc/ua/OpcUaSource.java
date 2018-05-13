@@ -6,6 +6,7 @@ import javax.persistence.Entity;
 
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
+import org.point85.domain.AesEncryption;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 
@@ -17,21 +18,21 @@ public class OpcUaSource extends CollectorDataSource {
 	private transient SecurityPolicy policy = SecurityPolicy.None;
 
 	private transient String endpointUrl;
-	
+
 	private transient MessageSecurityMode messageSecurityMode = MessageSecurityMode.None;
-	
+
 	@Column(name = "END_PATH")
 	private String endpointPath;
-	
+
 	@Column(name = "SEC_POLICY")
 	private String securityPolicy;
-	
+
 	@Column(name = "MSG_MODE")
 	private String messageMode;
-	
+
 	@Column(name = "KEYSTORE")
 	private String keystore;
-	
+
 	@Column(name = "KEYSTORE_PWD")
 	private String keystorePassword;
 
@@ -111,12 +112,12 @@ public class OpcUaSource extends CollectorDataSource {
 		this.keystore = fileName;
 	}
 
-	public String getKeystorePassword() {
-		return keystorePassword;
+	public String getKeystorePassword() throws Exception {
+		return AesEncryption.decrypt(keystorePassword);
 	}
 
-	public void setKeystorePassword(String keystorePassword) {
-		this.keystorePassword = keystorePassword;
+	public void setKeystorePassword(String keystorePassword) throws Exception {
+		this.keystorePassword = AesEncryption.encrypt(keystorePassword);
 	}
-	
+
 }

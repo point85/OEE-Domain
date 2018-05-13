@@ -10,6 +10,7 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
+import org.point85.domain.AesEncryption;
 import org.point85.domain.persistence.DataSourceConverter;
 import org.point85.domain.plant.NamedObject;
 
@@ -29,7 +30,7 @@ public abstract class CollectorDataSource extends NamedObject {
 	private String userName;
 
 	@Column(name = "PASSWORD")
-	private String password;
+	private String userPassword;
 
 	// to avoid repeated column mapping error
 	@Column(name = "TYPE", insertable = false, updatable = false)
@@ -67,12 +68,12 @@ public abstract class CollectorDataSource extends NamedObject {
 		this.userName = userName;
 	}
 
-	public String getUserPassword() {
-		return password;
+	public String getUserPassword() throws Exception {
+		return AesEncryption.decrypt(this.userPassword);
 	}
 
-	public void setPassword(String password) {
-		this.password = password;
+	public void setPassword(String password) throws Exception {
+		this.userPassword = AesEncryption.encrypt(password);
 	}
 
 	public DataSourceType getDataSourceType() {

@@ -17,7 +17,7 @@ import org.jinterop.dcom.core.JIVariant;
 
 /**
  *
- * @author Kent
+ * @author Kent Randall
  */
 public class OpcDaVariant {
 

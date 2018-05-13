@@ -73,10 +73,11 @@ import com.google.common.collect.ImmutableList;
 
 public class UaOpcClient implements SessionActivityListener {
 	// logging utility
-	private static Logger logger = LoggerFactory.getLogger(UaOpcClient.class);
+	private static final Logger logger = LoggerFactory.getLogger(UaOpcClient.class);
 
-	static final String APP_NAME = "Point85 OEE OPC UA Client";
-	static final String APP_URI = "urn:point85:oee:client";
+	private static final String APP_NAME = "Point85 OEE OPC UA Client";
+
+	private static final String APP_URI = "urn:point85:oee:client";
 
 	// request timeout (msec)
 	private static final int REQUEST_TIMEOUT = 20000;
@@ -190,18 +191,18 @@ public class UaOpcClient implements SessionActivityListener {
 				logger.error(msg);
 				throw new Exception(msg);
 			}
-			
+
 			UserTokenType certificateType = null;
-			
+
 			for (UserTokenPolicy tokenPolicy : endpointDescription.getUserIdentityTokens()) {
 				UserTokenType utt = tokenPolicy.getTokenType();
-				
+
 				if (utt.equals(UserTokenType.Certificate)) {
 					certificateType = utt;
 					break;
 				}
 			}
-			
+
 			if (certificateType == null) {
 				logger.error("The endpoint does not have a Certificate user token type.");
 			}
@@ -285,7 +286,6 @@ public class UaOpcClient implements SessionActivityListener {
 			List<DataValue> values = opcUaClient.readValues(MAX_AGE, TimestampsToReturn.Both, nodeIds)
 					.get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
 
-			// clientFuture.complete(opcUaClient);
 			return values;
 
 		} catch (Exception e) {
@@ -304,7 +304,6 @@ public class UaOpcClient implements SessionActivityListener {
 			}
 			List<StatusCode> codes = opcUaClient.writeValues(nodeIds, dataValues).get(REQUEST_TIMEOUT,
 					REQUEST_TIMEOUT_UNIT);
-			// clientFuture.complete(opcUaClient);
 			return codes;
 
 		} catch (Exception e) {
@@ -327,7 +326,6 @@ public class UaOpcClient implements SessionActivityListener {
 				listener.onOpcUaWrite(statusCodes);
 			}
 		});
-		// clientFuture.complete(opcUaClient);
 	}
 
 	public synchronized void readAsynch(NodeId nodeId) throws Exception {
@@ -342,8 +340,6 @@ public class UaOpcClient implements SessionActivityListener {
 				listener.onOpcUaRead(values);
 			}
 		});
-
-		// clientFuture.complete(opcUaClient);
 	}
 
 	public synchronized void readAsynch(List<NodeId> nodeIds) throws Exception {
@@ -355,8 +351,6 @@ public class UaOpcClient implements SessionActivityListener {
 				listener.onOpcUaRead(values);
 			}
 		});
-
-		// clientFuture.complete(opcUaClient);
 	}
 
 	public UInteger[] getArrayDimensions(NodeId nodeId) throws Exception {
@@ -388,7 +382,6 @@ public class UaOpcClient implements SessionActivityListener {
 
 			}
 
-			// clientFuture.complete(opcUaClient);
 			return value;
 		} catch (Exception e) {
 			throw new Exception(e.getMessage());
@@ -402,7 +395,7 @@ public class UaOpcClient implements SessionActivityListener {
 			CompletableFuture<StatusCode> cf = opcUaClient.writeValue(nodeId, new DataValue(newValue, null, null));
 
 			StatusCode statusCode = cf.get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
-			// clientFuture.complete(opcUaClient);
+
 			return statusCode;
 
 		} catch (Exception e) {
@@ -425,7 +418,6 @@ public class UaOpcClient implements SessionActivityListener {
 					listener.onOpcUaWrite(statusCodes);
 				}
 			});
-			// clientFuture.complete(opcUaClient);
 		} catch (Exception e) {
 			throw new Exception(e.getMessage());
 		}
@@ -493,8 +485,6 @@ public class UaOpcClient implements SessionActivityListener {
 
 			List<ReferenceDescription> referenceDescriptions = toList(browseResult.getReferences());
 
-			// clientFuture.complete(opcUaClient);
-
 			return referenceDescriptions;
 		} catch (Exception e) {
 			throw new Exception(e.getMessage());
@@ -514,8 +504,6 @@ public class UaOpcClient implements SessionActivityListener {
 
 			List<BrowseResult> browseResults = opcUaClient.browse(nodesToBrowse).get(REQUEST_TIMEOUT,
 					REQUEST_TIMEOUT_UNIT);
-
-			// clientFuture.complete(opcUaClient);
 
 			return browseResults;
 
@@ -545,12 +533,7 @@ public class UaOpcClient implements SessionActivityListener {
 		MonitoredItemCreateRequest request = new MonitoredItemCreateRequest(readValueId, MonitoringMode.Reporting,
 				parameters);
 
-		// when creating items in MonitoringMode.Reporting this callback is
-		// where each item needs to have its
-		// value/event consumer hooked up. The alternative is to create the item
-		// in sampling mode, hook up the
-		// consumer after the creation call completes, and then change the mode
-		// for all items to reporting.
+		// consumer
 		BiConsumer<UaMonitoredItem, Integer> onItemCreated = (item, id) -> item
 				.setValueConsumer(this::onSubscriptionValue);
 
@@ -570,8 +553,6 @@ public class UaOpcClient implements SessionActivityListener {
 						+ ", code: " + item.getStatusCode());
 			}
 		}
-
-		// clientFuture.complete(opcUaClient);
 
 		return subscription;
 	}
@@ -666,8 +647,6 @@ public class UaOpcClient implements SessionActivityListener {
 			});
 
 			List<Object> results = cf.get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
-
-			// clientFuture.complete(opcUaClient);
 
 			return results;
 		} catch (Exception e) {

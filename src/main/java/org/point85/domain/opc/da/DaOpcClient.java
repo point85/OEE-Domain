@@ -1,10 +1,7 @@
 
 package org.point85.domain.opc.da;
 
-import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +15,6 @@ import org.jinterop.dcom.core.JIComServer;
 import org.jinterop.dcom.core.JIProgId;
 import org.jinterop.dcom.core.JISession;
 import org.jinterop.dcom.core.JIVariant;
-import org.openscada.opc.dcom.common.FILETIME;
 import org.openscada.opc.dcom.common.KeyedResult;
 import org.openscada.opc.dcom.common.KeyedResultSet;
 import org.openscada.opc.dcom.common.impl.OPCCommon;
@@ -52,7 +48,7 @@ public class DaOpcClient {
 	}
 
 	// logging utility
-	private static Logger logger = LoggerFactory.getLogger(DaOpcClient.class);
+	private static final Logger logger = LoggerFactory.getLogger(DaOpcClient.class);
 
 	private JISession jiSession;
 	private OPCServer opcServer;
@@ -262,15 +258,6 @@ public class DaOpcClient {
 		return new OpcDaServerStatus(opcServer.getStatus());
 	}
 
-	public static String[] parseDomainAndUser(String name) {
-		// TODO
-		return new String[0];
-	}
-
-	public void saveSession() {
-		// TODO
-	}
-
 	public OpcDaMonitoredGroup registerTags(TagGroupInfo group, OpcDaDataChangeListener changeListener)
 			throws Exception {
 
@@ -293,18 +280,8 @@ public class DaOpcClient {
 		for (int i = 0; i < tagItems.size(); i++) {
 			TagItemInfo tagItem = tagItems.get(i);
 
-			// OpcDaBrowserLeaf tag = tagItem.getLeafTag();
-
-			// TODO
-			/*
-			 * List<String> ap = tag.getAccesspath(); String fn = tag.getFullName(); String
-			 * id = tag.getItemId();
-			 */
-
-			// if (tag == null) {
-			// find it
+			// find tag
 			OpcDaBrowserLeaf tag = browser.findTag(tagItem.getPathName());
-			// }
 
 			if (tag == null) {
 				throw new Exception("Unable to find tag with access path " + tagItem.getPathName());
@@ -315,22 +292,6 @@ public class DaOpcClient {
 		opcDaGroup.addItems(tagArray, true);
 
 		return opcDaGroup;
-	}
-
-	/*
-	 * public OpcDaBrowserLeaf getLeafFromTagItem(TagItem tagItem) throws Exception
-	 * { OpcDaBrowserLeaf leaf = tagItem.getLeafTag();
-	 * 
-	 * if (leaf == null) { // find it OpcDaTagTreeBrowser browser =
-	 * getTreeBrowser(); leaf = browser.findTag(tagItem.getAccessPath(),
-	 * tagItem.getItemName()); tagItem.setLeafTag(leaf); } return leaf; }
-	 */
-
-	public static ZonedDateTime fromFiletime(FILETIME filetime) {
-		Calendar cal = filetime.asCalendar();
-		Instant instant = Instant.ofEpochMilli(cal.getTime().getTime());
-		ZonedDateTime zdt = ZonedDateTime.ofInstant(instant, cal.getTimeZone().toZoneId());
-		return zdt;
 	}
 
 }

@@ -9,10 +9,13 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
 
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
+import org.openscada.opc.dcom.common.FILETIME;
 
 public class DomainUtils {
+	// folder with configuration files
 	public static final String CONFIG_DIR = "config_dir";
 	
 	// format a Duration
@@ -119,5 +122,12 @@ public class DomainUtils {
 			sb.append(thousand);
 		}
 		return sb.toString();
+	}
+	
+	public static ZonedDateTime fromFiletime(FILETIME filetime) {
+		Calendar cal = filetime.asCalendar();
+		Instant instant = Instant.ofEpochMilli(cal.getTime().getTime());
+		ZonedDateTime zdt = ZonedDateTime.ofInstant(instant, cal.getTimeZone().toZoneId());
+		return zdt;
 	}
 }

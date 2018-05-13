@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 public class OpcDaMonitoredGroup {
 
 	// logging utility
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private static final Logger logger = LoggerFactory.getLogger(OpcDaMonitoredGroup.class);
 
 	private OPCGroupStateMgt groupManager;
 	private Map<Integer, OpcDaMonitoredItem> itemMap = new HashMap<>();
@@ -53,14 +53,6 @@ public class OpcDaMonitoredGroup {
 
 	// list of data change listeners
 	private List<OpcDaDataChangeListener> listeners;
-
-	/*
-	public OpcDaGroup(OPCGroupStateMgt group, EventHandler eventHandler, Integer[] serverHandles) {
-		this.groupManager = group;
-		this.eventHandler = eventHandler;
-		this.serverHandles = serverHandles;
-	}
-	*/
 
 	public OpcDaMonitoredGroup(OPCGroupStateMgt groupManager, int clientHandle) {
 		this.groupManager = groupManager;
@@ -339,8 +331,7 @@ public class OpcDaMonitoredGroup {
 					try {
 						opcDaItem.setValueData(entry.getValue());
 					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						logger.error(e.getMessage());
 					}
 
 					for (OpcDaDataChangeListener listener : listeners) {

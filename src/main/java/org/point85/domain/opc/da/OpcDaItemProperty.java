@@ -6,7 +6,7 @@ package org.point85.domain.opc.da;
 
 /**
  *
- * @author Kent
+ * @author Kent Randall
  */
 public class OpcDaItemProperty {
 

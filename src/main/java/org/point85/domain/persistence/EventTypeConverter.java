@@ -87,5 +87,4 @@ public class EventTypeConverter implements AttributeConverter<EventType, String>
 		}
 		return type;
 	}
-
 }

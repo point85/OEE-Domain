@@ -15,8 +15,13 @@ import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
 import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.uom.Quantity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EquipmentLossManager {
+	// logger
+	private static final Logger logger = LoggerFactory.getLogger(EquipmentLossManager.class);
+
 	public static void calculateEquipmentLoss(EquipmentLoss equipmentLoss, OffsetDateTime from, OffsetDateTime to)
 			throws Exception {
 
@@ -133,7 +138,7 @@ public class EquipmentLossManager {
 			equipmentLoss.setLoss(TimeLoss.NOT_SCHEDULED, notScheduled);
 		}
 
-		System.out.println(equipmentLoss.toString());
+		logger.info(equipmentLoss.toString());
 	}
 
 	private static void checkTimePeriod(OeeEvent record, EquipmentLoss equipmentLoss, OffsetDateTime from,
@@ -180,7 +185,7 @@ public class EquipmentLossManager {
 			ParetoItem item = new ParetoItem(entry.getKey().getName(), entry.getValue());
 			items.add(item);
 
-			System.out.println("Pareto Reason: " + entry.getKey().getName() + ", duration: " + entry.getValue());
+			logger.info("Pareto Reason: " + entry.getKey().getName() + ", duration: " + entry.getValue());
 		}
 
 		return items;

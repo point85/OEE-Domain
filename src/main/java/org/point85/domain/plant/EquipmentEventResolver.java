@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 public class EquipmentEventResolver {
 	// logger
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private static final Logger logger = LoggerFactory.getLogger(EquipmentEventResolver.class);
 
 	// Nashorn script engine
 	public static final String SCRIPT_ENGINE_NAME = "nashorn";

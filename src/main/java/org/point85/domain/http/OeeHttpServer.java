@@ -38,7 +38,7 @@ public class OeeHttpServer extends NanoHTTPD {
 	public static final String DATA_SOURCE_EP = "data_source";
 
 	// logger
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private static final Logger logger = LoggerFactory.getLogger(OeeHttpServer.class);
 
 	// flag for accepting event requests
 	private boolean acceptingEventRequests = false;
@@ -84,7 +84,8 @@ public class OeeHttpServer extends NanoHTTPD {
 		state = ServerState.STOPPED;
 	}
 
-	// server the request
+	// serve the request
+	@SuppressWarnings("deprecation")
 	@Override
 	public Response serve(IHTTPSession session) {
 		Response response = null;
@@ -231,6 +232,7 @@ public class OeeHttpServer extends NanoHTTPD {
 		return bodyMap;
 	}
 
+	@SuppressWarnings("deprecation")
 	protected Map<String, String> getQueryStringParameters(IHTTPSession session) {
 		Map<String, String> parameterMap = session.getParms();
 
