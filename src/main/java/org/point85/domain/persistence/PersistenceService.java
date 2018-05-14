@@ -755,7 +755,7 @@ public class PersistenceService {
 		final String UOM_CATEGORIES = "UOM.Categories";
 
 		if (namedQueryMap.get(UOM_CATEGORIES) == null) {
-			createNamedQuery(UOM_CATEGORIES, "SELECT DISTINCT uom.category FROM UnitOfMeasure uom");
+			createNamedQuery(UOM_CATEGORIES, "SELECT DISTINCT uom.category FROM UnitOfMeasure uom WHERE uom.category IS NOT NULL");
 		}
 
 		TypedQuery<String> query = getEntityManager().createNamedQuery(UOM_CATEGORIES, String.class);
