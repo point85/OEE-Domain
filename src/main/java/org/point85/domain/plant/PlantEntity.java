@@ -56,7 +56,7 @@ public class PlantEntity extends NamedObject {
 	private EntityLevel level;
 
 	// work schedule
-	@OneToOne
+	@OneToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH })
 	@JoinColumn(name = "WS_KEY")
 	private WorkSchedule workSchedule;
 
