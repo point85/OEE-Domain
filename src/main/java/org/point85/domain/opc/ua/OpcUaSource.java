@@ -6,7 +6,7 @@ import javax.persistence.Entity;
 
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
-import org.point85.domain.AesEncryption;
+import org.point85.domain.EncryptionUtil;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 
@@ -88,8 +88,10 @@ public class OpcUaSource extends CollectorDataSource {
 	}
 
 	public void setSecurityPolicy(SecurityPolicy policy) {
-		this.securityPolicy = policy.name();
-		this.policy = policy;
+		if (policy != null) {
+			this.securityPolicy = policy.name();
+			this.policy = policy;
+		}
 	}
 
 	public MessageSecurityMode getMessageSecurityMode() {
@@ -100,8 +102,10 @@ public class OpcUaSource extends CollectorDataSource {
 	}
 
 	public void setMessageSecurityMode(MessageSecurityMode messageSecurityMode) {
-		this.messageMode = messageSecurityMode.name();
-		this.messageSecurityMode = messageSecurityMode;
+		if (messageSecurityMode != null) {
+			this.messageMode = messageSecurityMode.name();
+			this.messageSecurityMode = messageSecurityMode;
+		}
 	}
 
 	public String getKeystore() {
@@ -113,11 +117,11 @@ public class OpcUaSource extends CollectorDataSource {
 	}
 
 	public String getKeystorePassword() throws Exception {
-		return AesEncryption.decrypt(keystorePassword);
+		return EncryptionUtil.decrypt(keystorePassword);
 	}
 
 	public void setKeystorePassword(String keystorePassword) throws Exception {
-		this.keystorePassword = AesEncryption.encrypt(keystorePassword);
+		this.keystorePassword = EncryptionUtil.encrypt(keystorePassword);
 	}
 
 }

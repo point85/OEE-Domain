@@ -162,13 +162,16 @@ public class CollectorServer
 			appContext.getPublisherSubscribers().add(pubsub);
 
 			String brokerHostName = source.getHost();
-			Integer port = source.getPort();
+			Integer brokerPort = source.getPort();
+			String brokerUser = source.getUserName();
+			String brokerPassword = source.getUserPassword();
 
 			String queueName = getClass().getSimpleName() + "_" + queueCounter++;
 			List<RoutingKey> routingKeys = new ArrayList<>();
 			routingKeys.add(RoutingKey.EQUIPMENT_SOURCE_EVENT);
 
-			pubsub.connectToBroker(brokerHostName, port, queueName, false, routingKeys, this);
+			pubsub.connectToBroker(brokerHostName, brokerPort, brokerUser, brokerPassword, queueName, false,
+					routingKeys, this);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Started RMQ event pubsub: " + source.getId());
@@ -443,7 +446,8 @@ public class CollectorServer
 					pubSubs.put(key, pubsub);
 
 					// connect to broker
-					pubsub.connect(brokerHostName, brokerPort);
+					pubsub.connect(brokerHostName, brokerPort, collector.getBrokerUserName(),
+							collector.getBrokerUserPassword());
 
 					appContext.getPublisherSubscribers().add(pubsub);
 

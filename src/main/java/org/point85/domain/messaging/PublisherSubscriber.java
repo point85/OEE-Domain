@@ -24,10 +24,6 @@ public class PublisherSubscriber {
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(PublisherSubscriber.class);
 
-	// user name and password
-	public static final String RMQ_USER_NAME = "point85";
-	public static final String RMQ_PASSWORD = "point85";
-
 	// auto-ack on consume
 	private static final boolean AUTO_ACK = false;
 
@@ -50,7 +46,7 @@ public class PublisherSubscriber {
 	protected Channel channel;
 	private Consumer consumer;
 	private String consumerTag;
-	
+
 	// json serializer
 	private Gson gson = new Gson();
 
@@ -83,10 +79,10 @@ public class PublisherSubscriber {
 		this.listener = null;
 	}
 
-	public void connectToBroker(String brokerHostName, int port, String queueName, boolean durable,
-			List<RoutingKey> routingKeys, MessageListener listener) throws Exception {
+	public void connectToBroker(String brokerHostName, int port, String userName, String password, String queueName,
+			boolean durable, List<RoutingKey> routingKeys, MessageListener listener) throws Exception {
 		// connect to broker
-		connect(brokerHostName, port);
+		connect(brokerHostName, port, userName, password);
 
 		// add listener
 		registerListener(listener);
@@ -95,13 +91,18 @@ public class PublisherSubscriber {
 		subscribe(queueName, durable, routingKeys);
 	}
 
-	public void connect(String brokerHostName, int port) throws Exception {
+	public void connect(String brokerHostName, int port, String userName, String password) throws Exception {
+		if (logger.isInfoEnabled()) {
+			logger.info("Connecting to RMQ broker host " + brokerHostName + " on port " + port + ", user " + userName
+					+ ", exchange " + EXCHANGE_NAME);
+		}
+
 		// factory
 		factory = new ConnectionFactory();
 		factory.setHost(brokerHostName);
 		factory.setPort(port);
-		factory.setUsername(RMQ_USER_NAME);
-		factory.setPassword(RMQ_PASSWORD);
+		factory.setUsername(userName);
+		factory.setPassword(password);
 
 		// connection
 		connection = factory.newConnection();
@@ -143,7 +144,7 @@ public class PublisherSubscriber {
 		if (channel == null) {
 			return;
 		}
-		
+
 		// payload is JSON string
 		String payload = serialize(message);
 
@@ -225,7 +226,7 @@ public class PublisherSubscriber {
 		case STATUS:
 			message = gson.fromJson(payload, CollectorServerStatusMessage.class);
 			break;
-			
+
 		case RESOLVED_EVENT:
 			message = gson.fromJson(payload, CollectorResolvedEventMessage.class);
 			break;
