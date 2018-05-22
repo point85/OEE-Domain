@@ -6,7 +6,7 @@ import javax.persistence.Entity;
 
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
-import org.point85.domain.EncryptionUtil;
+import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 
@@ -117,11 +117,11 @@ public class OpcUaSource extends CollectorDataSource {
 	}
 
 	public String getKeystorePassword() throws Exception {
-		return EncryptionUtil.decrypt(keystorePassword);
+		return DomainUtils.decode(keystorePassword);
 	}
 
 	public void setKeystorePassword(String keystorePassword) throws Exception {
-		this.keystorePassword = EncryptionUtil.encrypt(keystorePassword);
+		this.keystorePassword = DomainUtils.encode(keystorePassword);
 	}
 
 }

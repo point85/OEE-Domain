@@ -10,7 +10,7 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
-import org.point85.domain.EncryptionUtil;
+import org.point85.domain.DomainUtils;
 import org.point85.domain.persistence.DataSourceConverter;
 import org.point85.domain.plant.NamedObject;
 
@@ -69,11 +69,11 @@ public abstract class CollectorDataSource extends NamedObject {
 	}
 
 	public String getUserPassword() throws Exception {
-		return EncryptionUtil.decrypt(this.userPassword);
+		return DomainUtils.decode(this.userPassword);
 	}
 
-	public void setPassword(String password) throws Exception { 
-		this.userPassword = EncryptionUtil.encrypt(password);
+	public void setPassword(String password) throws Exception {
+		this.userPassword = DomainUtils.encode(password);
 	}
 
 	public DataSourceType getDataSourceType() {

@@ -6,7 +6,7 @@ import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
-import org.point85.domain.EncryptionUtil;
+import org.point85.domain.DomainUtils;
 import org.point85.domain.persistence.CollectorStateConverter;
 import org.point85.domain.plant.NamedObject;
 
@@ -93,10 +93,10 @@ public class DataCollector extends NamedObject {
 	}
 
 	public String getBrokerUserPassword() throws Exception {
-		return EncryptionUtil.decrypt(brokerUserPassword);
+		return DomainUtils.decode(brokerUserPassword);
 	}
 
 	public void setBrokerUserPassword(String password) throws Exception {
-		this.brokerUserPassword = EncryptionUtil.encrypt(password);
+		this.brokerUserPassword = DomainUtils.encode(password);
 	}
 }

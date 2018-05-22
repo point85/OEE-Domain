@@ -2,7 +2,8 @@ package org.point85.domain.messaging;
 
 public enum RoutingKey {
 	ALL("#"), EQUIPMENT_SOURCE_EVENT("equipment.event"), NOTIFICATION_ALL("notification.#"), NOTIFICATION_MESSAGE(
-			"notification.msg"), NOTIFICATION_STATUS("notification.status"), RESOLVED_EVENT("resolved.event");
+			"notification.msg"), NOTIFICATION_STATUS(
+					"notification.status"), RESOLVED_EVENT("resolved.event"), COMMAND_MESSAGE("command.#");
 
 	private String routingKey;
 

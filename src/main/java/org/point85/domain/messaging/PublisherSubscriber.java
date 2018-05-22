@@ -79,7 +79,7 @@ public class PublisherSubscriber {
 		this.listener = null;
 	}
 
-	public void connectToBroker(String brokerHostName, int port, String userName, String password, String queueName,
+	public void connectAndSubscribe(String brokerHostName, int port, String userName, String password, String queueName,
 			boolean durable, List<RoutingKey> routingKeys, MessageListener listener) throws Exception {
 		// connect to broker
 		connect(brokerHostName, port, userName, password);
@@ -157,7 +157,7 @@ public class PublisherSubscriber {
 		publish(message, routingKey, null);
 	}
 
-	public void publish(ApplicationMessage message, RoutingKey routingKey, Integer ttl) throws Exception {
+	public void publish(ApplicationMessage message, RoutingKey routingKey, Integer ttlSec) throws Exception {
 		// validate
 		message.validate();
 
@@ -165,9 +165,9 @@ public class PublisherSubscriber {
 		BasicProperties properties = new BasicProperties.Builder().type(message.getMessageType().toString())
 				.correlationId(UUID.randomUUID().toString()).build();
 
-		if (ttl != null) {
+		if (ttlSec != null) {
 			// TTL in msec
-			properties.builder().expiration(String.valueOf(ttl * 1000));
+			properties.builder().expiration(String.valueOf(ttlSec * 1000));
 		}
 
 		// send the message with these properties
@@ -229,6 +229,10 @@ public class PublisherSubscriber {
 
 		case RESOLVED_EVENT:
 			message = gson.fromJson(payload, CollectorResolvedEventMessage.class);
+			break;
+			
+		case COMMAND:
+			message = gson.fromJson(payload, CollectorCommandMessage.class);
 			break;
 
 		default:

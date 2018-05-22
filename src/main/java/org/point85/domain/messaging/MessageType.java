@@ -2,7 +2,7 @@ package org.point85.domain.messaging;
 
 public enum MessageType implements MessagingConstants {
 	EQUIPMENT_EVENT(EQUIP_EVENT_ATTRIB), NOTIFICATION(NOTIFICATION_ATTRIB), STATUS(STATUS_ATTRIB), RESOLVED_EVENT(
-			RESOLVED_EVENT_ATTRIB);
+			RESOLVED_EVENT_ATTRIB), COMMAND(COMMAND_ATTRIB);
 
 	private String type;
 
@@ -31,6 +31,8 @@ public enum MessageType implements MessagingConstants {
 			messageType = MessageType.STATUS;
 		} else if (type.equals(RESOLVED_EVENT_ATTRIB)) {
 			messageType = MessageType.RESOLVED_EVENT;
+		} else if (type.equals(COMMAND_ATTRIB)) {
+			messageType = MessageType.COMMAND;
 		}
 
 		return messageType;

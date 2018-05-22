@@ -1,5 +1,6 @@
 package org.point85.domain;
 
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormatSymbols;
 import java.time.Duration;
 import java.time.Instant;
@@ -9,6 +10,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.Calendar;
 
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -17,7 +19,7 @@ import org.openscada.opc.dcom.common.FILETIME;
 public class DomainUtils {
 	// folder with configuration files
 	public static final String CONFIG_DIR = "config_dir";
-	
+
 	// format a Duration
 	public static String formatDuration(Duration duration) {
 		if (duration == null) {
@@ -123,11 +125,24 @@ public class DomainUtils {
 		}
 		return sb.toString();
 	}
-	
+
 	public static ZonedDateTime fromFiletime(FILETIME filetime) {
 		Calendar cal = filetime.asCalendar();
 		Instant instant = Instant.ofEpochMilli(cal.getTime().getTime());
 		ZonedDateTime zdt = ZonedDateTime.ofInstant(instant, cal.getTimeZone().toZoneId());
 		return zdt;
+	}
+
+	// encode the string in base64
+	public static String encode(String toEncode) {
+		byte[] bytes = toEncode.getBytes(StandardCharsets.UTF_8);
+		return Base64.getEncoder().withoutPadding().encodeToString(bytes);
+	}
+
+	// decode a base64 encoded string
+	public static String decode(String toDecode) {
+		byte[] bytes = toDecode.getBytes(StandardCharsets.UTF_8);
+		byte[] decodedBytes = Base64.getDecoder().decode(bytes);
+		return new String(decodedBytes);
 	}
 }

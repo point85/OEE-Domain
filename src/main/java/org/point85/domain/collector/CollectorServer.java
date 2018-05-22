@@ -24,6 +24,7 @@ import org.point85.domain.http.HttpEventListener;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.http.OeeHttpServer;
 import org.point85.domain.messaging.ApplicationMessage;
+import org.point85.domain.messaging.CollectorCommandMessage;
 import org.point85.domain.messaging.CollectorNotificationMessage;
 import org.point85.domain.messaging.CollectorResolvedEventMessage;
 import org.point85.domain.messaging.CollectorServerStatusMessage;
@@ -170,7 +171,7 @@ public class CollectorServer
 			List<RoutingKey> routingKeys = new ArrayList<>();
 			routingKeys.add(RoutingKey.EQUIPMENT_SOURCE_EVENT);
 
-			pubsub.connectToBroker(brokerHostName, brokerPort, brokerUser, brokerPassword, queueName, false,
+			pubsub.connectAndSubscribe(brokerHostName, brokerPort, brokerUser, brokerPassword, queueName, false,
 					routingKeys, this);
 
 			if (logger.isInfoEnabled()) {
@@ -387,7 +388,7 @@ public class CollectorServer
 		// collect data for HTTP
 		startHttpServers(httpServerMap);
 
-		// collect data for RMQ
+		// collect data for RMQ and receive commands
 		connectToEventBrokers(messageBrokerMap);
 
 		if (logger.isInfoEnabled()) {
@@ -417,9 +418,10 @@ public class CollectorServer
 			logger.info("Configuring server for host " + getId());
 		}
 
+		// configure all of the data sources
 		buildDataSources();
 
-		// connect to notification broker
+		// connect to broker for notifications and commands
 		startNotifications();
 
 		// start collecting data
@@ -445,9 +447,13 @@ public class CollectorServer
 					PublisherSubscriber pubsub = new PublisherSubscriber();
 					pubSubs.put(key, pubsub);
 
-					// connect to broker
-					pubsub.connect(brokerHostName, brokerPort, collector.getBrokerUserName(),
-							collector.getBrokerUserPassword());
+					// connect to broker and subscribe for commands
+					String queueName = getClass().getSimpleName() + "_" + queueCounter++;
+					List<RoutingKey> routingKeys = new ArrayList<>();
+					routingKeys.add(RoutingKey.COMMAND_MESSAGE);
+					
+					pubsub.connectAndSubscribe(brokerHostName, brokerPort, collector.getBrokerUserName(), collector.getBrokerUserPassword(), queueName, false,
+							routingKeys, this);
 
 					appContext.getPublisherSubscribers().add(pubsub);
 
@@ -1054,6 +1060,13 @@ public class CollectorServer
 						if (!eventResolver.isWatchMode()) {
 							recordResolution(resolvedDataItem);
 						}
+					}
+				} else if (type.equals(MessageType.COMMAND)) {
+					CollectorCommandMessage commandMessage = (CollectorCommandMessage)message;
+					
+					if (commandMessage.getCommand().equals(CollectorCommandMessage.CMD_RESTART)) {
+						logger.info("Received restart command");
+						restartDataCollection();
 					}
 				}
 			} catch (Exception e) {
