@@ -86,8 +86,8 @@ public class CollectorServer
 	// serializer
 	protected Gson gson;
 
-	// counter for pubsub queues
-	private int queueCounter = 0;
+	// queue on each RMQ broker
+	private String queueName = getClass().getSimpleName();
 
 	// script execution context
 	private OeeContext appContext;
@@ -103,6 +103,7 @@ public class CollectorServer
 	// JVM host IP address
 	private String ip;
 
+	// data source information
 	private Map<String, OpcDaInfo> opcDaSubscriptionMap = new HashMap<>();
 	private Map<String, OpcUaInfo> opcUaSubscriptionMap = new HashMap<>();
 	private Map<String, HttpServerSource> httpServerMap = new HashMap<>();
@@ -112,6 +113,15 @@ public class CollectorServer
 	private CollectorExceptionListener exceptionListener;
 
 	public CollectorServer() {
+		initialize();
+	}
+
+	private void initialize() {
+		opcDaSubscriptionMap.clear();
+		opcUaSubscriptionMap.clear();
+		httpServerMap.clear();
+		messageBrokerMap.clear();
+
 		gson = new Gson();
 		appContext = new OeeContext();
 		equipmentResolver = new EquipmentEventResolver();
@@ -167,7 +177,6 @@ public class CollectorServer
 			String brokerUser = source.getUserName();
 			String brokerPassword = source.getUserPassword();
 
-			String queueName = getClass().getSimpleName() + "_" + queueCounter++;
 			List<RoutingKey> routingKeys = new ArrayList<>();
 			routingKeys.add(RoutingKey.EQUIPMENT_SOURCE_EVENT);
 
@@ -324,15 +333,16 @@ public class CollectorServer
 		hostNames.add(hostname);
 		hostNames.add(ip);
 
-		// fetch runnable script resolvers from database
+		// fetch script resolvers from database
 		List<CollectorState> states = new ArrayList<>();
+		states.add(CollectorState.DEV);
 		states.add(CollectorState.READY);
 		states.add(CollectorState.RUNNING);
 		List<EventResolver> resolvers = PersistenceService.instance().fetchEventResolversByHost(hostNames, states);
 
 		if (resolvers.size() == 0) {
 			if (logger.isInfoEnabled()) {
-				logger.info("No resolvers found for hosts " + hostNames + " in the " + CollectorState.READY + " state");
+				logger.info("No resolvers found for hosts " + hostNames);
 			}
 		}
 
@@ -345,39 +355,41 @@ public class CollectorServer
 
 				if (logger.isInfoEnabled()) {
 					logger.info("Found data collector " + collector.getName() + ", for host " + collector.getHost()
-							+ ", resolver: " + resolver);
+							+ " in state " + collector.getCollectorState() + ", resolver: " + resolver);
 				}
 			}
 
 			// gather data for each data source
-			switch (resolver.getDataSource().getDataSourceType()) {
-			case OPC_DA: {
-				buildOpcDaSubscriptions(resolver);
-				break;
-			}
+			if (!resolver.getCollector().getCollectorState().equals(CollectorState.DEV)) {
+				switch (resolver.getDataSource().getDataSourceType()) {
+				case OPC_DA: {
+					buildOpcDaSubscriptions(resolver);
+					break;
+				}
 
-			case HTTP: {
-				buildHttpServers(resolver);
-				break;
-			}
+				case HTTP: {
+					buildHttpServers(resolver);
+					break;
+				}
 
-			case OPC_UA: {
-				buildOpcUaSubscriptions(resolver);
-				break;
-			}
+				case OPC_UA: {
+					buildOpcUaSubscriptions(resolver);
+					break;
+				}
 
-			case MESSAGING: {
-				buildMessagingBrokers(resolver);
-				break;
-			}
+				case MESSAGING: {
+					buildMessagingBrokers(resolver);
+					break;
+				}
 
-			default:
-				break;
+				default:
+					break;
+				}
 			}
 		}
 	}
 
-	public void startDataCollection() throws Exception {
+	public synchronized void startDataCollection() throws Exception {
 
 		// collect data for OPC DA
 		monitorOpcDaTags(opcDaSubscriptionMap);
@@ -395,7 +407,7 @@ public class CollectorServer
 			logger.info("Startup finished.");
 		}
 
-		// update collector state to running
+		// update collector state from READY to RUNNING
 		saveCollectorState(CollectorState.RUNNING);
 	}
 
@@ -431,7 +443,7 @@ public class CollectorServer
 		onInformation("Collector server started on host " + getId());
 	}
 
-	private void startNotifications() throws Exception {
+	private synchronized void startNotifications() throws Exception {
 		// connect to notification brokers for publishing only
 		Map<String, PublisherSubscriber> pubSubs = new HashMap<>();
 
@@ -448,12 +460,11 @@ public class CollectorServer
 					pubSubs.put(key, pubsub);
 
 					// connect to broker and subscribe for commands
-					String queueName = getClass().getSimpleName() + "_" + queueCounter++;
 					List<RoutingKey> routingKeys = new ArrayList<>();
 					routingKeys.add(RoutingKey.COMMAND_MESSAGE);
-					
-					pubsub.connectAndSubscribe(brokerHostName, brokerPort, collector.getBrokerUserName(), collector.getBrokerUserPassword(), queueName, false,
-							routingKeys, this);
+
+					pubsub.connectAndSubscribe(brokerHostName, brokerPort, collector.getBrokerUserName(),
+							collector.getBrokerUserPassword(), queueName, false, routingKeys, this);
 
 					appContext.getPublisherSubscribers().add(pubsub);
 
@@ -473,7 +484,7 @@ public class CollectorServer
 		}
 	}
 
-	private void sendNotification(String text, NotificationSeverity severity) {
+	private synchronized void sendNotification(String text, NotificationSeverity severity) {
 		if (appContext.getPublisherSubscribers().size() == 0) {
 			return;
 		}
@@ -501,28 +512,34 @@ public class CollectorServer
 		List<DataCollector> savedCollectors = new ArrayList<>();
 
 		for (DataCollector collector : collectors) {
-			collector.setCollectorState(state);
-			DataCollector saved = (DataCollector) PersistenceService.instance().save(collector);
 
-			if (logger.isInfoEnabled()) {
-				logger.info("Saved collector " + collector.getName());
+			CollectorState currentState = collector.getCollectorState();
+
+			if (currentState.isValidTransition(state)) {
+				collector.setCollectorState(state);
+				DataCollector saved = (DataCollector) PersistenceService.instance().save(collector);
+
+				if (logger.isInfoEnabled()) {
+					logger.info("Saved collector " + collector.getName());
+				}
+				savedCollectors.add(saved);
+			} else {
+				if (logger.isInfoEnabled()) {
+					logger.info("Invalid state " + state + " from state " + currentState);
+				}
 			}
-			savedCollectors.add(saved);
 		}
 		collectors = savedCollectors;
 	}
 
-	public void stopNotifications() throws Exception {
+	public synchronized void stopNotifications() throws Exception {
 		for (PublisherSubscriber pubsub : appContext.getPublisherSubscribers()) {
 			pubsub.disconnect();
 		}
 		appContext.getPublisherSubscribers().clear();
 	}
 
-	public void stopDataCollection() throws Exception {
-		// set back to ready
-		saveCollectorState(CollectorState.READY);
-
+	public synchronized void stopDataCollection() throws Exception {
 		// clear resolution caches
 		equipmentResolver.clearCache();
 
@@ -553,6 +570,9 @@ public class CollectorServer
 			onInformation("Disconnected from OPC UA client ");
 		}
 		appContext.getOpcUaClients().clear();
+
+		// set back to ready
+		saveCollectorState(CollectorState.READY);
 	}
 
 	public void shutdown() {
@@ -585,6 +605,20 @@ public class CollectorServer
 		}
 
 		System.exit(0);
+	}
+
+	public void restart() throws Exception {
+		if (logger.isInfoEnabled()) {
+			logger.info("Restarting");
+		}
+
+		// stop current activity
+		stopDataCollection();
+		stopNotifications();
+
+		initialize();
+
+		startup();
 	}
 
 	public void restartDataCollection() throws Exception {
@@ -757,7 +791,7 @@ public class CollectorServer
 
 	@Override
 	public void onMessage(Channel channel, Envelope envelope, ApplicationMessage message) {
-		if (message == null) {
+		if (channel == null || message == null) {
 			return;
 		}
 
@@ -1036,9 +1070,9 @@ public class CollectorServer
 
 		@Override
 		public void run() {
-			try {
-				MessageType type = message.getMessageType();
+			MessageType type = message.getMessageType();
 
+			try {
 				if (type.equals(MessageType.EQUIPMENT_EVENT)) {
 					EquipmentEventMessage eventMessage = (EquipmentEventMessage) message;
 					String dataValue = eventMessage.getValue();
@@ -1062,16 +1096,16 @@ public class CollectorServer
 						}
 					}
 				} else if (type.equals(MessageType.COMMAND)) {
-					CollectorCommandMessage commandMessage = (CollectorCommandMessage)message;
-					
+					CollectorCommandMessage commandMessage = (CollectorCommandMessage) message;
+
 					if (commandMessage.getCommand().equals(CollectorCommandMessage.CMD_RESTART)) {
 						logger.info("Received restart command");
-						restartDataCollection();
+						restart();
 					}
 				}
 			} catch (Exception e) {
 				// processing failed
-				onException("Unable to invoke messaging script resolver.", e);
+				onException("Unable to process event " + type, e);
 			} finally {
 				// ack message
 				try {

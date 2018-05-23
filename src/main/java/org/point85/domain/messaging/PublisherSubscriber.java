@@ -122,15 +122,25 @@ public class PublisherSubscriber {
 	public void disconnect() throws Exception {
 		if (channel != null) {
 			if (consumerTag != null) {
-				channel.basicCancel(consumerTag);
+				try {
+					channel.basicCancel(consumerTag);
+				} catch (Exception e) {
+				}
 			}
 
-			channel.close();
+			if (channel.isOpen()) {
+				try {
+					channel.close();
+				} catch (Exception e) {
+				}
+			}
 			channel = null;
 		}
 
 		if (connection != null) {
-			connection.close();
+			if (connection.isOpen()) {
+				connection.close();
+			}
 			connection = null;
 		}
 
@@ -201,7 +211,7 @@ public class PublisherSubscriber {
 				}
 				keys += routingKey;
 			}
-			logger.info("Subscribed to queue " + queueName + " with routing key(s) " + keys);
+			logger.info("Subscribed to queue " + queueName + " with routing key(s) " + keys + ", durable " + durable );
 		}
 	}
 
@@ -230,7 +240,7 @@ public class PublisherSubscriber {
 		case RESOLVED_EVENT:
 			message = gson.fromJson(payload, CollectorResolvedEventMessage.class);
 			break;
-			
+
 		case COMMAND:
 			message = gson.fromJson(payload, CollectorCommandMessage.class);
 			break;
