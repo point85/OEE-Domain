@@ -706,8 +706,7 @@ public class CollectorServer
 
 	public void saveOeeEvent(OeeEvent event) throws Exception {
 		if (logger.isInfoEnabled()) {
-			logger.info("Availability reason " + event.getReason().getName() + ", Loss Category: "
-					+ event.getReason().getLossCategory());
+			logger.info("OEE Event: " + event);
 		}
 
 		List<KeyedObject> records = new ArrayList<>();

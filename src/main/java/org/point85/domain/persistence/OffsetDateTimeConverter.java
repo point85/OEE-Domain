@@ -12,39 +12,19 @@ public class OffsetDateTimeConverter implements AttributeConverter<OffsetDateTim
 
 	@Override
 	public String convertToDatabaseColumn(OffsetDateTime time) {
-		return DomainUtils.offsetDateTimeToString(time);
+		String converted = null;
+		if (time != null) {
+			converted = DomainUtils.offsetDateTimeToString(time);
+		}
+		return converted;
 	}
 
 	@Override
 	public OffsetDateTime convertToEntityAttribute(String timestamp) {
 		OffsetDateTime odt = null;
-		if (timestamp == null) {
-			return odt;
+		if (timestamp != null) {
+			odt = DomainUtils.offsetDateTimeFromString(timestamp);
 		}
-		
-		String toConvert = timestamp;
-		if (timestamp.indexOf('T') == -1) {
-			// missing T
-			String[] tokens = timestamp.split(" ");
-
-			if (tokens.length > 0) {
-				StringBuilder sb = new StringBuilder();
-
-				// date + T + time + offset
-				sb.append(tokens[0]).append('T').append(tokens[1]);
-				if (tokens.length == 3) {
-					sb.append(tokens[2]);
-				}
-				toConvert = sb.toString();
-			}
-		}
-
-		try {
-			odt = DomainUtils.offsetDateTimeFromString(toConvert);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
 		return odt;
 	}
 }

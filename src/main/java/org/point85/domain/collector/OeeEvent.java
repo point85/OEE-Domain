@@ -12,6 +12,7 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.point85.domain.persistence.EventTypeConverter;
+import org.point85.domain.persistence.OffsetDateTimeConverter;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.plant.Material;
@@ -36,9 +37,11 @@ public class OeeEvent extends KeyedObject {
 	private Equipment equipment;
 
 	@Column(name = "START_TIME")
+	@Convert(converter = OffsetDateTimeConverter.class)
 	private OffsetDateTime startTime;
 
 	@Column(name = "END_TIME")
+	@Convert(converter = OffsetDateTimeConverter.class)
 	private OffsetDateTime endTime;
 
 	@OneToOne

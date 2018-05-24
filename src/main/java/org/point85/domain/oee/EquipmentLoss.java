@@ -30,7 +30,7 @@ public class EquipmentLoss {
 	// date and time accumulation starts
 	private OffsetDateTime startDateTime;
 
-	// date and time accumulation end
+	// date and time accumulation ends
 	private OffsetDateTime endDateTime;
 
 	// map of losses

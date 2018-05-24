@@ -15,10 +15,16 @@ import java.util.Calendar;
 
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.openscada.opc.dcom.common.FILETIME;
+import org.point85.domain.persistence.PersistenceService;
+import org.point85.domain.uom.MeasurementSystem;
+import org.point85.domain.uom.UnitOfMeasure;
 
 public class DomainUtils {
 	// folder with configuration files
 	public static final String CONFIG_DIR = "config_dir";
+
+	// pattern for OffsetDateTime conversion
+	private static final String OFFSET_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS ZZZZZ";
 
 	// format a Duration
 	public static String formatDuration(Duration duration) {
@@ -61,25 +67,29 @@ public class DomainUtils {
 	}
 
 	public static String offsetDateTimeToString(OffsetDateTime odt) {
-		return (odt != null) ? odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME) : null;
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(OFFSET_DATE_TIME_PATTERN);
+		return (odt != null) ? odt.format(dtf) : null;
 	}
 
-	public static OffsetDateTime offsetDateTimeFromString(String timestamp) throws Exception {
-		if (timestamp == null) {
-			return OffsetDateTime.now();
-		}
-
-		String timeString = timestamp;
-
-		// look for T separator
-		if (timeString.indexOf('T') == -1) {
-			// missing T
-			if (timestamp.indexOf(' ') != -1) {
-				timeString = timeString.replace(' ', 'T');
-			}
-		}
-		return OffsetDateTime.parse(timeString, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+	public static OffsetDateTime offsetDateTimeFromString(String formatted) {
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(OFFSET_DATE_TIME_PATTERN);
+		return OffsetDateTime.parse(formatted, dtf);
 	}
+
+	/*
+	 * public static String offsetDateTimeToIsoString(OffsetDateTime odt) { return
+	 * (odt != null) ? odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME) : null; }
+	 * 
+	 * public static OffsetDateTime offsetDateTimeFromIsoString(String timestamp)
+	 * throws Exception { if (timestamp == null) { return OffsetDateTime.now(); }
+	 * 
+	 * String timeString = timestamp;
+	 * 
+	 * // look for T separator if (timeString.indexOf('T') == -1) { // missing T if
+	 * (timestamp.indexOf(' ') != -1) { timeString = timeString.replace(' ', 'T'); }
+	 * } return OffsetDateTime.parse(timeString,
+	 * DateTimeFormatter.ISO_OFFSET_DATE_TIME); }
+	 */
 
 	// create a UTC ZonedDateTime from the DateTime
 	public static synchronized ZonedDateTime utcTimeFromDateTime(DateTime dateTime) {
@@ -144,5 +154,24 @@ public class DomainUtils {
 		byte[] bytes = toDecode.getBytes(StandardCharsets.UTF_8);
 		byte[] decodedBytes = Base64.getDecoder().decode(bytes);
 		return new String(decodedBytes);
+	}
+
+	public static UnitOfMeasure getUomBySymbol(String symbol) throws Exception {
+		if (symbol == null) {
+			throw new Exception("The unit of measure symbol cannot be null.");
+		}
+
+		// try cache
+		UnitOfMeasure uom = MeasurementSystem.instance().getUOM(symbol);
+
+		if (uom == null) {
+			// not cached
+			uom = PersistenceService.instance().fetchUomBySymbol(symbol);
+		}
+
+		if (uom == null) {
+			throw new Exception("Unit of measure with symbol " + symbol + " does not exist.");
+		}
+		return uom;
 	}
 }
