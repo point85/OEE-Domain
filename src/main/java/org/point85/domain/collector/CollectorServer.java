@@ -706,7 +706,7 @@ public class CollectorServer
 
 	public void saveOeeEvent(OeeEvent event) throws Exception {
 		if (logger.isInfoEnabled()) {
-			logger.info("OEE Event: " + event);
+			logger.info("Saving OEE event to database: " + event);
 		}
 
 		List<KeyedObject> records = new ArrayList<>();
@@ -991,7 +991,8 @@ public class CollectorServer
 			}
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Sent resolved event message for host " + getId());
+				logger.info("Sent message for host " + getId() + " of type " + message.getMessageType()
+						+ " for resolver type " + message.getResolverType());
 			}
 		} catch (Exception e) {
 			onException("Sending resolved event message failed.", e);

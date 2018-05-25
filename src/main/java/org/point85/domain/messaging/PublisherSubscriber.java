@@ -324,9 +324,12 @@ public class PublisherSubscriber {
 			MessageType type = MessageType.fromString(properties.getType());
 
 			ApplicationMessage message = deserialize(type, new String(body));
+			
+			if (logger.isInfoEnabled()) {
+				logger.info("Received message of type " + type + " from sender " + message.getSenderHostName());
+			}
 
 			if (listener != null) {
-
 				try {
 					listener.onMessage(channel, envelope, message);
 				} catch (Exception e) {

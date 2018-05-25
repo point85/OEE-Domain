@@ -113,8 +113,10 @@ public class EquipmentLossManager {
 					Duration edge = Duration.between(start, to);
 
 					// clip to event duration
-					if (edge.compareTo(eventDuration) < 0) {
-						duration = edge;
+					if (eventDuration != null) {
+						if (edge.compareTo(eventDuration) < 0) {
+							duration = edge;
+						}
 					}
 				}
 			}
@@ -138,7 +140,9 @@ public class EquipmentLossManager {
 			equipmentLoss.setLoss(TimeLoss.NOT_SCHEDULED, notScheduled);
 		}
 
-		logger.info(equipmentLoss.toString());
+		if (logger.isTraceEnabled()) {
+			logger.trace(equipmentLoss.toString());
+		}
 	}
 
 	private static void checkTimePeriod(OeeEvent record, EquipmentLoss equipmentLoss, OffsetDateTime from,

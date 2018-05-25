@@ -280,6 +280,10 @@ public class EquipmentEventResolver {
 		UnitOfMeasure uom = resolvedItem.getEquipment().getUOM(material, resolverType);
 		resolvedItem.setAmount(amount);
 		resolvedItem.setUOM(uom);
+		
+		if (logger.isInfoEnabled()) {
+			logger.info(resolverType.toString() + " amount is " + amount + " " + uom);
+		}
 	}
 
 	// availability
