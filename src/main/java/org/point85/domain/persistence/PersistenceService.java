@@ -755,7 +755,8 @@ public class PersistenceService {
 		final String UOM_CATEGORIES = "UOM.Categories";
 
 		if (namedQueryMap.get(UOM_CATEGORIES) == null) {
-			createNamedQuery(UOM_CATEGORIES, "SELECT DISTINCT uom.category FROM UnitOfMeasure uom WHERE uom.category IS NOT NULL");
+			createNamedQuery(UOM_CATEGORIES,
+					"SELECT DISTINCT uom.category FROM UnitOfMeasure uom WHERE uom.category IS NOT NULL");
 		}
 
 		TypedQuery<String> query = getEntityManager().createNamedQuery(UOM_CATEGORIES, String.class);
@@ -1243,16 +1244,18 @@ public class PersistenceService {
 	public int purge(Equipment equipment, OffsetDateTime cutoff) throws Exception {
 		EntityManager em = getEntityManager();
 
-		// availability
+		// preserver setup records
 		final String PURGE_OEE = "Oee.Purge";
 
 		if (namedQueryMap.get(PURGE_OEE) == null) {
 			createNamedQuery(PURGE_OEE,
-					"DELETE FROM OeeEvent e WHERE e.equipment = :equipment AND e.startTime < :cutoff");
+					"DELETE FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType != :type AND e.startTime < :cutoff");
 		}
 
-		Query purgeOee = em.createNamedQuery(PURGE_OEE).setParameter("equipment", equipment).setParameter("cutoff",
-				cutoff);
+		Query purgeOee = em.createNamedQuery(PURGE_OEE);
+		purgeOee.setParameter("equipment", equipment);
+		purgeOee.setParameter("cutoff", cutoff);
+		purgeOee.setParameter("type", EventType.MATL_CHANGE);
 
 		EntityTransaction txn = null;
 

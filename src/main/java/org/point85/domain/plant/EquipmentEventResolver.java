@@ -136,7 +136,11 @@ public class EquipmentEventResolver {
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Invoking script resolver for source id " + sourceId + " and type " + resolverType
-					+ " with source value " + sourceValue + " for script \n" + script);
+					+ " with source value " + sourceValue);
+		}
+
+		if (logger.isTraceEnabled()) {
+			logger.trace("for script \n" + script);
 		}
 
 		ResolverFunction resolverFunction = new ResolverFunction(script);
@@ -280,7 +284,7 @@ public class EquipmentEventResolver {
 		UnitOfMeasure uom = resolvedItem.getEquipment().getUOM(material, resolverType);
 		resolvedItem.setAmount(amount);
 		resolvedItem.setUOM(uom);
-		
+
 		if (logger.isInfoEnabled()) {
 			logger.info(resolverType.toString() + " amount is " + amount + " " + uom);
 		}

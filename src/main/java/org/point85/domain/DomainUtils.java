@@ -145,15 +145,25 @@ public class DomainUtils {
 
 	// encode the string in base64
 	public static String encode(String toEncode) {
-		byte[] bytes = toEncode.getBytes(StandardCharsets.UTF_8);
-		return Base64.getEncoder().withoutPadding().encodeToString(bytes);
+		String encoded = null;
+
+		if (toEncode != null) {
+			byte[] bytes = toEncode.getBytes(StandardCharsets.UTF_8);
+			encoded = Base64.getEncoder().withoutPadding().encodeToString(bytes);
+		}
+		return encoded;
 	}
 
 	// decode a base64 encoded string
 	public static String decode(String toDecode) {
-		byte[] bytes = toDecode.getBytes(StandardCharsets.UTF_8);
-		byte[] decodedBytes = Base64.getDecoder().decode(bytes);
-		return new String(decodedBytes);
+		String decoded = null;
+
+		if (toDecode != null) {
+			byte[] bytes = toDecode.getBytes(StandardCharsets.UTF_8);
+			byte[] decodedBytes = Base64.getDecoder().decode(bytes);
+			decoded = new String(decodedBytes);
+		}
+		return decoded;
 	}
 
 	public static UnitOfMeasure getUomBySymbol(String symbol) throws Exception {
