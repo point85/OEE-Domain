@@ -1,7 +1,6 @@
 package org.point85.domain.persistence;
 
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -673,14 +672,6 @@ public class PersistenceService {
 	// fetch Team by its primary key
 	public Team fetchTeamByKey(Long key) throws Exception {
 		return getEntityManager().find(Team.class, key);
-	}
-
-	public OffsetDateTime fetchDatabaseTime() {
-		String mssqlQuery = "select convert(nvarchar(100), SYSDATETIMEOFFSET(), 126)";
-		Query query = getEntityManager().createNativeQuery(mssqlQuery);
-		String result = (String) query.getSingleResult();
-		OffsetDateTime time = OffsetDateTime.parse(result, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-		return time;
 	}
 
 	// get any Team references to the Rotation

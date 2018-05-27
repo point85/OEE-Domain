@@ -3,7 +3,6 @@ package org.point85.domain.opc.da;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Objects;
 
@@ -90,14 +89,14 @@ public class OpcDaMonitoredItem {
 	}
 
 	public OffsetDateTime getLocalTimestamp() {
-
+		OffsetDateTime odt = null;
 		if (valueData != null) {
 			Date date = valueData.getTimestamp().getTime();
-			ZonedDateTime zdt = ZonedDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
-			return OffsetDateTime.from(zdt);
+			odt = OffsetDateTime.ofInstant(date.toInstant(), ZoneId.systemDefault());
 		} else {
-			return OffsetDateTime.now();
+			odt = OffsetDateTime.now();
 		}
+		return odt;
 	}
 
 	public String getItemId() {

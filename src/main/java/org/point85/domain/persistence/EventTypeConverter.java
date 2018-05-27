@@ -35,9 +35,6 @@ public class EventTypeConverter implements AttributeConverter<EventType, String>
 		case MATL_CHANGE:
 			value = EventType.MATERIAL_VALUE;
 			break;
-		case OTHER:
-			value = EventType.OTHER_VALUE;
-			break;
 		default:
 			break;
 		}
@@ -75,10 +72,6 @@ public class EventTypeConverter implements AttributeConverter<EventType, String>
 
 		case EventType.MATERIAL_VALUE:
 			type = EventType.MATL_CHANGE;
-			break;
-
-		case EventType.OTHER_VALUE:
-			type = EventType.OTHER;
 			break;
 
 		default:

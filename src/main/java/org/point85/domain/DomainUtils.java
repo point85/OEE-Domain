@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Calendar;
@@ -62,10 +61,6 @@ public class DomainUtils {
 		return info;
 	}
 
-	public static String zonedDateTimeToString(ZonedDateTime zdt) {
-		return (zdt != null) ? zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME) : null;
-	}
-
 	public static String offsetDateTimeToString(OffsetDateTime odt) {
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(OFFSET_DATE_TIME_PATTERN);
 		return (odt != null) ? odt.format(dtf) : null;
@@ -76,34 +71,20 @@ public class DomainUtils {
 		return OffsetDateTime.parse(formatted, dtf);
 	}
 
-	/*
-	 * public static String offsetDateTimeToIsoString(OffsetDateTime odt) { return
-	 * (odt != null) ? odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME) : null; }
-	 * 
-	 * public static OffsetDateTime offsetDateTimeFromIsoString(String timestamp)
-	 * throws Exception { if (timestamp == null) { return OffsetDateTime.now(); }
-	 * 
-	 * String timeString = timestamp;
-	 * 
-	 * // look for T separator if (timeString.indexOf('T') == -1) { // missing T if
-	 * (timestamp.indexOf(' ') != -1) { timeString = timeString.replace(' ', 'T'); }
-	 * } return OffsetDateTime.parse(timeString,
-	 * DateTimeFormatter.ISO_OFFSET_DATE_TIME); }
-	 */
-
-	// create a UTC ZonedDateTime from the DateTime
-	public static synchronized ZonedDateTime utcTimeFromDateTime(DateTime dateTime) {
+	// create a UTC OffsetDateTime from the DateTime
+	public static synchronized OffsetDateTime utcTimeFromDateTime(DateTime dateTime) {
 		long epochMillis = dateTime.getJavaTime();
 		Instant instant = Instant.ofEpochMilli(epochMillis);
-		ZonedDateTime time = ZonedDateTime.ofInstant(instant, ZoneId.of("Z"));
+		OffsetDateTime time = OffsetDateTime.ofInstant(instant, ZoneId.of("Z"));
 		return time;
 	}
 
-	// create a local ZonedDateTime from the DateTime
+	// create a local OffsetDateTime from the DateTime
 	public static synchronized OffsetDateTime localTimeFromDateTime(DateTime dateTime) {
-		ZonedDateTime utc = utcTimeFromDateTime(dateTime);
-		ZonedDateTime time = utc.withZoneSameInstant(ZoneId.systemDefault());
-		return OffsetDateTime.from(time);
+		long epochMillis = dateTime.getJavaTime();
+		Instant instant = Instant.ofEpochMilli(epochMillis);
+		OffsetDateTime time = OffsetDateTime.ofInstant(instant, ZoneId.systemDefault());
+		return time;
 	}
 
 	public static OffsetDateTime fromLocalDateTime(LocalDateTime ldt) {
@@ -136,11 +117,11 @@ public class DomainUtils {
 		return sb.toString();
 	}
 
-	public static ZonedDateTime fromFiletime(FILETIME filetime) {
+	public static OffsetDateTime fromFiletime(FILETIME filetime) {
 		Calendar cal = filetime.asCalendar();
 		Instant instant = Instant.ofEpochMilli(cal.getTime().getTime());
-		ZonedDateTime zdt = ZonedDateTime.ofInstant(instant, cal.getTimeZone().toZoneId());
-		return zdt;
+		OffsetDateTime odt = OffsetDateTime.ofInstant(instant, cal.getTimeZone().toZoneId());
+		return odt;
 	}
 
 	// encode the string in base64

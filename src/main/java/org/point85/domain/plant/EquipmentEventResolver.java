@@ -119,12 +119,14 @@ public class EquipmentEventResolver {
 
 			if (!fromSource.equals(DataSourceType.OPC_UA) && !fromSource.equals(DataSourceType.OPC_DA)) {
 				Duration delta = Duration.between(eventResolver.getLastTimestamp(), dateTime);
-				Duration threshold = Duration.ofMillis(eventResolver.getUpdatePeriod());
+				if (eventResolver.getUpdatePeriod() != null) {
+					Duration threshold = Duration.ofMillis(eventResolver.getUpdatePeriod());
 
-				if (delta.compareTo(threshold) != 1) {
-					throw new Exception("The event duration of " + DomainUtils.formatDuration(delta) + " for source id "
-							+ sourceId + " for equipment " + equipment.getName() + " must exceed the threshold of "
-							+ DomainUtils.formatDuration(threshold));
+					if (delta.compareTo(threshold) != 1) {
+						logger.warn("The event duration of " + DomainUtils.formatDuration(delta) + " for source id "
+								+ sourceId + " for equipment " + equipment.getName() + " must exceed the threshold of "
+								+ DomainUtils.formatDuration(threshold));
+					}
 				}
 			}
 		}
@@ -214,8 +216,7 @@ public class EquipmentEventResolver {
 				processMaterial(event);
 				break;
 			}
-			case OTHER:
-				break;
+
 			case PROD_GOOD:
 			case PROD_REJECT:
 			case PROD_STARTUP: {

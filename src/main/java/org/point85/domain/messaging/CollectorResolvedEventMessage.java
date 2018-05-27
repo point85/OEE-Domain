@@ -56,8 +56,6 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 			}
 			break;
 		}
-		case OTHER:
-			break;
 
 		case PROD_GOOD:
 		case PROD_REJECT:

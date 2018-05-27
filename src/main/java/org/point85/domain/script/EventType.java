@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public enum EventType {
-	AVAILABILITY, PROD_GOOD, PROD_REJECT, PROD_STARTUP, MATL_CHANGE, JOB_CHANGE, OTHER;
+	AVAILABILITY, PROD_GOOD, PROD_REJECT, PROD_STARTUP, MATL_CHANGE, JOB_CHANGE;
 
 	// database values
 	public static final String AVAILABILITY_VALUE = "AVAIL";
@@ -13,7 +13,6 @@ public enum EventType {
 	public static final String STARTUP_PROD_VALUE = "STARTUP";
 	public static final String MATERIAL_VALUE = "MATL";
 	public static final String JOB_VALUE = "JOB";
-	public static final String OTHER_VALUE = "OTHER";
 
 	public boolean isAvailability() {
 		return this.equals(AVAILABILITY) ? true : false;
