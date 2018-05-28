@@ -1128,50 +1128,6 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public OeeEvent fetchLastProduction(Equipment equipment) {
-		final String LAST_PROD = "Production.Last";
-
-		if (namedQueryMap.get(LAST_PROD) == null) {
-			createNamedQuery(LAST_PROD, "SELECT e FROM OeeEvent e WHERE e.equipment = :equipment "
-					+ "AND e.eventType IN :types ORDER BY e.startTime DESC");
-		}
-
-		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(LAST_PROD, OeeEvent.class);
-		query.setParameter("types", EventType.getProductionTypes());
-		query.setParameter("equipment", equipment);
-		query.setMaxResults(1);
-		List<OeeEvent> records = query.getResultList();
-
-		OeeEvent record = null;
-		if (records.size() == 1) {
-			record = records.get(0);
-		}
-
-		return record;
-	}
-
-	public OeeEvent fetchLastAvailability(Equipment equipment) {
-		final String LAST_AVAIL = "Availability.Last";
-
-		if (namedQueryMap.get(LAST_AVAIL) == null) {
-			createNamedQuery(LAST_AVAIL,
-					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type ORDER BY e.startTime DESC");
-		}
-
-		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(LAST_AVAIL, OeeEvent.class);
-		query.setParameter("type", EventType.AVAILABILITY);
-		query.setParameter("equipment", equipment);
-		query.setMaxResults(1);
-		List<OeeEvent> records = query.getResultList();
-
-		OeeEvent record = null;
-		if (records.size() == 1) {
-			record = records.get(0);
-		}
-
-		return record;
-	}
-
 	public List<OeeEvent> fetchSetupsForPeriod(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
 		final String SETUP_PERIOD = "Setup.Period";
 
@@ -1210,17 +1166,17 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public OeeEvent fetchLastSetup(Equipment equipment) {
-		final String LAST_SETUP = "Setup.Last";
+	public OeeEvent fetchLastEvent(Equipment equipment, EventType type) {
+		final String LAST_EVENT = "Event.Last";
 
-		if (namedQueryMap.get(LAST_SETUP) == null) {
-			createNamedQuery(LAST_SETUP,
+		if (namedQueryMap.get(LAST_EVENT) == null) {
+			createNamedQuery(LAST_EVENT,
 					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type ORDER BY e.startTime DESC");
 		}
 
-		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(LAST_SETUP, OeeEvent.class);
-		query.setParameter("type", EventType.MATL_CHANGE);
+		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(LAST_EVENT, OeeEvent.class);
 		query.setParameter("equipment", equipment);
+		query.setParameter("type", type);
 		query.setMaxResults(1);
 		List<OeeEvent> records = query.getResultList();
 
