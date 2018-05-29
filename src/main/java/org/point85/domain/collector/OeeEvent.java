@@ -18,7 +18,7 @@ import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
 import org.point85.domain.schedule.Shift;
-import org.point85.domain.script.EventType;
+import org.point85.domain.script.OeeEventType;
 import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.UnitOfMeasure;
 
@@ -30,7 +30,7 @@ import org.point85.domain.uom.UnitOfMeasure;
 public class OeeEvent extends KeyedObject {
 	@Column(name = "EVENT_TYPE")
 	@Convert(converter = EventTypeConverter.class)
-	private EventType eventType;
+	private OeeEventType eventType;
 
 	@OneToOne
 	@JoinColumn(name = "ENT_KEY")
@@ -119,11 +119,11 @@ public class OeeEvent extends KeyedObject {
 		this.endTime = endTime;
 	}
 
-	public EventType getEventType() {
+	public OeeEventType getEventType() {
 		return eventType;
 	}
 
-	public void setEventType(EventType type) {
+	public void setEventType(OeeEventType type) {
 		this.eventType = type;
 	}
 
@@ -220,12 +220,12 @@ public class OeeEvent extends KeyedObject {
 	}
 
 	public boolean isAvailability() {
-		return eventType.equals(EventType.AVAILABILITY);
+		return eventType.equals(OeeEventType.AVAILABILITY);
 	}
 
 	public boolean isProduction() {
-		if (eventType.equals(EventType.PROD_GOOD) || eventType.equals(EventType.PROD_REJECT)
-				|| eventType.equals(EventType.PROD_STARTUP)) {
+		if (eventType.equals(OeeEventType.PROD_GOOD) || eventType.equals(OeeEventType.PROD_REJECT)
+				|| eventType.equals(OeeEventType.PROD_STARTUP)) {
 			return true;
 		} else {
 			return false;
@@ -233,7 +233,7 @@ public class OeeEvent extends KeyedObject {
 	}
 
 	public boolean isSetup() {
-		if (eventType.equals(EventType.MATL_CHANGE) || eventType.equals(EventType.JOB_CHANGE)) {
+		if (eventType.equals(OeeEventType.MATL_CHANGE) || eventType.equals(OeeEventType.JOB_CHANGE)) {
 			return true;
 		} else {
 			return false;

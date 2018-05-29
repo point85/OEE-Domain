@@ -51,7 +51,7 @@ import org.point85.domain.schedule.Shift;
 import org.point85.domain.schedule.Team;
 import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.script.EventResolver;
-import org.point85.domain.script.EventType;
+import org.point85.domain.script.OeeEventType;
 import org.point85.domain.uom.MeasurementSystem;
 import org.point85.domain.uom.Unit;
 import org.point85.domain.uom.UnitOfMeasure;
@@ -1101,7 +1101,7 @@ public class PersistenceService {
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(AVAIL_RECORDS, OeeEvent.class);
-		query.setParameter("type", EventType.AVAILABILITY);
+		query.setParameter("type", OeeEventType.AVAILABILITY);
 		query.setParameter("loss", TimeLoss.NO_LOSS);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
@@ -1120,7 +1120,7 @@ public class PersistenceService {
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(PROD_RECORDS, OeeEvent.class);
 
-		query.setParameter("types", EventType.getProductionTypes());
+		query.setParameter("types", OeeEventType.getProductionTypes());
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
@@ -1138,7 +1138,7 @@ public class PersistenceService {
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(SETUP_PERIOD, OeeEvent.class);
-		query.setParameter("type", EventType.MATL_CHANGE);
+		query.setParameter("type", OeeEventType.MATL_CHANGE);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
@@ -1157,7 +1157,7 @@ public class PersistenceService {
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(SETUP_PERIOD_MATL, OeeEvent.class);
-		query.setParameter("type", EventType.MATL_CHANGE);
+		query.setParameter("type", OeeEventType.MATL_CHANGE);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
@@ -1166,7 +1166,7 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public OeeEvent fetchLastEvent(Equipment equipment, EventType type) {
+	public OeeEvent fetchLastEvent(Equipment equipment, OeeEventType type) {
 		final String LAST_EVENT = "Event.Last";
 
 		if (namedQueryMap.get(LAST_EVENT) == null) {
@@ -1202,7 +1202,7 @@ public class PersistenceService {
 		Query purgeOee = em.createNamedQuery(PURGE_OEE);
 		purgeOee.setParameter("equipment", equipment);
 		purgeOee.setParameter("cutoff", cutoff);
-		purgeOee.setParameter("type", EventType.MATL_CHANGE);
+		purgeOee.setParameter("type", OeeEventType.MATL_CHANGE);
 
 		EntityTransaction txn = null;
 

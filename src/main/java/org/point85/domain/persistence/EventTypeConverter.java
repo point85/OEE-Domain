@@ -3,13 +3,13 @@ package org.point85.domain.persistence;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-import org.point85.domain.script.EventType;
+import org.point85.domain.script.OeeEventType;
 
 @Converter
-public class EventTypeConverter implements AttributeConverter<EventType, String> {
+public class EventTypeConverter implements AttributeConverter<OeeEventType, String> {
 
 	@Override
-	public String convertToDatabaseColumn(EventType attribute) {
+	public String convertToDatabaseColumn(OeeEventType attribute) {
 		String value = null;
 
 		if (attribute == null) {
@@ -18,22 +18,22 @@ public class EventTypeConverter implements AttributeConverter<EventType, String>
 
 		switch (attribute) {
 		case AVAILABILITY:
-			value = EventType.AVAILABILITY_VALUE;
+			value = OeeEventType.AVAILABILITY_VALUE;
 			break;
 		case PROD_GOOD:
-			value = EventType.GOOD_PROD_VALUE;
+			value = OeeEventType.GOOD_PROD_VALUE;
 			break;
 		case PROD_REJECT:
-			value = EventType.REJECT_PROD_VALUE;
+			value = OeeEventType.REJECT_PROD_VALUE;
 			break;
 		case PROD_STARTUP:
-			value = EventType.STARTUP_PROD_VALUE;
+			value = OeeEventType.STARTUP_PROD_VALUE;
 			break;
 		case JOB_CHANGE:
-			value = EventType.JOB_VALUE;
+			value = OeeEventType.JOB_VALUE;
 			break;
 		case MATL_CHANGE:
-			value = EventType.MATERIAL_VALUE;
+			value = OeeEventType.MATERIAL_VALUE;
 			break;
 		default:
 			break;
@@ -42,36 +42,36 @@ public class EventTypeConverter implements AttributeConverter<EventType, String>
 	}
 
 	@Override
-	public EventType convertToEntityAttribute(String value) {
-		EventType type = null;
+	public OeeEventType convertToEntityAttribute(String value) {
+		OeeEventType type = null;
 
 		if (value == null) {
 			return type;
 		}
 
 		switch (value) {
-		case EventType.AVAILABILITY_VALUE:
-			type = EventType.AVAILABILITY;
+		case OeeEventType.AVAILABILITY_VALUE:
+			type = OeeEventType.AVAILABILITY;
 			break;
 
-		case EventType.GOOD_PROD_VALUE:
-			type = EventType.PROD_GOOD;
+		case OeeEventType.GOOD_PROD_VALUE:
+			type = OeeEventType.PROD_GOOD;
 			break;
 
-		case EventType.REJECT_PROD_VALUE:
-			type = EventType.PROD_REJECT;
+		case OeeEventType.REJECT_PROD_VALUE:
+			type = OeeEventType.PROD_REJECT;
 			break;
 
-		case EventType.STARTUP_PROD_VALUE:
-			type = EventType.PROD_STARTUP;
+		case OeeEventType.STARTUP_PROD_VALUE:
+			type = OeeEventType.PROD_STARTUP;
 			break;
 
-		case EventType.JOB_VALUE:
-			type = EventType.JOB_CHANGE;
+		case OeeEventType.JOB_VALUE:
+			type = OeeEventType.JOB_CHANGE;
 			break;
 
-		case EventType.MATERIAL_VALUE:
-			type = EventType.MATL_CHANGE;
+		case OeeEventType.MATERIAL_VALUE:
+			type = OeeEventType.MATL_CHANGE;
 			break;
 
 		default:

@@ -4,11 +4,11 @@ import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
-import org.point85.domain.script.EventType;
+import org.point85.domain.script.OeeEventType;
 
 public class CollectorResolvedEventMessage extends ApplicationMessage {
 	private String equipmentName;
-	private EventType resolverType;
+	private OeeEventType resolverType;
 	private String reasonName;
 	private String reasonDescription;
 	private TimeLoss loss;
@@ -130,11 +130,11 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		this.equipmentName = equipmentName;
 	}
 
-	public EventType getResolverType() {
+	public OeeEventType getResolverType() {
 		return resolverType;
 	}
 
-	public void setResolverType(EventType resolverType) {
+	public void setResolverType(OeeEventType resolverType) {
 		this.resolverType = resolverType;
 	}
 

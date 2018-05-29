@@ -52,7 +52,7 @@ import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentEventResolver;
 import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.script.EventResolver;
-import org.point85.domain.script.EventType;
+import org.point85.domain.script.OeeEventType;
 import org.point85.domain.script.OeeContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -715,7 +715,7 @@ public class CollectorServer
 
 		// close off previous events
 		OeeEvent lastRecord = null;
-		EventType type = event.getEventType();
+		OeeEventType type = event.getEventType();
 
 		if (!type.isProduction()) {
 			lastRecord = PersistenceService.instance().fetchLastEvent(event.getEquipment(), type);

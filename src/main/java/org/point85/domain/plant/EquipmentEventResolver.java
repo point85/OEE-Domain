@@ -19,7 +19,7 @@ import org.point85.domain.schedule.Shift;
 import org.point85.domain.schedule.ShiftInstance;
 import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.script.EventResolver;
-import org.point85.domain.script.EventType;
+import org.point85.domain.script.OeeEventType;
 import org.point85.domain.script.OeeContext;
 import org.point85.domain.script.ResolverFunction;
 import org.point85.domain.uom.UnitOfMeasure;
@@ -110,7 +110,7 @@ public class EquipmentEventResolver {
 
 		Equipment equipment = eventResolver.getEquipment();
 		String sourceId = eventResolver.getSourceId();
-		EventType resolverType = eventResolver.getType();
+		OeeEventType resolverType = eventResolver.getType();
 		String script = eventResolver.getScript();
 
 		// event durations must exceed the update period
@@ -178,7 +178,7 @@ public class EquipmentEventResolver {
 
 		// set material
 		Material material = null;
-		if (eventResolver.getType().equals(EventType.MATL_CHANGE)) {
+		if (eventResolver.getType().equals(OeeEventType.MATL_CHANGE)) {
 			// set material from event
 			material = fetchMaterial((String) sourceValue);
 			context.setMaterial(equipment, material);
@@ -189,7 +189,7 @@ public class EquipmentEventResolver {
 
 		// set job
 		String job = null;
-		if (eventResolver.getType().equals(EventType.JOB_CHANGE)) {
+		if (eventResolver.getType().equals(OeeEventType.JOB_CHANGE)) {
 			// set job from event
 			job = (String) sourceValue;
 			context.setJob(equipment, job);
@@ -242,7 +242,7 @@ public class EquipmentEventResolver {
 	}
 
 	// production counts
-	private void processProduction(OeeEvent resolvedItem, EventType resolverType, Material material, OeeContext context)
+	private void processProduction(OeeEvent resolvedItem, OeeEventType resolverType, Material material, OeeContext context)
 			throws Exception {
 		Object outputValue = resolvedItem.getOutputValue();
 		Double amount = null;

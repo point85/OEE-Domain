@@ -206,15 +206,18 @@ public class UaOpcClient implements SessionActivityListener {
 			if (certificateType == null) {
 				logger.error("The endpoint does not have a Certificate user token type.");
 			}
+			
+			// make sure the URL has the requested host name
+			EndpointDescription updatedEndpoint = EndpointUtilExt.updateUrl(endpointDescription, source.getHost());
 
-			logger.info("Using endpoint: {} [{}, {}]", endpointDescription.getEndpointUrl(),
-					endpointDescription.getSecurityPolicyUri(), endpointDescription.getSecurityMode());
+			logger.info("Using endpoint: {} [{}, {}]", updatedEndpoint.getEndpointUrl(),
+					updatedEndpoint.getSecurityPolicyUri(), updatedEndpoint.getSecurityMode());
 
 			// build the configuration
 			OpcUaClientConfigBuilder configBuilder = new OpcUaClientConfigBuilder();
 
 			configBuilder.setApplicationName(LocalizedText.english(APP_NAME)).setApplicationUri(APP_URI)
-					.setEndpoint(endpointDescription).setIdentityProvider(identityProvider)
+					.setEndpoint(updatedEndpoint).setIdentityProvider(identityProvider)
 					.setRequestTimeout(uint(REQUEST_TIMEOUT));
 
 			logger.info("App name: " + APP_NAME + ", app URI: " + APP_URI);

@@ -47,7 +47,7 @@ public class EventResolver extends KeyedObject {
 
 	@Column(name = "ER_TYPE")
 	@Convert(converter = EventTypeConverter.class)
-	private EventType type;
+	private OeeEventType type;
 
 	@Column(name = "DATA_TYPE")
 	private String dataType;
@@ -145,11 +145,11 @@ public class EventResolver extends KeyedObject {
 		this.updatePeriod = period;
 	}
 
-	public EventType getType() {
+	public OeeEventType getType() {
 		return type;
 	}
 
-	public void setType(EventType type) {
+	public void setType(OeeEventType type) {
 		this.type = type;
 	}
 
