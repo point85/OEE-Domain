@@ -113,6 +113,8 @@ public class CollectorServer
 	// exception listener
 	private CollectorExceptionListener exceptionListener;
 
+	private boolean webContainer = false;
+
 	public CollectorServer() {
 		initialize();
 	}
@@ -434,6 +436,9 @@ public class CollectorServer
 		// configure all of the data sources
 		buildDataSources();
 
+		// add a collector for a web server container if necessary
+		addWebCollector();
+
 		// connect to broker for notifications and commands
 		startNotifications();
 
@@ -442,6 +447,57 @@ public class CollectorServer
 
 		// notify monitors
 		onInformation("Collector server started on host " + getId());
+	}
+
+	public boolean isWebContainer() {
+		return webContainer;
+	}
+
+	public void setWebContainer(boolean web) {
+		this.webContainer = web;
+	}
+
+	private void addWebCollector() {
+		if (!webContainer) {
+			return;
+		}
+
+		// search for a collector on this host
+		DataCollector thisCollector = null;
+
+		for (DataCollector collector : collectors) {
+			if (collector.getHost().equals(hostname)) {
+				thisCollector = collector;
+				break;
+			}
+		}
+
+		if (thisCollector != null) {
+			// already a collector
+			return;
+		}
+
+		// fetch from database
+		List<String> hostNames = new ArrayList<String>();
+		hostNames.add(hostname);
+
+		// get collector on our host
+		List<CollectorState> states = new ArrayList<>();
+		states.add(CollectorState.READY);
+		states.add(CollectorState.RUNNING);
+
+		List<DataCollector> ourCollectors = PersistenceService.instance().fetchCollectorsByHostAndState(hostNames,
+				states);
+
+		if (ourCollectors.size() > 0) {
+			DataCollector ourCollector = ourCollectors.get(0);
+			collectors.add(ourCollector);
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Added data collector for this host " + ourCollector.getName() + " in state "
+						+ ourCollector.getCollectorState());
+			}
+		}
 	}
 
 	private synchronized void startNotifications() throws Exception {
@@ -970,9 +1026,18 @@ public class CollectorServer
 		}
 	}
 
-	private synchronized void recordResolution(OeeEvent resolvedEvent) throws Exception {
+	public synchronized void recordResolution(OeeEvent resolvedEvent) throws Exception {
 		if (resolvedEvent.getOutputValue() == null) {
 			return;
+		}
+
+		if (resolvedEvent.getEndTime() != null) {
+			Duration delta = Duration.between(resolvedEvent.getStartTime(), resolvedEvent.getEndTime());
+
+			if (delta.compareTo(resolvedEvent.getDuration()) > 0) {
+				throw new Exception("The event duration of " + resolvedEvent.getDuration()
+						+ " cannot be greater than the time period duration of " + delta);
+			}
 		}
 
 		// save in database

@@ -57,7 +57,6 @@ import org.point85.domain.uom.Unit;
 import org.point85.domain.uom.UnitOfMeasure;
 import org.point85.domain.uom.UnitOfMeasure.MeasurementType;
 import org.point85.domain.uom.UnitType;
-import org.point85.domain.web.WebSource;
 
 public class PersistenceService {
 	// persistence unit name for
@@ -1019,11 +1018,11 @@ public class PersistenceService {
 
 	private Class<?>[] getEntityClasses() {
 		return new Class<?>[] { DataCollector.class, CollectorDataSource.class, OeeEvent.class, HttpSource.class,
-				MessagingSource.class, OpcDaSource.class, OpcUaSource.class, WebSource.class, Area.class,
-				Enterprise.class, Equipment.class, EquipmentMaterial.class, Material.class, PlantEntity.class,
-				ProductionLine.class, Reason.class, Site.class, WorkCell.class, EventResolver.class,
-				UnitOfMeasure.class, NonWorkingPeriod.class, Rotation.class, RotationSegment.class, Shift.class,
-				Team.class, WorkSchedule.class };
+				MessagingSource.class, OpcDaSource.class, OpcUaSource.class, Area.class, Enterprise.class,
+				Equipment.class, EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class,
+				Reason.class, Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class,
+				NonWorkingPeriod.class, Rotation.class, RotationSegment.class, Shift.class, Team.class,
+				WorkSchedule.class };
 	}
 
 	private List<String> getEntityClassNames() {

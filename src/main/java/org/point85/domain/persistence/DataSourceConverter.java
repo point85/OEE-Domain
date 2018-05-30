@@ -33,10 +33,6 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 			value = DataSourceType.MESSAGING_VALUE;
 			break;
 
-		case WEB:
-			value = DataSourceType.WEB_VALUE;
-			break;
-
 		default:
 			break;
 		}
@@ -67,10 +63,6 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 
 		case DataSourceType.MESSAGING_VALUE:
 			state = DataSourceType.MESSAGING;
-			break;
-
-		case DataSourceType.WEB_VALUE:
-			state = DataSourceType.WEB;
 			break;
 
 		default:
