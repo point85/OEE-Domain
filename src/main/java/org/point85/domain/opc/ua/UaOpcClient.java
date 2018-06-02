@@ -372,19 +372,6 @@ public class UaOpcClient implements SessionActivityListener {
 		try {
 			VariableNode node = opcUaClient.getAddressSpace().createVariableNode(nodeId);
 			DataValue value = node.readValue().get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
-
-			// maybe not an array
-			try {
-				UInteger[] dims = node.getArrayDimensions().get();
-				if (dims != null) {
-					for (int i = 0; i < dims.length; i++) {
-						logger.info("[" + i + "] " + dims[i]);
-					}
-				}
-			} catch (Exception e) {
-
-			}
-
 			return value;
 		} catch (Exception e) {
 			throw new Exception(e.getMessage());
@@ -396,9 +383,7 @@ public class UaOpcClient implements SessionActivityListener {
 
 		try {
 			CompletableFuture<StatusCode> cf = opcUaClient.writeValue(nodeId, new DataValue(newValue, null, null));
-
 			StatusCode statusCode = cf.get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
-
 			return statusCode;
 
 		} catch (Exception e) {

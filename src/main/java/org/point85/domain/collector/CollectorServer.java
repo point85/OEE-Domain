@@ -1027,14 +1027,10 @@ public class CollectorServer
 	}
 
 	public synchronized void recordResolution(OeeEvent resolvedEvent) throws Exception {
-		if (resolvedEvent.getOutputValue() == null) {
-			return;
-		}
-
-		if (resolvedEvent.getEndTime() != null) {
+		if (resolvedEvent.getEndTime() != null && resolvedEvent.getDuration() != null) {
 			Duration delta = Duration.between(resolvedEvent.getStartTime(), resolvedEvent.getEndTime());
 
-			if (delta.compareTo(resolvedEvent.getDuration()) > 0) {
+			if (delta.compareTo(resolvedEvent.getDuration()) < 0) {
 				throw new Exception("The event duration of " + resolvedEvent.getDuration()
 						+ " cannot be greater than the time period duration of " + delta);
 			}
