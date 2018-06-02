@@ -45,7 +45,7 @@ public class EquipmentLossManager {
 		equipmentLoss.setDesignSpeed(eqm.getRunRate());
 
 		// time from measured production
-		List<OeeEvent> productions = PersistenceService.instance().fetchProduction(equipment, from, to);
+		List<OeeEvent> productions = PersistenceService.instance().fetchProduction(equipment, material, from, to);
 
 		equipmentLoss.getEventRecords().addAll(productions);
 

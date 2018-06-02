@@ -312,9 +312,9 @@ public class EquipmentLoss {
 		logger.info("No loss: " + noLoss);
 		logger.info("Reduced: " + reducedSpeed);
 
-		logger.info("Good Qty: " + this.goodQuantity);
-		logger.info("Reject Qty: " + this.rejectQuantity);
-		logger.info("Startup Qty: " + this.startupQuantity);
+		logger.info("Good Qty: " + goodQuantity);
+		logger.info("Reject Qty: " + rejectQuantity);
+		logger.info("Startup Qty: " + startupQuantity);
 	}
 
 	public OffsetDateTime getStartDateTime() {

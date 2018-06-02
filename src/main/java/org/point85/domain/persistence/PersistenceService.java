@@ -1109,18 +1109,20 @@ public class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<OeeEvent> fetchProduction(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
+	public List<OeeEvent> fetchProduction(Equipment equipment, Material material, OffsetDateTime from,
+			OffsetDateTime to) {
 		final String PROD_RECORDS = "Production.FromTo";
 
 		if (namedQueryMap.get(PROD_RECORDS) == null) {
 			createNamedQuery(PROD_RECORDS, "SELECT e FROM OeeEvent e WHERE e.equipment = :equipment "
-					+ "AND e.eventType IN :types AND (e.startTime >= :from AND e.startTime < :to) ORDER BY e.startTime ASC");
+					+ "AND e.eventType IN :types AND (e.startTime >= :from AND e.startTime < :to) AND e.material = :material ORDER BY e.startTime ASC");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(PROD_RECORDS, OeeEvent.class);
 
 		query.setParameter("types", OeeEventType.getProductionTypes());
 		query.setParameter("equipment", equipment);
+		query.setParameter("material", material);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
 
