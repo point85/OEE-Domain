@@ -8,10 +8,11 @@ public class EquipmentEventResponseDto {
 	private String errorText;
 
 	public EquipmentEventResponseDto() {
+		this.errorText = OK_STATUS;
 	}
 
 	public EquipmentEventResponseDto(String errorText) {
-		setErrorText(errorText);
+		this.errorText = errorText;
 	}
 
 	public String getErrorText() {

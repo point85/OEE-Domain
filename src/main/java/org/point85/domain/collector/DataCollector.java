@@ -40,7 +40,7 @@ public class DataCollector extends NamedObject {
 	private String brokerUserPassword;
 
 	public DataCollector() {
-
+		super();
 	}
 
 	public DataCollector(String name, String description) {

@@ -1,18 +1,11 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package org.point85.domain.opc.da;
 
-/**
- *
- * @author Kent Randall
- */
 public class OpcDaItemProperty {
 
-    private Integer propId;
-    private String propDescription;
-    private Short propdataType;
+    private final Integer propId;
+    private final String propDescription;
+    private final Short propdataType;
     private OpcDaVariant propValue;
 
     public OpcDaItemProperty(int id, String description, short type) {

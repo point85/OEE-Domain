@@ -4,10 +4,6 @@ import java.util.List;
 
 public class PlantEntityResponseDto {
 	private List<PlantEntityDto> entityList;
-	
-	public PlantEntityResponseDto() {
-		
-	}
 
 	public PlantEntityResponseDto(List<PlantEntityDto> entityList) {
 		this.entityList = entityList;

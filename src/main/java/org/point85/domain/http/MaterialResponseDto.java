@@ -4,10 +4,6 @@ import java.util.List;
 
 public class MaterialResponseDto {
 	private List<MaterialDto> materialList;
-	
-	public MaterialResponseDto() {
-		
-	}
 
 	public MaterialResponseDto(List<MaterialDto> materialList) {
 		this.materialList = materialList;

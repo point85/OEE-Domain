@@ -140,119 +140,117 @@ public class UaOpcClient implements SessionActivityListener {
 	// log into the server and connect
 	public synchronized void connect(OpcUaSource source) throws Exception {
 		String endpointUrl = source.getEndpointUrl();
-		logger.info("Connecting to: " + endpointUrl);
 
-		try {
-			// identity provider
-			IdentityProvider identityProvider = new AnonymousProvider();
-			X509KeyStoreLoader loader = null;
+		if (logger.isInfoEnabled()) {
+			logger.info("Connecting to: " + endpointUrl);
+		}
 
-			if (source.getUserName() != null && source.getUserName().length() > 0) {
-				// user name and password authentication
-				identityProvider = new UsernameProvider(source.getUserName(), source.getUserPassword());
-			}
+		// identity provider
+		IdentityProvider identityProvider = new AnonymousProvider();
+		X509KeyStoreLoader loader = null;
 
-			if (source.getKeystore() != null && source.getKeystore().length() > 0) {
-				// load X509 certificate from a keystore
-				loader = new X509KeyStoreLoader();
-				loader.load(source.getKeystore(), source.getKeystorePassword());
-				identityProvider = new X509IdentityProvider(loader.getClientCertificate(),
-						loader.getClientKeyPair().getPrivate());
-			}
+		if (source.getUserName() != null && source.getUserName().length() > 0) {
+			// user name and password authentication
+			identityProvider = new UsernameProvider(source.getUserName(), source.getUserPassword());
+		}
 
+		if (source.getKeystore() != null && source.getKeystore().length() > 0) {
+			// load X509 certificate from a keystore
+			loader = new X509KeyStoreLoader();
+			loader.load(source.getKeystore(), source.getKeystorePassword());
+			identityProvider = new X509IdentityProvider(loader.getClientCertificate(),
+					loader.getClientKeyPair().getPrivate());
+		}
+
+		if (logger.isInfoEnabled()) {
 			logger.info("Identity provider: " + identityProvider.getClass().getSimpleName());
+		}
 
-			// get the server's endpoints
-			EndpointDescription[] endpointDescriptions = UaTcpStackClient.getEndpoints(endpointUrl).get();
+		// get the server's endpoints
+		EndpointDescription[] endpointDescriptions = UaTcpStackClient.getEndpoints(endpointUrl).get();
 
-			// security settings
-			String policyUri = source.getSecurityPolicy().getSecurityPolicyUri();
-			MessageSecurityMode messageSecurityMode = source.getMessageSecurityMode();
+		// security settings
+		String policyUri = source.getSecurityPolicy().getSecurityPolicyUri();
+		MessageSecurityMode messageSecurityMode = source.getMessageSecurityMode();
 
+		if (logger.isInfoEnabled()) {
 			logger.info("Configured policy: " + policyUri + ", mode: " + messageSecurityMode);
+		}
 
-			EndpointDescription endpointDescription = null;
+		EndpointDescription endpointDescription = null;
 
-			for (EndpointDescription description : endpointDescriptions) {
-				String uri = description.getSecurityPolicyUri();
-				MessageSecurityMode mode = description.getSecurityMode();
-
-				logger.info("Checking URL: " + description.getEndpointUrl() + ",  Policy: " + uri + ", Mode: " + mode);
-
-				if (uri.equals(policyUri) && mode.equals(messageSecurityMode)) {
-					endpointDescription = description;
-					break;
-				}
-			}
-
-			if (endpointDescription == null) {
-				String msg = "Unable to find a matching endpoint for security policy " + policyUri + " and mode "
-						+ messageSecurityMode;
-				logger.error(msg);
-				throw new Exception(msg);
-			}
-
-			UserTokenType certificateType = null;
-
-			for (UserTokenPolicy tokenPolicy : endpointDescription.getUserIdentityTokens()) {
-				UserTokenType utt = tokenPolicy.getTokenType();
-
-				if (utt.equals(UserTokenType.Certificate)) {
-					certificateType = utt;
-					break;
-				}
-			}
-
-			if (certificateType == null) {
-				logger.error("The endpoint does not have a Certificate user token type.");
-			}
-			
-			// make sure the URL has the requested host name
-			EndpointDescription updatedEndpoint = EndpointUtilExt.updateUrl(endpointDescription, source.getHost());
-
-			logger.info("Using endpoint: {} [{}, {}]", updatedEndpoint.getEndpointUrl(),
-					updatedEndpoint.getSecurityPolicyUri(), updatedEndpoint.getSecurityMode());
-
-			// build the configuration
-			OpcUaClientConfigBuilder configBuilder = new OpcUaClientConfigBuilder();
-
-			configBuilder.setApplicationName(LocalizedText.english(APP_NAME)).setApplicationUri(APP_URI)
-					.setEndpoint(updatedEndpoint).setIdentityProvider(identityProvider)
-					.setRequestTimeout(uint(REQUEST_TIMEOUT));
-
-			logger.info("App name: " + APP_NAME + ", app URI: " + APP_URI);
-
-			if (loader != null) {
-				// get the configured certificate
-				configBuilder.setCertificate(loader.getClientCertificate()).setKeyPair(loader.getClientKeyPair());
-				logger.info("Client certificate alg " + loader.getClientCertificate().getSigAlgName());
-			}
-
-			// create the client
-			opcUaClient = new OpcUaClient(configBuilder.build());
-
-			// synchronous connect
-			opcUaClient.connect().get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
+		for (EndpointDescription description : endpointDescriptions) {
+			String uri = description.getSecurityPolicyUri();
+			MessageSecurityMode mode = description.getSecurityMode();
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Connected to server.");
+				logger.info("Checking URL: " + description.getEndpointUrl() + ",  Policy: " + uri + ", Mode: " + mode);
 			}
 
-		} catch (Exception e) {
-			e.printStackTrace();
-
-			String msg = e.getMessage();
-
-			if (msg == null) {
-				if (e.getCause() != null) {
-					msg = e.getCause().getMessage();
-				}
-
-				if (msg == null) {
-					msg = e.getClass().getSimpleName();
-				}
+			if (uri.equals(policyUri) && mode.equals(messageSecurityMode)) {
+				endpointDescription = description;
+				break;
 			}
-			throw new Exception("Unable to log in to server " + endpointUrl + ": " + msg);
+		}
+
+		if (endpointDescription == null) {
+			String msg = "Unable to find a matching endpoint for security policy " + policyUri + " and mode "
+					+ messageSecurityMode;
+			logger.error(msg);
+			throw new Exception(msg);
+		}
+
+		UserTokenType certificateType = null;
+
+		for (UserTokenPolicy tokenPolicy : endpointDescription.getUserIdentityTokens()) {
+			UserTokenType utt = tokenPolicy.getTokenType();
+
+			if (utt.equals(UserTokenType.Certificate)) {
+				certificateType = utt;
+				break;
+			}
+		}
+
+		if (certificateType == null) {
+			logger.error("The endpoint does not have a Certificate user token type.");
+		}
+
+		// make sure the URL has the requested host name
+		EndpointDescription updatedEndpoint = EndpointUtilExt.updateUrl(endpointDescription, source.getHost());
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Using endpoint: {} [{}, {}]", updatedEndpoint.getEndpointUrl(),
+					updatedEndpoint.getSecurityPolicyUri(), updatedEndpoint.getSecurityMode());
+		}
+
+		// build the configuration
+		OpcUaClientConfigBuilder configBuilder = new OpcUaClientConfigBuilder();
+
+		configBuilder.setApplicationName(LocalizedText.english(APP_NAME)).setApplicationUri(APP_URI)
+				.setEndpoint(updatedEndpoint).setIdentityProvider(identityProvider)
+				.setRequestTimeout(uint(REQUEST_TIMEOUT));
+
+		if (logger.isInfoEnabled()) {
+			logger.info("App name: " + APP_NAME + ", app URI: " + APP_URI);
+		}
+
+		if (loader != null) {
+			// get the configured certificate
+			configBuilder.setCertificate(loader.getClientCertificate()).setKeyPair(loader.getClientKeyPair());
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Client certificate alg " + loader.getClientCertificate().getSigAlgName());
+			}
+		}
+
+		// create the client
+		opcUaClient = new OpcUaClient(configBuilder.build());
+
+		// synchronous connect
+		opcUaClient.connect().get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Connected to server.");
 		}
 	}
 

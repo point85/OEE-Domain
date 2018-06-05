@@ -44,11 +44,10 @@ public class PublisherSubscriber {
 	private ConnectionFactory factory;
 	private Connection connection;
 	protected Channel channel;
-	private Consumer consumer;
 	private String consumerTag;
 
 	// json serializer
-	private Gson gson = new Gson();
+	private final Gson gson = new Gson();
 
 	// for blocking (RPC) style calls
 	private String replyQueueName;
@@ -57,6 +56,7 @@ public class PublisherSubscriber {
 	private MessageListener listener;
 
 	public PublisherSubscriber() {
+		// nothing to initialize
 	}
 
 	public String getBindingKey() {
@@ -185,23 +185,25 @@ public class PublisherSubscriber {
 	}
 
 	public void subscribe(String queueName, boolean durable, List<RoutingKey> routingKeys) throws Exception {
-		if (queueName == null) {
-			queueName = channel.queueDeclare().getQueue();
-		} else {
-			// durable, non-exclusive queue
-			channel.queueDeclare(queueName, durable, false, false, null);
+		String nameOfQueue = queueName;
+
+		if (nameOfQueue == null) {
+			nameOfQueue = channel.queueDeclare().getQueue();
 		}
+
+		// durable, non-exclusive queue
+		channel.queueDeclare(nameOfQueue, durable, false, false, null);
 
 		for (RoutingKey routingKey : routingKeys) {
 			// bind to key
-			channel.queueBind(queueName, EXCHANGE_NAME, routingKey.getKey());
+			channel.queueBind(nameOfQueue, EXCHANGE_NAME, routingKey.getKey());
 		}
 
 		// create a message receiver
 		Receiver consumer = new Receiver();
 
 		// start consuming messages
-		consumerTag = channel.basicConsume(queueName, AUTO_ACK, consumer);
+		consumerTag = channel.basicConsume(nameOfQueue, AUTO_ACK, consumer);
 
 		if (logger.isInfoEnabled()) {
 			String keys = "";
@@ -211,14 +213,13 @@ public class PublisherSubscriber {
 				}
 				keys += routingKey;
 			}
-			logger.info("Subscribed to queue " + queueName + " with routing key(s) " + keys + ", durable " + durable );
+			logger.info("Subscribed to queue " + nameOfQueue + " with routing key(s) " + keys + ", durable " + durable);
 		}
 	}
 
 	public String serialize(ApplicationMessage message) {
 		// payload is JSON string
-		String payload = gson.toJson(message);
-		return payload;
+		return gson.toJson(message);
 	}
 
 	public ApplicationMessage deserialize(MessageType type, String payload) {
@@ -256,7 +257,7 @@ public class PublisherSubscriber {
 	public void createRpcQueue() throws IOException {
 		replyQueueName = channel.queueDeclare().getQueue();
 
-		consumer = new DefaultConsumer(channel) {
+		Consumer consumer = new DefaultConsumer(channel) {
 			@Override
 			public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,
 					byte[] body) throws IOException {
@@ -312,7 +313,7 @@ public class PublisherSubscriber {
 
 	// ************************* Message Receiver ***************************
 	private class Receiver extends DefaultConsumer {
-		private Receiver() {
+		Receiver() {
 			super(channel);
 		}
 
@@ -324,7 +325,7 @@ public class PublisherSubscriber {
 			MessageType type = MessageType.fromString(properties.getType());
 
 			ApplicationMessage message = deserialize(type, new String(body));
-			
+
 			if (logger.isInfoEnabled()) {
 				logger.info("Received message of type " + type + " from sender " + message.getSenderHostName());
 			}
@@ -333,7 +334,7 @@ public class PublisherSubscriber {
 				try {
 					listener.onMessage(channel, envelope, message);
 				} catch (Exception e) {
-					e.printStackTrace();
+					logger.error(e.getMessage());
 				}
 			}
 		}

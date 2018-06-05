@@ -33,10 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
-/**
- * 
- * @author Kent Randall
- */
 public class DaOpcClient {
 	static {
 		// jinterop uses java.util.logging directly
@@ -55,14 +51,14 @@ public class DaOpcClient {
 	private static final int DEFAULT_LOCALE_ID = 1033;
 	private static final Integer TIME_BIAS = null;
 
-	private Random intGenerator = new Random(System.currentTimeMillis());
+	private final Random intGenerator = new Random(System.currentTimeMillis());
 
 	private OpcDaTreeBrowser tagTreeBrowser;
 
-	private Map<String, OpcDaMonitoredGroup> monitoredGroups = new HashMap<>();
+	private final Map<String, OpcDaMonitoredGroup> monitoredGroups = new HashMap<>();
 
 	public DaOpcClient() {
-
+		// nothing to initialize
 	}
 
 	public Collection<OpcDaMonitoredGroup> getMonitoredGroups() {
@@ -167,9 +163,7 @@ public class DaOpcClient {
 		OPCGroupStateMgt opcGroupStateMgt = opcServer.addGroup(groupName, active, updateRate, clientHandle, TIME_BIAS,
 				percentDeadband, DEFAULT_LOCALE_ID);
 
-		OpcDaMonitoredGroup opcDaGroup = new OpcDaMonitoredGroup(opcGroupStateMgt, clientHandle);
-
-		return opcDaGroup;
+		return new OpcDaMonitoredGroup(opcGroupStateMgt, clientHandle);
 	}
 
 	public void removeGroup(OpcDaMonitoredGroup group) throws Exception {

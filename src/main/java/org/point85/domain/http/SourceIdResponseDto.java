@@ -5,10 +5,6 @@ import java.util.List;
 public class SourceIdResponseDto {
 	private List<String> sourceIds;
 
-	public SourceIdResponseDto() {
-
-	}
-
 	public SourceIdResponseDto(List<String> sourceIds) {
 		this.sourceIds = sourceIds;
 	}

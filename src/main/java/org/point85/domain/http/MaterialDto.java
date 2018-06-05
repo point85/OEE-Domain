@@ -9,7 +9,7 @@ public class MaterialDto extends NamedDto {
 
 	public MaterialDto(String name, String description, String category) {
 		super(name, description);
-		this.setCategory(category);
+		this.category = category;
 	}
 
 	public String getCategory() {

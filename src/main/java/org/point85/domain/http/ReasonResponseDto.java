@@ -5,9 +5,6 @@ import java.util.List;
 public class ReasonResponseDto {
 	private List<ReasonDto> reasonList;
 	
-	public ReasonResponseDto() {
-		
-	}
 
 	public ReasonResponseDto(List<ReasonDto> reasonList) {
 		this.reasonList = reasonList;

@@ -1,8 +1,9 @@
 package org.point85.domain.messaging;
 
-public enum MessageType implements MessagingConstants {
-	EQUIPMENT_EVENT(EQUIP_EVENT_ATTRIB), NOTIFICATION(NOTIFICATION_ATTRIB), STATUS(STATUS_ATTRIB), RESOLVED_EVENT(
-			RESOLVED_EVENT_ATTRIB), COMMAND(COMMAND_ATTRIB);
+public enum MessageType {
+	EQUIPMENT_EVENT(MessagingConstants.EQUIP_EVENT_ATTRIB), NOTIFICATION(
+			MessagingConstants.NOTIFICATION_ATTRIB), STATUS(MessagingConstants.STATUS_ATTRIB), RESOLVED_EVENT(
+					MessagingConstants.RESOLVED_EVENT_ATTRIB), COMMAND(MessagingConstants.COMMAND_ATTRIB);
 
 	private String type;
 
@@ -23,15 +24,15 @@ public enum MessageType implements MessagingConstants {
 			return messageType;
 		}
 
-		if (type.equals(EQUIP_EVENT_ATTRIB)) {
+		if (type.equals(MessagingConstants.EQUIP_EVENT_ATTRIB)) {
 			messageType = MessageType.EQUIPMENT_EVENT;
-		} else if (type.equals(NOTIFICATION_ATTRIB)) {
+		} else if (type.equals(MessagingConstants.NOTIFICATION_ATTRIB)) {
 			messageType = MessageType.NOTIFICATION;
-		} else if (type.equals(STATUS_ATTRIB)) {
+		} else if (type.equals(MessagingConstants.STATUS_ATTRIB)) {
 			messageType = MessageType.STATUS;
-		} else if (type.equals(RESOLVED_EVENT_ATTRIB)) {
+		} else if (type.equals(MessagingConstants.RESOLVED_EVENT_ATTRIB)) {
 			messageType = MessageType.RESOLVED_EVENT;
-		} else if (type.equals(COMMAND_ATTRIB)) {
+		} else if (type.equals(MessagingConstants.COMMAND_ATTRIB)) {
 			messageType = MessageType.COMMAND;
 		}
 

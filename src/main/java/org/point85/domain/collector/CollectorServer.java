@@ -52,8 +52,8 @@ import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentEventResolver;
 import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.script.EventResolver;
-import org.point85.domain.script.OeeEventType;
 import org.point85.domain.script.OeeContext;
+import org.point85.domain.script.OeeEventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +76,7 @@ public class CollectorServer
 	private static final Logger logger = LoggerFactory.getLogger(CollectorServer.class);
 
 	// thread pool service
-	private ExecutorService executorService = Executors.newCachedThreadPool();
+	private final ExecutorService executorService = Executors.newCachedThreadPool();
 
 	// timer to broadcast status
 	private Timer heartbeatTimer;
@@ -88,7 +88,7 @@ public class CollectorServer
 	protected Gson gson;
 
 	// queue on each RMQ broker
-	private String queueName = getClass().getSimpleName();
+	private final String queueName = getClass().getSimpleName();
 
 	// script execution context
 	private OeeContext appContext;
@@ -105,10 +105,10 @@ public class CollectorServer
 	private String ip;
 
 	// data source information
-	private Map<String, OpcDaInfo> opcDaSubscriptionMap = new HashMap<>();
-	private Map<String, OpcUaInfo> opcUaSubscriptionMap = new HashMap<>();
-	private Map<String, HttpServerSource> httpServerMap = new HashMap<>();
-	private Map<String, MessageBrokerSource> messageBrokerMap = new HashMap<>();
+	private final Map<String, OpcDaInfo> opcDaSubscriptionMap = new HashMap<>();
+	private final Map<String, OpcUaInfo> opcUaSubscriptionMap = new HashMap<>();
+	private final Map<String, HttpServerSource> httpServerMap = new HashMap<>();
+	private final Map<String, MessageBrokerSource> messageBrokerMap = new HashMap<>();
 
 	// exception listener
 	private CollectorExceptionListener exceptionListener;
@@ -343,10 +343,8 @@ public class CollectorServer
 		states.add(CollectorState.RUNNING);
 		List<EventResolver> resolvers = PersistenceService.instance().fetchEventResolversByHost(hostNames, states);
 
-		if (resolvers.size() == 0) {
-			if (logger.isInfoEnabled()) {
-				logger.info("No resolvers found for hosts " + hostNames);
-			}
+		if (resolvers.isEmpty() && logger.isInfoEnabled()) {
+			logger.info("No resolvers found for hosts " + hostNames);
 		}
 
 		for (EventResolver resolver : resolvers) {
@@ -489,7 +487,7 @@ public class CollectorServer
 		List<DataCollector> ourCollectors = PersistenceService.instance().fetchCollectorsByHostAndState(hostNames,
 				states);
 
-		if (ourCollectors.size() > 0) {
+		if (!ourCollectors.isEmpty()) {
 			DataCollector ourCollector = ourCollectors.get(0);
 			collectors.add(ourCollector);
 
@@ -506,28 +504,30 @@ public class CollectorServer
 
 		for (DataCollector collector : collectors) {
 			String brokerHostName = collector.getBrokerHost();
+
+			if (brokerHostName == null) {
+				continue;
+			}
 			Integer brokerPort = collector.getBrokerPort();
 
-			if (brokerHostName != null) {
-				String key = brokerHostName + ":" + brokerPort;
+			String key = brokerHostName + ":" + brokerPort;
 
-				if (pubSubs.get(key) == null) {
-					// new publisher
-					PublisherSubscriber pubsub = new PublisherSubscriber();
-					pubSubs.put(key, pubsub);
+			if (pubSubs.get(key) == null) {
+				// new publisher
+				PublisherSubscriber pubsub = new PublisherSubscriber();
+				pubSubs.put(key, pubsub);
 
-					// connect to broker and subscribe for commands
-					List<RoutingKey> routingKeys = new ArrayList<>();
-					routingKeys.add(RoutingKey.COMMAND_MESSAGE);
+				// connect to broker and subscribe for commands
+				List<RoutingKey> routingKeys = new ArrayList<>();
+				routingKeys.add(RoutingKey.COMMAND_MESSAGE);
 
-					pubsub.connectAndSubscribe(brokerHostName, brokerPort, collector.getBrokerUserName(),
-							collector.getBrokerUserPassword(), queueName, false, routingKeys, this);
+				pubsub.connectAndSubscribe(brokerHostName, brokerPort, collector.getBrokerUserName(),
+						collector.getBrokerUserPassword(), queueName, false, routingKeys, this);
 
-					appContext.getPublisherSubscribers().add(pubsub);
+				appContext.getPublisherSubscribers().add(pubsub);
 
-					if (logger.isInfoEnabled()) {
-						logger.info("Connected to RMQ broker " + key + " for collector " + collector.getName());
-					}
+				if (logger.isInfoEnabled()) {
+					logger.info("Connected to RMQ broker " + key + " for collector " + collector.getName());
 				}
 			}
 		}
@@ -794,10 +794,12 @@ public class CollectorServer
 
 	@Override
 	public void onOpcUaRead(List<DataValue> dataValues) {
+		// no asynch read
 	}
 
 	@Override
 	public void onOpcUaWrite(List<StatusCode> statusCodes) {
+		// no asynch write
 	}
 
 	@Override
@@ -812,7 +814,7 @@ public class CollectorServer
 	}
 
 	public void onException(String preface, Exception any) {
-		// stack trace
+		// dump stack trace to log
 		any.printStackTrace();
 
 		// notify monitors
@@ -870,11 +872,11 @@ public class CollectorServer
 
 	// subscribed OPC DA items by source
 	private class OpcDaInfo {
-		private OpcDaSource source;
+		private final OpcDaSource source;
 
-		private Map<String, List<TagItemInfo>> subscribedItems = new HashMap<>();
+		private final Map<String, List<TagItemInfo>> subscribedItems = new HashMap<>();
 
-		private OpcDaInfo(OpcDaSource source) {
+		OpcDaInfo(OpcDaSource source) {
 			this.source = source;
 		}
 
@@ -899,17 +901,20 @@ public class CollectorServer
 
 	// subscribed OPC UA nodes by source
 	private class OpcUaInfo {
-		private OpcUaSource source;
+		private final OpcUaSource source;
 
-		private List<NodeId> monitoredNodes = new ArrayList<>();
+		private List<NodeId> monitoredNodes;
 
 		private double publishingInteval = Double.MAX_VALUE;
 
-		private OpcUaInfo(OpcUaSource source) {
+		OpcUaInfo(OpcUaSource source) {
 			this.source = source;
 		}
 
 		private List<NodeId> getMonitoredNodes() {
+			if (monitoredNodes == null) {
+				monitoredNodes = new ArrayList<>();
+			}
 			return monitoredNodes;
 		}
 
@@ -928,9 +933,9 @@ public class CollectorServer
 
 	// RMQ brokers
 	private class MessageBrokerSource {
-		private MessagingSource source;
+		private final MessagingSource source;
 
-		private MessageBrokerSource(MessagingSource source) {
+		MessageBrokerSource(MessagingSource source) {
 			this.source = source;
 		}
 
@@ -941,9 +946,9 @@ public class CollectorServer
 
 	// HTTP servers
 	private class HttpServerSource {
-		private HttpSource source;
+		private final HttpSource source;
 
-		private HttpServerSource(HttpSource source) {
+		HttpServerSource(HttpSource source) {
 			this.source = source;
 		}
 
@@ -954,11 +959,11 @@ public class CollectorServer
 
 	// handle the HTTP callback
 	private class HttpTask implements Runnable {
-		private String sourceId;
-		private String dataValue;
-		private OffsetDateTime timestamp;
+		private final String sourceId;
+		private final String dataValue;
+		private final OffsetDateTime timestamp;
 
-		private HttpTask(String sourceId, String dataValue, OffsetDateTime timestamp) {
+		HttpTask(String sourceId, String dataValue, OffsetDateTime timestamp) {
 			this.sourceId = sourceId;
 			this.dataValue = dataValue;
 			this.timestamp = timestamp;
@@ -990,10 +995,10 @@ public class CollectorServer
 
 	// handle the OPC UA callback
 	private class OpcUaTask implements Runnable {
-		private DataValue dataValue;
-		private UaMonitoredItem item;
+		private final DataValue dataValue;
+		private final UaMonitoredItem item;
 
-		private OpcUaTask(DataValue dataValue, UaMonitoredItem item) {
+		OpcUaTask(DataValue dataValue, UaMonitoredItem item) {
 			this.dataValue = dataValue;
 			this.item = item;
 		}
@@ -1074,9 +1079,9 @@ public class CollectorServer
 
 	// handle the OPC DA callback
 	private class OpcDaTask implements Runnable {
-		private OpcDaMonitoredItem item;
+		private final OpcDaMonitoredItem item;
 
-		private OpcDaTask(OpcDaMonitoredItem item) {
+		OpcDaTask(OpcDaMonitoredItem item) {
 			this.item = item;
 		}
 
@@ -1125,11 +1130,11 @@ public class CollectorServer
 	/********************* MessageHandler ***********************************/
 	private class MessageTask implements Runnable {
 
-		private Channel channel;
-		private Envelope envelope;
-		private ApplicationMessage message;
+		private final Channel channel;
+		private final Envelope envelope;
+		private final ApplicationMessage message;
 
-		private MessageTask(Channel channel, Envelope envelope, ApplicationMessage message) {
+		MessageTask(Channel channel, Envelope envelope, ApplicationMessage message) {
 			this.envelope = envelope;
 			this.message = message;
 			this.channel = channel;
@@ -1190,9 +1195,9 @@ public class CollectorServer
 	/********************* MessageHandler ***********************************/
 	private class MessageSender implements Runnable {
 
-		private PublisherSubscriber pubsub;
-		private ApplicationMessage message;
-		private RoutingKey routingKey;
+		private final PublisherSubscriber pubsub;
+		private final ApplicationMessage message;
+		private final RoutingKey routingKey;
 
 		MessageSender(PublisherSubscriber pubsub, ApplicationMessage message, RoutingKey routingKey) {
 			this.message = message;

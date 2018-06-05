@@ -18,9 +18,13 @@ import org.point85.domain.uom.Quantity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class EquipmentLossManager {
+public final class EquipmentLossManager {
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(EquipmentLossManager.class);
+	
+	private EquipmentLossManager() {
+		
+	}
 
 	public static void calculateEquipmentLoss(EquipmentLoss equipmentLoss, OffsetDateTime from, OffsetDateTime to)
 			throws Exception {

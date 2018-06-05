@@ -5,10 +5,6 @@ import java.util.List;
 public class DataSourceResponseDto {
 	private List<DataSourceDto> dataSourceList;
 
-	public DataSourceResponseDto() {
-
-	}
-
 	public DataSourceResponseDto(List<DataSourceDto> dataSourceList) {
 		this.dataSourceList = dataSourceList;
 	}

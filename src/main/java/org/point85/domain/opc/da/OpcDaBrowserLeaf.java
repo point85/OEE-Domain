@@ -14,11 +14,11 @@ public class OpcDaBrowserLeaf {
 
 	private OpcDaVariant dataType;
 
-	private Leaf leaf;
+	private final Leaf leaf;
 
 	private Collection<PropertyDescription> properties;
 
-	private OPCItemProperties propertyManager;
+	private final OPCItemProperties propertyManager;
 
 	public OpcDaBrowserLeaf(Leaf leaf, OPCItemProperties propertyManager) {
 		this.leaf = leaf;
@@ -62,9 +62,7 @@ public class OpcDaBrowserLeaf {
 	}
 
 	public LinkedList<String> getAccesspath() {
-		LinkedList<String> stack = (LinkedList<String>) getLeaf().getParent().getBranchStack();
-
-		return stack;
+		return (LinkedList<String>) getLeaf().getParent().getBranchStack();
 	}
 
 	public String getName() {
@@ -85,8 +83,7 @@ public class OpcDaBrowserLeaf {
 	}
 
 	public static String[] getPath(String pathName) {
-		String[] tokens = pathName.split(PATH_DELIMITERS);
-		return tokens;
+		return pathName.split(PATH_DELIMITERS);
 	}
 
 	public OpcDaVariant getDataType() {

@@ -6,13 +6,9 @@ package org.point85.domain.opc.da;
 
 import org.openscada.opc.dcom.da.OPCGroupState;
 
-/**
- *
- * @author Kent Randall
- */
 public class OpcDaGroupState {
 
-    private OPCGroupState groupState;
+    private final OPCGroupState groupState;
 
     public OpcDaGroupState() {
         groupState = new OPCGroupState();

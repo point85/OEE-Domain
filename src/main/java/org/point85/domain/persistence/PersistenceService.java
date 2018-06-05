@@ -30,7 +30,6 @@ import org.point85.domain.collector.DataSourceType;
 import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.messaging.MessagingSource;
-import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.opc.da.OpcDaSource;
 import org.point85.domain.opc.ua.OpcUaSource;
 import org.point85.domain.plant.Area;
@@ -57,8 +56,13 @@ import org.point85.domain.uom.Unit;
 import org.point85.domain.uom.UnitOfMeasure;
 import org.point85.domain.uom.UnitOfMeasure.MeasurementType;
 import org.point85.domain.uom.UnitType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PersistenceService {
+	// logger
+	private static final Logger logger = LoggerFactory.getLogger(PersistenceService.class);
+
 	// persistence unit name for
 	private static final String PU_NAME = "OEE";
 
@@ -90,11 +94,14 @@ public class PersistenceService {
 		// create EM on a a background thread
 		emfFuture = CompletableFuture.supplyAsync(() -> {
 			try {
+				// create the EMF
 				createContainerManagedEntityManagerFactory(jdbcUrl, userName, password);
 
+				// cache base UOms
 				primeUomCache();
 			} catch (Exception e) {
-				e.printStackTrace();
+				logger.error(e.getMessage());
+				;
 			}
 			return emf;
 		});
@@ -118,7 +125,7 @@ public class PersistenceService {
 			try {
 				emf = emfFuture.get(EMF_CREATION_TO_SEC, TimeUnit.SECONDS);
 			} catch (Exception e) {
-				e.printStackTrace();
+				logger.error(e.getMessage());
 			} finally {
 				emfFuture = null;
 			}
@@ -227,7 +234,6 @@ public class PersistenceService {
 			// roll back transaction
 			if (txn != null && txn.isActive()) {
 				txn.rollback();
-				e.printStackTrace();
 			}
 			throw new Exception(e.getMessage());
 		} finally {
@@ -259,7 +265,6 @@ public class PersistenceService {
 			// roll back transaction
 			if (txn != null && txn.isActive()) {
 				txn.rollback();
-				e.printStackTrace();
 			}
 			throw new Exception(e.getMessage());
 		} finally {
@@ -384,7 +389,6 @@ public class PersistenceService {
 			// roll back transaction
 			if (txn != null && txn.isActive()) {
 				txn.rollback();
-				e.printStackTrace();
 			}
 			throw new Exception(e.getMessage());
 		} finally {
@@ -1095,13 +1099,12 @@ public class PersistenceService {
 
 		if (namedQueryMap.get(AVAIL_RECORDS) == null) {
 			createNamedQuery(AVAIL_RECORDS,
-					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type AND e.reason.timeLoss != :loss "
+					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type "
 							+ "AND (e.startTime >= :from AND e.startTime < :to) ORDER BY e.startTime ASC");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(AVAIL_RECORDS, OeeEvent.class);
 		query.setParameter("type", OeeEventType.AVAILABILITY);
-		query.setParameter("loss", TimeLoss.NO_LOSS);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from);
 		query.setParameter("to", to);
@@ -1192,7 +1195,7 @@ public class PersistenceService {
 	public int purge(Equipment equipment, OffsetDateTime cutoff) throws Exception {
 		EntityManager em = getEntityManager();
 
-		// preserver setup records
+		// preserve active setup records
 		final String PURGE_OEE = "Oee.Purge";
 
 		if (namedQueryMap.get(PURGE_OEE) == null) {
@@ -1205,6 +1208,19 @@ public class PersistenceService {
 		purgeOee.setParameter("cutoff", cutoff);
 		purgeOee.setParameter("type", OeeEventType.MATL_CHANGE);
 
+		// purge inactive setup records
+		final String PURGE_MATL = "Matl.Purge";
+
+		if (namedQueryMap.get(PURGE_MATL) == null) {
+			createNamedQuery(PURGE_MATL,
+					"DELETE FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type AND e.endTime IS NOT NULL AND e.endTime < :cutoff");
+		}
+
+		Query purgeMaterial = em.createNamedQuery(PURGE_MATL);
+		purgeMaterial.setParameter("cutoff", cutoff);
+		purgeMaterial.setParameter("equipment", equipment);
+		purgeMaterial.setParameter("type", OeeEventType.MATL_CHANGE);
+
 		EntityTransaction txn = null;
 
 		try {
@@ -1212,8 +1228,9 @@ public class PersistenceService {
 			txn = em.getTransaction();
 			txn.begin();
 
-			// execute the delete
+			// execute the deletions
 			int deletedCount = purgeOee.executeUpdate();
+			purgeMaterial.executeUpdate();
 
 			// commit transaction
 			txn.commit();
@@ -1223,7 +1240,6 @@ public class PersistenceService {
 			// roll back transaction
 			if (txn != null && txn.isActive()) {
 				txn.rollback();
-				e.printStackTrace();
 			}
 			throw new Exception(e.getMessage());
 		} finally {

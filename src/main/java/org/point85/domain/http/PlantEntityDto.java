@@ -16,7 +16,7 @@ public class PlantEntityDto extends NamedDto {
 
 	public PlantEntityDto(String name, String description, String level) {
 		super(name, description);
-		this.setLevel(level);
+		this.level = level;
 	}
 
 	public List<PlantEntityDto> getChildren() {

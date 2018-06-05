@@ -1,7 +1,4 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package org.point85.domain.opc.da;
 
 import java.util.ArrayList;
@@ -34,25 +31,20 @@ import org.openscada.opc.dcom.da.impl.OPCSyncIO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Runtime monitored group
- * 
- * @author Kent Randall
- */
 public class OpcDaMonitoredGroup {
 
 	// logging utility
 	private static final Logger logger = LoggerFactory.getLogger(OpcDaMonitoredGroup.class);
 
-	private OPCGroupStateMgt groupManager;
-	private Map<Integer, OpcDaMonitoredItem> itemMap = new HashMap<>();
+	private final OPCGroupStateMgt groupManager;
+	private final Map<Integer, OpcDaMonitoredItem> itemMap = new HashMap<>();
 	private EventHandler eventHandler;
-	private Random intGenerator = new Random(System.currentTimeMillis());
-	private int clientHandle;
+	private final Random intGenerator = new Random(System.currentTimeMillis());
+	private final int clientHandle;
 	private Integer[] serverHandles;
 
 	// list of data change listeners
-	private List<OpcDaDataChangeListener> listeners;
+	private final List<OpcDaDataChangeListener> listeners;
 
 	public OpcDaMonitoredGroup(OPCGroupStateMgt groupManager, int clientHandle) {
 		this.groupManager = groupManager;
@@ -65,6 +57,7 @@ public class OpcDaMonitoredGroup {
 		try {
 			name = getGroupManager().getState().getName();
 		} catch (Exception e) {
+			logger.error(e.getMessage());
 		}
 		return name;
 	}
@@ -102,14 +95,13 @@ public class OpcDaMonitoredGroup {
 		for (int i = 0; i < itemIds.length; i++) {
 			OPCITEMDEF opcItemDef = new OPCITEMDEF();
 			opcItemDef.setItemID(itemIds[i].getItemId());
-			//opcItemDef.setAccessPath(itemIds[i].getPathName());
 
 			clientHandles[i] = intGenerator.nextInt();
 			opcItemDef.setClientHandle(clientHandles[i]);
 			opcItemDefs.add(opcItemDef);
 		}
 
-		OPCITEMDEF[] itemDefArray = opcItemDefs.toArray(new OPCITEMDEF[itemIds.length]);
+		OPCITEMDEF[] itemDefArray = opcItemDefs.toArray(new OPCITEMDEF[opcItemDefs.size()]);
 
 		// validate
 		KeyedResultSet<OPCITEMDEF, OPCITEMRESULT> result = itemManager.validate(itemDefArray);
@@ -163,6 +155,7 @@ public class OpcDaMonitoredGroup {
 
 		// set client handles
 		ResultSet<Integer> handleSet = itemManager.setClientHandles(serverHandles, clientHandles);
+
 		for (Result<Integer> resultEntry : handleSet) {
 			if (resultEntry.getErrorCode() != 0) {
 				String msg = String.format("Item: %08X, Error: %08X", resultEntry.getValue(),
@@ -203,6 +196,7 @@ public class OpcDaMonitoredGroup {
 
 		WriteRequest[] writeRequests = new WriteRequest[daItems.length];
 		Integer[] serverHandles = new Integer[daItems.length];
+		
 		for (int i = 0; i < daItems.length; i++) {
 			if (result.get(i).getErrorCode() != 0) {
 				throw new JIException(result.get(i).getErrorCode());
@@ -216,6 +210,7 @@ public class OpcDaMonitoredGroup {
 		// Perform write
 		OPCSyncIO syncIO = groupManager.getSyncIO();
 		ResultSet<WriteRequest> writeResults = syncIO.write(writeRequests);
+		
 		for (int i = 0; i < daItems.length; i++) {
 			Result<WriteRequest> writeResult = writeResults.get(i);
 
@@ -256,8 +251,7 @@ public class OpcDaMonitoredGroup {
 
 	public KeyedResultSet<Integer, OPCITEMSTATE> synchRead() throws Exception {
 		OPCSyncIO syncIO = groupManager.getSyncIO();
-		KeyedResultSet<Integer, OPCITEMSTATE> itemState = syncIO.read(OPCDATASOURCE.OPC_DS_DEVICE, serverHandles);
-		return itemState;
+		return syncIO.read(OPCDATASOURCE.OPC_DS_DEVICE, serverHandles);
 	}
 
 	@Override

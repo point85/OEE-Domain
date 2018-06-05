@@ -47,7 +47,7 @@ public class OeeHttpServer extends NanoHTTPD {
 	private HttpEventListener eventListener;
 
 	// JSON parser
-	private Gson gson = new Gson();
+	private final Gson gson = new Gson();
 
 	// server state
 	public enum ServerState {
@@ -71,8 +71,6 @@ public class OeeHttpServer extends NanoHTTPD {
 	public void startup() throws Exception {
 		start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
 		state = ServerState.STARTED;
-		// execute server on its own thread
-		// executorService.execute(() -> ServerRunner.executeInstance(this));
 	}
 
 	public void shutdown() {
@@ -224,10 +222,8 @@ public class OeeHttpServer extends NanoHTTPD {
 		session.parseBody(bodyMap);
 		String body = session.getQueryParameterString();
 
-		if (body != null && body.length() > 0) {
-			if (logger.isInfoEnabled()) {
+		if (body != null && body.length() > 0 && logger.isInfoEnabled()) {
 				logger.info("    Body: " + body);
-			}
 		}
 		return bodyMap;
 	}

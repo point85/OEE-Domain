@@ -6,12 +6,12 @@ public class NamedDto {
 	private String description;
 	
 	protected NamedDto() {
-		
+		// nothing to do
 	}
 	
 	protected NamedDto(String name, String description) {
-		this.setName(name);
-		this.setDescription(description);	
+		this.name = name;
+		this.description = description;	
 	}
 	
 	public String getName() {

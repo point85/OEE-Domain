@@ -82,7 +82,7 @@ public class OeeEvent extends KeyedObject {
 	private transient Object outputValue;
 
 	public OeeEvent() {
-
+		super();
 	}
 
 	public OeeEvent(Equipment equipment) {
@@ -224,20 +224,21 @@ public class OeeEvent extends KeyedObject {
 	}
 
 	public boolean isProduction() {
+		boolean isProduction = false;
+
 		if (eventType.equals(OeeEventType.PROD_GOOD) || eventType.equals(OeeEventType.PROD_REJECT)
 				|| eventType.equals(OeeEventType.PROD_STARTUP)) {
-			return true;
-		} else {
-			return false;
+			isProduction = true;
 		}
+		return isProduction;
 	}
 
 	public boolean isSetup() {
+		boolean isSetup = false;
 		if (eventType.equals(OeeEventType.MATL_CHANGE) || eventType.equals(OeeEventType.JOB_CHANGE)) {
-			return true;
-		} else {
-			return false;
+			isSetup = true;
 		}
+		return isSetup;
 	}
 
 	@Override

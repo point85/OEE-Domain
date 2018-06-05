@@ -18,12 +18,16 @@ import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.uom.MeasurementSystem;
 import org.point85.domain.uom.UnitOfMeasure;
 
-public class DomainUtils {
+public final class DomainUtils {
 	// folder with configuration files
 	public static final String CONFIG_DIR = "config_dir";
 
 	// pattern for OffsetDateTime conversion
 	private static final String OFFSET_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS ZZZZZ";
+	
+	private DomainUtils() {
+		
+	}
 
 	// format a Duration
 	public static String formatDuration(Duration duration) {
@@ -72,19 +76,17 @@ public class DomainUtils {
 	}
 
 	// create a UTC OffsetDateTime from the DateTime
-	public static synchronized OffsetDateTime utcTimeFromDateTime(DateTime dateTime) {
+	public static OffsetDateTime utcTimeFromDateTime(DateTime dateTime) {
 		long epochMillis = dateTime.getJavaTime();
 		Instant instant = Instant.ofEpochMilli(epochMillis);
-		OffsetDateTime time = OffsetDateTime.ofInstant(instant, ZoneId.of("Z"));
-		return time;
+		return OffsetDateTime.ofInstant(instant, ZoneId.of("Z"));
 	}
 
 	// create a local OffsetDateTime from the DateTime
-	public static synchronized OffsetDateTime localTimeFromDateTime(DateTime dateTime) {
+	public static OffsetDateTime localTimeFromDateTime(DateTime dateTime) {
 		long epochMillis = dateTime.getJavaTime();
 		Instant instant = Instant.ofEpochMilli(epochMillis);
-		OffsetDateTime time = OffsetDateTime.ofInstant(instant, ZoneId.systemDefault());
-		return time;
+		return OffsetDateTime.ofInstant(instant, ZoneId.systemDefault());
 	}
 
 	public static OffsetDateTime fromLocalDateTime(LocalDateTime ldt) {
@@ -120,8 +122,7 @@ public class DomainUtils {
 	public static OffsetDateTime fromFiletime(FILETIME filetime) {
 		Calendar cal = filetime.asCalendar();
 		Instant instant = Instant.ofEpochMilli(cal.getTime().getTime());
-		OffsetDateTime odt = OffsetDateTime.ofInstant(instant, cal.getTimeZone().toZoneId());
-		return odt;
+		return OffsetDateTime.ofInstant(instant, cal.getTimeZone().toZoneId());
 	}
 
 	// encode the string in base64

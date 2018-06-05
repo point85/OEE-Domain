@@ -16,17 +16,15 @@ public class ApplicationMessage {
 
 	// time message sent
 	private String timestamp;
-	
+
 	protected ApplicationMessage(MessageType messageType) {
-		this.setMessageType(messageType);
-		this.setTimestamp(OffsetDateTime.now());
+		this.messageType = messageType;
 	}
 
-	protected ApplicationMessage(String senderHostName,  String senderHostAddress, MessageType messageType) {
-		this.setMessageType(messageType);
-		this.setSenderHostName(senderHostName);
-		this.setSenderHostAddress(senderHostAddress);
-		this.setTimestamp(OffsetDateTime.now());
+	protected ApplicationMessage(String senderHostName, String senderHostAddress, MessageType messageType) {
+		this.messageType = messageType;
+		this.senderHostName = senderHostName;
+		this.senderHostAddress = senderHostAddress;
 	}
 
 	public MessageType getMessageType() {
@@ -68,6 +66,9 @@ public class ApplicationMessage {
 	}
 
 	public String getTimestamp() {
+		if (timestamp == null) {
+			setTimestamp(OffsetDateTime.now());
+		}
 		return timestamp;
 	}
 

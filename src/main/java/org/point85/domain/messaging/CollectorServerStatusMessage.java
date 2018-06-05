@@ -12,9 +12,9 @@ public class CollectorServerStatusMessage extends ApplicationMessage {
 	private double freeMemory = 0.0;
 	private double processCpuLoad = 0.0;
 
-	public CollectorServerStatusMessage(String senderHostName,  String senderHostAddress) {
+	public CollectorServerStatusMessage(String senderHostName, String senderHostAddress) throws Exception {
 		super(senderHostName, senderHostAddress, MessageType.STATUS);
-		
+
 		// calculate memory and CPU
 		this.setMemoryUsage();
 		this.setProcessCpuLoad();
@@ -27,16 +27,11 @@ public class CollectorServerStatusMessage extends ApplicationMessage {
 		freeMemory = runtime.freeMemory() / MB;
 	}
 
-	private void setProcessCpuLoad() {
-		try {			
-			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();			
-			ObjectName oname = new ObjectName(ManagementFactory.OPERATING_SYSTEM_MXBEAN_NAME);
-			
-			processCpuLoad = (Double) mbs.getAttribute(oname, "ProcessCpuLoad");
-						
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	private void setProcessCpuLoad() throws Exception {
+		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+		ObjectName oname = new ObjectName(ManagementFactory.OPERATING_SYSTEM_MXBEAN_NAME);
+
+		processCpuLoad = (Double) mbs.getAttribute(oname, "ProcessCpuLoad");
 	}
 
 	public double getUsedMemory() {

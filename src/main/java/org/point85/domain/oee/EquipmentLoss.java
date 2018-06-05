@@ -34,10 +34,10 @@ public class EquipmentLoss {
 	private OffsetDateTime endDateTime;
 
 	// map of losses
-	private Map<TimeLoss, Duration> lossMap = new HashMap<>();
+	private final Map<TimeLoss, Duration> lossMap = new HashMap<>();
 
 	// map of reasons
-	private Map<TimeLoss, Map<Reason, Duration>> reasonMap = new HashMap<>();
+	private final Map<TimeLoss, Map<Reason, Duration>> reasonMap = new HashMap<>();
 
 	// quantities produced
 	private Quantity goodQuantity;
@@ -57,16 +57,16 @@ public class EquipmentLoss {
 
 	private void resetLosses() {
 		// summary losses
-		setLoss(TimeLoss.NO_LOSS, Duration.ZERO);
-		setLoss(TimeLoss.UNSCHEDULED, Duration.ZERO);
-		setLoss(TimeLoss.MINOR_STOPPAGES, Duration.ZERO);
-		setLoss(TimeLoss.PLANNED_DOWNTIME, Duration.ZERO);
-		setLoss(TimeLoss.REDUCED_SPEED, Duration.ZERO);
-		setLoss(TimeLoss.REJECT_REWORK, Duration.ZERO);
-		setLoss(TimeLoss.SETUP, Duration.ZERO);
-		setLoss(TimeLoss.UNPLANNED_DOWNTIME, Duration.ZERO);
-		setLoss(TimeLoss.NOT_SCHEDULED, Duration.ZERO);
-		setLoss(TimeLoss.STARTUP_YIELD, Duration.ZERO);
+		lossMap.put(TimeLoss.NO_LOSS, Duration.ZERO);
+		lossMap.put(TimeLoss.UNSCHEDULED, Duration.ZERO);
+		lossMap.put(TimeLoss.MINOR_STOPPAGES, Duration.ZERO);
+		lossMap.put(TimeLoss.PLANNED_DOWNTIME, Duration.ZERO);
+		lossMap.put(TimeLoss.REDUCED_SPEED, Duration.ZERO);
+		lossMap.put(TimeLoss.REJECT_REWORK, Duration.ZERO);
+		lossMap.put(TimeLoss.SETUP, Duration.ZERO);
+		lossMap.put(TimeLoss.UNPLANNED_DOWNTIME, Duration.ZERO);
+		lossMap.put(TimeLoss.NOT_SCHEDULED, Duration.ZERO);
+		lossMap.put(TimeLoss.STARTUP_YIELD, Duration.ZERO);
 
 		// reason losses
 		reasonMap.put(TimeLoss.NO_LOSS, new HashMap<>());
@@ -122,8 +122,7 @@ public class EquipmentLoss {
 	private ParetoItem fromLossCategory(TimeLoss category, Unit timeUnit) throws Exception {
 		Number loss = convertSeconds(getLoss(category).getSeconds(), timeUnit);
 
-		ParetoItem item = new ParetoItem(category.toString(), loss);
-		return item;
+		return new ParetoItem(category.toString(), loss);
 	}
 
 	public Duration getDuration() {
@@ -138,7 +137,7 @@ public class EquipmentLoss {
 		return lossMap.get(category);
 	}
 
-	public void setLoss(TimeLoss category, Duration duration) {
+	void setLoss(TimeLoss category, Duration duration) {
 		lossMap.put(category, duration);
 	}
 
@@ -278,9 +277,7 @@ public class EquipmentLoss {
 		// multiplier on NPT
 		double npt = getNetProductionTime().getSeconds();
 		Quantity q = idealSpeed.subtract(actualSpeed).divide(idealSpeed).multiply(npt);
-		Duration duration = Duration.ofSeconds((long) q.getAmount());
-
-		return duration;
+		return Duration.ofSeconds((long) q.getAmount());
 	}
 
 	public void calculateReducedSpeedLoss() throws Exception {
@@ -395,8 +392,7 @@ public class EquipmentLoss {
 		Quantity timeQty = quantity.divide(irr).convert(Unit.SECOND);
 		long seconds = Double.valueOf(timeQty.getAmount()).longValue();
 
-		Duration duration = Duration.ofSeconds(seconds);
-		return duration;
+		return Duration.ofSeconds(seconds);
 	}
 
 	public Quantity getDesignSpeedQuantity() {

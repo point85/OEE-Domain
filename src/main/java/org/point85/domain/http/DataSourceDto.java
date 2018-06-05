@@ -8,10 +8,6 @@ public class DataSourceDto {
 	private Integer port;
 	private String description;
 
-	public DataSourceDto() {
-
-	}
-
 	public DataSourceDto(CollectorDataSource source) {
 		this.name = source.getName();
 		this.host = source.getHost();
