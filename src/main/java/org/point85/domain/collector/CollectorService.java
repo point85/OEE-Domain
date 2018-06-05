@@ -61,7 +61,7 @@ import com.google.gson.Gson;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 
-public class CollectorServer
+public class CollectorService
 		implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener, MessageListener {
 	// msec between status checks
 	private static final long HEARTBEAT_SEC = 60;
@@ -73,7 +73,7 @@ public class CollectorServer
 	private static final int STATUS_TTL_SEC = 3600;
 
 	// logger
-	private static final Logger logger = LoggerFactory.getLogger(CollectorServer.class);
+	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
 
 	// thread pool service
 	private final ExecutorService executorService = Executors.newCachedThreadPool();
@@ -115,7 +115,7 @@ public class CollectorServer
 
 	private boolean webContainer = false;
 
-	public CollectorServer() {
+	public CollectorService() {
 		initialize();
 	}
 
@@ -553,7 +553,7 @@ public class CollectorServer
 		Integer ttl = null;
 
 		if (severity.equals(NotificationSeverity.INFO)) {
-			ttl = CollectorServer.STATUS_TTL_SEC;
+			ttl = CollectorService.STATUS_TTL_SEC;
 		}
 
 		for (PublisherSubscriber pubSub : appContext.getPublisherSubscribers()) {

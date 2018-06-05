@@ -151,7 +151,7 @@ public class Quantity {
 	public boolean equals(Object other) {
 		boolean answer = false;
 
-		if (other != null && other instanceof Quantity) {
+		if (other instanceof Quantity) {
 			Quantity otherQuantity = (Quantity) other;
 
 			// same amount and same unit of measure
@@ -303,8 +303,7 @@ public class Quantity {
 	public Quantity subtract(Quantity other) throws Exception {
 		Quantity toSubtract = other.convert(getUOM());
 		double amount = getAmount() - toSubtract.getAmount();
-		Quantity quantity = new Quantity(amount, this.getUOM());
-		return quantity;
+		return new Quantity(amount, this.getUOM());
 	}
 
 	/**
@@ -319,8 +318,7 @@ public class Quantity {
 	public Quantity add(Quantity other) throws Exception {
 		Quantity toAdd = other.convert(getUOM());
 		double amount = getAmount() + toAdd.getAmount();
-		Quantity quantity = new Quantity(amount, this.getUOM());
-		return quantity;
+		return new Quantity(amount, this.getUOM());
 	}
 
 	/**
@@ -342,8 +340,7 @@ public class Quantity {
 		double amount = getAmount() / toDivide.getAmount();
 		UnitOfMeasure newUOM = getUOM().divide(toDivide.getUOM());
 
-		Quantity quantity = new Quantity(amount, newUOM);
-		return quantity;
+		return new Quantity(amount, newUOM);
 	}
 
 	/**
@@ -357,8 +354,7 @@ public class Quantity {
 	 */
 	public Quantity divide(double divisor) throws Exception {
 		double amount = getAmount() / divisor;
-		Quantity quantity = new Quantity(amount, getUOM());
-		return quantity;
+		return new Quantity(amount, getUOM());
 	}
 
 	/**
@@ -376,8 +372,7 @@ public class Quantity {
 		double amount = getAmount() * toMultiply.getAmount();
 		UnitOfMeasure newUOM = getUOM().multiply(toMultiply.getUOM());
 
-		Quantity quantity = new Quantity(amount, newUOM);
-		return quantity;
+		return new Quantity(amount, newUOM);
 	}
 
 	/**
@@ -393,8 +388,7 @@ public class Quantity {
 		double amount = Math.pow(getAmount(), exponent);
 		UnitOfMeasure newUOM = MeasurementSystem.instance().createPowerUOM(getUOM(), exponent);
 
-		Quantity quantity = new Quantity(amount, newUOM);
-		return quantity;
+		return new Quantity(amount, newUOM);
 	}
 
 	/**
@@ -408,8 +402,7 @@ public class Quantity {
 	 */
 	public Quantity multiply(double multiplier) throws Exception {
 		double amount = getAmount() * multiplier;
-		Quantity quantity = new Quantity(amount, getUOM());
-		return quantity;
+		return new Quantity(amount, getUOM());
 	}
 
 	/**
@@ -424,8 +417,7 @@ public class Quantity {
 		double amount = 1.0d / getAmount();
 		UnitOfMeasure uom = getUOM().invert();
 
-		Quantity quantity = new Quantity(amount, uom);
-		return quantity;
+		return new Quantity(amount, uom);
 	}
 
 	/**
@@ -470,7 +462,6 @@ public class Quantity {
 	 */
 	public Quantity convertToPowerProduct(UnitOfMeasure uom1, UnitOfMeasure uom2) throws Exception {
 		UnitOfMeasure newUOM = getUOM().clonePowerProduct(uom1, uom2);
-
 		return convert(newUOM);
 	}
 

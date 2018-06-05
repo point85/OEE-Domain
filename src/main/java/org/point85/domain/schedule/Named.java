@@ -48,12 +48,12 @@ abstract class Named extends KeyedObject {
 	private String description;
 	
 	protected Named() {
-		
+		// nothing to initialize
 	}
 
 	protected Named(String name, String description) throws Exception {
-		setName(name);
-		setDescription(description);
+		this.name = name;
+		this.description = description;
 	}
 
 	/**
@@ -107,7 +107,7 @@ abstract class Named extends KeyedObject {
 	@Override
 	public boolean equals(Object other) {
 
-		if (other == null || !(other instanceof Named)) {
+		if (!(other instanceof Named)) {
 			return false;
 		}
 

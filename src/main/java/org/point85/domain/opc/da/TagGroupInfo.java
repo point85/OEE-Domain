@@ -13,10 +13,10 @@ public class TagGroupInfo {
 	private int updatePeriod = EventResolver.DEFAULT_UPDATE_PERIOD;
 
 	// list of tag information
-	private List<TagItemInfo> tagItems = new ArrayList<>();
+	private final List<TagItemInfo> tagItems = new ArrayList<>();
 
 	public TagGroupInfo(String name) {
-		this.setGroupName(name);
+		this.groupName = name;
 	}
 
 	public List<TagItemInfo> getTagItems() {

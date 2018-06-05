@@ -13,12 +13,8 @@ public class ResolverFunction {
 	private List<String> arguments;
 	private String body;
 
-	public ResolverFunction(String script) throws Exception {
-		if (script == null) {
-			return;
-		}
-
-		setScriptFunction(script);
+	public ResolverFunction(String script) {
+		this.scriptFunction = script;
 	}
 
 	private void parseFunction() throws Exception {

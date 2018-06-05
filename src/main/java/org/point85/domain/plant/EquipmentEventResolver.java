@@ -34,15 +34,16 @@ public class EquipmentEventResolver {
 	public static final String SCRIPT_ENGINE_NAME = "nashorn";
 
 	// reason cache
-	private ConcurrentMap<String, Reason> reasonCache = new ConcurrentHashMap<>();
+	private final ConcurrentMap<String, Reason> reasonCache = new ConcurrentHashMap<>();
 
 	// material cache
-	private ConcurrentMap<String, Material> materialCache = new ConcurrentHashMap<>();
+	private final ConcurrentMap<String, Material> materialCache = new ConcurrentHashMap<>();
 
 	// resolvers by source id
-	private ConcurrentMap<Equipment, List<EventResolver>> resolverCache = new ConcurrentHashMap<>();
+	private final ConcurrentMap<Equipment, List<EventResolver>> resolverCache = new ConcurrentHashMap<>();
 
-	private ScriptEngine scriptEngine;
+	//  engine to evaluate java script
+	private final ScriptEngine scriptEngine;
 
 	public EquipmentEventResolver() {
 		scriptEngine = new ScriptEngineManager().getEngineByName(SCRIPT_ENGINE_NAME);
@@ -170,7 +171,7 @@ public class EquipmentEventResolver {
 		if (schedule != null) {
 			List<ShiftInstance> shiftInstances = schedule.getShiftInstancesForTime(dateTime.toLocalDateTime());
 
-			if (shiftInstances.size() > 0) {
+			if (!shiftInstances.isEmpty()) {
 				// pick first one
 				shift = shiftInstances.get(0).getShift();
 			}
@@ -267,22 +268,24 @@ public class EquipmentEventResolver {
 		}
 
 		// get UOM from material and equipment
-		if (material == null) {
+		Material producedMaterial = material;
+		
+		if (producedMaterial == null) {
 			EquipmentMaterial eqm = resolvedItem.getEquipment().getDefaultEquipmentMaterial();
 
 			if (eqm != null) {
-				material = eqm.getMaterial();
+				producedMaterial = eqm.getMaterial();
 
 				// set material into context too
-				context.setMaterial(eqm.getEquipment(), material);
+				context.setMaterial(eqm.getEquipment(), producedMaterial);
 
 				if (logger.isInfoEnabled()) {
-					logger.info("Produced material is not defined.  Using default of " + material.getName());
+					logger.info("Produced material is not defined.  Using default of " + producedMaterial.getName());
 				}
 			}
 		}
 
-		UnitOfMeasure uom = resolvedItem.getEquipment().getUOM(material, resolverType);
+		UnitOfMeasure uom = resolvedItem.getEquipment().getUOM(producedMaterial, resolverType);
 		resolvedItem.setAmount(amount);
 		resolvedItem.setUOM(uom);
 

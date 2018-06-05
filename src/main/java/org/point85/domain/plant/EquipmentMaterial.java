@@ -46,6 +46,7 @@ public class EquipmentMaterial extends KeyedObject {
 	private Boolean isDefault = false;
 
 	public EquipmentMaterial() {
+		super();
 	}
 
 	public EquipmentMaterial(Equipment equipment, Material material) {
@@ -118,7 +119,7 @@ public class EquipmentMaterial extends KeyedObject {
 	@Override
 	public boolean equals(Object other) {
 
-		if (other == null || !(other instanceof EquipmentMaterial)) {
+		if (!(other instanceof EquipmentMaterial)) {
 			return false;
 		}
 		EquipmentMaterial otherEquipmentMaterial = (EquipmentMaterial) other;
@@ -144,8 +145,7 @@ public class EquipmentMaterial extends KeyedObject {
 
 	@Override
 	public String toString() {
-		String text = "Matl: " + getMaterial().getName() + ", Speed: " + getRunRate();
-		return text;
+		return "Matl: " + getMaterial().getName() + ", Speed: " + getRunRate();
 	}
 
 }

@@ -94,17 +94,18 @@ public class UaOpcClient implements SessionActivityListener {
 	private OpcUaClient opcUaClient;
 
 	// asynch callback listeners
-	private List<OpcUaAsynchListener> asynchListeners = new ArrayList<>();
+	private final List<OpcUaAsynchListener> asynchListeners = new ArrayList<>();
 
 	// client handle counter for subscriptions
 	private final AtomicLong clientHandles = new AtomicLong(1L);
 
 	// registry of subscriptions
-	private ConcurrentMap<NodeId, UaSubscription> subscriptionMap = new ConcurrentHashMap<>();
+	private final ConcurrentMap<NodeId, UaSubscription> subscriptionMap = new ConcurrentHashMap<>();
 
 	private final AtomicReference<BiConsumer<Boolean, Throwable>> listener = new AtomicReference<>();
 
 	public UaOpcClient() {
+		// nothing to initialize
 	}
 
 	public OpcUaClient getNativeClient() {
@@ -256,21 +257,10 @@ public class UaOpcClient implements SessionActivityListener {
 
 	public synchronized void disconnect() throws Exception {
 		if (opcUaClient != null) {
-			try {
-				opcUaClient.disconnect().get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
-				Stack.releaseSharedResources();
-				// clientFuture.complete(opcUaClient);
-				opcUaClient = null;
-			} catch (Exception e) {
-				String msg = e.getMessage();
-				if (msg == null) {
-					msg = e.getClass().getSimpleName();
-				}
-				throw new Exception("Error disconnecting: " + msg);
-			}
-		} else {
-			Stack.releaseSharedResources();
+			opcUaClient.disconnect().get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
+			opcUaClient = null;
 		}
+		Stack.releaseSharedResources();
 	}
 
 	private void checkPreconditions() throws Exception {
@@ -283,33 +273,19 @@ public class UaOpcClient implements SessionActivityListener {
 		checkPreconditions();
 
 		// synchronous read request
-		try {
-			List<DataValue> values = opcUaClient.readValues(MAX_AGE, TimestampsToReturn.Both, nodeIds)
-					.get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
-
-			return values;
-
-		} catch (Exception e) {
-			throw new Exception(e.getMessage());
-		}
+		return opcUaClient.readValues(MAX_AGE, TimestampsToReturn.Both, nodeIds).get(REQUEST_TIMEOUT,
+				REQUEST_TIMEOUT_UNIT);
 	}
 
 	public synchronized List<StatusCode> writeSynch(List<NodeId> nodeIds, List<Variant> values) throws Exception {
 		checkPreconditions();
 
-		try {
-			List<DataValue> dataValues = new ArrayList<>(values.size());
+		List<DataValue> dataValues = new ArrayList<>(values.size());
 
-			for (Variant variant : values) {
-				dataValues.add(new DataValue(variant, null, null));
-			}
-			List<StatusCode> codes = opcUaClient.writeValues(nodeIds, dataValues).get(REQUEST_TIMEOUT,
-					REQUEST_TIMEOUT_UNIT);
-			return codes;
-
-		} catch (Exception e) {
-			throw new Exception(e.getMessage());
+		for (Variant variant : values) {
+			dataValues.add(new DataValue(variant, null, null));
 		}
+		return opcUaClient.writeValues(nodeIds, dataValues).get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
 	}
 
 	public synchronized void writeAsynch(List<NodeId> nodeIds, List<Variant> values) throws Exception {
@@ -355,58 +331,38 @@ public class UaOpcClient implements SessionActivityListener {
 	}
 
 	public UInteger[] getArrayDimensions(NodeId nodeId) throws Exception {
-		try {
-			VariableNode node = opcUaClient.getAddressSpace().createVariableNode(nodeId);
-
-			return node.getArrayDimensions().get();
-		} catch (Exception e) {
-			throw new Exception(e.getMessage());
-		}
+		VariableNode node = opcUaClient.getAddressSpace().createVariableNode(nodeId);
+		return node.getArrayDimensions().get();
 	}
 
 	public synchronized DataValue readSynch(NodeId nodeId) throws Exception {
 		checkPreconditions();
 
-		try {
-			VariableNode node = opcUaClient.getAddressSpace().createVariableNode(nodeId);
-			DataValue value = node.readValue().get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
-			return value;
-		} catch (Exception e) {
-			throw new Exception(e.getMessage());
-		}
+		VariableNode node = opcUaClient.getAddressSpace().createVariableNode(nodeId);
+		return node.readValue().get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
 	}
 
 	public synchronized StatusCode writeSynch(NodeId nodeId, Variant newValue) throws Exception {
 		checkPreconditions();
 
-		try {
-			CompletableFuture<StatusCode> cf = opcUaClient.writeValue(nodeId, new DataValue(newValue, null, null));
-			StatusCode statusCode = cf.get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
-			return statusCode;
-
-		} catch (Exception e) {
-			throw new Exception(e.getMessage());
-		}
+		CompletableFuture<StatusCode> cf = opcUaClient.writeValue(nodeId, new DataValue(newValue, null, null));
+		return cf.get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
 	}
 
 	public synchronized void writeAsynch(NodeId nodeId, Variant value) throws Exception {
 		checkPreconditions();
 
-		try {
-			DataValue dataValue = new DataValue(value, null, null);
-			CompletableFuture<StatusCode> cf = opcUaClient.writeValue(nodeId, dataValue);
+		DataValue dataValue = new DataValue(value, null, null);
+		CompletableFuture<StatusCode> cf = opcUaClient.writeValue(nodeId, dataValue);
 
-			cf.thenAccept(statusCode -> {
-				List<StatusCode> statusCodes = new ArrayList<>(1);
-				statusCodes.add(statusCode);
+		cf.thenAccept(statusCode -> {
+			List<StatusCode> statusCodes = new ArrayList<>(1);
+			statusCodes.add(statusCode);
 
-				for (OpcUaAsynchListener listener : asynchListeners) {
-					listener.onOpcUaWrite(statusCodes);
-				}
-			});
-		} catch (Exception e) {
-			throw new Exception(e.getMessage());
-		}
+			for (OpcUaAsynchListener listener : asynchListeners) {
+				listener.onOpcUaWrite(statusCodes);
+			}
+		});
 	}
 
 	public static Class<?> getJavaDataType(Variant value) {
@@ -462,40 +418,26 @@ public class UaOpcClient implements SessionActivityListener {
 	}
 
 	public synchronized List<ReferenceDescription> browseSynch(NodeId parentNode) throws Exception {
-		try {
-			BrowseDescription browseDescription = new BrowseDescription(parentNode, BrowseDirection.Forward,
-					Identifiers.References, true, uint(NodeClass.Object.getValue() | NodeClass.Variable.getValue()),
-					uint(BrowseResultMask.All.getValue()));
+		BrowseDescription browseDescription = new BrowseDescription(parentNode, BrowseDirection.Forward,
+				Identifiers.References, true, uint(NodeClass.Object.getValue() | NodeClass.Variable.getValue()),
+				uint(BrowseResultMask.All.getValue()));
 
-			BrowseResult browseResult = opcUaClient.browse(browseDescription).get();
+		BrowseResult browseResult = opcUaClient.browse(browseDescription).get();
 
-			List<ReferenceDescription> referenceDescriptions = toList(browseResult.getReferences());
-
-			return referenceDescriptions;
-		} catch (Exception e) {
-			throw new Exception(e.getMessage());
-		}
+		return toList(browseResult.getReferences());
 	}
 
 	public synchronized List<BrowseResult> browse(List<NodeId> nodeIds) throws Exception {
-		try {
-			List<BrowseDescription> nodesToBrowse = new ArrayList<>(nodeIds.size());
+		List<BrowseDescription> nodesToBrowse = new ArrayList<>(nodeIds.size());
 
-			for (NodeId nodeId : nodeIds) {
-				BrowseDescription browseDescription = new BrowseDescription(nodeId, BrowseDirection.Forward,
-						Identifiers.References, true, uint(NodeClass.Object.getValue() | NodeClass.Variable.getValue()),
-						uint(BrowseResultMask.All.getValue()));
-				nodesToBrowse.add(browseDescription);
-			}
-
-			List<BrowseResult> browseResults = opcUaClient.browse(nodesToBrowse).get(REQUEST_TIMEOUT,
-					REQUEST_TIMEOUT_UNIT);
-
-			return browseResults;
-
-		} catch (Exception e) {
-			throw new Exception(e.getMessage());
+		for (NodeId nodeId : nodeIds) {
+			BrowseDescription browseDescription = new BrowseDescription(nodeId, BrowseDirection.Forward,
+					Identifiers.References, true, uint(NodeClass.Object.getValue() | NodeClass.Variable.getValue()),
+					uint(BrowseResultMask.All.getValue()));
+			nodesToBrowse.add(browseDescription);
 		}
+
+		return opcUaClient.browse(nodesToBrowse).get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
 	}
 
 	private void onSubscriptionValue(UaMonitoredItem item, DataValue value) {
@@ -547,142 +489,115 @@ public class UaOpcClient implements SessionActivityListener {
 			throws Exception {
 		checkPreconditions();
 
-		try {
-			// check to see if modified
-			UaSubscription subscription = getSubscription(nodeId);
+		// check to see if modified
+		UaSubscription subscription = getSubscription(nodeId);
 
-			if (subscription != null) {
-				// modify it by publishing interval
-				opcUaClient.getSubscriptionManager().modifySubscription(subscription.getSubscriptionId(),
-						publishingInterval);
-			}
-
-			// create subscription
-			subscription = establishSubscription(nodeId, publishingInterval, filter);
-
-			// save in map
-			registerSubscription(nodeId, subscription);
-
-		} catch (Exception e) {
-			throw new Exception(e.getMessage());
+		if (subscription != null) {
+			// modify it by publishing interval
+			opcUaClient.getSubscriptionManager().modifySubscription(subscription.getSubscriptionId(),
+					publishingInterval);
 		}
+
+		// create subscription
+		subscription = establishSubscription(nodeId, publishingInterval, filter);
+
+		// save in map
+		registerSubscription(nodeId, subscription);
 	}
 
 	public synchronized void unsubscribe(NodeId nodeId) throws Exception {
-		try {
-			if (nodeId == null) {
-				return;
-			}
-
-			// from the registry
-			UaSubscription subscription = getSubscription(nodeId);
-
-			if (subscription == null) {
-				return;
-			}
-
-			ImmutableList<UaMonitoredItem> items = subscription.getMonitoredItems();
-
-			List<StatusCode> codes = subscription.deleteMonitoredItems(items).get(REQUEST_TIMEOUT,
-					REQUEST_TIMEOUT_UNIT);
-
-			for (StatusCode code : codes) {
-				if (!code.isGood()) {
-					throw new Exception("Unable to unsubscribe from node " + nodeId + ": " + code);
-				}
-			}
-
-			opcUaClient.getSubscriptionManager().deleteSubscription(subscription.getSubscriptionId());
-
-			// remove from registry
-			unregisterSubscription(nodeId);
-
-		} catch (Exception e) {
-			throw new Exception(e.getMessage());
+		if (nodeId == null) {
+			return;
 		}
+
+		// from the registry
+		UaSubscription subscription = getSubscription(nodeId);
+
+		if (subscription == null) {
+			return;
+		}
+
+		ImmutableList<UaMonitoredItem> items = subscription.getMonitoredItems();
+
+		List<StatusCode> codes = subscription.deleteMonitoredItems(items).get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
+
+		for (StatusCode code : codes) {
+			if (!code.isGood()) {
+				throw new Exception("Unable to unsubscribe from node " + nodeId + ": " + code);
+			}
+		}
+
+		opcUaClient.getSubscriptionManager().deleteSubscription(subscription.getSubscriptionId());
+
+		// remove from registry
+		unregisterSubscription(nodeId);
 	}
 
 	public synchronized List<Object> callMethodSynch(NodeId objectId, NodeId methodId, List<Object> inputArguments)
 			throws Exception {
-		try {
-			Variant[] variants = new Variant[inputArguments.size()];
-			for (int i = 0; i < inputArguments.size(); i++) {
-				variants[i] = new Variant(inputArguments.get(i));
-			}
 
-			CallMethodRequest request = new CallMethodRequest(objectId, methodId, variants);
-
-			CompletableFuture<List<Object>> cf = opcUaClient.call(request).thenCompose(result -> {
-				StatusCode statusCode = result.getStatusCode();
-
-				if (statusCode.isGood()) {
-					Variant[] outputArguments = result.getOutputArguments();
-
-					List<Object> outputs = new ArrayList<>(outputArguments.length);
-
-					for (int i = 0; i < outputArguments.length; i++) {
-						outputs.add(outputArguments[i].getValue());
-					}
-
-					return CompletableFuture.completedFuture(outputs);
-				} else {
-					CompletableFuture<List<Object>> f = new CompletableFuture<>();
-					f.completeExceptionally(new org.eclipse.milo.opcua.stack.core.UaException(statusCode));
-					return f;
-				}
-			});
-
-			List<Object> results = cf.get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
-
-			return results;
-		} catch (Exception e) {
-			throw new Exception(e.getMessage());
+		Variant[] variants = new Variant[inputArguments.size()];
+		for (int i = 0; i < inputArguments.size(); i++) {
+			variants[i] = new Variant(inputArguments.get(i));
 		}
+
+		CallMethodRequest request = new CallMethodRequest(objectId, methodId, variants);
+
+		CompletableFuture<List<Object>> cf = opcUaClient.call(request).thenCompose(result -> {
+			StatusCode statusCode = result.getStatusCode();
+
+			if (statusCode.isGood()) {
+				Variant[] outputArguments = result.getOutputArguments();
+
+				List<Object> outputs = new ArrayList<>(outputArguments.length);
+
+				for (int i = 0; i < outputArguments.length; i++) {
+					outputs.add(outputArguments[i].getValue());
+				}
+
+				return CompletableFuture.completedFuture(outputs);
+			} else {
+				CompletableFuture<List<Object>> f = new CompletableFuture<>();
+				f.completeExceptionally(new org.eclipse.milo.opcua.stack.core.UaException(statusCode));
+				return f;
+			}
+		});
+
+		return cf.get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
 	}
 
 	public DateTime getServerCurrentTime() throws Exception {
-		try {
-			ServerNode serverNode = opcUaClient.getAddressSpace().getObjectNode(Identifiers.Server, ServerNode.class)
-					.get();
+		ServerNode serverNode = opcUaClient.getAddressSpace().getObjectNode(Identifiers.Server, ServerNode.class).get();
 
-			ServerStatusNode serverStatusNode = serverNode.getServerStatusNode().get();
-			DateTime currentTime = serverStatusNode.getCurrentTime().get();
-			return currentTime;
-		} catch (Exception e) {
-			throw new Exception(e.getMessage());
-		}
+		ServerStatusNode serverStatusNode = serverNode.getServerStatusNode().get();
+		return serverStatusNode.getCurrentTime().get();
 	}
 
 	public OpcUaServerStatus getServerStatus() throws Exception {
-		try {
-			OpcUaServerStatus serverStatus = new OpcUaServerStatus();
+		OpcUaServerStatus serverStatus = new OpcUaServerStatus();
 
-			// get build info separately
-			VariableNode buildInfoNode = opcUaClient.getAddressSpace()
-					.createVariableNode(Identifiers.Server_ServerStatus_BuildInfo);
+		// get build info separately
+		VariableNode buildInfoNode = opcUaClient.getAddressSpace()
+				.createVariableNode(Identifiers.Server_ServerStatus_BuildInfo);
 
-			BuildInfo buildInfo = buildInfoNode.getValue().thenApply(ExtensionObject.class::cast)
-					.thenApply(ExtensionObject::<BuildInfo>decode).get();
+		BuildInfo buildInfo = buildInfoNode.getValue().thenApply(ExtensionObject.class::cast)
+				.thenApply(ExtensionObject::<BuildInfo>decode).get();
 
-			// Get a typed reference to the Server object: ServerNode
-			ServerNode serverNode = opcUaClient.getAddressSpace().getObjectNode(Identifiers.Server, ServerNode.class)
-					.get();
+		// Get a typed reference to the Server object: ServerNode
+		ServerNode serverNode = opcUaClient.getAddressSpace().getObjectNode(Identifiers.Server, ServerNode.class).get();
 
-			// Get a typed reference to the ServerStatus variable
-			// component and read value attributes individually
-			ServerStatusNode serverStatusNode = serverNode.getServerStatusNode().get();
+		// Get a typed reference to the ServerStatus variable
+		// component and read value attributes individually
+		ServerStatusNode serverStatusNode = serverNode.getServerStatusNode().get();
 
-			DateTime startTime = serverStatusNode.getStartTime().get();
-			ServerState state = serverStatusNode.getState().get();
+		DateTime startTime = serverStatusNode.getStartTime().get();
+		ServerState state = serverStatusNode.getState().get();
 
-			serverStatus.setState(state);
-			serverStatus.setBuildInfo(buildInfo);
-			serverStatus.setStartTime(startTime);
+		serverStatus.setState(state);
+		serverStatus.setBuildInfo(buildInfo);
+		serverStatus.setStartTime(startTime);
 
-			return serverStatus;
-		} catch (Exception e) {
-			throw new Exception(e.getMessage());
-		}
+		return serverStatus;
 	}
 
 	public boolean isConnected() {

@@ -122,7 +122,7 @@ public class UnitOfMeasure extends NamedObject {
 	private static final char ONE_CHAR = '1';
 
 	// registry of unit conversion factor
-	private transient Map<UnitOfMeasure, Double> conversionRegistry = new ConcurrentHashMap<UnitOfMeasure, Double>();
+	private transient final Map<UnitOfMeasure, Double> conversionRegistry = new ConcurrentHashMap<UnitOfMeasure, Double>();
 
 	// cached base symbol
 	private transient String baseSymbol;
@@ -508,7 +508,7 @@ public class UnitOfMeasure extends NamedObject {
 	@Override
 	public boolean equals(Object other) {
 
-		if (other == null || !(other instanceof UnitOfMeasure)) {
+		if (!(other instanceof UnitOfMeasure)) {
 			return false;
 		}
 		UnitOfMeasure otherUnit = (UnitOfMeasure) other;
@@ -877,9 +877,7 @@ public class UnitOfMeasure extends NamedObject {
 		}
 
 		// new path amount
-		double scalingFactor = thisPathFactor / targetPathFactor;
-
-		return scalingFactor;
+		return thisPathFactor / targetPathFactor;
 	}
 
 	private static void checkTypes(UnitOfMeasure uom1, UnitOfMeasure uom2) throws Exception {
@@ -1224,8 +1222,8 @@ public class UnitOfMeasure extends NamedObject {
 
 	// UOM, scaling factor and power cumulative along a conversion path
 	private class PathParameters {
-		private UnitOfMeasure pathUOM;
-		private double pathFactor;
+		private final UnitOfMeasure pathUOM;
+		private final double pathFactor;
 
 		private PathParameters(UnitOfMeasure pathUOM, double pathFactor) {
 			this.pathUOM = pathUOM;
@@ -1255,7 +1253,7 @@ public class UnitOfMeasure extends NamedObject {
 		private double mapScalingFactor = 1.0d;
 
 		// list of exponents down a path to the leaf UOM
-		private List<Integer> pathExponents = new ArrayList<>();
+		private final List<Integer> pathExponents = new ArrayList<>();
 
 		// recursion counter
 		private int counter = 0;
@@ -1308,7 +1306,7 @@ public class UnitOfMeasure extends NamedObject {
 			Integer exp2 = abscissaUnit.getExponent2();
 
 			// scaling
-			if (pathExponents.size() > 0) {
+			if (!pathExponents.isEmpty()) {
 				int lastExponent = pathExponents.get(pathExponents.size() - 1);
 
 				// compute the overall scaling factor

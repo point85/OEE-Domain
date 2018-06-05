@@ -74,7 +74,7 @@ public class RotationSegment extends KeyedObject implements Comparable<RotationS
 	 * Constructor
 	 */
 	public RotationSegment() {
-
+		super();
 	}
 
 	RotationSegment(Shift startingShift, int daysOn, int daysOff, Rotation rotation) {

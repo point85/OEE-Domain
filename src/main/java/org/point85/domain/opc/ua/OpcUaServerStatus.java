@@ -10,13 +10,12 @@ public class OpcUaServerStatus {
 
 	// when server started
 	private DateTime startTime;
-	
+
 	// build information
 	private BuildInfo buildInfo;
 
-
 	public OpcUaServerStatus() {
-
+		// nothing to initialize
 	}
 
 	public ServerState getState() {

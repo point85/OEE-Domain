@@ -71,19 +71,16 @@ public class WorkSchedule extends NamedObject {
 
 	// list of teams
 	@OneToMany(mappedBy = "workSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<Team> teams = new ArrayList<>();
+	private final List<Team> teams = new ArrayList<>();
 
 	// list of shifts
 	@OneToMany(mappedBy = "workSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<Shift> shifts = new ArrayList<>();
+	private final List<Shift> shifts = new ArrayList<>();
 
 	// holidays and planned downtime
 	@OneToMany(mappedBy = "workSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<NonWorkingPeriod> nonWorkingPeriods = new ArrayList<>();
+	private final List<NonWorkingPeriod> nonWorkingPeriods = new ArrayList<>();
 
-	/**
-	 * Default constructor
-	 */
 	public WorkSchedule() {
 		super();
 	}
@@ -486,7 +483,7 @@ public class WorkSchedule extends NamedObject {
 
 			List<ShiftInstance> instances = getShiftInstancesForDay(day);
 
-			if (instances.size() == 0) {
+			if (instances.isEmpty()) {
 				System.out.println("   " + getMessage("shifts.non.working"));
 			} else {
 				int count = 1;
@@ -543,7 +540,7 @@ public class WorkSchedule extends NamedObject {
 			// non-working periods
 			List<NonWorkingPeriod> periods = getNonWorkingPeriods();
 
-			if (periods.size() > 0) {
+			if (!periods.isEmpty()) {
 				text += "\n" + sn + ":";
 
 				Duration totalMinutes = Duration.ZERO;

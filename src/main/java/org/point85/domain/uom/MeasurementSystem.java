@@ -91,7 +91,7 @@ public class MeasurementSystem {
 	private static ResourceBundle units;
 
 	// UOM cache manager
-	private CacheManager cacheManager;
+	private final CacheManager cacheManager;
 
 	private MeasurementSystem() {
 		cacheManager = new CacheManager();
@@ -1398,7 +1398,6 @@ public class MeasurementSystem {
 
 		Collections.sort(list, new Comparator<UnitOfMeasure>() {
 			public int compare(UnitOfMeasure unit1, UnitOfMeasure unit2) {
-
 				return unit1.getSymbol().compareTo(unit2.getSymbol());
 			}
 		});
@@ -2139,13 +2138,13 @@ public class MeasurementSystem {
 
 	private class CacheManager {
 		// registry by unit symbol
-		private Map<String, UnitOfMeasure> symbolRegistry = new ConcurrentHashMap<String, UnitOfMeasure>();
+		private final Map<String, UnitOfMeasure> symbolRegistry = new ConcurrentHashMap<String, UnitOfMeasure>();
 
 		// registry by base symbol
-		private Map<String, UnitOfMeasure> baseRegistry = new ConcurrentHashMap<String, UnitOfMeasure>();
+		private final Map<String, UnitOfMeasure> baseRegistry = new ConcurrentHashMap<String, UnitOfMeasure>();
 
 		// registry for units by enumeration
-		private Map<Unit, UnitOfMeasure> unitRegistry = new ConcurrentHashMap<Unit, UnitOfMeasure>();
+		private final Map<Unit, UnitOfMeasure> unitRegistry = new ConcurrentHashMap<Unit, UnitOfMeasure>();
 
 		private UnitOfMeasure getUOM(Unit unit) {
 			return unitRegistry.get(unit);

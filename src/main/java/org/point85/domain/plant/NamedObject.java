@@ -33,8 +33,8 @@ public abstract class NamedObject extends KeyedObject implements Comparable<Name
 
 	protected NamedObject(String name, String description) {
 		super();
-		setName(name);
-		setDescription(description);
+		this.name = name;
+		this.description = description;
 	}
 
 	/**

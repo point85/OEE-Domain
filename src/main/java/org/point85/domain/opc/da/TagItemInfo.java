@@ -4,7 +4,7 @@ import org.point85.domain.collector.CollectorDataSource;
 
 public class TagItemInfo {
 	// path to tag leaf node
-	private String pathName;
+	private final String pathName;
 	
 	// requested update period
 	private int updatePeriod = CollectorDataSource.DEFAULT_UPDATE_PERIOD_MSEC;

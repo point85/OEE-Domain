@@ -40,7 +40,7 @@ public class OeeContext {
 	private static final String HTTP_KEY = "HTTP";
 
 	// hash map of objects exposed to scripting
-	private ConcurrentMap<String, Object> contextMap;
+	private final ConcurrentMap<String, Object> contextMap;
 
 	public OeeContext() {
 		contextMap = new ConcurrentHashMap<>();
@@ -109,7 +109,7 @@ public class OeeContext {
 		// get the first one
 		DaOpcClient client = null;
 
-		if (getOpcDaClients().size() > 0) {
+		if (!getOpcDaClients().isEmpty()) {
 			client = getOpcDaClients().get(0);
 		}
 		return client;
@@ -128,7 +128,7 @@ public class OeeContext {
 		// get the first one
 		UaOpcClient client = null;
 
-		if (getOpcUaClients().size() > 0) {
+		if (!getOpcUaClients().isEmpty()) {
 			client = getOpcUaClients().get(0);
 		}
 		return client;
@@ -147,7 +147,7 @@ public class OeeContext {
 		// get the first one
 		PublisherSubscriber client = null;
 
-		if (getPublisherSubscribers().size() > 0) {
+		if (!getPublisherSubscribers().isEmpty()) {
 			client = getPublisherSubscribers().get(0);
 		}
 		return client;
@@ -166,7 +166,7 @@ public class OeeContext {
 		// get the first one
 		OeeHttpServer server = null;
 
-		if (getHttpServers().size() > 0) {
+		if (!getHttpServers().isEmpty()) {
 			server = getHttpServers().get(0);
 		}
 		return server;

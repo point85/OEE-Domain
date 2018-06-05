@@ -85,13 +85,13 @@ public class Prefix {
 	public static final Prefix GIBI = new Prefix("gibi", "Gi", 1.073741824E+09);
 
 	// name
-	private String name;
+	private final String name;
 
 	// symbol
-	private String symbol;
+	private final String symbol;
 
 	// factor
-	private double factor;
+	private final double factor;
 
 	/**
 	 * Construct a prefix

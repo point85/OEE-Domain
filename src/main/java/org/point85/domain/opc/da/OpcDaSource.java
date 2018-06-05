@@ -32,10 +32,6 @@ public class OpcDaSource extends CollectorDataSource {
 		return null;
 	}
 
-	public void setClassId(String classId) {
-
-	}
-
 	@Override
 	public String getId() {
 		return getProgId();

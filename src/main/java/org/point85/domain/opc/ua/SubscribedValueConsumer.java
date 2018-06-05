@@ -15,7 +15,7 @@ public class SubscribedValueConsumer implements Consumer<DataValue> {
 	private final UaSubscription subscription;
 
 	// asynch listeners
-	private List<OpcUaAsynchListener> asynchReceivers = new ArrayList<>();
+	private final List<OpcUaAsynchListener> asynchReceivers = new ArrayList<>();
 
 	public SubscribedValueConsumer(UaSubscription subscription, UaMonitoredItem item) {
 		this.item = item;

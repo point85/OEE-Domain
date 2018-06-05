@@ -48,7 +48,7 @@ public class PlantEntity extends NamedObject {
 
 	// children
 	@OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
-	private Set<PlantEntity> children = new HashSet<>();
+	private final Set<PlantEntity> children = new HashSet<>();
 
 	// level in the hierarchy
 	@Column(name = "HIER_LEVEL", insertable = false, updatable = false)
@@ -70,7 +70,7 @@ public class PlantEntity extends NamedObject {
 
 	public PlantEntity(String name, String description, EntityLevel nodeLevel) {
 		super(name, description);
-		setLevel(nodeLevel);
+		this.level = nodeLevel;
 	}
 
 	public PlantEntity getParent() {
@@ -118,10 +118,8 @@ public class PlantEntity extends NamedObject {
 	public WorkSchedule findWorkSchedule() {
 		WorkSchedule schedule = workSchedule;
 
-		if (schedule == null) {
-			if (parent != null) {
-				schedule = parent.findWorkSchedule();
-			}
+		if (schedule == null && parent != null) {
+			schedule = parent.findWorkSchedule();
 		}
 		return schedule;
 	}
@@ -137,10 +135,8 @@ public class PlantEntity extends NamedObject {
 	public Duration findDurationPeriod() {
 		Duration duration = retentionDuration;
 
-		if (duration == null) {
-			if (parent != null) {
-				duration = parent.findDurationPeriod();
-			}
+		if (duration == null && parent != null) {
+			duration = parent.findDurationPeriod();
 		}
 		return duration;
 	}

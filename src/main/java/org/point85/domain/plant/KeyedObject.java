@@ -18,7 +18,7 @@ public abstract class KeyedObject {
 	private Long primaryKey;
 
 	protected KeyedObject() {
-
+		// nothing to initialize
 	}
 
 	/**

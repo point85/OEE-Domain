@@ -78,8 +78,8 @@ public class NonWorkingPeriod extends Named implements Comparable<NonWorkingPeri
 
 	NonWorkingPeriod(String name, String description, LocalDateTime startDateTime, Duration duration) throws Exception {
 		super(name, description);
-		setStartDateTime(startDateTime);
-		setDuration(duration);
+		this.startDateTime = startDateTime;
+		this.duration = duration;
 	}
 
 	/**

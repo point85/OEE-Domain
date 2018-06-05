@@ -20,8 +20,8 @@ import org.openscada.opc.dcom.da.impl.OPCItemMgt;
  */
 public class OpcDaMonitoredItem {
 
-	private OPCITEMDEF opcItemDef;
-	private OPCITEMRESULT opcItemResult;
+	private final OPCITEMDEF opcItemDef;
+	private final OPCITEMRESULT opcItemResult;
 	private ValueData valueData;
 
 	private OpcDaMonitoredGroup group;

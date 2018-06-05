@@ -9,13 +9,9 @@ import java.time.OffsetDateTime;
 import org.openscada.opc.dcom.da.OPCSERVERSTATUS;
 import org.point85.domain.DomainUtils;
 
-/**
- *
- * @author Kent Randall
- */
 public class OpcDaServerStatus {
 
-	private OPCSERVERSTATUS serverStatus;
+	private final OPCSERVERSTATUS serverStatus;
 
 	public OpcDaServerStatus(OPCSERVERSTATUS status) {
 		this.serverStatus = status;

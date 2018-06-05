@@ -56,14 +56,11 @@ public class Rotation extends Named implements Comparable<Rotation> {
 
 	// working periods in the rotation
 	@OneToMany(mappedBy = "rotation", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<RotationSegment> rotationSegments = new ArrayList<>();
+	private final List<RotationSegment> rotationSegments = new ArrayList<>();
 
 	// list of working and non-working days
 	private transient List<TimePeriod> periods;
 
-	/**
-	 * Default constructor
-	 */
 	public Rotation() {
 		super();
 	}
@@ -101,7 +98,7 @@ public class Rotation extends Named implements Comparable<Rotation> {
 	public List<TimePeriod> getPeriods() {
 		if (periods == null) {
 			periods = new ArrayList<>();
-			
+
 			// sort by sequence number
 			Collections.sort(rotationSegments);
 
@@ -168,8 +165,8 @@ public class Rotation extends Named implements Comparable<Rotation> {
 	}
 
 	/**
-	 * Add a working period to this rotation. A working period starts with a
-	 * shift and specifies the number of days on and days off
+	 * Add a working period to this rotation. A working period starts with a shift
+	 * and specifies the number of days on and days off
 	 * 
 	 * @param startingShift
 	 *            {@link Shift} that starts the period
@@ -220,9 +217,7 @@ public class Rotation extends Named implements Comparable<Rotation> {
 			periodsString += period.getName() + " (" + onOff + ")";
 		}
 
-		String text = named + "\n" + rper + ": [" + periodsString + "], " + rd + ": " + getDuration() + ", " + rda
-				+ ": " + getDuration().toDays() + ", " + rw + ": " + getWorkingTime();
-
-		return text;
+		return named + "\n" + rper + ": [" + periodsString + "], " + rd + ": " + getDuration() + ", " + rda + ": "
+				+ getDuration().toDays() + ", " + rw + ": " + getWorkingTime();
 	}
 }

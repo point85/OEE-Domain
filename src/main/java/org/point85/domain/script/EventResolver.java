@@ -61,7 +61,7 @@ public class EventResolver extends KeyedObject {
 
 	// time last received
 	private transient OffsetDateTime lastTimestamp;
-	
+
 	// mode
 	private transient boolean watchMode = false;
 
@@ -169,7 +169,7 @@ public class EventResolver extends KeyedObject {
 	@Override
 	public boolean equals(Object other) {
 
-		if (other == null || !(other instanceof EventResolver)) {
+		if (!(other instanceof EventResolver)) {
 			return false;
 		}
 		EventResolver otherResolver = (EventResolver) other;

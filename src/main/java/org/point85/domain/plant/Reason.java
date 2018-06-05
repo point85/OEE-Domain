@@ -39,7 +39,7 @@ public class Reason extends NamedObject {
 
 	// child reasons
 	@OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
-	private Set<Reason> children = new HashSet<>();
+	private final Set<Reason> children = new HashSet<>();
 
 	// loss category
 	@Column(name = "LOSS")

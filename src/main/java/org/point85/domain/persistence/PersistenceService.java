@@ -59,9 +59,9 @@ import org.point85.domain.uom.UnitType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PersistenceService {
+public final class PersistenceService {
 	// logger
-	private static final Logger logger = LoggerFactory.getLogger(PersistenceService.class);
+	private static Logger logger;
 
 	// persistence unit name for
 	private static final String PU_NAME = "OEE";
@@ -75,9 +75,11 @@ public class PersistenceService {
 	// singleton service
 	private static PersistenceService persistencyService;
 
+	// the EMF future
 	private CompletableFuture<EntityManagerFactory> emfFuture;
 
-	private Map<String, Boolean> namedQueryMap;
+	// map of named queries
+	private final Map<String, Boolean> namedQueryMap;
 
 	private PersistenceService() {
 		namedQueryMap = new ConcurrentHashMap<>();
@@ -90,6 +92,13 @@ public class PersistenceService {
 		return persistencyService;
 	}
 
+	private Logger getLogger() {
+		if (logger == null) {
+			logger = LoggerFactory.getLogger(PersistenceService.class);
+		}
+		return logger;
+	}
+
 	public void initialize(String jdbcUrl, String userName, String password) {
 		// create EM on a a background thread
 		emfFuture = CompletableFuture.supplyAsync(() -> {
@@ -100,8 +109,7 @@ public class PersistenceService {
 				// cache base UOms
 				primeUomCache();
 			} catch (Exception e) {
-				logger.error(e.getMessage());
-				;
+				getLogger().error(e.getMessage());
 			}
 			return emf;
 		});
@@ -279,7 +287,7 @@ public class PersistenceService {
 			// check for team reference
 			List<Team> referencingTeams = fetchTeamCrossReferences(rotation);
 
-			if (referencingTeams.size() != 0) {
+			if (!referencingTeams.isEmpty()) {
 				String refs = "";
 
 				for (Team team : referencingTeams) {
@@ -297,7 +305,7 @@ public class PersistenceService {
 			// check for script resolver references
 			List<EventResolver> resolvers = fetchResolverCrossReferences(source);
 
-			if (resolvers.size() > 0) {
+			if (!resolvers.isEmpty()) {
 				String refs = "";
 				for (EventResolver resolver : resolvers) {
 					if (refs.length() > 0) {
@@ -314,7 +322,7 @@ public class PersistenceService {
 			// check for plant entity references
 			List<PlantEntity> entities = fetchEntityCrossReferences(schedule);
 
-			if (entities.size() > 0) {
+			if (!entities.isEmpty()) {
 				String refs = "";
 				for (PlantEntity entity : entities) {
 					if (refs.length() > 0) {
@@ -331,7 +339,7 @@ public class PersistenceService {
 			// check for usage by equipment material
 			List<EquipmentMaterial> eqms = fetchEquipmentMaterials(uom);
 
-			if (eqms.size() != 0) {
+			if (!eqms.isEmpty()) {
 				String refs = "";
 				for (int i = 0; i < eqms.size(); i++) {
 					if (i > 0) {
@@ -347,7 +355,7 @@ public class PersistenceService {
 			// check for usage by UOM
 			List<UnitOfMeasure> uoms = PersistenceService.instance().fetchUomCrossReferences(uom);
 
-			if (uoms.size() != 0) {
+			if (!uoms.isEmpty()) {
 				String refs = "";
 				for (int i = 0; i < uoms.size(); i++) {
 					if (!uom.equals(uoms.get(i))) {
@@ -1017,6 +1025,7 @@ public class PersistenceService {
 	}
 
 	private String[] getMappingFileNames() {
+		// placeholder for mapping files
 		return null;
 	}
 

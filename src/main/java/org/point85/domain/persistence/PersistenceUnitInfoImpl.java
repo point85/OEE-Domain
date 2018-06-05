@@ -19,126 +19,123 @@ import java.util.Properties;
  */
 public class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
 
-    public static final String JPA_VERSION = "2.1";
+	public static final String JPA_VERSION = "2.1";
 
-    private final String persistenceUnitName;
+	private final String persistenceUnitName;
 
-    private PersistenceUnitTransactionType transactionType = PersistenceUnitTransactionType.RESOURCE_LOCAL;
+	private PersistenceUnitTransactionType transactionType = PersistenceUnitTransactionType.RESOURCE_LOCAL;
 
-    private final List<String> managedClassNames;
+	private final List<String> managedClassNames;
 
-    private final List<String> mappingFileNames = new ArrayList<>();
+	private final List<String> mappingFileNames = new ArrayList<>();
 
-    private final Properties properties;
+	private final Properties properties;
 
-    private DataSource jtaDataSource;
+	private DataSource jtaDataSource;
 
-    private DataSource nonJtaDataSource;
+	private DataSource nonJtaDataSource;
 
-    public PersistenceUnitInfoImpl(
-            String persistenceUnitName,
-            List<String> managedClassNames,
-            Properties properties) {
-        this.persistenceUnitName = persistenceUnitName;
-        this.managedClassNames = managedClassNames;
-        this.properties = properties;
-    }
+	public PersistenceUnitInfoImpl(String persistenceUnitName, List<String> managedClassNames, Properties properties) {
+		this.persistenceUnitName = persistenceUnitName;
+		this.managedClassNames = managedClassNames;
+		this.properties = properties;
+	}
 
-    @Override
-    public String getPersistenceUnitName() {
-        return persistenceUnitName;
-    }
+	@Override
+	public String getPersistenceUnitName() {
+		return persistenceUnitName;
+	}
 
-    @Override
-    public String getPersistenceProviderClassName() {
-        return HibernatePersistenceProvider.class.getName();
-    }
+	@Override
+	public String getPersistenceProviderClassName() {
+		return HibernatePersistenceProvider.class.getName();
+	}
 
-    @Override
-    public PersistenceUnitTransactionType getTransactionType() {
-        return transactionType;
-    }
+	@Override
+	public PersistenceUnitTransactionType getTransactionType() {
+		return transactionType;
+	}
 
-    @Override
-    public DataSource getJtaDataSource() {
-        return jtaDataSource;
-    }
+	@Override
+	public DataSource getJtaDataSource() {
+		return jtaDataSource;
+	}
 
-    public PersistenceUnitInfoImpl setJtaDataSource(DataSource jtaDataSource) {
-        this.jtaDataSource = jtaDataSource;
-        this.nonJtaDataSource = null;
-        transactionType = PersistenceUnitTransactionType.JTA;
-        return this;
-    }
+	public PersistenceUnitInfoImpl setJtaDataSource(DataSource jtaDataSource) {
+		this.jtaDataSource = jtaDataSource;
+		this.nonJtaDataSource = null;
+		transactionType = PersistenceUnitTransactionType.JTA;
+		return this;
+	}
 
-    @Override
-    public DataSource getNonJtaDataSource() {
-        return nonJtaDataSource;
-    }
+	@Override
+	public DataSource getNonJtaDataSource() {
+		return nonJtaDataSource;
+	}
 
-    public PersistenceUnitInfoImpl setNonJtaDataSource(DataSource nonJtaDataSource) {
-        this.nonJtaDataSource = nonJtaDataSource;
-        this.jtaDataSource = null;
-        transactionType = PersistenceUnitTransactionType.RESOURCE_LOCAL;
-        return this;
-    }
+	public PersistenceUnitInfoImpl setNonJtaDataSource(DataSource nonJtaDataSource) {
+		this.nonJtaDataSource = nonJtaDataSource;
+		this.jtaDataSource = null;
+		transactionType = PersistenceUnitTransactionType.RESOURCE_LOCAL;
+		return this;
+	}
 
-    @Override
-    public List<String> getMappingFileNames() {
-        return mappingFileNames;
-    }
+	@Override
+	public List<String> getMappingFileNames() {
+		return mappingFileNames;
+	}
 
-    @Override
-    public List<URL> getJarFileUrls() {
-        return Collections.emptyList();
-    }
+	@Override
+	public List<URL> getJarFileUrls() {
+		return Collections.emptyList();
+	}
 
-    @Override
-    public URL getPersistenceUnitRootUrl() {
-        return null;
-    }
+	@Override
+	public URL getPersistenceUnitRootUrl() {
+		return null;
+	}
 
-    @Override
-    public List<String> getManagedClassNames() {
-        return managedClassNames;
-    }
+	@Override
+	public List<String> getManagedClassNames() {
+		return managedClassNames;
+	}
 
-    @Override
-    public boolean excludeUnlistedClasses() {
-        return false;
-    }
+	@Override
+	public boolean excludeUnlistedClasses() {
+		return false;
+	}
 
-    @Override
-    public SharedCacheMode getSharedCacheMode() {
-        return SharedCacheMode.UNSPECIFIED;
-    }
+	@Override
+	public SharedCacheMode getSharedCacheMode() {
+		return SharedCacheMode.UNSPECIFIED;
+	}
 
-    @Override
-    public ValidationMode getValidationMode() {
-        return ValidationMode.AUTO;
-    }
+	@Override
+	public ValidationMode getValidationMode() {
+		return ValidationMode.AUTO;
+	}
 
-    public Properties getProperties() {
-        return properties;
-    }
+	public Properties getProperties() {
+		return properties;
+	}
 
-    @Override
-    public String getPersistenceXMLSchemaVersion() {
-        return JPA_VERSION;
-    }
+	@Override
+	public String getPersistenceXMLSchemaVersion() {
+		return JPA_VERSION;
+	}
 
-    @Override
-    public ClassLoader getClassLoader() {
-        return Thread.currentThread().getContextClassLoader();
-    }
+	@Override
+	public ClassLoader getClassLoader() {
+		return Thread.currentThread().getContextClassLoader();
+	}
 
-    @Override
-    public void addTransformer(ClassTransformer transformer) {
+	@Override
+	public void addTransformer(ClassTransformer transformer) {
+		// place holder
+	}
 
-    }
-
-    @Override
-    public ClassLoader getNewTempClassLoader() {
-        return null;
-    }
+	@Override
+	public ClassLoader getNewTempClassLoader() {
+		return null;
+	}
 }

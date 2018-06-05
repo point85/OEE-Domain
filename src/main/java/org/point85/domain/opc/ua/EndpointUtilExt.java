@@ -10,6 +10,8 @@ import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import org.eclipse.milo.opcua.stack.core.util.EndpointUtil;
 
 public class EndpointUtilExt extends EndpointUtil {
+	private static final Pattern ENDPOINT_URL_PATTERN = Pattern
+			.compile("(opc.tcp|http|https)://([^:/]+)(:\\d+)?(/.*)?");
 
 	/**
 	 * Replace the hostname in the endpoint URL field of {@code endpoint} with a new
@@ -60,9 +62,6 @@ public class EndpointUtilExt extends EndpointUtil {
 				endpoint.getServerCertificate(), endpoint.getSecurityMode(), endpoint.getSecurityPolicyUri(),
 				endpoint.getUserIdentityTokens(), endpoint.getTransportProfileUri(), endpoint.getSecurityLevel());
 	}
-
-	private static final Pattern ENDPOINT_URL_PATTERN = Pattern
-			.compile("(opc.tcp|http|https)://([^:/]+)(:\\d+)?(/.*)?");
 
 	static String updateUrl(String endpointUrl, @Nullable String hostname) {
 		return updateUrl(endpointUrl, hostname, -1);

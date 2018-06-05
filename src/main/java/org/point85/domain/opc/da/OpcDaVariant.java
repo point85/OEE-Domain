@@ -6,7 +6,6 @@ package org.point85.domain.opc.da;
 
 import java.util.Date;
 
-import org.jinterop.dcom.common.JIException;
 import org.jinterop.dcom.core.JIArray;
 import org.jinterop.dcom.core.JICurrency;
 import org.jinterop.dcom.core.JIString;
@@ -21,7 +20,7 @@ import org.jinterop.dcom.core.JIVariant;
  */
 public class OpcDaVariant {
 
-	private JIVariant jiVariant;
+	private final JIVariant jiVariant;
 
 	public OpcDaVariant(JIVariant variant) {
 		this.jiVariant = variant;
@@ -141,11 +140,7 @@ public class OpcDaVariant {
 	}
 
 	public boolean isArray() throws Exception {
-		try {
-			return jiVariant.isArray();
-		} catch (JIException e) {
-			throw new Exception(e.getMessage());
-		}
+		return jiVariant.isArray();
 	}
 
 	public String getValueAsString() throws Exception {
@@ -270,7 +265,7 @@ public class OpcDaVariant {
 			JICurrency currency = (JICurrency) jiVariant.getObject();
 			valueString = currency.getUnits() + "." + currency.getFractionalUnits();
 			break;
-			
+
 		case JIVariant.VT_ERROR:
 			valueString = String.format("%08X", jiVariant.getObjectAsSCODE());
 			break;
@@ -337,64 +332,61 @@ public class OpcDaVariant {
 		return numberValue;
 	}
 
-	public OpcDaVariantType getDataType() {
+	public OpcDaVariantType getDataType() throws Exception {
 		OpcDaVariantType type = OpcDaVariantType.UNKNOWN;
 
-		try {
-			switch (getJIVariant().getType()) {
-			case JIVariant.VT_I1:
-			case JIVariant.VT_UI1:
-				type = OpcDaVariantType.I1;
-				break;
+		switch (getJIVariant().getType()) {
+		case JIVariant.VT_I1:
+		case JIVariant.VT_UI1:
+			type = OpcDaVariantType.I1;
+			break;
 
-			case JIVariant.VT_I2:
-			case JIVariant.VT_UI2:
-				type = OpcDaVariantType.I2;
-				break;
+		case JIVariant.VT_I2:
+		case JIVariant.VT_UI2:
+			type = OpcDaVariantType.I2;
+			break;
 
-			case JIVariant.VT_INT:
-			case JIVariant.VT_UINT:
-			case JIVariant.VT_UI4:
-			case JIVariant.VT_I4:
-				type = OpcDaVariantType.I4;
-				break;
+		case JIVariant.VT_INT:
+		case JIVariant.VT_UINT:
+		case JIVariant.VT_UI4:
+		case JIVariant.VT_I4:
+			type = OpcDaVariantType.I4;
+			break;
 
-			case JIVariant.VT_I8:
-				type = OpcDaVariantType.I8;
-				break;
+		case JIVariant.VT_I8:
+			type = OpcDaVariantType.I8;
+			break;
 
-			case JIVariant.VT_R4:
-			case JIVariant.VT_DECIMAL:
-				type = OpcDaVariantType.R4;
-				break;
+		case JIVariant.VT_R4:
+		case JIVariant.VT_DECIMAL:
+			type = OpcDaVariantType.R4;
+			break;
 
-			case JIVariant.VT_R8:
-				type = OpcDaVariantType.R8;
-				break;
+		case JIVariant.VT_R8:
+			type = OpcDaVariantType.R8;
+			break;
 
-			case JIVariant.VT_BOOL:
-				type = OpcDaVariantType.BOOLEAN;
-				break;
+		case JIVariant.VT_BOOL:
+			type = OpcDaVariantType.BOOLEAN;
+			break;
 
-			case JIVariant.VT_BSTR:
-				type = OpcDaVariantType.STRING;
-				break;
-			case JIVariant.VT_DATE:
-				type = OpcDaVariantType.DATE;
-			default:
-				break;
-			}
-		} catch (Exception e) {
+		case JIVariant.VT_BSTR:
+			type = OpcDaVariantType.STRING;
+			break;
+
+		case JIVariant.VT_DATE:
+			type = OpcDaVariantType.DATE;
+			break;
+
+		default:
+			break;
 		}
+
 		return type;
 	}
 
 	public boolean isNumeric() {
-		if (this.getValueAsNumber() != null) {
-			return true;
-		} else {
-			return false;
-		}
+		return getValueAsNumber() != null ? true : false;
 	}
 
 	@Override

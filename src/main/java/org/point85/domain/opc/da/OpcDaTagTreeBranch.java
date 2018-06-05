@@ -5,7 +5,7 @@ import java.util.Collection;
 import org.openscada.opc.lib.da.browser.Branch;
 
 public class OpcDaTagTreeBranch {
-    private Branch branch;
+    private final Branch branch;
 
     public OpcDaTagTreeBranch(Branch branch) {
         this.branch = branch;

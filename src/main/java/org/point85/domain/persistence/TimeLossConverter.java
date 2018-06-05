@@ -47,7 +47,6 @@ public class TimeLossConverter implements AttributeConverter<TimeLoss, String> {
 		case NO_LOSS:
 			value = TimeLoss.NO_LOSS_VALUE;
 			break;
-
 		default:
 			break;
 		}
@@ -92,6 +91,7 @@ public class TimeLossConverter implements AttributeConverter<TimeLoss, String> {
 			break;
 		case TimeLoss.NO_LOSS_VALUE:
 			loss = TimeLoss.NO_LOSS;
+			break;
 		default:
 			break;
 		}

@@ -11,8 +11,8 @@ import org.openscada.opc.lib.da.browser.TreeBrowser;
 
 public class OpcDaTreeBrowser {
 
-	private TreeBrowser treeBrowser;
-	private OPCItemProperties itemProperties;
+	private final TreeBrowser treeBrowser;
+	private final OPCItemProperties itemProperties;
 
 	public OpcDaTreeBrowser(TreeBrowser browser,
 			OPCItemProperties itemProperties) {

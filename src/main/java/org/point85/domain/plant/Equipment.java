@@ -28,7 +28,7 @@ public class Equipment extends PlantEntity {
 	public static final Duration DEFAULT_RETENTION_PERIOD = Duration.ofDays(30);
 
 	// map by Material
-	transient private Map<Material, EquipmentMaterial> equipmentMaterialsMap = new HashMap<>();
+	transient private final Map<Material, EquipmentMaterial> equipmentMaterialsMap = new HashMap<>();
 
 	@OneToMany(mappedBy = "equipment", cascade = CascadeType.ALL, orphanRemoval = true)
 	private Set<EquipmentMaterial> equipmentMaterials = new HashSet<>();
@@ -63,7 +63,7 @@ public class Equipment extends PlantEntity {
 	}
 
 	public EquipmentMaterial getEquipmentMaterial(Material material) {
-		if (equipmentMaterialsMap.size() == 0) {
+		if (equipmentMaterialsMap.isEmpty()) {
 			populateMap();
 		}
 

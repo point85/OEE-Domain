@@ -53,7 +53,7 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 	private WorkSchedule workSchedule;
 
 	// breaks
-	private transient List<Break> breaks = new ArrayList<>();
+	private final transient List<Break> breaks = new ArrayList<>();
 
 	/**
 	 * Default constructor
@@ -131,8 +131,8 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 	}
 
 	/**
-	 * Calculate the working time between the specified times of day. The shift
-	 * must not span midnight.
+	 * Calculate the working time between the specified times of day. The shift must
+	 * not span midnight.
 	 * 
 	 * @param from
 	 *            starting time
@@ -200,10 +200,8 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 
 		if (spansMidnight()) {
 			// adjust for shift crossing midnight
-			if (fromSecond < startSecond && fromSecond < endSecond) {
-				if (!beforeMidnight) {
-					fromSecond = fromSecond + 86400;
-				}
+			if (fromSecond < startSecond && fromSecond < endSecond && !beforeMidnight) {
+				fromSecond = fromSecond + 86400;
 			}
 			toSecond = fromSecond + delta;
 			endSecond = endSecond + 86400;
