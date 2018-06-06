@@ -21,9 +21,9 @@ import org.slf4j.LoggerFactory;
 public final class EquipmentLossManager {
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(EquipmentLossManager.class);
-	
+
 	private EquipmentLossManager() {
-		
+
 	}
 
 	public static void calculateEquipmentLoss(EquipmentLoss equipmentLoss, OffsetDateTime from, OffsetDateTime to)
@@ -89,10 +89,18 @@ public final class EquipmentLossManager {
 
 		// time from measured availability losses
 		List<OeeEvent> records = PersistenceService.instance().fetchAvailability(equipment, from, to);
+
 		equipmentLoss.getEventRecords().addAll(records);
 
 		for (int i = 0; i < records.size(); i++) {
 			OeeEvent record = records.get(i);
+
+			// skip no loss records
+			TimeLoss lossCategory = record.getReason().getLossCategory();
+
+			if (lossCategory.equals(TimeLoss.NO_LOSS)) {
+				continue;
+			}
 
 			checkTimePeriod(record, equipmentLoss, from, to);
 
@@ -125,6 +133,7 @@ public final class EquipmentLossManager {
 				}
 			}
 
+			// increment the loss for this reason
 			equipmentLoss.incrementLoss(record.getReason(), duration);
 
 			// save in event record

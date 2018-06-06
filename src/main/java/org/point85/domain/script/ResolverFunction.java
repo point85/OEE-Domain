@@ -102,10 +102,10 @@ public class ResolverFunction {
 		return "function " + ResolverFunction.generateFunctionName() + "(context, value, lastValue) {" + script + "}";
 	}
 
-	public String getDisplayString() {
+	public String getDisplayString() throws Exception {
 		String displayString = "";
 
-		if (body != null) {
+		if (getBody() != null) {
 			displayString = body;
 			int idx = body.indexOf('\n');
 
