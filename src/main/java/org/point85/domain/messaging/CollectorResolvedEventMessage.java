@@ -16,7 +16,7 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 	private String materialName;
 	private String materialDescription;
 	private Double amount;
-	private String uom;
+	private String uomSymbol;
 
 	public CollectorResolvedEventMessage(String senderHostName, String senderHostAddress) {
 		super(senderHostName, senderHostAddress, MessageType.RESOLVED_EVENT);
@@ -64,7 +64,7 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 			this.setAmount(event.getAmount());
 
 			if (event.getUOM() != null) {
-				this.setUom(event.getUOM().getName());
+				this.setUomSymbol(event.getUOM().getSymbol());
 			}
 			break;
 		}
@@ -146,11 +146,11 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		this.loss = loss;
 	}
 
-	public String getUom() {
-		return uom;
+	public String getUomSymbol() {
+		return uomSymbol;
 	}
 
-	public void setUom(String uom) {
-		this.uom = uom;
+	public void setUomSymbol(String symbol) {
+		this.uomSymbol = symbol;
 	}
 }
