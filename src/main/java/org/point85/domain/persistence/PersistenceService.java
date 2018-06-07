@@ -106,7 +106,7 @@ public final class PersistenceService {
 				// create the EMF
 				createContainerManagedEntityManagerFactory(jdbcUrl, userName, password);
 
-				// cache base UOms
+				// cache base UOMs
 				primeUomCache();
 			} catch (Exception e) {
 				getLogger().error(e.getMessage());
