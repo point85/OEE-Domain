@@ -72,6 +72,9 @@ public class CollectorService
 	// sec for a status message to live in the queue
 	private static final int STATUS_TTL_SEC = 3600;
 
+	// sec for a event resolution message to live in the queue
+	private static final int RESOLUTION_TTL_SEC = 60;
+
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
 
@@ -505,7 +508,7 @@ public class CollectorService
 		for (DataCollector collector : collectors) {
 			String brokerHostName = collector.getBrokerHost();
 
-			if (brokerHostName == null) {
+			if (brokerHostName == null || brokerHostName.length() == 0) {
 				continue;
 			}
 			Integer brokerPort = collector.getBrokerPort();
@@ -747,7 +750,7 @@ public class CollectorService
 	private void purgeRecords(OeeEvent event) throws Exception {
 		Equipment equipment = event.getEquipment();
 
-		Duration days = equipment.findDurationPeriod();
+		Duration days = equipment.findRetentionPeriod();
 
 		if (days == null) {
 			days = Equipment.DEFAULT_RETENTION_PERIOD;
@@ -762,6 +765,14 @@ public class CollectorService
 	}
 
 	public void saveOeeEvent(OeeEvent event) throws Exception {
+		Equipment equipment = event.getEquipment();
+		Duration days = equipment.findRetentionPeriod();
+		
+		if (days != null && days.equals(Duration.ZERO)) {
+			// no need to save or purge
+			return;
+		}
+		
 		if (logger.isInfoEnabled()) {
 			logger.info("Saving OEE event to database: " + event);
 		}
@@ -1059,7 +1070,7 @@ public class CollectorService
 			message.fromResolvedEvent(resolvedEvent);
 
 			for (PublisherSubscriber pubsub : appContext.getPublisherSubscribers()) {
-				pubsub.publish(message, RoutingKey.RESOLVED_EVENT, HEARTBEAT_TTL_SEC);
+				pubsub.publish(message, RoutingKey.RESOLVED_EVENT, RESOLUTION_TTL_SEC);
 			}
 
 			if (logger.isInfoEnabled()) {

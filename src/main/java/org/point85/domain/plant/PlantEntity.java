@@ -132,11 +132,11 @@ public class PlantEntity extends NamedObject {
 		this.retentionDuration = retentionDuration;
 	}
 
-	public Duration findDurationPeriod() {
+	public Duration findRetentionPeriod() {
 		Duration duration = retentionDuration;
 
 		if (duration == null && parent != null) {
-			duration = parent.findDurationPeriod();
+			duration = parent.findRetentionPeriod();
 		}
 		return duration;
 	}
