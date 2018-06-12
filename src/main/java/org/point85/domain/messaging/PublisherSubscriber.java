@@ -1,7 +1,9 @@
 package org.point85.domain.messaging;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -37,6 +39,9 @@ public class PublisherSubscriber {
 
 	// durable exchange
 	private static final boolean DURABLE_EXCHANGE = true;
+
+	// queue TTL (sec)
+	private static final int QUEUE_TTL_SEC = 3600;
 
 	private String bindingKey;
 
@@ -80,7 +85,7 @@ public class PublisherSubscriber {
 	}
 
 	public void connectAndSubscribe(String brokerHostName, int port, String userName, String password, String queueName,
-			boolean durable, List<RoutingKey> routingKeys, MessageListener listener) throws Exception {
+			List<RoutingKey> routingKeys, MessageListener listener) throws Exception {
 		// connect to broker
 		connect(brokerHostName, port, userName, password);
 
@@ -88,7 +93,7 @@ public class PublisherSubscriber {
 		registerListener(listener);
 
 		// subscribe to messages
-		subscribe(queueName, durable, routingKeys);
+		subscribe(queueName, routingKeys);
 	}
 
 	public void connect(String brokerHostName, int port, String userName, String password) throws Exception {
@@ -184,26 +189,24 @@ public class PublisherSubscriber {
 		sendMessage(message, routingKey.getKey(), properties);
 	}
 
-	public void subscribe(String queueName, boolean durable, List<RoutingKey> routingKeys) throws Exception {
-		String nameOfQueue = queueName;
+	private void subscribe(String queueName, List<RoutingKey> routingKeys) throws Exception {
+		// TTL
+		Map<String, Object> args = new HashMap<String, Object>();
+		args.put("x-message-ttl", QUEUE_TTL_SEC * 1000);
 
-		if (nameOfQueue == null) {
-			nameOfQueue = channel.queueDeclare().getQueue();
-		}
-
-		// durable, non-exclusive queue
-		channel.queueDeclare(nameOfQueue, durable, false, false, null);
+		// not durable, non-exclusive queue, autodelete with TTL
+		channel.queueDeclare(queueName, false, false, true, args);
 
 		for (RoutingKey routingKey : routingKeys) {
 			// bind to key
-			channel.queueBind(nameOfQueue, EXCHANGE_NAME, routingKey.getKey());
+			channel.queueBind(queueName, EXCHANGE_NAME, routingKey.getKey());
 		}
 
 		// create a message receiver
 		Receiver consumer = new Receiver();
 
 		// start consuming messages
-		consumerTag = channel.basicConsume(nameOfQueue, AUTO_ACK, consumer);
+		consumerTag = channel.basicConsume(queueName, AUTO_ACK, consumer);
 
 		if (logger.isInfoEnabled()) {
 			String keys = "";
@@ -213,7 +216,7 @@ public class PublisherSubscriber {
 				}
 				keys += routingKey;
 			}
-			logger.info("Subscribed to queue " + nameOfQueue + " with routing key(s) " + keys + ", durable " + durable);
+			logger.info("Subscribed to queue " + queueName + " with routing key(s) " + keys);
 		}
 	}
 
@@ -266,7 +269,7 @@ public class PublisherSubscriber {
 
 				String response = new String(body, "UTF-8");
 
-				channel.basicPublish("", properties.getReplyTo(), replyProps, response.getBytes("UTF-8"));
+				channel.basicPublish(EXCHANGE_NAME, properties.getReplyTo(), replyProps, response.getBytes("UTF-8"));
 
 				channel.basicAck(envelope.getDeliveryTag(), false);
 			}

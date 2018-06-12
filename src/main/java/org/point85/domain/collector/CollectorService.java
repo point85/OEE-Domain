@@ -73,7 +73,7 @@ public class CollectorService
 	private static final int STATUS_TTL_SEC = 3600;
 
 	// sec for a event resolution message to live in the queue
-	private static final int RESOLUTION_TTL_SEC = 60;
+	private static final int RESOLUTION_TTL_SEC = 3600;
 
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
@@ -89,9 +89,6 @@ public class CollectorService
 
 	// serializer
 	protected Gson gson;
-
-	// queue on each RMQ broker
-	private final String queueName = getClass().getSimpleName();
 
 	// script execution context
 	private OeeContext appContext;
@@ -183,11 +180,14 @@ public class CollectorService
 			String brokerUser = source.getUserName();
 			String brokerPassword = source.getUserPassword();
 
+			// queue on each RMQ broker
+			String queueName = "EVT_" + getClass().getSimpleName() + "_" + System.currentTimeMillis();
+
 			List<RoutingKey> routingKeys = new ArrayList<>();
 			routingKeys.add(RoutingKey.EQUIPMENT_SOURCE_EVENT);
 
-			pubsub.connectAndSubscribe(brokerHostName, brokerPort, brokerUser, brokerPassword, queueName, false,
-					routingKeys, this);
+			pubsub.connectAndSubscribe(brokerHostName, brokerPort, brokerUser, brokerPassword, queueName, routingKeys,
+					this);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Started RMQ event pubsub: " + source.getId());
@@ -502,7 +502,7 @@ public class CollectorService
 	}
 
 	private synchronized void startNotifications() throws Exception {
-		// connect to notification brokers for publishing only
+		// connect to notification brokers for commands
 		Map<String, PublisherSubscriber> pubSubs = new HashMap<>();
 
 		for (DataCollector collector : collectors) {
@@ -520,12 +520,15 @@ public class CollectorService
 				PublisherSubscriber pubsub = new PublisherSubscriber();
 				pubSubs.put(key, pubsub);
 
+				// queue
+				String queueName = "CMD_" + getClass().getSimpleName() + "_" + System.currentTimeMillis();
+
 				// connect to broker and subscribe for commands
 				List<RoutingKey> routingKeys = new ArrayList<>();
 				routingKeys.add(RoutingKey.COMMAND_MESSAGE);
 
 				pubsub.connectAndSubscribe(brokerHostName, brokerPort, collector.getBrokerUserName(),
-						collector.getBrokerUserPassword(), queueName, false, routingKeys, this);
+						collector.getBrokerUserPassword(), queueName, routingKeys, this);
 
 				appContext.getPublisherSubscribers().add(pubsub);
 
@@ -767,12 +770,12 @@ public class CollectorService
 	public void saveOeeEvent(OeeEvent event) throws Exception {
 		Equipment equipment = event.getEquipment();
 		Duration days = equipment.findRetentionPeriod();
-		
+
 		if (days != null && days.equals(Duration.ZERO)) {
 			// no need to save or purge
 			return;
 		}
-		
+
 		if (logger.isInfoEnabled()) {
 			logger.info("Saving OEE event to database: " + event);
 		}
@@ -816,12 +819,6 @@ public class CollectorService
 	@Override
 	public void onOpcUaSubscription(DataValue dataValue, UaMonitoredItem item) {
 		getExecutorService().execute(new OpcUaTask(dataValue, item));
-	}
-
-	protected void sendMessage(PublisherSubscriber pubsub, ApplicationMessage message, RoutingKey routingKey) {
-		// we publish only to the data recorder
-		MessageSender sender = new MessageSender(pubsub, message, routingKey);
-		this.executorService.execute(sender);
 	}
 
 	public void onException(String preface, Exception any) {
@@ -1199,33 +1196,6 @@ public class CollectorService
 					// ack failed
 					onException("Unable to ack message.", ex);
 				}
-			}
-		}
-	}
-
-	/********************* MessageHandler ***********************************/
-	private class MessageSender implements Runnable {
-
-		private final PublisherSubscriber pubsub;
-		private final ApplicationMessage message;
-		private final RoutingKey routingKey;
-
-		MessageSender(PublisherSubscriber pubsub, ApplicationMessage message, RoutingKey routingKey) {
-			this.message = message;
-			this.routingKey = routingKey;
-			this.pubsub = pubsub;
-		}
-
-		@Override
-		public void run() {
-			try {
-				if (message != null) {
-					// send message
-					pubsub.publish(message, routingKey);
-				}
-			} catch (Exception e) {
-				// sending failed
-				onException("Unable to send message.", e);
 			}
 		}
 	}
