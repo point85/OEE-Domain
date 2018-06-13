@@ -556,15 +556,9 @@ public class CollectorService
 		message.setText(text);
 		message.setSeverity(severity);
 
-		Integer ttl = null;
-
-		if (severity.equals(NotificationSeverity.INFO)) {
-			ttl = CollectorService.STATUS_TTL_SEC;
-		}
-
 		for (PublisherSubscriber pubSub : appContext.getPublisherSubscribers()) {
 			try {
-				pubSub.publish(message, RoutingKey.NOTIFICATION_MESSAGE, ttl);
+				pubSub.publish(message, RoutingKey.NOTIFICATION_MESSAGE, STATUS_TTL_SEC);
 			} catch (Exception e) {
 				logger.error("Unable to publish notification.", e);
 			}

@@ -167,12 +167,7 @@ public class PublisherSubscriber {
 		channel.basicPublish(EXCHANGE_NAME, routingKey, properties, payload.getBytes());
 	}
 
-	public void publish(ApplicationMessage message, RoutingKey routingKey) throws Exception {
-		// no TTL
-		publish(message, routingKey, null);
-	}
-
-	public void publish(ApplicationMessage message, RoutingKey routingKey, Integer ttlSec) throws Exception {
+	public void publish(ApplicationMessage message, RoutingKey routingKey, int ttlSec) throws Exception {
 		// validate
 		message.validate();
 
@@ -180,10 +175,8 @@ public class PublisherSubscriber {
 		BasicProperties properties = new BasicProperties.Builder().type(message.getMessageType().toString())
 				.correlationId(UUID.randomUUID().toString()).build();
 
-		if (ttlSec != null) {
-			// TTL in msec
-			properties.builder().expiration(String.valueOf(ttlSec * 1000));
-		}
+		// TTL in msec
+		properties.builder().expiration(String.valueOf(ttlSec * 1000));
 
 		// send the message with these properties
 		sendMessage(message, routingKey.getKey(), properties);

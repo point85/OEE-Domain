@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 
 import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.plant.Equipment;
+import org.point85.domain.plant.EquipmentMaterial;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
 import org.point85.domain.uom.Quantity;
@@ -488,5 +489,13 @@ public class EquipmentLoss {
 
 	public void setEventRecords(List<OeeEvent> records) {
 		this.eventRecords = records;
+	}
+
+	public EquipmentMaterial getEquipmentMaterial() {
+		EquipmentMaterial eqm = null;
+		if (equipment != null && material != null) {
+			eqm = equipment.getEquipmentMaterial(material);
+		}
+		return eqm;
 	}
 }
