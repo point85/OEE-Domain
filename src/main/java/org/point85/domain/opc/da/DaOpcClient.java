@@ -117,7 +117,8 @@ public class DaOpcClient {
 	public void disconnect() throws Exception {
 
 		if (jiSession != null) {
-			JISession.destroySession(jiSession);
+			// should it be destroyed?
+			//JISession.destroySession(jiSession);
 		}
 		jiSession = null;
 	}

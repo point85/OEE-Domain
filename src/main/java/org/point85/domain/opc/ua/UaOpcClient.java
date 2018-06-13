@@ -55,7 +55,6 @@ import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.NodeClass;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.ServerState;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
-import org.eclipse.milo.opcua.stack.core.types.enumerated.UserTokenType;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.BuildInfo;
@@ -65,7 +64,6 @@ import org.eclipse.milo.opcua.stack.core.types.structured.MonitoredItemCreateReq
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoringParameters;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
-import org.eclipse.milo.opcua.stack.core.types.structured.UserTokenPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,6 +87,9 @@ public class UaOpcClient implements SessionActivityListener {
 	private static final int SUBSCRIPTION_QUEUE_SIZE = 1;
 
 	private static final double SAMPLING_INTERVAL = 0.0d;
+	
+	// session timeout (msec)
+	private static final int SESSION_TIMEOUT = 24 * 3600 * 1000;
 
 	// wrapped UA client
 	private OpcUaClient opcUaClient;
@@ -201,21 +202,6 @@ public class UaOpcClient implements SessionActivityListener {
 			throw new Exception(msg);
 		}
 
-		UserTokenType certificateType = null;
-
-		for (UserTokenPolicy tokenPolicy : endpointDescription.getUserIdentityTokens()) {
-			UserTokenType utt = tokenPolicy.getTokenType();
-
-			if (utt.equals(UserTokenType.Certificate)) {
-				certificateType = utt;
-				break;
-			}
-		}
-
-		if (certificateType == null) {
-			logger.error("The endpoint does not have a Certificate user token type.");
-		}
-
 		// make sure the URL has the requested host name
 		EndpointDescription updatedEndpoint = EndpointUtilExt.updateUrl(endpointDescription, source.getHost());
 
@@ -243,6 +229,9 @@ public class UaOpcClient implements SessionActivityListener {
 				logger.info("Client certificate alg " + loader.getClientCertificate().getSigAlgName());
 			}
 		}
+		
+		// session timeout
+		configBuilder.setSessionTimeout(uint(SESSION_TIMEOUT));
 
 		// create the client
 		opcUaClient = new OpcUaClient(configBuilder.build());
