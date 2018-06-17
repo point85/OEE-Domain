@@ -1,10 +1,26 @@
 package org.point85.domain.http;
 
+/**
+ * Data Transfer Object (DTO) for an equipment event (availability, production
+ * of material, setup or job change)
+ * 
+ *
+ */
 public class EquipmentEventRequestDto {
 	private String sourceId;
 	private String value;
 	private String timestamp;
 
+	/**
+	 * Construct the event
+	 * 
+	 * @param sourceId
+	 *            Data source identifier from the configured event resolver
+	 * @param value
+	 *            Data value
+	 * @param timestamp
+	 *            Date and time when event occurred
+	 */
 	public EquipmentEventRequestDto(String sourceId, String value, String timestamp) {
 		this.sourceId = sourceId;
 		this.value = value;
