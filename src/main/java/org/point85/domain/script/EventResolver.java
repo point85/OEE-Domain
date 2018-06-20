@@ -23,6 +23,10 @@ import org.point85.domain.plant.KeyedObject;
 @Table(name = "EVENT_RESOLVER")
 @AttributeOverride(name = "primaryKey", column = @Column(name = "ER_KEY"))
 
+/**
+ * This class executes a JavaScript script to resolve an event
+ *
+ */
 public class EventResolver extends KeyedObject {
 	// period between value updates
 	public static final int DEFAULT_UPDATE_PERIOD = 5000;
@@ -93,7 +97,6 @@ public class EventResolver extends KeyedObject {
 		this.functionScript = script;
 	}
 
-	// get owning entity
 	public Equipment getEquipment() {
 		return equipment;
 	}
@@ -102,14 +105,25 @@ public class EventResolver extends KeyedObject {
 		this.equipment = owner;
 	}
 
-	public static String getPassthroughScript() {
+	/**
+	 * Create the default pass-through function for an availability event
+	 * 
+	 * @return JavaScript function
+	 */
+	public static String createDefaultAvailabilityFunction() {
 		String body = "return value;";
 		return ResolverFunction.functionFromBody(body);
 	}
 
-	public static String getDefaultProductionScript() {
+	/**
+	 * Create the default function for a production count event
+	 * 
+	 * @return JavaScript function
+	 */
+	public static String createDefaultProductionFunction() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("var ROLLOVER = 0;");
+		sb.append('\n').append("var lastValue = resolver.getLastValue();");
 		sb.append('\n').append("var delta = value - lastValue;");
 		sb.append('\n').append("if (value < lastValue) {");
 		sb.append('\n').append("    delta += ROLLOVER;");
@@ -119,14 +133,24 @@ public class EventResolver extends KeyedObject {
 		return ResolverFunction.functionFromBody(sb.toString());
 	}
 
-	public static String getDefaultMaterialScript() {
+	/**
+	 * Create the default pass-through function for a material change event
+	 * 
+	 * @return JavaScript function
+	 */
+	public static String createDefaultMaterialFunction() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("return value;");
 
 		return ResolverFunction.functionFromBody(sb.toString());
 	}
 
-	public static String getDefaultJobScript() {
+	/**
+	 * Create the default pass-through function for a job change event
+	 * 
+	 * @return JavaScript function
+	 */
+	public static String createDefaultJobFunction() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("return value;");
 

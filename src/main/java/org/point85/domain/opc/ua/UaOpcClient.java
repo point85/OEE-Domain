@@ -87,7 +87,7 @@ public class UaOpcClient implements SessionActivityListener {
 	private static final int SUBSCRIPTION_QUEUE_SIZE = 1;
 
 	private static final double SAMPLING_INTERVAL = 0.0d;
-	
+
 	// session timeout (msec)
 	private static final int SESSION_TIMEOUT = 24 * 3600 * 1000;
 
@@ -104,6 +104,8 @@ public class UaOpcClient implements SessionActivityListener {
 	private final ConcurrentMap<NodeId, UaSubscription> subscriptionMap = new ConcurrentHashMap<>();
 
 	private final AtomicReference<BiConsumer<Boolean, Throwable>> listener = new AtomicReference<>();
+
+	private OpcUaSource connectedSource;
 
 	public UaOpcClient() {
 		// nothing to initialize
@@ -229,7 +231,7 @@ public class UaOpcClient implements SessionActivityListener {
 				logger.info("Client certificate alg " + loader.getClientCertificate().getSigAlgName());
 			}
 		}
-		
+
 		// session timeout
 		configBuilder.setSessionTimeout(uint(SESSION_TIMEOUT));
 
@@ -242,6 +244,7 @@ public class UaOpcClient implements SessionActivityListener {
 		if (logger.isInfoEnabled()) {
 			logger.info("Connected to server.");
 		}
+		connectedSource = source;
 	}
 
 	public synchronized void disconnect() throws Exception {
@@ -250,6 +253,7 @@ public class UaOpcClient implements SessionActivityListener {
 			opcUaClient = null;
 		}
 		Stack.releaseSharedResources();
+		connectedSource = null;
 	}
 
 	private void checkPreconditions() throws Exception {
@@ -609,5 +613,15 @@ public class UaOpcClient implements SessionActivityListener {
 		if (consumer != null) {
 			consumer.accept(Boolean.FALSE, null);
 		}
+	}
+
+	@Override
+	public String toString() {
+		String value = connectedSource != null ? "Host: " + connectedSource.getHost() + ":" + connectedSource.getPort()
+				: "";
+		if (connectedSource.getEndpointPath() != null) {
+			value += "/" + connectedSource.getEndpointPath();
+		}
+		return value;
 	}
 }

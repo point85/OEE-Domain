@@ -99,7 +99,7 @@ public class ResolverFunction {
 	}
 
 	public static String functionFromBody(String script) {
-		return "function " + ResolverFunction.generateFunctionName() + "(context, value, lastValue) {" + script + "}";
+		return "function " + ResolverFunction.generateFunctionName() + "(context, value, resolver) {" + script + "}";
 	}
 
 	public String getDisplayString() throws Exception {

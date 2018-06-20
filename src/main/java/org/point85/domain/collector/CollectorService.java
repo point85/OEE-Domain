@@ -173,7 +173,6 @@ public class CollectorService
 			MessagingSource source = entry.getValue().getSource();
 
 			PublisherSubscriber pubsub = new PublisherSubscriber();
-			appContext.getPublisherSubscribers().add(pubsub);
 
 			String brokerHostName = source.getHost();
 			Integer brokerPort = source.getPort();
@@ -188,6 +187,9 @@ public class CollectorService
 
 			pubsub.connectAndSubscribe(brokerHostName, brokerPort, brokerUser, brokerPassword, queueName, routingKeys,
 					this);
+			
+			// add to context
+			appContext.getPublisherSubscribers().add(pubsub);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Started RMQ event pubsub: " + source.getId());
@@ -201,10 +203,12 @@ public class CollectorService
 
 			Integer port = source.getPort();
 			OeeHttpServer httpServer = new OeeHttpServer(port);
-			appContext.getHttpServers().add(httpServer);
 			httpServer.setDataChangeListener(this);
 			httpServer.setAcceptingEventRequests(true);
 			httpServer.startup();
+			
+			// add to context
+			appContext.getHttpServers().add(httpServer);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Started HTTP server on port " + port);
@@ -242,6 +246,7 @@ public class CollectorService
 			UaOpcClient uaClient = new UaOpcClient();
 			uaClient.connect(uaInfo.getSource());
 
+			// add to context
 			appContext.getOpcUaClients().add(uaClient);
 
 			uaClient.registerAsynchListener(this);
@@ -530,6 +535,7 @@ public class CollectorService
 				pubsub.connectAndSubscribe(brokerHostName, brokerPort, collector.getBrokerUserName(),
 						collector.getBrokerUserPassword(), queueName, routingKeys, this);
 
+				// add to context
 				appContext.getPublisherSubscribers().add(pubsub);
 
 				if (logger.isInfoEnabled()) {
@@ -539,7 +545,7 @@ public class CollectorService
 		}
 
 		// maybe start status publishing
-		if (appContext.getPublisherSubscribers().size() > 0 && heartbeatTimer == null) {
+		if (!appContext.getPublisherSubscribers().isEmpty()  && heartbeatTimer == null) {
 			// create timer and task
 			heartbeatTimer = new Timer();
 			heartbeatTask = new HeartbeatTask();
@@ -548,7 +554,7 @@ public class CollectorService
 	}
 
 	private synchronized void sendNotification(String text, NotificationSeverity severity) {
-		if (appContext.getPublisherSubscribers().size() == 0) {
+		if (appContext.getPublisherSubscribers().isEmpty()) {
 			return;
 		}
 

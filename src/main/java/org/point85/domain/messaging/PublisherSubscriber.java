@@ -157,7 +157,7 @@ public class PublisherSubscriber {
 	private void sendMessage(ApplicationMessage message, String routingKey, BasicProperties properties)
 			throws Exception {
 		if (channel == null) {
-			return;
+			throw new Exception("The channel is null.");
 		}
 
 		// payload is JSON string
@@ -305,6 +305,11 @@ public class PublisherSubscriber {
 		replyMessage = deserialize(type, body);
 
 		return replyMessage;
+	}
+
+	@Override
+	public String toString() {
+		return factory != null ? factory.getHost() + ":" + factory.getPort() : "";
 	}
 
 	// ************************* Message Receiver ***************************

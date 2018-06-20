@@ -223,7 +223,7 @@ public class OeeHttpServer extends NanoHTTPD {
 		String body = session.getQueryParameterString();
 
 		if (body != null && body.length() > 0 && logger.isInfoEnabled()) {
-				logger.info("    Body: " + body);
+			logger.info("    Body: " + body);
 		}
 		return bodyMap;
 	}
@@ -421,5 +421,11 @@ public class OeeHttpServer extends NanoHTTPD {
 
 	public void setAcceptingEventRequests(boolean acceptingEventRequests) {
 		this.acceptingEventRequests = acceptingEventRequests;
+	}
+
+	@Override
+	public String toString() {
+		String hostName = getHostname() != null ? getHostname() : "localhost";
+		return "Host: " + hostName + ":" + getListeningPort();
 	}
 }

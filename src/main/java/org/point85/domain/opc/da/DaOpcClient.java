@@ -46,6 +46,8 @@ public class DaOpcClient {
 	// logging utility
 	private static final Logger logger = LoggerFactory.getLogger(DaOpcClient.class);
 
+	private OpcDaSource connectedSource;
+
 	private JISession jiSession;
 	private OPCServer opcServer;
 	private static final int DEFAULT_LOCALE_ID = 1033;
@@ -89,9 +91,17 @@ public class DaOpcClient {
 		opcServer = new OPCServer(serverObject);
 	}
 
+	@Override
+	public String toString() {
+		return connectedSource != null
+				? "Host: " + connectedSource.getHost() + ", ProgId: " + connectedSource.getProgId()
+				: "";
+	}
+
 	public void connect(OpcDaSource opcDaSource) throws Exception {
 		this.connect(opcDaSource.getHost(), opcDaSource.getUserName(), opcDaSource.getUserPassword(),
 				opcDaSource.getProgId(), opcDaSource.getClassId());
+		connectedSource = opcDaSource;
 	}
 
 	private void connect(String host, String domainUser, String password, String progId, String classId)
@@ -106,7 +116,7 @@ public class DaOpcClient {
 
 		if (logger.isInfoEnabled()) {
 			String text = "Connecting to OPC DA server, host: " + host + ", domain:" + userInfo[0] + ", user: "
-					+ userInfo[1] + ", password: " + password + ", progId: " + progId + ", classid: " + classId;
+					+ userInfo[1] + ", ProgId: " + progId + ", classid: " + classId;
 			logger.info(text);
 		}
 
@@ -118,9 +128,10 @@ public class DaOpcClient {
 
 		if (jiSession != null) {
 			// should it be destroyed?
-			//JISession.destroySession(jiSession);
+			// JISession.destroySession(jiSession);
 		}
 		jiSession = null;
+		connectedSource = null;
 	}
 
 	public OpcDaTreeBrowser getTreeBrowser() throws Exception {

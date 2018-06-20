@@ -42,7 +42,7 @@ public class EquipmentEventResolver {
 	// resolvers by source id
 	private final ConcurrentMap<Equipment, List<EventResolver>> resolverCache = new ConcurrentHashMap<>();
 
-	//  engine to evaluate java script
+	// engine to evaluate java script
 	private final ScriptEngine scriptEngine;
 
 	public EquipmentEventResolver() {
@@ -149,19 +149,30 @@ public class EquipmentEventResolver {
 		ResolverFunction resolverFunction = new ResolverFunction(script);
 
 		// for production counts
-		if (eventResolver.getLastValue() == null) {
-			eventResolver.setLastValue(sourceValue);
+		if (resolverType.isProduction() && eventResolver.getLastValue() == null) {
+			// fetch from database
+			OeeEvent event = PersistenceService.instance().fetchLastEvent(equipment, resolverType);
+
+			if (event != null) {
+				eventResolver.setLastValue(event.getOutputValue());
+			} else {
+				eventResolver.setLastValue(sourceValue);
+			}
 		}
 
 		// result of script
-		Object result = resolverFunction.invoke(getScriptEngine(), context, sourceValue, eventResolver.getLastValue());
+		Object result = resolverFunction.invoke(getScriptEngine(), context, sourceValue, eventResolver);
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Result: " + result);
 		}
 
 		// save last value
-		eventResolver.setLastValue(sourceValue);
+		if (resolverType.isProduction()) {
+			eventResolver.setLastValue(result);
+		}
+		
+		// last event time
 		eventResolver.setLastTimestamp(dateTime);
 
 		// set shift
@@ -243,8 +254,8 @@ public class EquipmentEventResolver {
 	}
 
 	// production counts
-	private void processProduction(OeeEvent resolvedItem, OeeEventType resolverType, Material material, OeeContext context)
-			throws Exception {
+	private void processProduction(OeeEvent resolvedItem, OeeEventType resolverType, Material material,
+			OeeContext context) throws Exception {
 		Object outputValue = resolvedItem.getOutputValue();
 		Double amount = null;
 
@@ -269,7 +280,7 @@ public class EquipmentEventResolver {
 
 		// get UOM from material and equipment
 		Material producedMaterial = material;
-		
+
 		if (producedMaterial == null) {
 			EquipmentMaterial eqm = resolvedItem.getEquipment().getDefaultEquipmentMaterial();
 
