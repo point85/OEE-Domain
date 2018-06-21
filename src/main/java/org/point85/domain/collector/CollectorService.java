@@ -187,7 +187,7 @@ public class CollectorService
 
 			pubsub.connectAndSubscribe(brokerHostName, brokerPort, brokerUser, brokerPassword, queueName, routingKeys,
 					this);
-			
+
 			// add to context
 			appContext.getPublisherSubscribers().add(pubsub);
 
@@ -206,7 +206,7 @@ public class CollectorService
 			httpServer.setDataChangeListener(this);
 			httpServer.setAcceptingEventRequests(true);
 			httpServer.startup();
-			
+
 			// add to context
 			appContext.getHttpServers().add(httpServer);
 
@@ -545,7 +545,7 @@ public class CollectorService
 		}
 
 		// maybe start status publishing
-		if (!appContext.getPublisherSubscribers().isEmpty()  && heartbeatTimer == null) {
+		if (!appContext.getPublisherSubscribers().isEmpty() && heartbeatTimer == null) {
 			// create timer and task
 			heartbeatTimer = new Timer();
 			heartbeatTask = new HeartbeatTask();

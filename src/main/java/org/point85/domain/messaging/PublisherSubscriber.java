@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -21,7 +22,10 @@ import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 
-//connect to RMQ, publish and subscribe to message
+/**
+ * Class to connect to RMQ, publish and subscribe to message
+ *
+ */
 public class PublisherSubscriber {
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(PublisherSubscriber.class);
@@ -157,7 +161,7 @@ public class PublisherSubscriber {
 	private void sendMessage(ApplicationMessage message, String routingKey, BasicProperties properties)
 			throws Exception {
 		if (channel == null) {
-			throw new Exception("The channel is null.");
+			throw new Exception("Can't send message: " + message + ".  The channel is null.");
 		}
 
 		// payload is JSON string
@@ -305,6 +309,23 @@ public class PublisherSubscriber {
 		replyMessage = deserialize(type, body);
 
 		return replyMessage;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(factory.getHost(), factory.getPort());
+	}
+
+	@Override
+	public boolean equals(Object other) {
+
+		if (!(other instanceof PublisherSubscriber)) {
+			return false;
+		}
+		PublisherSubscriber otherPubSub = (PublisherSubscriber) other;
+
+		return factory.getHost().equals(otherPubSub.factory.getHost())
+				&& factory.getPort() == otherPubSub.factory.getPort();
 	}
 
 	@Override

@@ -1,10 +1,13 @@
 package org.point85.domain.http;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.CollectorDataSource;
@@ -55,10 +58,6 @@ public class OeeHttpServer extends NanoHTTPD {
 	};
 
 	private ServerState state = ServerState.STOPPED;
-
-	public OeeHttpServer() {
-		super(DEFAULT_PORT);
-	}
 
 	public OeeHttpServer(int port) {
 		super(port);
@@ -424,8 +423,37 @@ public class OeeHttpServer extends NanoHTTPD {
 	}
 
 	@Override
+	public int hashCode() {
+		return Objects.hash(getHost(), getListeningPort());
+	}
+
+	@Override
+	public boolean equals(Object other) {
+
+		if (!(other instanceof OeeHttpServer)) {
+			return false;
+		}
+		OeeHttpServer otherServer = (OeeHttpServer) other;
+
+		return getHost().equals(otherServer.getHost()) && getListeningPort() == otherServer.getListeningPort();
+	}
+
+	private String getHost() {
+		String host = getHostname();
+
+		if (host == null) {
+			try {
+				host = InetAddress.getLocalHost().getHostName();
+			} catch (UnknownHostException e) {
+				host = "localhost";
+			}
+		}
+		return host;
+	}
+
+	@Override
 	public String toString() {
-		String hostName = getHostname() != null ? getHostname() : "localhost";
-		return "Host: " + hostName + ":" + getListeningPort();
+
+		return "Host: " + getHost() + ":" + getListeningPort();
 	}
 }

@@ -291,7 +291,7 @@ public class OeeContext {
 	 * @param pubSub
 	 *            {@link PublisherSubscriber}
 	 */
-	public void addMessagingClient(PublisherSubscriber pubSub) {
+	public void addPublisherSubscriber(PublisherSubscriber pubSub) {
 		if (!getPublisherSubscribers().contains(pubSub)) {
 			getPublisherSubscribers().add(pubSub);
 		}
@@ -303,7 +303,7 @@ public class OeeContext {
 	 * @param pubSub
 	 *            {@link PublisherSubscriber}
 	 */
-	public void removeMessagingClient(PublisherSubscriber pubSub) {
+	public void removePublisherSubscriber(PublisherSubscriber pubSub) {
 		if (getPublisherSubscribers().contains(pubSub)) {
 			getPublisherSubscribers().remove(pubSub);
 		}

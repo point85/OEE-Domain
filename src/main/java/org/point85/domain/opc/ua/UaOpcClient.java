@@ -6,6 +6,7 @@ import static org.eclipse.milo.opcua.stack.core.util.ConversionUtil.toList;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -613,6 +614,23 @@ public class UaOpcClient implements SessionActivityListener {
 		if (consumer != null) {
 			consumer.accept(Boolean.FALSE, null);
 		}
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(connectedSource.getHost(), connectedSource.getPort());
+	}
+
+	@Override
+	public boolean equals(Object other) {
+
+		if (!(other instanceof UaOpcClient)) {
+			return false;
+		}
+		UaOpcClient otherClient = (UaOpcClient) other;
+
+		return connectedSource.getHost().equals(otherClient.connectedSource.getHost())
+				&& connectedSource.getPort() == otherClient.connectedSource.getPort();
 	}
 
 	@Override

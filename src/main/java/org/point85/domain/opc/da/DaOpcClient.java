@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 
 import org.jinterop.dcom.common.JISystem;
@@ -89,6 +90,23 @@ public class DaOpcClient {
 
 		IJIComObject serverObject = comServer.createInstance();
 		opcServer = new OPCServer(serverObject);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(connectedSource.getHost(), connectedSource.getProgId());
+	}
+
+	@Override
+	public boolean equals(Object other) {
+
+		if (!(other instanceof DaOpcClient)) {
+			return false;
+		}
+		DaOpcClient otherClient = (DaOpcClient) other;
+
+		return connectedSource.getHost().equals(otherClient.connectedSource.getHost())
+				&& connectedSource.getProgId() == otherClient.connectedSource.getProgId();
 	}
 
 	@Override
