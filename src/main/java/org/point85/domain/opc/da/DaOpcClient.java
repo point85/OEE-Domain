@@ -358,6 +358,7 @@ public class DaOpcClient {
 		// Add a new item to the group
 		Item item = group.addItem(itemId);
 
+		// read it
 		ItemState itemState = item.read(false);
 		
 		server.disconnect();
@@ -368,6 +369,44 @@ public class DaOpcClient {
 		}
 
 		return new OpcDaVariant(itemState.getValue());
+	}
+	
+	public void writeSynch(String itemId, OpcDaVariant variant) throws Exception {
+		if (connectedSource == null) {
+			throw new Exception("The OPC DA client is not connected to a server.");
+		}
+
+		String[] userInfo = DomainUtils.parseDomainAndUser(connectedSource.getUserName());
+
+		// create connection information
+		ConnectionInformation ci = new ConnectionInformation();
+		ci.setHost(connectedSource.getHost());
+		ci.setDomain(userInfo[0]);
+		ci.setUser(userInfo[1]);
+		ci.setPassword(connectedSource.getUserPassword());
+		ci.setProgId(connectedSource.getProgId());
+
+		// create a new server
+		Server server = new Server(ci, Executors.newSingleThreadScheduledExecutor());
+
+		// connect to server
+		server.connect();
+
+		// create a group only for the read
+		String groupName = Long.toHexString(System.currentTimeMillis());
+		Group group = server.addGroup(groupName);
+
+		// Add a new item to the group
+		Item item = group.addItem(itemId);
+
+		// write to it
+		Integer errorCode = item.write(variant.getJIVariant());
+		
+		server.disconnect();
+		
+		if (errorCode != 0) {
+			throw new Exception("Unable to write to " + itemId + ", error code: " + String.format("%08X", errorCode));
+		}
 	}
 
 }

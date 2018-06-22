@@ -618,7 +618,7 @@ public class UaOpcClient implements SessionActivityListener {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(connectedSource.getHost(), connectedSource.getPort());
+		return connectedSource != null ? Objects.hash(connectedSource.getHost(), connectedSource.getPort()) : 17;
 	}
 
 	@Override
