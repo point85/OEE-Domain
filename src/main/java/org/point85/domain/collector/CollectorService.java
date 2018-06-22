@@ -33,7 +33,7 @@ import org.point85.domain.messaging.MessageListener;
 import org.point85.domain.messaging.MessageType;
 import org.point85.domain.messaging.MessagingSource;
 import org.point85.domain.messaging.NotificationSeverity;
-import org.point85.domain.messaging.PublisherSubscriber;
+import org.point85.domain.messaging.MessagingClient;
 import org.point85.domain.messaging.RoutingKey;
 import org.point85.domain.opc.da.DaOpcClient;
 import org.point85.domain.opc.da.OpcDaDataChangeListener;
@@ -172,7 +172,7 @@ public class CollectorService
 		for (Entry<String, MessageBrokerSource> entry : brokerSources.entrySet()) {
 			MessagingSource source = entry.getValue().getSource();
 
-			PublisherSubscriber pubsub = new PublisherSubscriber();
+			MessagingClient pubsub = new MessagingClient();
 
 			String brokerHostName = source.getHost();
 			Integer brokerPort = source.getPort();
@@ -189,7 +189,7 @@ public class CollectorService
 					this);
 
 			// add to context
-			appContext.getPublisherSubscribers().add(pubsub);
+			appContext.getMessagingClients().add(pubsub);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Started RMQ event pubsub: " + source.getId());
@@ -508,7 +508,7 @@ public class CollectorService
 
 	private synchronized void startNotifications() throws Exception {
 		// connect to notification brokers for commands
-		Map<String, PublisherSubscriber> pubSubs = new HashMap<>();
+		Map<String, MessagingClient> pubSubs = new HashMap<>();
 
 		for (DataCollector collector : collectors) {
 			String brokerHostName = collector.getBrokerHost();
@@ -522,7 +522,7 @@ public class CollectorService
 
 			if (pubSubs.get(key) == null) {
 				// new publisher
-				PublisherSubscriber pubsub = new PublisherSubscriber();
+				MessagingClient pubsub = new MessagingClient();
 				pubSubs.put(key, pubsub);
 
 				// queue
@@ -536,7 +536,7 @@ public class CollectorService
 						collector.getBrokerUserPassword(), queueName, routingKeys, this);
 
 				// add to context
-				appContext.getPublisherSubscribers().add(pubsub);
+				appContext.getMessagingClients().add(pubsub);
 
 				if (logger.isInfoEnabled()) {
 					logger.info("Connected to RMQ broker " + key + " for collector " + collector.getName());
@@ -545,7 +545,7 @@ public class CollectorService
 		}
 
 		// maybe start status publishing
-		if (!appContext.getPublisherSubscribers().isEmpty() && heartbeatTimer == null) {
+		if (!appContext.getMessagingClients().isEmpty() && heartbeatTimer == null) {
 			// create timer and task
 			heartbeatTimer = new Timer();
 			heartbeatTask = new HeartbeatTask();
@@ -554,7 +554,7 @@ public class CollectorService
 	}
 
 	private synchronized void sendNotification(String text, NotificationSeverity severity) {
-		if (appContext.getPublisherSubscribers().isEmpty()) {
+		if (appContext.getMessagingClients().isEmpty()) {
 			return;
 		}
 
@@ -562,7 +562,7 @@ public class CollectorService
 		message.setText(text);
 		message.setSeverity(severity);
 
-		for (PublisherSubscriber pubSub : appContext.getPublisherSubscribers()) {
+		for (MessagingClient pubSub : appContext.getMessagingClients()) {
 			try {
 				pubSub.publish(message, RoutingKey.NOTIFICATION_MESSAGE, STATUS_TTL_SEC);
 			} catch (Exception e) {
@@ -596,10 +596,10 @@ public class CollectorService
 	}
 
 	public synchronized void stopNotifications() throws Exception {
-		for (PublisherSubscriber pubsub : appContext.getPublisherSubscribers()) {
+		for (MessagingClient pubsub : appContext.getMessagingClients()) {
 			pubsub.disconnect();
 		}
-		appContext.getPublisherSubscribers().clear();
+		appContext.getMessagingClients().clear();
 	}
 
 	public synchronized void stopDataCollection() throws Exception {
@@ -607,11 +607,11 @@ public class CollectorService
 		equipmentResolver.clearCache();
 
 		// disconnect from RMQ brokers
-		for (PublisherSubscriber pubsub : appContext.getPublisherSubscribers()) {
+		for (MessagingClient pubsub : appContext.getMessagingClients()) {
 			pubsub.disconnect();
 			onInformation("Disconnected from pubsub with binding key " + pubsub.getBindingKey());
 		}
-		appContext.getPublisherSubscribers().clear();
+		appContext.getMessagingClients().clear();
 
 		// shutdown HTTP servers
 		for (OeeHttpServer httpServer : appContext.getHttpServers()) {
@@ -868,7 +868,7 @@ public class CollectorService
 
 		// ack it now
 		try {
-			channel.basicAck(envelope.getDeliveryTag(), PublisherSubscriber.ACK_MULTIPLE);
+			channel.basicAck(envelope.getDeliveryTag(), MessagingClient.ACK_MULTIPLE);
 		} catch (Exception e) {
 			onException("Failed to ack message.", e);
 			return;
@@ -1058,7 +1058,7 @@ public class CollectorService
 
 	private void sendResolutionMessage(OeeEvent resolvedEvent) {
 		try {
-			if (appContext.getPublisherSubscribers().size() == 0) {
+			if (appContext.getMessagingClients().size() == 0) {
 				return;
 			}
 
@@ -1066,7 +1066,7 @@ public class CollectorService
 			CollectorResolvedEventMessage message = new CollectorResolvedEventMessage(hostname, ip);
 			message.fromResolvedEvent(resolvedEvent);
 
-			for (PublisherSubscriber pubsub : appContext.getPublisherSubscribers()) {
+			for (MessagingClient pubsub : appContext.getMessagingClients()) {
 				pubsub.publish(message, RoutingKey.RESOLVED_EVENT, RESOLUTION_TTL_SEC);
 			}
 
@@ -1190,7 +1190,7 @@ public class CollectorService
 				// ack message
 				try {
 					if (channel.isOpen()) {
-						channel.basicAck(envelope.getDeliveryTag(), PublisherSubscriber.ACK_MULTIPLE);
+						channel.basicAck(envelope.getDeliveryTag(), MessagingClient.ACK_MULTIPLE);
 					}
 				} catch (Exception ex) {
 					// ack failed
@@ -1205,14 +1205,14 @@ public class CollectorService
 		@Override
 		public void run() {
 			try {
-				if (appContext.getPublisherSubscribers().size() == 0) {
+				if (appContext.getMessagingClients().size() == 0) {
 					return;
 				}
 
 				// send status message to each PubSub
 				CollectorServerStatusMessage message = new CollectorServerStatusMessage(hostname, ip);
 
-				for (PublisherSubscriber pubsub : appContext.getPublisherSubscribers()) {
+				for (MessagingClient pubsub : appContext.getMessagingClients()) {
 					pubsub.publish(message, RoutingKey.NOTIFICATION_STATUS, HEARTBEAT_TTL_SEC);
 				}
 

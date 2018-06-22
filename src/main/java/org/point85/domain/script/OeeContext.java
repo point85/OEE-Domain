@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.point85.domain.http.OeeHttpServer;
-import org.point85.domain.messaging.PublisherSubscriber;
+import org.point85.domain.messaging.MessagingClient;
 import org.point85.domain.opc.da.DaOpcClient;
 import org.point85.domain.opc.ua.UaOpcClient;
 import org.point85.domain.plant.Equipment;
@@ -40,8 +40,8 @@ public class OeeContext {
 	// OPC UA client key
 	private static final String OPC_UA_KEY = "OPC_UA";
 
-	// RMQ pub/sub key
-	private static final String PUB_SUB_KEY = "PUB_SUB";
+	// RMQ client key
+	private static final String MSG_KEY = "MESSAGE";
 
 	// HTTP server key
 	private static final String HTTP_KEY = "HTTP";
@@ -49,9 +49,6 @@ public class OeeContext {
 	// hash map of objects exposed to scripting
 	private final ConcurrentMap<String, Object> contextMap;
 
-	/**
-	 * constructor
-	 */
 	public OeeContext() {
 		contextMap = new ConcurrentHashMap<>();
 
@@ -60,7 +57,7 @@ public class OeeContext {
 
 		setOpcDaClients(new HashSet<DaOpcClient>());
 		setOpcUaClients(new HashSet<UaOpcClient>());
-		setPublisherSubscribers(new HashSet<PublisherSubscriber>());
+		setMessagingClients(new HashSet<MessagingClient>());
 		setHttpServers(new HashSet<OeeHttpServer>());
 	}
 
@@ -253,24 +250,24 @@ public class OeeContext {
 	/**
 	 * Get a list of the messaging clients defined for the collector
 	 * 
-	 * @return Collection of {@link PublisherSubscriber}
+	 * @return Collection of {@link MessagingClient}
 	 */
 	@SuppressWarnings("unchecked")
-	public Collection<PublisherSubscriber> getPublisherSubscribers() {
-		return (Collection<PublisherSubscriber>) contextMap.get(PUB_SUB_KEY);
+	public Collection<MessagingClient> getMessagingClients() {
+		return (Collection<MessagingClient>) contextMap.get(MSG_KEY);
 	}
 
 	/**
 	 * Get the first (only) messaging client
 	 * 
-	 * @return {@link PublisherSubscriber}
+	 * @return {@link MessagingClient}
 	 */
-	public PublisherSubscriber getPublisherSubscriber() {
+	public MessagingClient getMessagingClient() {
 		// get the first one
-		PublisherSubscriber client = null;
+		MessagingClient client = null;
 
-		if (!getPublisherSubscribers().isEmpty()) {
-			client = getPublisherSubscribers().iterator().next();
+		if (!getMessagingClients().isEmpty()) {
+			client = getMessagingClients().iterator().next();
 		}
 		return client;
 	}
@@ -279,33 +276,33 @@ public class OeeContext {
 	 * Set the list of the messaging clients defined for the collector
 	 * 
 	 * @param clients
-	 *            Set of {@link PublisherSubscriber}
+	 *            Set of {@link MessagingClient}
 	 */
-	public void setPublisherSubscribers(Collection<PublisherSubscriber> clients) {
-		contextMap.put(PUB_SUB_KEY, clients);
+	public void setMessagingClients(Collection<MessagingClient> clients) {
+		contextMap.put(MSG_KEY, clients);
 	}
 
 	/**
 	 * Add a messaging client to the list
 	 * 
-	 * @param pubSub
-	 *            {@link PublisherSubscriber}
+	 * @param client
+	 *            {@link MessagingClient}
 	 */
-	public void addPublisherSubscriber(PublisherSubscriber pubSub) {
-		if (!getPublisherSubscribers().contains(pubSub)) {
-			getPublisherSubscribers().add(pubSub);
+	public void addMessagingClient(MessagingClient client) {
+		if (!getMessagingClients().contains(client)) {
+			getMessagingClients().add(client);
 		}
 	}
 
 	/**
 	 * Remove a messaging client from the list
 	 * 
-	 * @param pubSub
-	 *            {@link PublisherSubscriber}
+	 * @param client
+	 *            {@link MessagingClient}
 	 */
-	public void removePublisherSubscriber(PublisherSubscriber pubSub) {
-		if (getPublisherSubscribers().contains(pubSub)) {
-			getPublisherSubscribers().remove(pubSub);
+	public void removeMessagingClient(MessagingClient client) {
+		if (getMessagingClients().contains(client)) {
+			getMessagingClients().remove(client);
 		}
 	}
 
@@ -383,8 +380,8 @@ public class OeeContext {
 		}
 
 		sb.append("\n Messaging clients ...");
-		for (PublisherSubscriber pubSub : getPublisherSubscribers()) {
-			sb.append('\t').append(pubSub.toString());
+		for (MessagingClient client : getMessagingClients()) {
+			sb.append('\t').append(client.toString());
 		}
 
 		sb.append("\n HTTP servers ...");

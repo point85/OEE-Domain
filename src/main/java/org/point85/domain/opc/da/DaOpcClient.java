@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.Executors;
 
 import org.jinterop.dcom.common.JISystem;
 import org.jinterop.dcom.core.IJIComObject;
@@ -26,6 +27,11 @@ import org.openscada.opc.dcom.da.impl.OPCGroupStateMgt;
 import org.openscada.opc.dcom.da.impl.OPCItemProperties;
 import org.openscada.opc.dcom.da.impl.OPCServer;
 import org.openscada.opc.dcom.list.ClassDetails;
+import org.openscada.opc.lib.common.ConnectionInformation;
+import org.openscada.opc.lib.da.Group;
+import org.openscada.opc.lib.da.Item;
+import org.openscada.opc.lib.da.ItemState;
+import org.openscada.opc.lib.da.Server;
 import org.openscada.opc.lib.da.browser.TreeBrowser;
 import org.openscada.opc.lib.list.Category;
 import org.openscada.opc.lib.list.ServerList;
@@ -94,7 +100,9 @@ public class DaOpcClient {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(connectedSource.getHost(), connectedSource.getProgId());
+		String host = connectedSource != null ? connectedSource.getHost() : "host";
+		String progId = connectedSource != null ? connectedSource.getProgId() : "progId";
+		return Objects.hash(host, progId);
 	}
 
 	@Override
@@ -316,6 +324,50 @@ public class DaOpcClient {
 		opcDaGroup.addItems(tagArray, true);
 
 		return opcDaGroup;
+	}
+
+	public OPCServer getNativeServer() {
+		return opcServer;
+	}
+
+	public OpcDaVariant synchRead(String itemId) throws Exception {
+		if (connectedSource == null) {
+			throw new Exception("The OPC DA client is not connected to a server.");
+		}
+
+		String[] userInfo = DomainUtils.parseDomainAndUser(connectedSource.getUserName());
+
+		// create connection information
+		ConnectionInformation ci = new ConnectionInformation();
+		ci.setHost(connectedSource.getHost());
+		ci.setDomain(userInfo[0]);
+		ci.setUser(userInfo[1]);
+		ci.setPassword(connectedSource.getUserPassword());
+		ci.setProgId(connectedSource.getProgId());
+
+		// create a new server
+		Server server = new Server(ci, Executors.newSingleThreadScheduledExecutor());
+
+		// connect to server
+		server.connect();
+
+		// create a group only for the read
+		String groupName = Long.toHexString(System.currentTimeMillis());
+		Group group = server.addGroup(groupName);
+
+		// Add a new item to the group
+		Item item = group.addItem(itemId);
+
+		ItemState itemState = item.read(false);
+		
+		server.disconnect();
+
+		int errorCode = itemState.getErrorCode();
+		if (errorCode != 0) {
+			throw new Exception("Unable to read " + itemId + ", error code: " + String.format("%08X", errorCode));
+		}
+
+		return new OpcDaVariant(itemState.getValue());
 	}
 
 }

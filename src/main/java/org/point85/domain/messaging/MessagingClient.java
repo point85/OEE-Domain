@@ -26,9 +26,9 @@ import com.rabbitmq.client.Envelope;
  * Class to connect to RMQ, publish and subscribe to message
  *
  */
-public class PublisherSubscriber {
+public class MessagingClient {
 	// logger
-	private static final Logger logger = LoggerFactory.getLogger(PublisherSubscriber.class);
+	private static final Logger logger = LoggerFactory.getLogger(MessagingClient.class);
 
 	// auto-ack on consume
 	private static final boolean AUTO_ACK = false;
@@ -64,7 +64,7 @@ public class PublisherSubscriber {
 	// listener to call back when message received
 	private MessageListener listener;
 
-	public PublisherSubscriber() {
+	public MessagingClient() {
 		// nothing to initialize
 	}
 
@@ -319,10 +319,10 @@ public class PublisherSubscriber {
 	@Override
 	public boolean equals(Object other) {
 
-		if (!(other instanceof PublisherSubscriber)) {
+		if (!(other instanceof MessagingClient)) {
 			return false;
 		}
-		PublisherSubscriber otherPubSub = (PublisherSubscriber) other;
+		MessagingClient otherPubSub = (MessagingClient) other;
 
 		return factory.getHost().equals(otherPubSub.factory.getHost())
 				&& factory.getPort() == otherPubSub.factory.getPort();
