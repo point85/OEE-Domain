@@ -67,13 +67,13 @@ public final class PersistenceService {
 	private static final String PU_NAME = "OEE";
 
 	// time in sec to wait for EntityManagerFactory creation to complete
-	private static final int EMF_CREATION_TO_SEC = 60;
+	private static final int EMF_CREATION_TO_SEC = 15;
 
 	// entity manager factory
 	private EntityManagerFactory emf;
 
 	// singleton service
-	private static PersistenceService persistencyService;
+	private static PersistenceService persistenceService;
 
 	// the EMF future
 	private CompletableFuture<EntityManagerFactory> emfFuture;
@@ -86,10 +86,10 @@ public final class PersistenceService {
 	}
 
 	public synchronized static PersistenceService instance() {
-		if (persistencyService == null) {
-			persistencyService = new PersistenceService();
+		if (persistenceService == null) {
+			persistenceService = new PersistenceService();
 		}
-		return persistencyService;
+		return persistenceService;
 	}
 
 	private Logger getLogger() {
@@ -128,12 +128,18 @@ public final class PersistenceService {
 		}
 	}
 
-	public EntityManagerFactory getEntityManagerFactory() {
+	private EntityManagerFactory getEntityManagerFactory() {
 		if (emf == null && emfFuture != null) {
 			try {
 				emf = emfFuture.get(EMF_CREATION_TO_SEC, TimeUnit.SECONDS);
 			} catch (Exception e) {
-				logger.error(e.getMessage());
+				getLogger().error("Unable to create an EntityManagerFactory");
+
+				if (e.getMessage() != null) {
+					getLogger().error(e.getMessage());
+				} else {
+					e.printStackTrace();
+				}
 			} finally {
 				emfFuture = null;
 			}
@@ -1001,6 +1007,7 @@ public final class PersistenceService {
 
 	private void createContainerManagedEntityManagerFactory(String jdbcUrl, String userName, String password)
 			throws Exception {
+
 		// create the PU info
 		PersistenceUnitInfo persistenceUnitInfo = new PersistenceUnitInfoImpl(PU_NAME, getEntityClassNames(),
 				createProperties(jdbcUrl, userName, password));
@@ -1020,6 +1027,7 @@ public final class PersistenceService {
 					(IntegratorProvider) () -> Collections.singletonList(integrator));
 		}
 
+		// create the EntityManagerFactory
 		emf = new HibernatePersistenceProvider().createContainerEntityManagerFactory(persistenceUnitInfo,
 				configuration);
 	}

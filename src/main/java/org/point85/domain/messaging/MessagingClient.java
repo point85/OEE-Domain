@@ -161,7 +161,8 @@ public class MessagingClient {
 	private void sendMessage(ApplicationMessage message, String routingKey, BasicProperties properties)
 			throws Exception {
 		if (channel == null) {
-			throw new Exception("Can't send message: " + message + ".  The channel is null.");
+			logger.error("Can't send message: " + message + ".  The channel is null.");
+			return;
 		}
 
 		// payload is JSON string

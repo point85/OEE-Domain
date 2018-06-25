@@ -64,8 +64,8 @@ public class OeeContext {
 	/**
 	 * Get the job running on this equipment
 	 * 
-	 * @param equipment
-	 * @return
+	 * @param equipment {@link Equipment}
+	 * @return Job
 	 */
 	public String getJob(Equipment equipment) {
 		@SuppressWarnings("unchecked")
@@ -90,6 +90,8 @@ public class OeeContext {
 
 	/**
 	 * Get the material being produced on this equipment
+	 * @param equipment {@link Equipment}
+	 * @return {@link Material}
 	 */
 	public Material getMaterial(Equipment equipment) {
 		@SuppressWarnings("unchecked")

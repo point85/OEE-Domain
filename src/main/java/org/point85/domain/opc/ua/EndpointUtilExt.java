@@ -50,7 +50,7 @@ public class EndpointUtilExt extends EndpointUtil {
 	 *            the new hostname to use. A null value will result in the original
 	 *            hostname being used.
 	 * @param port
-	 *            the new port to use. Any value <= 0 will result in the original
+	 *            the new port to use. Any negative value will result in the original
 	 *            port being used.
 	 * @return an updated {@link EndpointDescription} in which the hostname of the
 	 *         endpoint URL has been replaced with {@code hostname}.
