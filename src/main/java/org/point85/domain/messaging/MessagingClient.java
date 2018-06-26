@@ -350,7 +350,8 @@ public class MessagingClient {
 			ApplicationMessage message = deserialize(type, new String(body));
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Received message of type " + type + " from sender " + message.getSenderHostName());
+				logger.info("Received message of type " + type + " from sender " + message.getSenderHostName() + " ("
+						+ message.getSenderHostAddress() + ")");
 			}
 
 			if (listener != null) {

@@ -1031,6 +1031,10 @@ public final class PersistenceService {
 		emf = new HibernatePersistenceProvider().createContainerEntityManagerFactory(persistenceUnitInfo,
 				configuration);
 	}
+	
+	public boolean isConnected() {
+		return emf != null ? true : false;
+	}
 
 	private String[] getMappingFileNames() {
 		// placeholder for mapping files

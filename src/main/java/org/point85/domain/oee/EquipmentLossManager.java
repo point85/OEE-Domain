@@ -32,12 +32,6 @@ public final class EquipmentLossManager {
 		Equipment equipment = equipmentLoss.getEquipment();
 		Material material = equipmentLoss.getMaterial();
 
-		// from the work schedule
-		WorkSchedule schedule = equipment.findWorkSchedule();
-		if (schedule == null) {
-			throw new Exception("A work schedule must be defined for this equipment.");
-		}
-
 		EquipmentMaterial eqm = equipment.getEquipmentMaterial(material);
 
 		if (eqm == null || eqm.getRunRate() == null) {
@@ -148,8 +142,14 @@ public final class EquipmentLossManager {
 		OffsetDateTime odtEnd = equipmentLoss.getEndDateTime();
 
 		if (odtStart != null && odtEnd != null) {
-			Duration notScheduled = schedule.calculateNonWorkingTime(odtStart.toLocalDateTime(),
-					odtEnd.toLocalDateTime());
+			Duration notScheduled = Duration.ZERO;
+
+			// from the work schedule
+			WorkSchedule schedule = equipment.findWorkSchedule();
+			if (schedule != null) {
+
+				notScheduled = schedule.calculateNonWorkingTime(odtStart.toLocalDateTime(), odtEnd.toLocalDateTime());
+			}
 			equipmentLoss.setLoss(TimeLoss.NOT_SCHEDULED, notScheduled);
 		}
 
