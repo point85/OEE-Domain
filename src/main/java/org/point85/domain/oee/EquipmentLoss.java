@@ -15,6 +15,7 @@ import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
 import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.Unit;
+import org.point85.domain.uom.UnitOfMeasure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -274,12 +275,13 @@ public class EquipmentLoss {
 		return qp;
 	}
 
-	public Duration calculateReducedSpeedLoss(Quantity actualSpeed, Quantity idealSpeed) throws Exception {
-		// multiplier on NPT
-		double npt = getNetProductionTime().getSeconds();
-		Quantity q = idealSpeed.subtract(actualSpeed).divide(idealSpeed).multiply(npt);
-		return Duration.ofSeconds((long) q.getAmount());
-	}
+	/*
+	 * public Duration calculateReducedSpeedLoss(Quantity actualSpeed, Quantity
+	 * idealSpeed) throws Exception { // multiplier on NPT double npt =
+	 * getNetProductionTime().getSeconds(); Quantity q =
+	 * idealSpeed.subtract(actualSpeed).divide(idealSpeed).multiply(npt); return
+	 * Duration.ofSeconds((long) q.getAmount()); }
+	 */
 
 	public void calculateReducedSpeedLoss() throws Exception {
 		Duration goodDur = convertToLostTime(goodQuantity);
@@ -313,6 +315,31 @@ public class EquipmentLoss {
 		logger.info("Good Qty: " + goodQuantity);
 		logger.info("Reject Qty: " + rejectQuantity);
 		logger.info("Startup Qty: " + startupQuantity);
+	}
+
+	public Quantity getTotalQuantity(UnitOfMeasure uom) throws Exception {
+		Quantity total = new Quantity(0.0d, uom);
+
+		if (goodQuantity != null) {
+			total = total.add(goodQuantity);
+		}
+
+		if (rejectQuantity != null) {
+			total = total.add(rejectQuantity.convert(uom));
+		}
+
+		if (startupQuantity != null) {
+			total = total.add(startupQuantity.convert(uom));
+		}
+
+		return total;
+	}
+
+	public Quantity calculateActualSpeed(Quantity designSpeed) throws Exception {
+		Quantity timeQty = new Quantity(getAvailableTime().getSeconds(), Unit.SECOND);
+		UnitOfMeasure goodUOM = designSpeed.getUOM().getDividend();
+		Quantity speed = getTotalQuantity(goodUOM).divide(timeQty).convert(designSpeed.getUOM());
+		return speed;
 	}
 
 	public OffsetDateTime getStartDateTime() {

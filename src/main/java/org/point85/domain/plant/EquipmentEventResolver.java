@@ -17,10 +17,11 @@ import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.schedule.Shift;
 import org.point85.domain.schedule.ShiftInstance;
+import org.point85.domain.schedule.Team;
 import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.script.EventResolver;
-import org.point85.domain.script.OeeEventType;
 import org.point85.domain.script.OeeContext;
+import org.point85.domain.script.OeeEventType;
 import org.point85.domain.script.ResolverFunction;
 import org.point85.domain.uom.UnitOfMeasure;
 import org.slf4j.Logger;
@@ -171,13 +172,14 @@ public class EquipmentEventResolver {
 		if (resolverType.isProduction()) {
 			eventResolver.setLastValue(result);
 		}
-		
+
 		// last event time
 		eventResolver.setLastTimestamp(dateTime);
 
 		// set shift
 		WorkSchedule schedule = equipment.findWorkSchedule();
 		Shift shift = null;
+		Team team = null;
 
 		if (schedule != null) {
 			List<ShiftInstance> shiftInstances = schedule.getShiftInstancesForTime(dateTime.toLocalDateTime());
@@ -185,6 +187,7 @@ public class EquipmentEventResolver {
 			if (!shiftInstances.isEmpty()) {
 				// pick first one
 				shift = shiftInstances.get(0).getShift();
+				team = shiftInstances.get(0).getTeam();
 			}
 		}
 
@@ -245,6 +248,7 @@ public class EquipmentEventResolver {
 		event.setItemId(sourceId);
 		event.setStartTime(dateTime);
 		event.setShift(shift);
+		event.setTeam(team);
 
 		if (logger.isInfoEnabled()) {
 			logger.info(event.toString());

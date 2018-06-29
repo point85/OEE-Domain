@@ -110,9 +110,6 @@ public class CollectorService
 	private final Map<String, HttpServerSource> httpServerMap = new HashMap<>();
 	private final Map<String, MessageBrokerSource> messageBrokerMap = new HashMap<>();
 
-	// exception listener
-	private CollectorExceptionListener exceptionListener;
-
 	private boolean webContainer = false;
 
 	public CollectorService() {
@@ -837,11 +834,6 @@ public class CollectorService
 
 		// send to monitors
 		sendNotification(text, NotificationSeverity.ERROR);
-
-		// callback listener
-		if (exceptionListener != null) {
-			exceptionListener.onException(any);
-		}
 	}
 
 	public void onInformation(String text) {
@@ -1077,10 +1069,6 @@ public class CollectorService
 		} catch (Exception e) {
 			onException("Sending resolved event message failed.", e);
 		}
-	}
-
-	public void registerExceptionLisener(CollectorExceptionListener listener) {
-		this.exceptionListener = listener;
 	}
 
 	/********************* OPC DA ***********************************/

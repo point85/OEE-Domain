@@ -28,9 +28,6 @@ import org.point85.domain.plant.KeyedObject;
  *
  */
 public class EventResolver extends KeyedObject {
-	// period between value updates
-	public static final int DEFAULT_UPDATE_PERIOD = 5000;
-
 	// owning plant entity
 	@ManyToOne
 	@JoinColumn(name = "ENT_KEY")

@@ -3,14 +3,14 @@ package org.point85.domain.opc.da;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.point85.domain.script.EventResolver;
+import org.point85.domain.collector.CollectorDataSource;
 
 public class TagGroupInfo {
 	// name
 	private String groupName;
 
 	// group update period
-	private int updatePeriod = EventResolver.DEFAULT_UPDATE_PERIOD;
+	private int updatePeriod = CollectorDataSource.DEFAULT_UPDATE_PERIOD_MSEC;
 
 	// list of tag information
 	private final List<TagItemInfo> tagItems = new ArrayList<>();

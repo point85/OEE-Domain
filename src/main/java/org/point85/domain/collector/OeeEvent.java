@@ -18,6 +18,7 @@ import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
 import org.point85.domain.schedule.Shift;
+import org.point85.domain.schedule.Team;
 import org.point85.domain.script.OeeEventType;
 import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.UnitOfMeasure;
@@ -47,6 +48,10 @@ public class OeeEvent extends KeyedObject {
 	@OneToOne
 	@JoinColumn(name = "SHIFT_KEY")
 	private Shift shift;
+	
+	@OneToOne
+	@JoinColumn(name = "TEAM_KEY")
+	private Team team;
 
 	@Column(name = "DURATION")
 	private Duration duration;
@@ -244,5 +249,13 @@ public class OeeEvent extends KeyedObject {
 	@Override
 	public String toString() {
 		return "Start: " + startTime + ", End: " + endTime + ", Type: " + eventType;
+	}
+
+	public Team getTeam() {
+		return team;
+	}
+
+	public void setTeam(Team team) {
+		this.team = team;
 	}
 }
