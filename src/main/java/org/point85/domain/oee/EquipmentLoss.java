@@ -16,13 +16,8 @@ import org.point85.domain.plant.Reason;
 import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.Unit;
 import org.point85.domain.uom.UnitOfMeasure;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EquipmentLoss {
-	// logger
-	private static final Logger logger = LoggerFactory.getLogger(EquipmentLoss.class);
-
 	// equipment
 	private Equipment equipment;
 
@@ -304,17 +299,6 @@ public class EquipmentLoss {
 		Duration noLoss = getLoss(TimeLoss.NO_LOSS);
 		Duration reducedSpeed = npt.minus(quality).minus(noLoss);
 		setLoss(TimeLoss.REDUCED_SPEED, reducedSpeed);
-
-		logger.info("NPT: " + npt);
-		logger.info("Reject: " + reject);
-		logger.info("Startup: " + startup);
-		logger.info("Quality: " + quality);
-		logger.info("No loss: " + noLoss);
-		logger.info("Reduced: " + reducedSpeed);
-
-		logger.info("Good Qty: " + goodQuantity);
-		logger.info("Reject Qty: " + rejectQuantity);
-		logger.info("Startup Qty: " + startupQuantity);
 	}
 
 	public Quantity getTotalQuantity(UnitOfMeasure uom) throws Exception {
@@ -363,7 +347,7 @@ public class EquipmentLoss {
 		StringBuilder sb = new StringBuilder();
 
 		if (startDateTime != null && endDateTime != null) {
-			sb.append("From: ").append(startDateTime.toString()).append("To: ").append(endDateTime.toString())
+			sb.append("\nFrom: ").append(startDateTime.toString()).append("To: ").append(endDateTime.toString())
 					.append(", Duration: ").append(getDuration().toString());
 		}
 

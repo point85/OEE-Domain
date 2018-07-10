@@ -143,14 +143,17 @@ public final class EquipmentLossManager {
 
 		if (odtStart != null && odtEnd != null) {
 			Duration notScheduled = Duration.ZERO;
+			Duration extraNotScheduled = Duration.ZERO;
 
 			// from the work schedule
 			WorkSchedule schedule = equipment.findWorkSchedule();
 			if (schedule != null) {
-
 				notScheduled = schedule.calculateNonWorkingTime(odtStart.toLocalDateTime(), odtEnd.toLocalDateTime());
+				
+				// add any additional time not scheduled
+				extraNotScheduled = equipmentLoss.getLoss(TimeLoss.NOT_SCHEDULED);
 			}
-			equipmentLoss.setLoss(TimeLoss.NOT_SCHEDULED, notScheduled);
+			equipmentLoss.setLoss(TimeLoss.NOT_SCHEDULED, notScheduled.plus(extraNotScheduled));
 		}
 
 		if (logger.isTraceEnabled()) {

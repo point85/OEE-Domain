@@ -67,7 +67,7 @@ public final class PersistenceService {
 	private static final String PU_NAME = "OEE";
 
 	// time in sec to wait for EntityManagerFactory creation to complete
-	private static final int EMF_CREATION_TO_SEC = 15;
+	private static final int EMF_CREATION_TO_SEC = 30;
 
 	// entity manager factory
 	private EntityManagerFactory emf;
@@ -133,7 +133,8 @@ public final class PersistenceService {
 			try {
 				emf = emfFuture.get(EMF_CREATION_TO_SEC, TimeUnit.SECONDS);
 			} catch (Exception e) {
-				getLogger().error("Unable to create an EntityManagerFactory");
+				getLogger()
+						.error("Unable to create an EntityManagerFactory after " + EMF_CREATION_TO_SEC + " seconds.");
 
 				if (e.getMessage() != null) {
 					getLogger().error(e.getMessage());
@@ -1031,7 +1032,7 @@ public final class PersistenceService {
 		emf = new HibernatePersistenceProvider().createContainerEntityManagerFactory(persistenceUnitInfo,
 				configuration);
 	}
-	
+
 	public boolean isConnected() {
 		return emf != null ? true : false;
 	}
