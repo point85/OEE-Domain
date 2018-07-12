@@ -270,14 +270,6 @@ public class EquipmentLoss {
 		return qp;
 	}
 
-	/*
-	 * public Duration calculateReducedSpeedLoss(Quantity actualSpeed, Quantity
-	 * idealSpeed) throws Exception { // multiplier on NPT double npt =
-	 * getNetProductionTime().getSeconds(); Quantity q =
-	 * idealSpeed.subtract(actualSpeed).divide(idealSpeed).multiply(npt); return
-	 * Duration.ofSeconds((long) q.getAmount()); }
-	 */
-
 	public void calculateReducedSpeedLoss() throws Exception {
 		Duration goodDur = convertToLostTime(goodQuantity);
 		setLoss(TimeLoss.NO_LOSS, goodDur);
@@ -320,9 +312,13 @@ public class EquipmentLoss {
 	}
 
 	public Quantity calculateActualSpeed(Quantity designSpeed) throws Exception {
-		Quantity timeQty = new Quantity(getAvailableTime().getSeconds(), Unit.SECOND);
-		UnitOfMeasure goodUOM = designSpeed.getUOM().getDividend();
-		Quantity speed = getTotalQuantity(goodUOM).divide(timeQty).convert(designSpeed.getUOM());
+		Quantity speed = null;
+
+		if (!getAvailableTime().equals(Duration.ZERO)) {
+			Quantity timeQty = new Quantity(getAvailableTime().getSeconds(), Unit.SECOND);
+			UnitOfMeasure goodUOM = designSpeed.getUOM().getDividend();
+			speed = getTotalQuantity(goodUOM).divide(timeQty).convert(designSpeed.getUOM());
+		}
 		return speed;
 	}
 
