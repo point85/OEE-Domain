@@ -199,6 +199,11 @@ public class CollectorService
 			HttpSource source = entry.getValue().getSource();
 
 			Integer port = source.getPort();
+			
+			if (logger.isInfoEnabled()) {
+				logger.info("Starting embedded HTTP server on port " + port);
+			}
+			
 			OeeHttpServer httpServer = new OeeHttpServer(port);
 			httpServer.setDataChangeListener(this);
 			httpServer.setAcceptingEventRequests(true);
