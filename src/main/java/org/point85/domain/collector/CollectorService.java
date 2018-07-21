@@ -31,9 +31,9 @@ import org.point85.domain.messaging.CollectorServerStatusMessage;
 import org.point85.domain.messaging.EquipmentEventMessage;
 import org.point85.domain.messaging.MessageListener;
 import org.point85.domain.messaging.MessageType;
+import org.point85.domain.messaging.MessagingClient;
 import org.point85.domain.messaging.MessagingSource;
 import org.point85.domain.messaging.NotificationSeverity;
-import org.point85.domain.messaging.MessagingClient;
 import org.point85.domain.messaging.RoutingKey;
 import org.point85.domain.opc.da.DaOpcClient;
 import org.point85.domain.opc.da.OpcDaDataChangeListener;
@@ -199,11 +199,11 @@ public class CollectorService
 			HttpSource source = entry.getValue().getSource();
 
 			Integer port = source.getPort();
-			
+
 			if (logger.isInfoEnabled()) {
 				logger.info("Starting embedded HTTP server on port " + port);
 			}
-			
+
 			OeeHttpServer httpServer = new OeeHttpServer(port);
 			httpServer.setDataChangeListener(this);
 			httpServer.setAcceptingEventRequests(true);
@@ -353,8 +353,8 @@ public class CollectorService
 		states.add(CollectorState.RUNNING);
 		List<EventResolver> resolvers = PersistenceService.instance().fetchEventResolversByHost(hostNames, states);
 
-		if (resolvers.isEmpty() && logger.isInfoEnabled()) {
-			logger.info("No resolvers found for hosts " + hostNames);
+		if (resolvers.isEmpty()) {
+			logger.warn("No resolvers found for hosts " + hostNames);
 		}
 
 		for (EventResolver resolver : resolvers) {
@@ -666,10 +666,8 @@ public class CollectorService
 		}
 
 		if (logger.isInfoEnabled()) {
-			logger.info("Shutdown finished, exiting now");
+			logger.info("Shutdown finished.");
 		}
-
-		System.exit(0);
 	}
 
 	public void restart() throws Exception {
