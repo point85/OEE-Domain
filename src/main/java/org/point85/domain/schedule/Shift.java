@@ -316,7 +316,7 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 	public String toString() {
 		String text = super.toString();
 
-		if (getBreaks().size() > 0) {
+		if (!getBreaks().isEmpty()) {
 			text += "\n      " + getBreaks().size() + " " + WorkSchedule.getMessage("breaks") + ":";
 		}
 

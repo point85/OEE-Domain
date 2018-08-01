@@ -250,7 +250,7 @@ public final class PersistenceService {
 			if (txn != null && txn.isActive()) {
 				txn.rollback();
 			}
-			throw new Exception(e.getMessage());
+			throw e;
 		} finally {
 			em.close();
 		}
@@ -281,7 +281,7 @@ public final class PersistenceService {
 			if (txn != null && txn.isActive()) {
 				txn.rollback();
 			}
-			throw new Exception(e.getMessage());
+			throw e;
 		} finally {
 			em.close();
 		}
@@ -405,7 +405,7 @@ public final class PersistenceService {
 			if (txn != null && txn.isActive()) {
 				txn.rollback();
 			}
-			throw new Exception(e.getMessage());
+			throw e;
 		} finally {
 			em.close();
 		}
@@ -1263,7 +1263,7 @@ public final class PersistenceService {
 			if (txn != null && txn.isActive()) {
 				txn.rollback();
 			}
-			throw new Exception(e.getMessage());
+			throw e;
 		} finally {
 			em.close();
 		}

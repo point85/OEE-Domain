@@ -75,7 +75,7 @@ public class Team extends Named implements Comparable<Team> {
 	Team(String name, String description, Rotation rotation, LocalDate rotationStart) throws Exception {
 		super(name, description);
 		this.rotation = rotation;
-		this.setRotationStart(rotationStart);
+		this.rotationStart = rotationStart;
 	}
 
 	/**
@@ -174,8 +174,7 @@ public class Team extends Named implements Comparable<Team> {
 			throw new Exception(msg);
 		}
 
-		int dayInRotation = (int) (deltaDays % getRotation().getDuration().toDays()) + 1;
-		return dayInRotation;
+		return (int) (deltaDays % getRotation().getDuration().toDays()) + 1;
 	}
 
 	/**

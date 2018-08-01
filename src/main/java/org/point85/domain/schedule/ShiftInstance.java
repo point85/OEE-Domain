@@ -35,13 +35,13 @@ import java.time.LocalDateTime;
  */
 public class ShiftInstance implements Comparable<ShiftInstance> {
 	// definition of the shift
-	private Shift shift;
+	private final Shift shift;
 
 	// team working it
-	private Team team;
+	private final Team team;
 
 	// start date and time of day
-	private LocalDateTime startDateTime;
+	private final LocalDateTime startDateTime;
 
 	ShiftInstance(Shift shift, LocalDateTime startDateTime, Team team) {
 		this.shift = shift;
@@ -106,9 +106,8 @@ public class ShiftInstance implements Comparable<ShiftInstance> {
 		String ps = WorkSchedule.getMessage("period.start");
 		String pe = WorkSchedule.getMessage("period.end");
 
-		String text = " " + t + ": " + getTeam().getName() + ", " + s + ": " + getShift().getName() + ", " + ps + ": "
+		return " " + t + ": " + getTeam().getName() + ", " + s + ": " + getShift().getName() + ", " + ps + ": "
 				+ getStartTime() + ", " + pe + ": " + getEndTime();
-		return text;
 	}
 
 }

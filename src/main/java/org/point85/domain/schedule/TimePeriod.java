@@ -55,8 +55,8 @@ abstract class TimePeriod extends Named {
 	
 	protected TimePeriod(String name, String description, LocalTime startTime, Duration duration) throws Exception {
 		super(name, description);
-		setStart(startTime);
-		setDuration(duration);
+		this.startTime = startTime;
+		this.duration = duration;
 	}
 
 	/**

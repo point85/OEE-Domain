@@ -630,15 +630,19 @@ public class UaOpcClient implements SessionActivityListener {
 		UaOpcClient otherClient = (UaOpcClient) other;
 
 		return connectedSource.getHost().equals(otherClient.connectedSource.getHost())
-				&& connectedSource.getPort() == otherClient.connectedSource.getPort();
+				&& connectedSource.getPort().equals(otherClient.connectedSource.getPort());
 	}
 
 	@Override
 	public String toString() {
-		String value = connectedSource != null ? "Host: " + connectedSource.getHost() + ":" + connectedSource.getPort()
-				: "";
-		if (connectedSource.getEndpointPath() != null) {
-			value += "/" + connectedSource.getEndpointPath();
+		String value = getClass().getSimpleName();
+
+		if (connectedSource != null) {
+			value = "Host: " + connectedSource.getHost() + ":" + connectedSource.getPort();
+
+			if (connectedSource.getEndpointPath() != null) {
+				value += "/" + connectedSource.getEndpointPath();
+			}
 		}
 		return value;
 	}

@@ -114,7 +114,7 @@ public class DaOpcClient {
 		DaOpcClient otherClient = (DaOpcClient) other;
 
 		return connectedSource.getHost().equals(otherClient.connectedSource.getHost())
-				&& connectedSource.getProgId() == otherClient.connectedSource.getProgId();
+				&& connectedSource.getProgId().equals(otherClient.connectedSource.getProgId());
 	}
 
 	@Override
@@ -360,7 +360,7 @@ public class DaOpcClient {
 
 		// read it
 		ItemState itemState = item.read(false);
-		
+
 		server.disconnect();
 
 		int errorCode = itemState.getErrorCode();
@@ -370,7 +370,7 @@ public class DaOpcClient {
 
 		return new OpcDaVariant(itemState.getValue());
 	}
-	
+
 	public void writeSynch(String itemId, OpcDaVariant variant) throws Exception {
 		if (connectedSource == null) {
 			throw new Exception("The OPC DA client is not connected to a server.");
@@ -401,9 +401,9 @@ public class DaOpcClient {
 
 		// write to it
 		Integer errorCode = item.write(variant.getJIVariant());
-		
+
 		server.disconnect();
-		
+
 		if (errorCode != 0) {
 			throw new Exception("Unable to write to " + itemId + ", error code: " + String.format("%08X", errorCode));
 		}
