@@ -63,7 +63,7 @@ import com.rabbitmq.client.Envelope;
 
 public class CollectorService
 		implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener, MessageListener {
-	// msec between status checks
+	// sec between status checks
 	private static final long HEARTBEAT_SEC = 60;
 
 	// sec for heartbeat message to live in the queue
@@ -552,6 +552,10 @@ public class CollectorService
 			heartbeatTimer = new Timer();
 			heartbeatTask = new HeartbeatTask();
 			heartbeatTimer.schedule(heartbeatTask, HEARTBEAT_SEC * 1000, HEARTBEAT_SEC * 1000);
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Scheduled heartbeat task for interval (sec): " + HEARTBEAT_SEC);
+			}
 		}
 	}
 
@@ -803,7 +807,9 @@ public class CollectorService
 		PersistenceService.instance().save(records);
 
 		// purge old data
-		purgeRecords(event);
+		if (!type.isProduction()) {
+			purgeRecords(event);
+		}
 	}
 
 	@Override

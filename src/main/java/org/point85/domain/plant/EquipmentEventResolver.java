@@ -200,6 +200,15 @@ public class EquipmentEventResolver {
 		} else {
 			// set material from context
 			material = context.getMaterial(equipment);
+
+			if (material == null && equipment.getDefaultEquipmentMaterial() != null) {
+				material = equipment.getDefaultEquipmentMaterial().getMaterial();
+				context.setMaterial(equipment, material);
+
+				if (material == null) {
+					logger.warn("The produced material for this event is not defined.");
+				}
+			}
 		}
 
 		// set job
@@ -244,6 +253,8 @@ public class EquipmentEventResolver {
 		}
 
 		// common attributes
+		event.setMaterial(material);
+		event.setJob(job);
 		event.setEventType(resolverType);
 		event.setItemId(sourceId);
 		event.setStartTime(dateTime);

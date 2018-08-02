@@ -48,7 +48,7 @@ public class OeeEvent extends KeyedObject {
 	@OneToOne
 	@JoinColumn(name = "SHIFT_KEY")
 	private Shift shift;
-	
+
 	@OneToOne
 	@JoinColumn(name = "TEAM_KEY")
 	private Team team;
@@ -248,7 +248,8 @@ public class OeeEvent extends KeyedObject {
 
 	@Override
 	public String toString() {
-		return "Start: " + startTime + ", End: " + endTime + ", Type: " + eventType;
+		return "Start: " + startTime + ", End: " + endTime + ", Type: " + eventType + ", Material: " + material
+				+ ", Job:" + job;
 	}
 
 	public Team getTeam() {
