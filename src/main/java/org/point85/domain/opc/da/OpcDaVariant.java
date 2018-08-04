@@ -2,6 +2,7 @@ package org.point85.domain.opc.da;
 
 import java.util.Date;
 
+import org.jinterop.dcom.common.JIException;
 import org.jinterop.dcom.core.JIArray;
 import org.jinterop.dcom.core.JICurrency;
 import org.jinterop.dcom.core.JIString;
@@ -275,55 +276,57 @@ public class OpcDaVariant {
 		return valueString;
 	}
 
-	public Number getValueAsNumber() {
+	public Number getValueAsNumber() throws JIException {
 		Number numberValue = null;
 
-		try {
-			switch (getJIVariant().getType()) {
-			case JIVariant.VT_I1:
-			case JIVariant.VT_UI1:
-				numberValue = new Byte((byte) getJIVariant().getObjectAsChar());
-				break;
+		switch (getJIVariant().getType()) {
+		case JIVariant.VT_I1:
+		case JIVariant.VT_UI1:
+			numberValue = new Byte((byte) getJIVariant().getObjectAsChar());
+			break;
 
-			case JIVariant.VT_I2:
-			case JIVariant.VT_UI2:
+		case JIVariant.VT_I2:
+		case JIVariant.VT_UI2:
+			if (getJIVariant().getObject() instanceof JIUnsignedShort) {
+				// bug? avoid class cast exception
+				numberValue = ((JIUnsignedShort) getJIVariant().getObject()).getValue();
+			} else {
 				numberValue = new Short(getJIVariant().getObjectAsShort());
-				break;
-
-			case JIVariant.VT_INT:
-			case JIVariant.VT_UINT:
-			case JIVariant.VT_UI4:
-			case JIVariant.VT_I4:
-				numberValue = new Integer(getJIVariant().getObjectAsInt());
-				break;
-
-			case JIVariant.VT_I8:
-				numberValue = new Long(getJIVariant().getObjectAsLong());
-				break;
-
-			case JIVariant.VT_R4:
-			case JIVariant.VT_DECIMAL:
-				numberValue = new Float(getJIVariant().getObjectAsFloat());
-				break;
-
-			case JIVariant.VT_R8:
-				numberValue = new Double(getJIVariant().getObjectAsDouble());
-				break;
-
-			case JIVariant.VT_BOOL:
-				byte boolValue = 0;
-				if (getJIVariant().getObjectAsBoolean()) {
-					boolValue = 1;
-				}
-				numberValue = new Byte(boolValue);
-				break;
-
-			case JIVariant.VT_BSTR:
-			case JIVariant.VT_DATE:
-			default:
-				break;
 			}
-		} catch (Exception e) {
+			break;
+
+		case JIVariant.VT_INT:
+		case JIVariant.VT_UINT:
+		case JIVariant.VT_UI4:
+		case JIVariant.VT_I4:
+			numberValue = new Integer(getJIVariant().getObjectAsInt());
+			break;
+
+		case JIVariant.VT_I8:
+			numberValue = new Long(getJIVariant().getObjectAsLong());
+			break;
+
+		case JIVariant.VT_R4:
+		case JIVariant.VT_DECIMAL:
+			numberValue = new Float(getJIVariant().getObjectAsFloat());
+			break;
+
+		case JIVariant.VT_R8:
+			numberValue = new Double(getJIVariant().getObjectAsDouble());
+			break;
+
+		case JIVariant.VT_BOOL:
+			byte boolValue = 0;
+			if (getJIVariant().getObjectAsBoolean()) {
+				boolValue = 1;
+			}
+			numberValue = new Byte(boolValue);
+			break;
+
+		case JIVariant.VT_BSTR:
+		case JIVariant.VT_DATE:
+		default:
+			break;
 		}
 		return numberValue;
 	}
@@ -381,7 +384,7 @@ public class OpcDaVariant {
 		return type;
 	}
 
-	public boolean isNumeric() {
+	public boolean isNumeric() throws JIException {
 		return getValueAsNumber() != null ? true : false;
 	}
 

@@ -787,20 +787,20 @@ public class CollectorService
 		List<KeyedObject> records = new ArrayList<>();
 		records.add(event);
 
-		// close off previous events
-		OeeEvent lastRecord = null;
+		// close off previous events if not summarized
 		OeeEventType type = event.getEventType();
 
-		if (!type.isProduction()) {
-			lastRecord = PersistenceService.instance().fetchLastEvent(event.getEquipment(), type);
-		}
+		if (!type.isProduction() && event.getEndTime() == null) {
+			// availability, material or job change
+			OeeEvent lastRecord = PersistenceService.instance().fetchLastEvent(event.getEquipment(), type);
 
-		if (lastRecord != null) {
-			lastRecord.setEndTime(event.getStartTime());
-			Duration duration = Duration.between(lastRecord.getStartTime(), lastRecord.getEndTime());
-			lastRecord.setDuration(duration);
+			if (lastRecord != null) {
+				lastRecord.setEndTime(event.getStartTime());
+				Duration duration = Duration.between(lastRecord.getStartTime(), lastRecord.getEndTime());
+				lastRecord.setDuration(duration);
 
-			records.add(lastRecord);
+				records.add(lastRecord);
+			}
 		}
 
 		// save records

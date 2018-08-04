@@ -134,7 +134,7 @@ public class EquipmentEventResolver {
 		}
 
 		if (script == null) {
-			logger.warn("The event script is not defined for source id " + sourceId + " for equipment "
+			throw new Exception("The event script is not defined for source id " + sourceId + " for equipment "
 					+ equipment.getName());
 		}
 
