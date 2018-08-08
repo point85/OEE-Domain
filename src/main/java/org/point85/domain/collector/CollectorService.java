@@ -777,6 +777,9 @@ public class CollectorService
 
 		if (days != null && days.equals(Duration.ZERO)) {
 			// no need to save or purge
+			if (logger.isInfoEnabled()) {
+				logger.info("Retention period is zero.  No record will be saved.");
+			}
 			return;
 		}
 
