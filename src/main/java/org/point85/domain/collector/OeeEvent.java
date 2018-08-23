@@ -249,7 +249,7 @@ public class OeeEvent extends KeyedObject {
 	@Override
 	public String toString() {
 		return "Start: " + startTime + ", End: " + endTime + ", Type: " + eventType + ", Material: " + material
-				+ ", Job:" + job;
+				+ ", Job:" + job + ", Reason: " + reason;
 	}
 
 	public Team getTeam() {

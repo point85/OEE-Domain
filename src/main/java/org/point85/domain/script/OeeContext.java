@@ -10,15 +10,16 @@ import org.point85.domain.http.OeeHttpServer;
 import org.point85.domain.messaging.MessagingClient;
 import org.point85.domain.opc.da.DaOpcClient;
 import org.point85.domain.opc.ua.UaOpcClient;
+import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Material;
+import org.point85.domain.plant.Reason;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * This class contains information about the execution environment
  * 
- * @author Kent
  *
  */
 public class OeeContext {
@@ -46,14 +47,22 @@ public class OeeContext {
 	// HTTP server key
 	private static final String HTTP_KEY = "HTTP";
 
+	// external reason key
+	private static final String REASON_KEY = "REASON";
+
 	// hash map of objects exposed to scripting
 	private final ConcurrentMap<String, Object> contextMap;
 
+	// cached reasons
+	private final ConcurrentMap<String, Reason> reasonCache;
+
 	public OeeContext() {
 		contextMap = new ConcurrentHashMap<>();
+		reasonCache = new ConcurrentHashMap<>();
 
 		contextMap.put(MATL_KEY, new ConcurrentHashMap<Equipment, Material>());
 		contextMap.put(JOB_KEY, new ConcurrentHashMap<Equipment, String>());
+		contextMap.put(REASON_KEY, new ConcurrentHashMap<Equipment, Reason>());
 
 		setOpcDaClients(new HashSet<DaOpcClient>());
 		setOpcUaClients(new HashSet<UaOpcClient>());
@@ -64,7 +73,8 @@ public class OeeContext {
 	/**
 	 * Get the job running on this equipment
 	 * 
-	 * @param equipment {@link Equipment}
+	 * @param equipment
+	 *            {@link Equipment}
 	 * @return Job
 	 */
 	public String getJob(Equipment equipment) {
@@ -90,7 +100,9 @@ public class OeeContext {
 
 	/**
 	 * Get the material being produced on this equipment
-	 * @param equipment {@link Equipment}
+	 * 
+	 * @param equipment
+	 *            {@link Equipment}
 	 * @return {@link Material}
 	 */
 	public Material getMaterial(Equipment equipment) {
@@ -112,6 +124,54 @@ public class OeeContext {
 		@SuppressWarnings("unchecked")
 		ConcurrentMap<Equipment, Material> materialMap = (ConcurrentMap<Equipment, Material>) contextMap.get(MATL_KEY);
 		materialMap.put(equipment, material);
+	}
+
+	/**
+	 * Get the equipment reason for a quality event
+	 * @param equipment {@link Equipment}
+	 * @return {@link Reason}
+	 */
+	public Reason getQualityReason(Equipment equipment) {
+		@SuppressWarnings("unchecked")
+		ConcurrentMap<Equipment, Reason> reasonMap = (ConcurrentMap<Equipment, Reason>) contextMap.get(REASON_KEY);
+
+		return reasonMap.get(equipment);
+	}
+
+	/**
+	 * Set the equipment reason for a quality event
+	 * @param equipment {@link Equipment}
+	 * @param reasonName Reason id
+	 * @throws Exception Exception
+	 */
+	public void setQualityReason(Equipment equipment, String reasonName) throws Exception {
+		// fetch the reason
+		if (equipment == null || reasonName == null) {
+			return;
+		}
+
+		Reason reason = fetchReason(reasonName);
+
+		@SuppressWarnings("unchecked")
+		ConcurrentMap<Equipment, Reason> reasonMap = (ConcurrentMap<Equipment, Reason>) contextMap.get(REASON_KEY);
+		reasonMap.put(equipment, reason);
+	}
+
+	private Reason fetchReason(String reasonName) throws Exception {
+		Reason reason = reasonCache.get(reasonName);
+
+		if (reason == null) {
+			// fetch from database
+			reason = PersistenceService.instance().fetchReasonByName(reasonName);
+
+			// cache it
+			if (reason != null) {
+				reasonCache.put(reasonName, reason);
+			} else {
+				throw new Exception("Reason " + reasonName + " not found in database.");
+			}
+		}
+		return reason;
 	}
 
 	/**

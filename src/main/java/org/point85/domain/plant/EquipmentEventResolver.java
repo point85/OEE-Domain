@@ -318,6 +318,13 @@ public class EquipmentEventResolver {
 		if (logger.isInfoEnabled()) {
 			logger.info(resolverType.toString() + " amount is " + amount + " " + uom);
 		}
+		
+		// set the quality reason
+		Reason reason = context.getQualityReason(resolvedItem.getEquipment());
+		resolvedItem.setReason(reason);
+		
+		// clear reason from context
+		context.setQualityReason(resolvedItem.getEquipment(), null);
 	}
 
 	// availability

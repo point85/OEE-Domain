@@ -2,25 +2,14 @@ package org.point85.domain.http;
 
 import org.point85.domain.collector.CollectorDataSource;
 
-public class DataSourceDto {
-	private String name;
+public class DataSourceDto extends NamedDto {
 	private String host;
 	private Integer port;
-	private String description;
 
 	public DataSourceDto(CollectorDataSource source) {
-		this.name = source.getName();
+		super(source.getName(), source.getDescription());
 		this.host = source.getHost();
 		this.port = source.getPort();
-		this.description = source.getDescription();
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
 	}
 
 	public String getHostName() {
@@ -37,13 +26,5 @@ public class DataSourceDto {
 
 	public void setPort(Integer port) {
 		this.port = port;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
 	}
 }

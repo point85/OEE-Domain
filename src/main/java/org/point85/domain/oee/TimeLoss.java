@@ -8,7 +8,7 @@ import javafx.scene.paint.Color;
 public enum TimeLoss {
 	NO_LOSS("Value Adding"), NOT_SCHEDULED("Not Scheduled"), UNSCHEDULED("Unscheduled"), PLANNED_DOWNTIME(
 			"Planned Downtime"), SETUP("Setup"), UNPLANNED_DOWNTIME("Unplanned Downtime"), MINOR_STOPPAGES(
-					"Stoppages"), REDUCED_SPEED(
+					"Minor Stoppages"), REDUCED_SPEED(
 							"Reduced Speed"), REJECT_REWORK("Reject/Rework"), STARTUP_YIELD("Startup/Yield");
 
 	// database values

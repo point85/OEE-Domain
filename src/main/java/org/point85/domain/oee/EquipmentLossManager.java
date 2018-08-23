@@ -51,6 +51,7 @@ public final class EquipmentLossManager {
 			checkTimePeriod(record, equipmentLoss, from, to);
 
 			Quantity quantity = record.getQuantity();
+			Duration lostTime = null;
 
 			switch (record.getEventType()) {
 			case PROD_GOOD: {
@@ -62,7 +63,7 @@ public final class EquipmentLossManager {
 				equipmentLoss.incrementRejectQuantity(quantity);
 
 				// convert to a time loss
-				Duration lostTime = equipmentLoss.convertToLostTime(quantity);
+				lostTime = equipmentLoss.convertToLostTime(quantity);
 				record.setLostTime(lostTime);
 				break;
 			}
@@ -71,13 +72,18 @@ public final class EquipmentLossManager {
 				equipmentLoss.incrementStartupQuantity(quantity);
 
 				// convert to a time loss
-				Duration lostTime = equipmentLoss.convertToLostTime(quantity);
+				lostTime = equipmentLoss.convertToLostTime(quantity);
 				record.setLostTime(lostTime);
 				break;
 			}
 
 			default:
 				break;
+			}
+			
+			if (record.getReason() != null && lostTime != null) {
+				// reason map too
+				equipmentLoss.incrementReasonLoss(record.getReason(), lostTime);
 			}
 		}
 
