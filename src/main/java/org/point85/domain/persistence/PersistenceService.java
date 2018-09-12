@@ -59,6 +59,8 @@ import org.point85.domain.uom.UnitType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+
 public final class PersistenceService {
 	// logger
 	private static Logger logger;
@@ -1267,5 +1269,50 @@ public final class PersistenceService {
 		} finally {
 			em.close();
 		}
+	}
+
+	/**
+	 * Execute the SQL insert, update or delete
+	 * @param sql SQL insert, update or delete statement
+	 * @return Number of rows inserted
+	 */
+	public int executeUpdate(String sql) {
+		EntityManager em = getEntityManager();
+		
+		EntityTransaction txn = null;
+
+		try {
+			// start transaction
+			txn = em.getTransaction();
+			txn.begin();
+
+			// execute the deletions
+			int updatedCount = em.createNativeQuery(sql).executeUpdate();
+
+			// commit transaction
+			txn.commit();
+
+			return updatedCount;
+		} catch (Exception e) {
+			// roll back transaction
+			if (txn != null && txn.isActive()) {
+				txn.rollback();
+			}
+			throw e;
+		} finally {
+			em.close();
+		}
+	}
+
+	/**
+	 * Execute the SQL query
+	 * @param sql SQL select statement
+	 * @return JSON string of result list
+	 */
+	@SuppressWarnings("unchecked")
+	public String executeQuery(String sql) {
+		List<Object[]> rowList = getEntityManager().createNativeQuery(sql).getResultList();
+		Gson gson = new Gson();
+		return gson.toJson(rowList);
 	}
 }

@@ -35,7 +35,10 @@ public class EventTypeConverter implements AttributeConverter<OeeEventType, Stri
 		case MATL_CHANGE:
 			value = OeeEventType.MATERIAL_VALUE;
 			break;
-		default:
+		case CUSTOM:
+			value = OeeEventType.CUSTOM_VALUE;
+			break;
+		default:			
 			break;
 		}
 		return value;
@@ -72,6 +75,10 @@ public class EventTypeConverter implements AttributeConverter<OeeEventType, Stri
 
 		case OeeEventType.MATERIAL_VALUE:
 			type = OeeEventType.MATL_CHANGE;
+			break;
+			
+		case OeeEventType.CUSTOM_VALUE:
+			type = OeeEventType.CUSTOM;
 			break;
 
 		default:

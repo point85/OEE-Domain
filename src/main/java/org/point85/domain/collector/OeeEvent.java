@@ -73,6 +73,9 @@ public class OeeEvent extends KeyedObject {
 
 	@Column(name = "JOB")
 	private String job;
+	
+	@Column(name = "IN_VALUE")
+	private String input;
 
 	// computed lost time
 	private transient Duration lostTime;
@@ -97,6 +100,7 @@ public class OeeEvent extends KeyedObject {
 	public OeeEvent(Equipment equipment, Object inputValue, Object outputValue) {
 		this.equipment = equipment;
 		this.inputValue = inputValue;
+		this.input = inputValue.toString();
 		this.outputValue = outputValue;
 	}
 
@@ -248,7 +252,7 @@ public class OeeEvent extends KeyedObject {
 
 	@Override
 	public String toString() {
-		return "Start: " + startTime + ", End: " + endTime + ", Type: " + eventType + ", Material: " + material
+		return "Input: " + input + ", Start: " + startTime + ", End: " + endTime + ", Type: " + eventType + ", Material: " + material
 				+ ", Job:" + job + ", Reason: " + reason;
 	}
 

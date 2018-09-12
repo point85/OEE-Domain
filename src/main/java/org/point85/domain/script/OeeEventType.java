@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public enum OeeEventType {
-	AVAILABILITY, PROD_GOOD, PROD_REJECT, PROD_STARTUP, MATL_CHANGE, JOB_CHANGE;
+	AVAILABILITY, PROD_GOOD, PROD_REJECT, PROD_STARTUP, MATL_CHANGE, JOB_CHANGE, CUSTOM;
 
 	// database values
 	public static final String AVAILABILITY_VALUE = "AVAIL";
@@ -13,6 +13,7 @@ public enum OeeEventType {
 	public static final String STARTUP_PROD_VALUE = "STARTUP";
 	public static final String MATERIAL_VALUE = "MATL";
 	public static final String JOB_VALUE = "JOB";
+	public static final String CUSTOM_VALUE = "CUSTOM";
 
 	public boolean isAvailability() {
 		return this.equals(AVAILABILITY) ? true : false;
