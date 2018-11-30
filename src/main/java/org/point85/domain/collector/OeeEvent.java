@@ -25,7 +25,6 @@ import org.point85.domain.uom.UnitOfMeasure;
 
 @Entity
 @Table(name = "OEE_EVENT")
-
 @AttributeOverride(name = "primaryKey", column = @Column(name = "EVENT_KEY"))
 
 public class OeeEvent extends KeyedObject {

@@ -28,6 +28,9 @@ import org.point85.domain.collector.CollectorState;
 import org.point85.domain.collector.DataCollector;
 import org.point85.domain.collector.DataSourceType;
 import org.point85.domain.collector.OeeEvent;
+import org.point85.domain.db.DatabaseEvent;
+import org.point85.domain.db.DatabaseEventSource;
+import org.point85.domain.db.DatabaseEventStatus;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.messaging.MessagingSource;
 import org.point85.domain.opc.da.OpcDaSource;
@@ -65,8 +68,11 @@ public final class PersistenceService {
 	// logger
 	private static Logger logger;
 
-	// persistence unit name for
+	// persistence unit name for OEE tables
 	private static final String PU_NAME = "OEE";
+
+	// persistence unit name for interface table
+	private static final String DB_PU_NAME = "OEE_DB_IF";
 
 	// time in sec to wait for EntityManagerFactory creation to complete
 	private static final int EMF_CREATION_TO_SEC = 30;
@@ -92,6 +98,10 @@ public final class PersistenceService {
 			persistenceService = new PersistenceService();
 		}
 		return persistenceService;
+	}
+
+	public synchronized static PersistenceService create() {
+		return new PersistenceService();
 	}
 
 	private Logger getLogger() {
@@ -1035,6 +1045,31 @@ public final class PersistenceService {
 				configuration);
 	}
 
+	public void connectToDatabaseEventServer(String jdbcUrl, String userName, String password) throws Exception {
+		// create the PU info
+		PersistenceUnitInfo persistenceUnitInfo = new PersistenceUnitInfoImpl(DB_PU_NAME,
+				getDatabaseEventEntityClassNames(), createProperties(jdbcUrl, userName, password));
+
+		// add any mapping files
+		String[] fileNames = getMappingFileNames();
+		if (fileNames != null) {
+			persistenceUnitInfo.getMappingFileNames().addAll(Arrays.asList(fileNames));
+		}
+
+		// PU configuration map
+		Map<String, Object> configuration = new HashMap<>();
+
+		Integrator integrator = getIntegrator();
+		if (integrator != null) {
+			configuration.put("hibernate.integrator_provider",
+					(IntegratorProvider) () -> Collections.singletonList(integrator));
+		}
+
+		// create the EntityManagerFactory
+		emf = new HibernatePersistenceProvider().createContainerEntityManagerFactory(persistenceUnitInfo,
+				configuration);
+	}
+
 	public boolean isConnected() {
 		return emf != null ? true : false;
 	}
@@ -1046,11 +1081,19 @@ public final class PersistenceService {
 
 	private Class<?>[] getEntityClasses() {
 		return new Class<?>[] { DataCollector.class, CollectorDataSource.class, OeeEvent.class, HttpSource.class,
-				MessagingSource.class, OpcDaSource.class, OpcUaSource.class, Area.class, Enterprise.class,
-				Equipment.class, EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class,
-				Reason.class, Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class,
-				NonWorkingPeriod.class, Rotation.class, RotationSegment.class, Shift.class, Team.class,
-				WorkSchedule.class };
+				MessagingSource.class, DatabaseEventSource.class, OpcDaSource.class, OpcUaSource.class, Area.class,
+				Enterprise.class, Equipment.class, EquipmentMaterial.class, Material.class, PlantEntity.class,
+				ProductionLine.class, Reason.class, Site.class, WorkCell.class, EventResolver.class,
+				UnitOfMeasure.class, NonWorkingPeriod.class, Rotation.class, RotationSegment.class, Shift.class,
+				Team.class, WorkSchedule.class };
+	}
+
+	private Class<?>[] getDatabaseEventEntityClasses() {
+		return new Class<?>[] { DatabaseEvent.class };
+	}
+
+	private List<String> getDatabaseEventEntityClassNames() {
+		return Arrays.asList(getDatabaseEventEntityClasses()).stream().map(Class::getName).collect(Collectors.toList());
 	}
 
 	private List<String> getEntityClassNames() {
@@ -1273,12 +1316,14 @@ public final class PersistenceService {
 
 	/**
 	 * Execute the SQL insert, update or delete
-	 * @param sql SQL insert, update or delete statement
+	 * 
+	 * @param sql
+	 *            SQL insert, update or delete statement
 	 * @return Number of rows inserted
 	 */
 	public int executeUpdate(String sql) {
 		EntityManager em = getEntityManager();
-		
+
 		EntityTransaction txn = null;
 
 		try {
@@ -1306,7 +1351,9 @@ public final class PersistenceService {
 
 	/**
 	 * Execute the SQL query
-	 * @param sql SQL select statement
+	 * 
+	 * @param sql
+	 *            SQL select statement
 	 * @return JSON string of result list
 	 */
 	@SuppressWarnings("unchecked")
@@ -1314,5 +1361,50 @@ public final class PersistenceService {
 		List<Object[]> rowList = getEntityManager().createNativeQuery(sql).getResultList();
 		Gson gson = new Gson();
 		return gson.toJson(rowList);
+	}
+
+	/**
+	 * Fetch database interface table events with the specified status
+	 * 
+	 * @param status
+	 *            {@link DatabaseEventStatus}
+	 * @return List of {@link DatabaseEvent}
+	 */
+	public List<DatabaseEvent> fetchDatabaseEvents(DatabaseEventStatus status) {
+		final String NEW_EVENTS = "DATABASE_EVENT.NEW";
+
+		if (namedQueryMap.get(NEW_EVENTS) == null) {
+			createNamedQuery(NEW_EVENTS,
+					"SELECT event FROM DatabaseEvent event WHERE status = :status ORDER BY event.time ASC");
+		}
+
+		TypedQuery<DatabaseEvent> query = getEntityManager().createNamedQuery(NEW_EVENTS, DatabaseEvent.class);
+		query.setParameter("status", status);
+
+		return query.getResultList();
+	}
+
+	/**
+	 * Fetch database interface table events with the specified status and type
+	 * 
+	 * @param status
+	 *            {@link DatabaseEventStatus}
+	 * @param sourceId
+	 *            event source identifier
+	 * @return List of {@link DatabaseEvent}
+	 */
+	public List<DatabaseEvent> fetchDatabaseEvents(DatabaseEventStatus status, String sourceId) {
+		final String NEW_EVENTS_SOURCE = "DATABASE_EVENT.NEW.SOURCE";
+
+		if (namedQueryMap.get(NEW_EVENTS_SOURCE) == null) {
+			createNamedQuery(NEW_EVENTS_SOURCE,
+					"SELECT event FROM DatabaseEvent event WHERE status = :status AND sourceId = :sourceId ORDER BY event.time ASC");
+		}
+
+		TypedQuery<DatabaseEvent> query = getEntityManager().createNamedQuery(NEW_EVENTS_SOURCE, DatabaseEvent.class);
+		query.setParameter("status", status);
+		query.setParameter("sourceId", sourceId);
+
+		return query.getResultList();
 	}
 }

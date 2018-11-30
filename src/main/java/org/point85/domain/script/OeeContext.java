@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.point85.domain.db.DatabaseEventClient;
 import org.point85.domain.http.OeeHttpServer;
 import org.point85.domain.messaging.MessagingClient;
 import org.point85.domain.opc.da.DaOpcClient;
@@ -44,6 +45,9 @@ public class OeeContext {
 	// RMQ client key
 	private static final String MSG_KEY = "MESSAGE";
 
+	// database client key
+	private static final String DB_KEY = "DB";
+
 	// HTTP server key
 	private static final String HTTP_KEY = "HTTP";
 
@@ -68,6 +72,7 @@ public class OeeContext {
 		setOpcUaClients(new HashSet<UaOpcClient>());
 		setMessagingClients(new HashSet<MessagingClient>());
 		setHttpServers(new HashSet<OeeHttpServer>());
+		setDatabaseEventClients(new HashSet<DatabaseEventClient>());
 	}
 
 	/**
@@ -128,7 +133,9 @@ public class OeeContext {
 
 	/**
 	 * Get the equipment reason for a quality event
-	 * @param equipment {@link Equipment}
+	 * 
+	 * @param equipment
+	 *            {@link Equipment}
 	 * @return {@link Reason}
 	 */
 	public Reason getQualityReason(Equipment equipment) {
@@ -140,9 +147,13 @@ public class OeeContext {
 
 	/**
 	 * Set the equipment reason for a quality event
-	 * @param equipment {@link Equipment}
-	 * @param reasonName Reason id
-	 * @throws Exception Exception
+	 * 
+	 * @param equipment
+	 *            {@link Equipment}
+	 * @param reasonName
+	 *            Reason id
+	 * @throws Exception
+	 *             Exception
 	 */
 	public void setQualityReason(Equipment equipment, String reasonName) throws Exception {
 		// fetch the reason
@@ -320,6 +331,16 @@ public class OeeContext {
 	}
 
 	/**
+	 * Get a list of the database event clients defined for the collector
+	 * 
+	 * @return Collection of {@link DatabaseEventClient}
+	 */
+	@SuppressWarnings("unchecked")
+	public Collection<DatabaseEventClient> getDatabaseEventClients() {
+		return (Collection<DatabaseEventClient>) contextMap.get(DB_KEY);
+	}
+
+	/**
 	 * Get the first (only) messaging client
 	 * 
 	 * @return {@link MessagingClient}
@@ -345,6 +366,16 @@ public class OeeContext {
 	}
 
 	/**
+	 * Set the list of the database event clients defined for the collector
+	 * 
+	 * @param clients
+	 *            Set of {@link DatabaseEventClient}
+	 */
+	public void setDatabaseEventClients(Collection<DatabaseEventClient> clients) {
+		contextMap.put(DB_KEY, clients);
+	}
+
+	/**
 	 * Add a messaging client to the list
 	 * 
 	 * @param client
@@ -357,6 +388,18 @@ public class OeeContext {
 	}
 
 	/**
+	 * Add a database event client to the list
+	 * 
+	 * @param client
+	 *            {@link DatabaseEventClient}
+	 */
+	public void addDatabaseEventClient(DatabaseEventClient client) {
+		if (!getDatabaseEventClients().contains(client)) {
+			getDatabaseEventClients().add(client);
+		}
+	}
+
+	/**
 	 * Remove a messaging client from the list
 	 * 
 	 * @param client
@@ -365,6 +408,18 @@ public class OeeContext {
 	public void removeMessagingClient(MessagingClient client) {
 		if (getMessagingClients().contains(client)) {
 			getMessagingClients().remove(client);
+		}
+	}
+
+	/**
+	 * Remove a database event client from the list
+	 * 
+	 * @param client
+	 *            {@link DatabaseEventClient}
+	 */
+	public void removeDatabaseEventClient(DatabaseEventClient client) {
+		if (getDatabaseEventClients().contains(client)) {
+			getDatabaseEventClients().remove(client);
 		}
 	}
 

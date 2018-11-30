@@ -20,6 +20,11 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.point85.domain.DomainUtils;
+import org.point85.domain.db.DatabaseEvent;
+import org.point85.domain.db.DatabaseEventClient;
+import org.point85.domain.db.DatabaseEventListener;
+import org.point85.domain.db.DatabaseEventSource;
+import org.point85.domain.db.DatabaseEventStatus;
 import org.point85.domain.http.HttpEventListener;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.http.OeeHttpServer;
@@ -61,8 +66,12 @@ import com.google.gson.Gson;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 
-public class CollectorService
-		implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener, MessageListener {
+public class CollectorService implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener,
+		MessageListener, DatabaseEventListener {
+
+	// logger
+	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
+
 	// sec between status checks
 	private static final long HEARTBEAT_SEC = 60;
 
@@ -74,9 +83,6 @@ public class CollectorService
 
 	// sec for a event resolution message to live in the queue
 	private static final int RESOLUTION_TTL_SEC = 3600;
-
-	// logger
-	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
 
 	// thread pool service
 	private final ExecutorService executorService = Executors.newCachedThreadPool();
@@ -109,6 +115,7 @@ public class CollectorService
 	private final Map<String, OpcUaInfo> opcUaSubscriptionMap = new HashMap<>();
 	private final Map<String, HttpServerSource> httpServerMap = new HashMap<>();
 	private final Map<String, MessageBrokerSource> messageBrokerMap = new HashMap<>();
+	private final Map<String, DatabaseServerSource> databaseServerMap = new HashMap<>();
 
 	private boolean webContainer = false;
 
@@ -121,6 +128,7 @@ public class CollectorService
 		opcUaSubscriptionMap.clear();
 		httpServerMap.clear();
 		messageBrokerMap.clear();
+		databaseServerMap.clear();
 
 		gson = new Gson();
 		appContext = new OeeContext();
@@ -165,6 +173,23 @@ public class CollectorService
 		}
 	}
 
+	// collect all database server sources
+	private void buildDatabaseServers(EventResolver resolver) {
+		DatabaseEventSource source = (DatabaseEventSource) resolver.getDataSource();
+		String id = source.getId();
+
+		DatabaseServerSource dbSource = databaseServerMap.get(id);
+
+		if (dbSource == null) {
+			if (logger.isInfoEnabled()) {
+				logger.info("Found database server specified for host " + source.getHost());
+			}
+			dbSource = new DatabaseServerSource(source, resolver.getUpdatePeriod());
+
+			databaseServerMap.put(id, dbSource);
+		}
+	}
+
 	private void connectToEventBrokers(Map<String, MessageBrokerSource> brokerSources) throws Exception {
 		for (Entry<String, MessageBrokerSource> entry : brokerSources.entrySet()) {
 			MessagingSource source = entry.getValue().getSource();
@@ -190,6 +215,26 @@ public class CollectorService
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Started RMQ event pubsub: " + source.getId());
+			}
+		}
+	}
+
+	private void connectToDatabaseServers(Map<String, DatabaseServerSource> dbSources) throws Exception {
+		for (Entry<String, DatabaseServerSource> entry : dbSources.entrySet()) {
+			DatabaseServerSource source = entry.getValue();
+			DatabaseEventSource eventSource = source.getSource();
+
+			DatabaseEventClient dbClient = new DatabaseEventClient(this, source.getPollingInterval());
+
+			dbClient.connectToServer(eventSource.getId(), eventSource.getUserName(), eventSource.getUserPassword());
+
+			dbClient.startPolling();
+
+			// add to context
+			appContext.getDatabaseEventClients().add(dbClient);
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Connnected to database server: " + eventSource.getId());
 			}
 		}
 	}
@@ -236,8 +281,8 @@ public class CollectorService
 
 		double publishingInterval = resolver.getUpdatePeriod().doubleValue();
 
-		if (publishingInterval < uaInfo.getPublishingInteval()) {
-			uaInfo.setPublishingInteval(publishingInterval);
+		if (publishingInterval < uaInfo.getPublishingInterval()) {
+			uaInfo.setPublishingInterval(publishingInterval);
 		}
 	}
 
@@ -253,7 +298,7 @@ public class CollectorService
 
 			uaClient.registerAsynchListener(this);
 
-			double publishingInterval = uaInfo.getPublishingInteval();
+			double publishingInterval = uaInfo.getPublishingInterval();
 
 			for (NodeId monitoredNodeId : entry.getValue().getMonitoredNodes()) {
 				uaClient.subscribe(monitoredNodeId, publishingInterval, null);
@@ -393,6 +438,11 @@ public class CollectorService
 					break;
 				}
 
+				case DATABASE: {
+					buildDatabaseServers(resolver);
+					break;
+				}
+
 				default:
 					break;
 				}
@@ -413,6 +463,9 @@ public class CollectorService
 
 		// collect data for RMQ and receive commands
 		connectToEventBrokers(messageBrokerMap);
+
+		// poll database servers for events in the interface table
+		connectToDatabaseServers(databaseServerMap);
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Startup finished.");
@@ -572,7 +625,7 @@ public class CollectorService
 			try {
 				pubSub.publish(message, RoutingKey.NOTIFICATION_MESSAGE, STATUS_TTL_SEC);
 			} catch (Exception e) {
-				logger.error("Unable to publish notification.", e);
+				onException("Unable to publish notification.", e);
 			}
 		}
 	}
@@ -612,10 +665,17 @@ public class CollectorService
 		// clear resolution caches
 		equipmentResolver.clearCache();
 
+		// disconnect from database servers
+		for (DatabaseEventClient dbClient : appContext.getDatabaseEventClients()) {
+			dbClient.disconnect();
+			onInformation("Disconnected from database server " + dbClient.getJdbcUrl());
+		}
+		appContext.getDatabaseEventClients().clear();
+
 		// disconnect from RMQ brokers
 		for (MessagingClient pubsub : appContext.getMessagingClients()) {
+			onInformation("Disconnecting from pubsub with binding key " + pubsub.getBindingKey());
 			pubsub.disconnect();
-			onInformation("Disconnected from pubsub with binding key " + pubsub.getBindingKey());
 		}
 		appContext.getMessagingClients().clear();
 
@@ -882,6 +942,15 @@ public class CollectorService
 		executorService.execute(task);
 	}
 
+	@Override
+	public void resolveDatabaseEvents(DatabaseEventClient databaseClient, List<DatabaseEvent> events) {
+		for (DatabaseEvent event : events) {
+			// execute on worker thread
+			DatabaseEventTask task = new DatabaseEventTask(databaseClient, event);
+			executorService.execute(task);
+		}
+	}
+
 	// subscribed OPC DA items by source
 	private class OpcDaInfo {
 		private final OpcDaSource source;
@@ -917,7 +986,7 @@ public class CollectorService
 
 		private List<NodeId> monitoredNodes;
 
-		private double publishingInteval = Double.MAX_VALUE;
+		private double publishingInterval = Double.MAX_VALUE;
 
 		OpcUaInfo(OpcUaSource source) {
 			this.source = source;
@@ -930,12 +999,12 @@ public class CollectorService
 			return monitoredNodes;
 		}
 
-		private double getPublishingInteval() {
-			return publishingInteval;
+		private double getPublishingInterval() {
+			return publishingInterval;
 		}
 
-		private void setPublishingInteval(double publishingInteval) {
-			this.publishingInteval = publishingInteval;
+		private void setPublishingInterval(double publishingInterval) {
+			this.publishingInterval = publishingInterval;
 		}
 
 		private OpcUaSource getSource() {
@@ -966,6 +1035,25 @@ public class CollectorService
 
 		private HttpSource getSource() {
 			return source;
+		}
+	}
+
+	// database servers
+	private class DatabaseServerSource {
+		private final DatabaseEventSource source;
+		private final Integer pollingInterval;
+
+		DatabaseServerSource(DatabaseEventSource source, Integer pollingInterval) {
+			this.source = source;
+			this.pollingInterval = pollingInterval;
+		}
+
+		private DatabaseEventSource getSource() {
+			return source;
+		}
+
+		private Integer getPollingInterval() {
+			return pollingInterval;
 		}
 	}
 
@@ -1221,6 +1309,62 @@ public class CollectorService
 				}
 			} catch (Exception e) {
 				onException("Sending server status message failed.", e);
+			}
+		}
+	}
+
+	/********************* Database Event Task ***********************************/
+	private class DatabaseEventTask implements Runnable {
+		private final DatabaseEventClient databaseClient;
+		private final DatabaseEvent databaseEvent;
+
+		DatabaseEventTask(DatabaseEventClient databaseClient, DatabaseEvent databaseEvent) {
+			this.databaseClient = databaseClient;
+			this.databaseEvent = databaseEvent;
+		}
+
+		@Override
+		public void run() {
+			try {
+				String sourceId = databaseEvent.getSourceId();
+				String dataValue = databaseEvent.getInputValue();
+				OffsetDateTime timestamp = databaseEvent.getTime();
+
+				// find resolver
+				EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
+
+				if (eventResolver == null) {
+					throw new Exception("No event resolver found for source id " + sourceId);
+				}
+
+				if (logger.isInfoEnabled()) {
+					logger.info("Database event, source: " + sourceId + ", type: " + eventResolver.getType()
+							+ ", value: " + dataValue + ", timestamp: " + timestamp);
+				}
+
+				OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue,
+						timestamp);
+
+				if (!eventResolver.isWatchMode()) {
+					recordResolution(resolvedDataItem);
+				}
+
+				// pass
+				databaseEvent.setStatus(DatabaseEventStatus.PASS);
+				databaseEvent.setError(null);
+
+			} catch (Exception e) {
+				// fail
+				databaseEvent.setStatus(DatabaseEventStatus.FAIL);
+				databaseEvent.setError(e.getMessage());
+
+				onException("Unable to invoke script resolver.", e);
+			} finally {
+				try {
+					databaseClient.save(databaseEvent);
+				} catch (Exception ex) {
+					onException("Unable to save database event.", ex);
+				}
 			}
 		}
 	}

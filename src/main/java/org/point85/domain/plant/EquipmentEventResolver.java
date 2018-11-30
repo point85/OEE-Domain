@@ -121,12 +121,14 @@ public class EquipmentEventResolver {
 
 			if (!fromSource.equals(DataSourceType.OPC_UA) && !fromSource.equals(DataSourceType.OPC_DA)) {
 				Duration delta = Duration.between(eventResolver.getLastTimestamp(), dateTime);
+				
 				if (eventResolver.getUpdatePeriod() != null) {
 					Duration threshold = Duration.ofMillis(eventResolver.getUpdatePeriod());
 
-					if (delta.compareTo(threshold) != 1) {
-						logger.warn("The event duration of " + DomainUtils.formatDuration(delta) + " for source id "
-								+ sourceId + " for equipment " + equipment.getName() + " must exceed the threshold of "
+					if (delta != Duration.ZERO && delta.compareTo(threshold) == -1) {
+						logger.warn("The event duration of " + DomainUtils.formatDuration(delta) + " from "
+								+ eventResolver.getLastTimestamp() + " to " + dateTime + " for source id " + sourceId
+								+ " for equipment " + equipment.getName() + " must exceed the threshold of "
 								+ DomainUtils.formatDuration(threshold));
 					}
 				}
@@ -318,11 +320,11 @@ public class EquipmentEventResolver {
 		if (logger.isInfoEnabled()) {
 			logger.info(resolverType.toString() + " amount is " + amount + " " + uom);
 		}
-		
+
 		// set the quality reason
 		Reason reason = context.getQualityReason(resolvedItem.getEquipment());
 		resolvedItem.setReason(reason);
-		
+
 		// clear reason from context
 		context.setQualityReason(resolvedItem.getEquipment(), null);
 	}

@@ -224,7 +224,7 @@ public class EventResolver extends KeyedObject {
 
 	@Override
 	public String toString() {
-		return "Data source: " + dataSource + ", source id: " + sourceId;
+		return "Data source: " + dataSource + ", source id: " + sourceId + ", type: " + type;
 	}
 
 	public OffsetDateTime getLastTimestamp() {
