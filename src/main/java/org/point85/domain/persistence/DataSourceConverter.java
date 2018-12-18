@@ -36,7 +36,10 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 		case DATABASE:
 			value = DataSourceType.DATABASE_VALUE;
 			break;
-
+		case FILE:
+			value = DataSourceType.FILE_VALUE;
+			break;
+			
 		default:
 			break;
 		}
@@ -72,7 +75,11 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 		case DataSourceType.DATABASE_VALUE:
 			state = DataSourceType.DATABASE;
 			break;
-
+			
+		case DataSourceType.FILE_VALUE:
+			state = DataSourceType.FILE;
+			break;
+			
 		default:
 			break;
 		}

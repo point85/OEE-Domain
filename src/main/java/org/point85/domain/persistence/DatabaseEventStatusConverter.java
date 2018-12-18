@@ -18,6 +18,10 @@ public class DatabaseEventStatusConverter implements AttributeConverter<Database
 			value = DatabaseEventStatus.PASS_VALUE;
 			break;
 
+		case PROCESSING:
+			value = DatabaseEventStatus.PROCESSING_VALUE;
+			break;
+
 		case FAIL:
 			value = DatabaseEventStatus.FAIL_VALUE;
 			break;
@@ -51,6 +55,10 @@ public class DatabaseEventStatusConverter implements AttributeConverter<Database
 
 		case DatabaseEventStatus.FAIL_VALUE:
 			status = DatabaseEventStatus.FAIL;
+			break;
+
+		case DatabaseEventStatus.PROCESSING_VALUE:
+			status = DatabaseEventStatus.PROCESSING;
 			break;
 
 		default:

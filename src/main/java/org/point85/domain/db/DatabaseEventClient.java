@@ -19,10 +19,10 @@ public class DatabaseEventClient {
 	private static final Logger logger = LoggerFactory.getLogger(DatabaseEventClient.class);
 
 	// time between polling queries
-	private static final int DEFAULT_POLLING_SEC = 60;
+	private static final int DEFAULT_POLLING_MSEC = 10000;
 
-	// polling interval in sec
-	private int pollingMillis = DEFAULT_POLLING_SEC;
+	// polling interval in msec
+	private int pollingMillis = DEFAULT_POLLING_MSEC;
 
 	// polling timer
 	private Timer pollingTimer;
@@ -42,9 +42,9 @@ public class DatabaseEventClient {
 	// the source id of interest
 	private String sourceId;
 
-	public DatabaseEventClient(DatabaseEventListener eventListener, int pollingSeconds) {
+	public DatabaseEventClient(DatabaseEventListener eventListener, int pollingMillis) {
 		this.eventListener = eventListener;
-		this.pollingMillis = pollingSeconds;
+		this.pollingMillis = pollingMillis;
 	}
 
 	public String getJdbcUrl() {
@@ -66,7 +66,9 @@ public class DatabaseEventClient {
 			logger.info("Disconnecting from database");
 		}
 
-		pollingTimer.cancel();
+		if (pollingTimer != null) {
+			pollingTimer.cancel();
+		}
 
 		if (persistenceService != null) {
 			persistenceService.close();
@@ -112,7 +114,7 @@ public class DatabaseEventClient {
 			String msg = "Querying for READY events";
 
 			if (getSourceId() != null) {
-				msg += " for sourcee " + getSourceId();
+				msg += " for source " + getSourceId();
 			}
 			logger.info(msg);
 		}

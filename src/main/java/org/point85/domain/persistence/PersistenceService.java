@@ -31,6 +31,7 @@ import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.db.DatabaseEvent;
 import org.point85.domain.db.DatabaseEventSource;
 import org.point85.domain.db.DatabaseEventStatus;
+import org.point85.domain.file.FileEventSource;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.messaging.MessagingSource;
 import org.point85.domain.opc.da.OpcDaSource;
@@ -1081,11 +1082,11 @@ public final class PersistenceService {
 
 	private Class<?>[] getEntityClasses() {
 		return new Class<?>[] { DataCollector.class, CollectorDataSource.class, OeeEvent.class, HttpSource.class,
-				MessagingSource.class, DatabaseEventSource.class, OpcDaSource.class, OpcUaSource.class, Area.class,
-				Enterprise.class, Equipment.class, EquipmentMaterial.class, Material.class, PlantEntity.class,
-				ProductionLine.class, Reason.class, Site.class, WorkCell.class, EventResolver.class,
-				UnitOfMeasure.class, NonWorkingPeriod.class, Rotation.class, RotationSegment.class, Shift.class,
-				Team.class, WorkSchedule.class };
+				MessagingSource.class, DatabaseEventSource.class, FileEventSource.class, OpcDaSource.class,
+				OpcUaSource.class, Area.class, Enterprise.class, Equipment.class, EquipmentMaterial.class,
+				Material.class, PlantEntity.class, ProductionLine.class, Reason.class, Site.class, WorkCell.class,
+				EventResolver.class, UnitOfMeasure.class, NonWorkingPeriod.class, Rotation.class, RotationSegment.class,
+				Shift.class, Team.class, WorkSchedule.class };
 	}
 
 	private Class<?>[] getDatabaseEventEntityClasses() {
@@ -1385,7 +1386,7 @@ public final class PersistenceService {
 	}
 
 	/**
-	 * Fetch database interface table events with the specified status and type
+	 * Fetch database interface table events with the specified status and source id
 	 * 
 	 * @param status
 	 *            {@link DatabaseEventStatus}

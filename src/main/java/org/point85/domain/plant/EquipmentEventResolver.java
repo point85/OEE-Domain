@@ -1,6 +1,5 @@
 package org.point85.domain.plant;
 
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,8 +10,6 @@ import java.util.concurrent.ConcurrentMap;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.point85.domain.DomainUtils;
-import org.point85.domain.collector.DataSourceType;
 import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.schedule.Shift;
@@ -115,26 +112,6 @@ public class EquipmentEventResolver {
 		OeeEventType resolverType = eventResolver.getType();
 		String script = eventResolver.getScript();
 
-		// event durations must exceed the update period
-		if (eventResolver.getLastTimestamp() != null) {
-			DataSourceType fromSource = eventResolver.getDataSource().getDataSourceType();
-
-			if (!fromSource.equals(DataSourceType.OPC_UA) && !fromSource.equals(DataSourceType.OPC_DA)) {
-				Duration delta = Duration.between(eventResolver.getLastTimestamp(), dateTime);
-				
-				if (eventResolver.getUpdatePeriod() != null) {
-					Duration threshold = Duration.ofMillis(eventResolver.getUpdatePeriod());
-
-					if (delta != Duration.ZERO && delta.compareTo(threshold) == -1) {
-						logger.warn("The event duration of " + DomainUtils.formatDuration(delta) + " from "
-								+ eventResolver.getLastTimestamp() + " to " + dateTime + " for source id " + sourceId
-								+ " for equipment " + equipment.getName() + " must exceed the threshold of "
-								+ DomainUtils.formatDuration(threshold));
-					}
-				}
-			}
-		}
-
 		if (script == null) {
 			throw new Exception("The event script is not defined for source id " + sourceId + " for equipment "
 					+ equipment.getName());
@@ -163,11 +140,18 @@ public class EquipmentEventResolver {
 			}
 		}
 
-		// result of script
+		// result of script execution
 		Object result = resolverFunction.invoke(getScriptEngine(), context, sourceValue, eventResolver);
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Result: " + result);
+		}
+
+		// an event time could have been set in the resolver
+		OffsetDateTime eventTime = dateTime;
+
+		if (eventResolver.getTimestamp() != null) {
+			eventTime = eventResolver.getTimestamp();
 		}
 
 		// save last value
@@ -175,16 +159,13 @@ public class EquipmentEventResolver {
 			eventResolver.setLastValue(result);
 		}
 
-		// last event time
-		eventResolver.setLastTimestamp(dateTime);
-
 		// set shift
 		WorkSchedule schedule = equipment.findWorkSchedule();
 		Shift shift = null;
 		Team team = null;
 
 		if (schedule != null) {
-			List<ShiftInstance> shiftInstances = schedule.getShiftInstancesForTime(dateTime.toLocalDateTime());
+			List<ShiftInstance> shiftInstances = schedule.getShiftInstancesForTime(eventTime.toLocalDateTime());
 
 			if (!shiftInstances.isEmpty()) {
 				// pick first one
@@ -249,6 +230,8 @@ public class EquipmentEventResolver {
 				processProduction(event, resolverType, material, context);
 				break;
 			}
+
+			case CUSTOM:
 			default:
 				break;
 			}
@@ -259,7 +242,7 @@ public class EquipmentEventResolver {
 		event.setJob(job);
 		event.setEventType(resolverType);
 		event.setItemId(sourceId);
-		event.setStartTime(dateTime);
+		event.setStartTime(eventTime);
 		event.setShift(shift);
 		event.setTeam(team);
 

@@ -24,9 +24,9 @@ public final class DomainUtils {
 
 	// pattern for OffsetDateTime conversion
 	private static final String OFFSET_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS ZZZZZ";
-	
+
 	private DomainUtils() {
-		
+
 	}
 
 	// format a Duration
@@ -72,7 +72,7 @@ public final class DomainUtils {
 
 	public static OffsetDateTime offsetDateTimeFromString(String formatted) {
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(OFFSET_DATE_TIME_PATTERN);
-		return OffsetDateTime.parse(formatted, dtf);
+		return (formatted != null) ? OffsetDateTime.parse(formatted.trim(), dtf) : null;
 	}
 
 	// create a UTC OffsetDateTime from the DateTime

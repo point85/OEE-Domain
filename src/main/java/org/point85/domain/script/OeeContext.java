@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.point85.domain.db.DatabaseEventClient;
+import org.point85.domain.file.FileEventClient;
 import org.point85.domain.http.OeeHttpServer;
 import org.point85.domain.messaging.MessagingClient;
 import org.point85.domain.opc.da.DaOpcClient;
@@ -48,6 +49,9 @@ public class OeeContext {
 	// database client key
 	private static final String DB_KEY = "DB";
 
+	// file server key
+	private static final String FILE_KEY = "FILE";
+
 	// HTTP server key
 	private static final String HTTP_KEY = "HTTP";
 
@@ -73,6 +77,7 @@ public class OeeContext {
 		setMessagingClients(new HashSet<MessagingClient>());
 		setHttpServers(new HashSet<OeeHttpServer>());
 		setDatabaseEventClients(new HashSet<DatabaseEventClient>());
+		setFileEventClients(new HashSet<FileEventClient>());
 	}
 
 	/**
@@ -341,6 +346,16 @@ public class OeeContext {
 	}
 
 	/**
+	 * Get a list of the file event clients defined for the collector
+	 * 
+	 * @return Collection of {@link FileEventClient}
+	 */
+	@SuppressWarnings("unchecked")
+	public Collection<FileEventClient> getFileEventClients() {
+		return (Collection<FileEventClient>) contextMap.get(FILE_KEY);
+	}
+
+	/**
 	 * Get the first (only) messaging client
 	 * 
 	 * @return {@link MessagingClient}
@@ -351,6 +366,36 @@ public class OeeContext {
 
 		if (!getMessagingClients().isEmpty()) {
 			client = getMessagingClients().iterator().next();
+		}
+		return client;
+	}
+
+	/**
+	 * Get the first (only) database event client
+	 * 
+	 * @return {@link DatabaseEventClient}
+	 */
+	public DatabaseEventClient getDatabaseEventClient() {
+		// get the first one
+		DatabaseEventClient client = null;
+
+		if (!getDatabaseEventClients().isEmpty()) {
+			client = getDatabaseEventClients().iterator().next();
+		}
+		return client;
+	}
+
+	/**
+	 * Get the first (only) file event client
+	 * 
+	 * @return {@link DatabaseEventClient}
+	 */
+	public FileEventClient getFileEventClient() {
+		// get the first one
+		FileEventClient client = null;
+
+		if (!getFileEventClients().isEmpty()) {
+			client = getFileEventClients().iterator().next();
 		}
 		return client;
 	}
@@ -373,6 +418,16 @@ public class OeeContext {
 	 */
 	public void setDatabaseEventClients(Collection<DatabaseEventClient> clients) {
 		contextMap.put(DB_KEY, clients);
+	}
+
+	/**
+	 * Set the list of the file event clients defined for the collector
+	 * 
+	 * @param clients
+	 *            Set of {@link FileEventClient}
+	 */
+	public void setFileEventClients(Collection<FileEventClient> clients) {
+		contextMap.put(FILE_KEY, clients);
 	}
 
 	/**
@@ -400,6 +455,18 @@ public class OeeContext {
 	}
 
 	/**
+	 * Add a file event client to the list
+	 * 
+	 * @param client
+	 *            {@link FileEventClient}
+	 */
+	public void addFileEventClient(FileEventClient client) {
+		if (!getFileEventClients().contains(client)) {
+			getFileEventClients().add(client);
+		}
+	}
+
+	/**
 	 * Remove a messaging client from the list
 	 * 
 	 * @param client
@@ -420,6 +487,18 @@ public class OeeContext {
 	public void removeDatabaseEventClient(DatabaseEventClient client) {
 		if (getDatabaseEventClients().contains(client)) {
 			getDatabaseEventClients().remove(client);
+		}
+	}
+
+	/**
+	 * Remove a file event client from the list
+	 * 
+	 * @param client
+	 *            {@link FileEventClient}
+	 */
+	public void removeFileEventClient(FileEventClient client) {
+		if (getFileEventClients().contains(client)) {
+			getFileEventClients().remove(client);
 		}
 	}
 

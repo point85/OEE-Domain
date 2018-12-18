@@ -61,7 +61,7 @@ public class EventResolver extends KeyedObject {
 	private transient Object lastValue;
 
 	// time last received
-	private transient OffsetDateTime lastTimestamp;
+	private transient OffsetDateTime timestamp;
 
 	// mode
 	private transient boolean watchMode = false;
@@ -227,12 +227,12 @@ public class EventResolver extends KeyedObject {
 		return "Data source: " + dataSource + ", source id: " + sourceId + ", type: " + type;
 	}
 
-	public OffsetDateTime getLastTimestamp() {
-		return lastTimestamp;
+	public OffsetDateTime getTimestamp() {
+		return timestamp;
 	}
 
-	public void setLastTimestamp(OffsetDateTime lastTimestamp) {
-		this.lastTimestamp = lastTimestamp;
+	public void setTimestamp(OffsetDateTime lastTimestamp) {
+		this.timestamp = lastTimestamp;
 	}
 
 	public boolean isWatchMode() {

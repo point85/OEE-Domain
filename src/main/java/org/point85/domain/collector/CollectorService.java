@@ -1,5 +1,7 @@
 package org.point85.domain.collector;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -25,6 +27,9 @@ import org.point85.domain.db.DatabaseEventClient;
 import org.point85.domain.db.DatabaseEventListener;
 import org.point85.domain.db.DatabaseEventSource;
 import org.point85.domain.db.DatabaseEventStatus;
+import org.point85.domain.file.FileEventClient;
+import org.point85.domain.file.FileEventListener;
+import org.point85.domain.file.FileEventSource;
 import org.point85.domain.http.HttpEventListener;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.http.OeeHttpServer;
@@ -67,7 +72,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 
 public class CollectorService implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener,
-		MessageListener, DatabaseEventListener {
+		MessageListener, DatabaseEventListener, FileEventListener {
 
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
@@ -116,6 +121,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	private final Map<String, HttpServerSource> httpServerMap = new HashMap<>();
 	private final Map<String, MessageBrokerSource> messageBrokerMap = new HashMap<>();
 	private final Map<String, DatabaseServerSource> databaseServerMap = new HashMap<>();
+	private final Map<String, FileServerSource> fileServerMap = new HashMap<>();
 
 	private boolean webContainer = false;
 
@@ -190,6 +196,28 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 	}
 
+	// collect all file server info
+	private void buildFileServers(EventResolver resolver) throws Exception {
+		FileEventSource eventSource = (FileEventSource) resolver.getDataSource();
+		String sourceId = resolver.getSourceId();
+		Integer pollingMillis = resolver.getUpdatePeriod();
+
+		String id = eventSource.getId();
+
+		FileServerSource serverSource = fileServerMap.get(id);
+
+		if (serverSource == null) {
+			if (logger.isInfoEnabled()) {
+				logger.info("Found file server specified for host " + eventSource.getHost());
+			}
+
+			serverSource = new FileServerSource(eventSource);
+			fileServerMap.put(id, serverSource);
+		}
+		serverSource.getSourceIds().add(sourceId);
+		serverSource.getPollingIntervals().add(pollingMillis);
+	}
+
 	private void connectToEventBrokers(Map<String, MessageBrokerSource> brokerSources) throws Exception {
 		for (Entry<String, MessageBrokerSource> entry : brokerSources.entrySet()) {
 			MessagingSource source = entry.getValue().getSource();
@@ -236,6 +264,26 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			if (logger.isInfoEnabled()) {
 				logger.info("Connnected to database server: " + eventSource.getId());
 			}
+		}
+	}
+
+	private void startFilePolling(Map<String, FileServerSource> fileSources) throws Exception {
+		for (Entry<String, FileServerSource> entry : fileSources.entrySet()) {
+			// source of file events
+			FileServerSource fileSource = entry.getValue();
+			FileEventSource fileEventSource = fileSource.getEventSource();
+			List<String> sourceIds = fileSource.getSourceIds();
+			List<Integer> pollingIntervals = fileSource.getPollingIntervals();
+
+			FileEventClient fileClient = new FileEventClient(this, fileEventSource, sourceIds, pollingIntervals);
+
+			// add to context
+			appContext.getFileEventClients().add(fileClient);
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Polling files on server: " + fileEventSource.getId());
+			}
+			fileClient.startPolling();
 		}
 	}
 
@@ -443,6 +491,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					break;
 				}
 
+				case FILE: {
+					buildFileServers(resolver);
+					break;
+				}
+
 				default:
 					break;
 				}
@@ -466,6 +519,9 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 		// poll database servers for events in the interface table
 		connectToDatabaseServers(databaseServerMap);
+
+		// poll file servers
+		startFilePolling(fileServerMap);
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Startup finished.");
@@ -665,19 +721,19 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		// clear resolution caches
 		equipmentResolver.clearCache();
 
+		// stop polling file servers
+		for (FileEventClient fileClient : appContext.getFileEventClients()) {
+			fileClient.stopPolling();
+			onInformation("Stopped polling file server " + fileClient.getFileEventSource().getHost());
+		}
+		appContext.getFileEventClients().clear();
+
 		// disconnect from database servers
 		for (DatabaseEventClient dbClient : appContext.getDatabaseEventClients()) {
 			dbClient.disconnect();
 			onInformation("Disconnected from database server " + dbClient.getJdbcUrl());
 		}
 		appContext.getDatabaseEventClients().clear();
-
-		// disconnect from RMQ brokers
-		for (MessagingClient pubsub : appContext.getMessagingClients()) {
-			onInformation("Disconnecting from pubsub with binding key " + pubsub.getBindingKey());
-			pubsub.disconnect();
-		}
-		appContext.getMessagingClients().clear();
 
 		// shutdown HTTP servers
 		for (OeeHttpServer httpServer : appContext.getHttpServers()) {
@@ -699,6 +755,13 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			onInformation("Disconnected from OPC UA client ");
 		}
 		appContext.getOpcUaClients().clear();
+
+		// disconnect from RMQ brokers
+		for (MessagingClient pubsub : appContext.getMessagingClients()) {
+			onInformation("Disconnecting from pubsub with binding key " + pubsub.getBindingKey());
+			pubsub.disconnect();
+		}
+		appContext.getMessagingClients().clear();
 
 		// set back to ready
 		saveCollectorState(CollectorState.READY);
@@ -775,12 +838,28 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		for (UaOpcClient uaClient : appContext.getOpcUaClients()) {
 			uaClient.unregisterAsynchListener(this);
 		}
+
+		// database polling
+		for (DatabaseEventClient dbClient : appContext.getDatabaseEventClients()) {
+			dbClient.stopPolling();
+		}
+
+		// file share polling
+		for (FileEventClient fileClient : appContext.getFileEventClients()) {
+			fileClient.stopPolling();
+		}
+
+		// HTTP servers
+		for (OeeHttpServer httpServer : appContext.getHttpServers()) {
+			httpServer.shutdown();
+		}
+
 		if (logger.isInfoEnabled()) {
 			logger.info("Unsubscribed from data sources.");
 		}
 	}
 
-	public void subscribeToDataSource() {
+	public void subscribeToDataSource() throws Exception {
 		// DA clients
 		for (DaOpcClient daClient : appContext.getOpcDaClients()) {
 			for (OpcDaMonitoredGroup group : daClient.getMonitoredGroups()) {
@@ -791,6 +870,21 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		// UA clients
 		for (UaOpcClient uaClient : appContext.getOpcUaClients()) {
 			uaClient.registerAsynchListener(this);
+		}
+
+		// database polling
+		for (DatabaseEventClient dbClient : appContext.getDatabaseEventClients()) {
+			dbClient.startPolling();
+		}
+
+		// file share polling
+		for (FileEventClient fileClient : appContext.getFileEventClients()) {
+			fileClient.startPolling();
+		}
+
+		// HTTP servers
+		for (OeeHttpServer httpServer : appContext.getHttpServers()) {
+			httpServer.startup();
 		}
 
 		if (logger.isInfoEnabled()) {
@@ -806,6 +900,12 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	@Override
 	public void onHttpEquipmentEvent(String sourceId, String dataValue, OffsetDateTime timestamp) {
 		getExecutorService().execute(new HttpTask(sourceId, dataValue, timestamp));
+	}
+
+	// File request
+	@Override
+	public void resolveFileEvents(FileEventClient client, String sourceId, List<File> files) {
+		getExecutorService().execute(new FileTask(client, sourceId, files));
 	}
 
 	@Override
@@ -1054,6 +1154,29 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 		private Integer getPollingInterval() {
 			return pollingInterval;
+		}
+	}
+
+	// file servers
+	private class FileServerSource {
+		private final FileEventSource eventSource;
+		private final List<String> sourceIds = new ArrayList<>();
+		private final List<Integer> pollingIntervals = new ArrayList<>();
+
+		private FileServerSource(FileEventSource eventSource) {
+			this.eventSource = eventSource;
+		}
+
+		private FileEventSource getEventSource() {
+			return eventSource;
+		}
+
+		private List<String> getSourceIds() {
+			return sourceIds;
+		}
+
+		private List<Integer> getPollingIntervals() {
+			return pollingIntervals;
 		}
 	}
 
@@ -1342,6 +1465,17 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 							+ ", value: " + dataValue + ", timestamp: " + timestamp);
 				}
 
+				// set status to processing
+				databaseEvent.setStatus(DatabaseEventStatus.PROCESSING);
+				databaseEvent.setError(null);
+
+				try {
+					databaseClient.save(databaseEvent);
+				} catch (Exception ex) {
+					onException("Unable to save database event.", ex);
+				}
+
+				// invoke the script
 				OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue,
 						timestamp);
 
@@ -1364,6 +1498,67 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					databaseClient.save(databaseEvent);
 				} catch (Exception ex) {
 					onException("Unable to save database event.", ex);
+				}
+			}
+		}
+	}
+
+	// handle the File event callback
+	private class FileTask implements Runnable {
+		private final FileEventClient fileClient;
+		private String sourceId;
+		private final List<File> files;
+
+		FileTask(FileEventClient fileClient, String sourceId, List<File> files) {
+			this.fileClient = fileClient;
+			this.sourceId = sourceId;
+			this.files = files;
+		}
+
+		@Override
+		public void run() {
+			for (File file : files) {
+				try {
+					// event time (unless set by script)
+					OffsetDateTime timestamp = fileClient.getFileService().extractTimestamp(file);
+
+					// find resolver
+					EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
+
+					if (eventResolver == null) {
+						throw new Exception("No event resolver found for source id " + sourceId);
+					}
+
+					if (logger.isInfoEnabled()) {
+						logger.info("File event, file: " + file.getName() + ", source: " + sourceId + ", type: "
+								+ eventResolver.getType() + ", timestamp: " + timestamp);
+					}
+
+					// read contents in ready folder
+					String dataValue = fileClient.readFile(file);
+
+					// move to in-process
+					fileClient.moveFile(file, FileEventClient.READY_FOLDER, FileEventClient.PROCESSING_FOLDER);
+
+					OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
+							dataValue, timestamp);
+
+					if (!eventResolver.isWatchMode()) {
+						recordResolution(resolvedDataItem);
+					}
+
+					// move to pass folder
+					fileClient.moveFile(file, FileEventClient.PROCESSING_FOLDER, FileEventClient.PASS_FOLDER);
+
+				} catch (Exception e) {
+					onException("Unable to invoke script resolver.", e);
+
+					// fail
+					try {
+						fileClient.moveFile(file, FileEventClient.PROCESSING_FOLDER, FileEventClient.FAIL_FOLDER, e);
+					} catch (IOException ex) {
+						onException("Unable to move file.", ex);
+					}
 				}
 			}
 		}

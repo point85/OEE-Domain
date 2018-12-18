@@ -28,6 +28,8 @@ import org.point85.domain.uom.UnitOfMeasure;
 @AttributeOverride(name = "primaryKey", column = @Column(name = "EVENT_KEY"))
 
 public class OeeEvent extends KeyedObject {
+	private static final int MAX_INPUT_VALUE = 64;
+
 	@Column(name = "EVENT_TYPE")
 	@Convert(converter = EventTypeConverter.class)
 	private OeeEventType eventType;
@@ -72,7 +74,7 @@ public class OeeEvent extends KeyedObject {
 
 	@Column(name = "JOB")
 	private String job;
-	
+
 	@Column(name = "IN_VALUE")
 	private String input;
 
@@ -81,9 +83,6 @@ public class OeeEvent extends KeyedObject {
 
 	// source identifier
 	private transient String itemId;
-
-	// input value
-	private transient Object inputValue;
 
 	// output value
 	private transient Object outputValue;
@@ -98,8 +97,7 @@ public class OeeEvent extends KeyedObject {
 
 	public OeeEvent(Equipment equipment, Object inputValue, Object outputValue) {
 		this.equipment = equipment;
-		this.inputValue = inputValue;
-		this.input = inputValue.toString();
+		setInputValue(inputValue.toString());
 		this.outputValue = outputValue;
 	}
 
@@ -160,11 +158,15 @@ public class OeeEvent extends KeyedObject {
 	}
 
 	public Object getInputValue() {
-		return inputValue;
+		return input;
 	}
 
-	public void setInputValue(Object sourceValue) {
-		this.inputValue = sourceValue;
+	public void setInputValue(String inputValue) {
+		String value = inputValue;
+		if (inputValue.length() > MAX_INPUT_VALUE) {
+			value = inputValue.substring(0, MAX_INPUT_VALUE - 1);
+		}
+		this.input = value;
 	}
 
 	public Object getOutputValue() {
@@ -251,8 +253,8 @@ public class OeeEvent extends KeyedObject {
 
 	@Override
 	public String toString() {
-		return "Input: " + input + ", Start: " + startTime + ", End: " + endTime + ", Type: " + eventType + ", Material: " + material
-				+ ", Job:" + job + ", Reason: " + reason;
+		return "Input: " + input + ", Start: " + startTime + ", End: " + endTime + ", Type: " + eventType
+				+ ", Material: " + material + ", Job:" + job + ", Reason: " + reason;
 	}
 
 	public Team getTeam() {
