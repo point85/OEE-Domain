@@ -105,7 +105,9 @@ public class DatabaseEventClient {
 	}
 
 	private void stopPollingTimer() {
-		pollingTimer.cancel();
+		if (pollingTimer != null) {
+			pollingTimer.cancel();
+		}
 		pollingTimer = null;
 	}
 

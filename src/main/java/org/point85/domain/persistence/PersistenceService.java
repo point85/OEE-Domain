@@ -1408,4 +1408,44 @@ public final class PersistenceService {
 
 		return query.getResultList();
 	}
+
+	/**
+	 * Fetch OEE events for the equipemnt and event type over the specified period
+	 * 
+	 * @param equipment
+	 *            {@link Equipment}
+	 * @param type
+	 *            {@link OeeEventType}
+	 * @param from
+	 *            starting date and time
+	 * @param to
+	 *            ending date and time
+	 * @return List of {@link OeeEvent}
+	 */
+	public List<OeeEvent> fetchEvents(Equipment equipment, OeeEventType type, OffsetDateTime from, OffsetDateTime to) {
+		String qry = "SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type ";
+
+		if (from != null) {
+			qry += "AND e.startTime >= :from ";
+		}
+
+		if (to != null) {
+			qry += "AND e.startTime < :to ";
+		}
+		qry += " ORDER BY e.startTime ASC";
+
+		TypedQuery<OeeEvent> query = getEntityManager().createQuery(qry, OeeEvent.class);
+		query.setParameter("type", type);
+		query.setParameter("equipment", equipment);
+
+		if (from != null) {
+			query.setParameter("from", from);
+		}
+
+		if (to != null) {
+			query.setParameter("to", to);
+		}
+
+		return query.getResultList();
+	}
 }
