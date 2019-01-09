@@ -33,6 +33,7 @@ import org.point85.domain.db.DatabaseEventSource;
 import org.point85.domain.db.DatabaseEventStatus;
 import org.point85.domain.file.FileEventSource;
 import org.point85.domain.http.HttpSource;
+import org.point85.domain.jms.JMSSource;
 import org.point85.domain.messaging.MessagingSource;
 import org.point85.domain.opc.da.OpcDaSource;
 import org.point85.domain.opc.ua.OpcUaSource;
@@ -1082,7 +1083,7 @@ public final class PersistenceService {
 
 	private Class<?>[] getEntityClasses() {
 		return new Class<?>[] { DataCollector.class, CollectorDataSource.class, OeeEvent.class, HttpSource.class,
-				MessagingSource.class, DatabaseEventSource.class, FileEventSource.class, OpcDaSource.class,
+				MessagingSource.class, JMSSource.class, DatabaseEventSource.class, FileEventSource.class, OpcDaSource.class,
 				OpcUaSource.class, Area.class, Enterprise.class, Equipment.class, EquipmentMaterial.class,
 				Material.class, PlantEntity.class, ProductionLine.class, Reason.class, Site.class, WorkCell.class,
 				EventResolver.class, UnitOfMeasure.class, NonWorkingPeriod.class, Rotation.class, RotationSegment.class,

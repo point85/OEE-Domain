@@ -34,7 +34,7 @@ public class EquipmentEventMessage extends ApplicationMessage {
 	}
 
 	@Override
-	protected void validate() throws Exception {
+	public void validate() throws Exception {
 		super.validate();
 
 		if (sourceId == null) {

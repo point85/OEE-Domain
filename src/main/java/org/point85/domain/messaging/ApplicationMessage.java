@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 
 import org.point85.domain.DomainUtils;
 
-public class ApplicationMessage {
+public abstract class ApplicationMessage {
 	// type of message for deserialization
 	private MessageType messageType;
 
@@ -43,7 +43,7 @@ public class ApplicationMessage {
 		this.senderHostName = senderHostName;
 	}
 
-	protected void validate() throws Exception {
+	public void validate() throws Exception {
 		if (messageType == null) {
 			throw new Exception("The message type cannot be null");
 		}

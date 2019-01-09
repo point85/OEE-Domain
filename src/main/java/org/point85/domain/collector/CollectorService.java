@@ -33,6 +33,9 @@ import org.point85.domain.file.FileEventSource;
 import org.point85.domain.http.HttpEventListener;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.http.OeeHttpServer;
+import org.point85.domain.jms.JMSClient;
+import org.point85.domain.jms.JMSListener;
+import org.point85.domain.jms.JMSSource;
 import org.point85.domain.messaging.ApplicationMessage;
 import org.point85.domain.messaging.CollectorCommandMessage;
 import org.point85.domain.messaging.CollectorNotificationMessage;
@@ -72,7 +75,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 
 public class CollectorService implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener,
-		MessageListener, DatabaseEventListener, FileEventListener {
+		MessageListener, JMSListener, DatabaseEventListener, FileEventListener {
 
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
@@ -104,6 +107,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	// script execution context
 	private OeeContext appContext;
 
+	// resolver
 	private EquipmentEventResolver equipmentResolver;
 
 	// data collectors
@@ -120,6 +124,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	private final Map<String, OpcUaInfo> opcUaSubscriptionMap = new HashMap<>();
 	private final Map<String, HttpServerSource> httpServerMap = new HashMap<>();
 	private final Map<String, MessageBrokerSource> messageBrokerMap = new HashMap<>();
+	private final Map<String, JMSBrokerSource> jmsBrokerMap = new HashMap<>();
 	private final Map<String, DatabaseServerSource> databaseServerMap = new HashMap<>();
 	private final Map<String, FileServerSource> fileServerMap = new HashMap<>();
 
@@ -134,7 +139,9 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		opcUaSubscriptionMap.clear();
 		httpServerMap.clear();
 		messageBrokerMap.clear();
+		jmsBrokerMap.clear();
 		databaseServerMap.clear();
+		fileServerMap.clear();
 
 		gson = new Gson();
 		appContext = new OeeContext();
@@ -176,6 +183,22 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			}
 			brokerSource = new MessageBrokerSource(source);
 			messageBrokerMap.put(id, brokerSource);
+		}
+	}
+	
+	// collect all JMS broker info
+	private void buildJMSBrokers(EventResolver resolver) throws Exception {
+		JMSSource source = (JMSSource) resolver.getDataSource();
+		String id = source.getId();
+
+		JMSBrokerSource brokerSource = jmsBrokerMap.get(id);
+
+		if (brokerSource == null) {
+			if (logger.isInfoEnabled()) {
+				logger.info("Found JMS broker specified for host " + source.getHost() + " on port " + source.getPort());
+			}
+			brokerSource = new JMSBrokerSource(source);
+			jmsBrokerMap.put(id, brokerSource);
 		}
 	}
 
@@ -243,6 +266,28 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Started RMQ event pubsub: " + source.getId());
+			}
+		}
+	}
+	
+	private void connectToJMSBrokers(Map<String, JMSBrokerSource> brokerSources) throws Exception {
+		for (Entry<String, JMSBrokerSource> entry : brokerSources.entrySet()) {
+			JMSSource source = entry.getValue().getSource();
+
+			JMSClient jmsClient = new JMSClient();
+
+			String brokerHostName = source.getHost();
+			Integer brokerPort = source.getPort();
+			String brokerUser = source.getUserName();
+			String brokerPassword = source.getUserPassword();
+			
+			jmsClient.connectAndConsume(brokerHostName, brokerPort, brokerUser, brokerPassword, this);
+
+			// add to context
+			appContext.getJMSClients().add(jmsClient);
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Started JMS client: " + source.getId());
 			}
 		}
 	}
@@ -485,6 +530,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					buildMessagingBrokers(resolver);
 					break;
 				}
+				
+				case JMS: {
+					buildJMSBrokers(resolver);
+					break;
+				}
 
 				case DATABASE: {
 					buildDatabaseServers(resolver);
@@ -516,6 +566,9 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 		// collect data for RMQ and receive commands
 		connectToEventBrokers(messageBrokerMap);
+		
+		// collect equipment events for JMS
+		connectToJMSBrokers(jmsBrokerMap);
 
 		// poll database servers for events in the interface table
 		connectToDatabaseServers(databaseServerMap);
@@ -1041,6 +1094,13 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		MessageTask task = new MessageTask(channel, envelope, message);
 		executorService.execute(task);
 	}
+	
+	@Override
+	public void onEquipmentEvent(EquipmentEventMessage message) {
+		// execute on worker thread
+		JMSTask task = new JMSTask(message);
+		executorService.execute(task);
+	}
 
 	@Override
 	public void resolveDatabaseEvents(DatabaseEventClient databaseClient, List<DatabaseEvent> events) {
@@ -1121,6 +1181,19 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 
 		private MessagingSource getSource() {
+			return source;
+		}
+	}
+	
+	// JMS brokers
+	private class JMSBrokerSource {
+		private final JMSSource source;
+
+		JMSBrokerSource(JMSSource source) {
+			this.source = source;
+		}
+
+		private JMSSource getSource() {
 			return source;
 		}
 	}
@@ -1371,7 +1444,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					OffsetDateTime timestamp = DomainUtils.offsetDateTimeFromString(eventMessage.getTimestamp());
 
 					if (logger.isInfoEnabled()) {
-						logger.info("Equipment event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "
+						logger.info("RMQ equipment event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "
 								+ timestamp);
 					}
 
@@ -1407,6 +1480,46 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					// ack failed
 					onException("Unable to ack message.", ex);
 				}
+			}
+		}
+	}
+	
+	/********************* JMS Handler ***********************************/
+	private class JMSTask implements Runnable {
+
+		private final EquipmentEventMessage eventMessage;
+
+		JMSTask(EquipmentEventMessage message) {
+			this.eventMessage = message;
+		}
+
+		@Override
+		public void run() {
+			try {
+					String dataValue = eventMessage.getValue();
+					String sourceId = eventMessage.getSourceId();
+					OffsetDateTime timestamp = DomainUtils.offsetDateTimeFromString(eventMessage.getTimestamp());
+
+					if (logger.isInfoEnabled()) {
+						logger.info("JMS equipment event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "
+								+ timestamp);
+					}
+
+					// find resolver
+					EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
+
+					if (eventResolver != null) {
+						OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
+								dataValue, timestamp);
+
+						if (!eventResolver.isWatchMode()) {
+							recordResolution(resolvedDataItem);
+						}
+					}
+ 
+			} catch (Exception e) {
+				// processing failed
+				onException("Unable to process equipemnt event ", e);
 			}
 		}
 	}

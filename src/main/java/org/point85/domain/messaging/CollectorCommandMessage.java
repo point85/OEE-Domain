@@ -18,7 +18,7 @@ public class CollectorCommandMessage extends ApplicationMessage {
 	}
 
 	@Override
-	protected void validate() throws Exception {
+	public void validate() throws Exception {
 		super.validate();
 
 		if (command == null) {

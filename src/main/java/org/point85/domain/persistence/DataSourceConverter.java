@@ -32,14 +32,18 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 		case MESSAGING:
 			value = DataSourceType.MESSAGING_VALUE;
 			break;
-			
+
+		case JMS:
+			value = DataSourceType.JMS_VALUE;
+			break;
+
 		case DATABASE:
 			value = DataSourceType.DATABASE_VALUE;
 			break;
 		case FILE:
 			value = DataSourceType.FILE_VALUE;
 			break;
-			
+
 		default:
 			break;
 		}
@@ -71,15 +75,19 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 		case DataSourceType.MESSAGING_VALUE:
 			state = DataSourceType.MESSAGING;
 			break;
-			
+
+		case DataSourceType.JMS_VALUE:
+			state = DataSourceType.JMS;
+			break;
+
 		case DataSourceType.DATABASE_VALUE:
 			state = DataSourceType.DATABASE;
 			break;
-			
+
 		case DataSourceType.FILE_VALUE:
 			state = DataSourceType.FILE;
 			break;
-			
+
 		default:
 			break;
 		}

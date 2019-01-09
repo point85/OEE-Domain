@@ -12,7 +12,6 @@ import java.util.concurrent.BlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
@@ -26,7 +25,7 @@ import com.rabbitmq.client.Envelope;
  * Class to connect to RMQ, publish and subscribe to message
  *
  */
-public class MessagingClient {
+public class MessagingClient extends BaseMessagingClient {
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(MessagingClient.class);
 
@@ -44,9 +43,6 @@ public class MessagingClient {
 	// durable exchange
 	private static final boolean DURABLE_EXCHANGE = true;
 
-	// queue TTL (sec)
-	private static final int QUEUE_TTL_SEC = 3600;
-
 	private String bindingKey;
 
 	// RMQ objects
@@ -54,9 +50,6 @@ public class MessagingClient {
 	private Connection connection;
 	protected Channel channel;
 	private String consumerTag;
-
-	// json serializer
-	private final Gson gson = new Gson();
 
 	// for blocking (RPC) style calls
 	private String replyQueueName;
@@ -216,43 +209,6 @@ public class MessagingClient {
 			}
 			logger.info("Subscribed to queue " + queueName + " with routing key(s) " + keys);
 		}
-	}
-
-	public String serialize(ApplicationMessage message) {
-		// payload is JSON string
-		return gson.toJson(message);
-	}
-
-	public ApplicationMessage deserialize(MessageType type, String payload) {
-		ApplicationMessage message = null;
-
-		switch (type) {
-		case EQUIPMENT_EVENT:
-			message = gson.fromJson(payload, EquipmentEventMessage.class);
-			break;
-
-		case NOTIFICATION:
-			message = gson.fromJson(payload, CollectorNotificationMessage.class);
-			break;
-
-		case STATUS:
-			message = gson.fromJson(payload, CollectorServerStatusMessage.class);
-			break;
-
-		case RESOLVED_EVENT:
-			message = gson.fromJson(payload, CollectorResolvedEventMessage.class);
-			break;
-
-		case COMMAND:
-			message = gson.fromJson(payload, CollectorCommandMessage.class);
-			break;
-
-		default:
-			logger.warn("Unhandled message: " + payload + " of type: " + type);
-			break;
-		}
-
-		return message;
 	}
 
 	public void createRpcQueue() throws IOException {

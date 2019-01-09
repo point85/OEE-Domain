@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.point85.domain.db.DatabaseEventClient;
 import org.point85.domain.file.FileEventClient;
 import org.point85.domain.http.OeeHttpServer;
+import org.point85.domain.jms.JMSClient;
 import org.point85.domain.messaging.MessagingClient;
 import org.point85.domain.opc.da.DaOpcClient;
 import org.point85.domain.opc.ua.UaOpcClient;
@@ -46,6 +47,9 @@ public class OeeContext {
 	// RMQ client key
 	private static final String MSG_KEY = "MESSAGE";
 
+	// JMS client key
+	private static final String JMS_KEY = "JMS";
+
 	// database client key
 	private static final String DB_KEY = "DB";
 
@@ -75,6 +79,7 @@ public class OeeContext {
 		setOpcDaClients(new HashSet<DaOpcClient>());
 		setOpcUaClients(new HashSet<UaOpcClient>());
 		setMessagingClients(new HashSet<MessagingClient>());
+		setJMSClients(new HashSet<JMSClient>());
 		setHttpServers(new HashSet<OeeHttpServer>());
 		setDatabaseEventClients(new HashSet<DatabaseEventClient>());
 		setFileEventClients(new HashSet<FileEventClient>());
@@ -336,6 +341,16 @@ public class OeeContext {
 	}
 
 	/**
+	 * Get a list of the JMS clients defined for the collector
+	 * 
+	 * @return Collection of {@link JMSClient}
+	 */
+	@SuppressWarnings("unchecked")
+	public Collection<JMSClient> getJMSClients() {
+		return (Collection<JMSClient>) contextMap.get(JMS_KEY);
+	}
+
+	/**
 	 * Get a list of the database event clients defined for the collector
 	 * 
 	 * @return Collection of {@link DatabaseEventClient}
@@ -366,6 +381,21 @@ public class OeeContext {
 
 		if (!getMessagingClients().isEmpty()) {
 			client = getMessagingClients().iterator().next();
+		}
+		return client;
+	}
+
+	/**
+	 * Get the first (only) JMS client
+	 * 
+	 * @return {@link JMSClient}
+	 */
+	public JMSClient getJMSClient() {
+		// get the first one
+		JMSClient client = null;
+
+		if (!getJMSClients().isEmpty()) {
+			client = getJMSClients().iterator().next();
 		}
 		return client;
 	}
@@ -411,6 +441,16 @@ public class OeeContext {
 	}
 
 	/**
+	 * Set the list of the JMS clients defined for the collector
+	 * 
+	 * @param clients
+	 *            Set of {@link JMSClient}
+	 */
+	public void setJMSClients(Collection<JMSClient> clients) {
+		contextMap.put(JMS_KEY, clients);
+	}
+
+	/**
 	 * Set the list of the database event clients defined for the collector
 	 * 
 	 * @param clients
@@ -439,6 +479,18 @@ public class OeeContext {
 	public void addMessagingClient(MessagingClient client) {
 		if (!getMessagingClients().contains(client)) {
 			getMessagingClients().add(client);
+		}
+	}
+
+	/**
+	 * Add a JMS client to the list
+	 * 
+	 * @param client
+	 *            {@link JMSClient}
+	 */
+	public void addJMSClient(JMSClient client) {
+		if (!getJMSClients().contains(client)) {
+			getJMSClients().add(client);
 		}
 	}
 
@@ -475,6 +527,18 @@ public class OeeContext {
 	public void removeMessagingClient(MessagingClient client) {
 		if (getMessagingClients().contains(client)) {
 			getMessagingClients().remove(client);
+		}
+	}
+
+	/**
+	 * Remove a JMS client from the list
+	 * 
+	 * @param client
+	 *            {@link JMSClient}
+	 */
+	public void removeJMSClient(JMSClient client) {
+		if (getJMSClients().contains(client)) {
+			getJMSClients().remove(client);
 		}
 	}
 
@@ -580,6 +644,11 @@ public class OeeContext {
 			sb.append('\t').append(client.toString());
 		}
 
+		sb.append("\n JMS clients ...");
+		for (JMSClient client : getJMSClients()) {
+			sb.append('\t').append(client.toString());
+		}
+
 		sb.append("\n HTTP servers ...");
 		for (OeeHttpServer server : this.getHttpServers()) {
 			sb.append('\t').append(server.toString());
@@ -587,5 +656,4 @@ public class OeeContext {
 
 		return sb.toString();
 	}
-
 }
