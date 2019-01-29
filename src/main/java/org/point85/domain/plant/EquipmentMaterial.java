@@ -124,15 +124,15 @@ public class EquipmentMaterial extends KeyedObject {
 		}
 		EquipmentMaterial otherEquipmentMaterial = (EquipmentMaterial) other;
 
-		if (getMaterial() == null) {
+		if (getMaterial() == null || getEquipment() == null) {
 			return true;
 		}
 
-		if (!getMaterial().equals(otherEquipmentMaterial.getMaterial())) {
-			return false;
+		if (getEquipment().equals(otherEquipmentMaterial.getEquipment())
+				&& getMaterial().equals(otherEquipmentMaterial.getMaterial())) {
+			return true;
 		}
-
-		return true;
+		return false;
 	}
 
 	public Boolean isDefault() {

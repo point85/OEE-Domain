@@ -112,7 +112,7 @@ public class EquipmentEventResolver {
 		OeeEventType resolverType = eventResolver.getType();
 		String script = eventResolver.getScript();
 
-		if (script == null) {
+		if (script == null || script.length() == 0) {
 			throw new Exception("The event script is not defined for source id " + sourceId + " for equipment "
 					+ equipment.getName());
 		}
@@ -148,7 +148,7 @@ public class EquipmentEventResolver {
 		}
 
 		// an event time could have been set in the resolver
-		OffsetDateTime eventTime = dateTime;
+		OffsetDateTime eventTime = dateTime != null ? dateTime : OffsetDateTime.now();
 
 		if (eventResolver.getTimestamp() != null) {
 			eventTime = eventResolver.getTimestamp();

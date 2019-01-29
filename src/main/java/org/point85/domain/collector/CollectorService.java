@@ -34,7 +34,7 @@ import org.point85.domain.http.HttpEventListener;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.http.OeeHttpServer;
 import org.point85.domain.jms.JMSClient;
-import org.point85.domain.jms.JMSListener;
+import org.point85.domain.jms.JMSEquipmentEventListener;
 import org.point85.domain.jms.JMSSource;
 import org.point85.domain.messaging.ApplicationMessage;
 import org.point85.domain.messaging.CollectorCommandMessage;
@@ -48,6 +48,9 @@ import org.point85.domain.messaging.MessagingClient;
 import org.point85.domain.messaging.MessagingSource;
 import org.point85.domain.messaging.NotificationSeverity;
 import org.point85.domain.messaging.RoutingKey;
+import org.point85.domain.mqtt.MQTTClient;
+import org.point85.domain.mqtt.MQTTEquipmentEventListener;
+import org.point85.domain.mqtt.MQTTSource;
 import org.point85.domain.opc.da.DaOpcClient;
 import org.point85.domain.opc.da.OpcDaDataChangeListener;
 import org.point85.domain.opc.da.OpcDaMonitoredGroup;
@@ -74,8 +77,9 @@ import com.google.gson.Gson;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 
-public class CollectorService implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener,
-		MessageListener, JMSListener, DatabaseEventListener, FileEventListener {
+public class CollectorService
+		implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener, MessageListener,
+		JMSEquipmentEventListener, DatabaseEventListener, FileEventListener, MQTTEquipmentEventListener {
 
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
@@ -127,6 +131,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	private final Map<String, JMSBrokerSource> jmsBrokerMap = new HashMap<>();
 	private final Map<String, DatabaseServerSource> databaseServerMap = new HashMap<>();
 	private final Map<String, FileServerSource> fileServerMap = new HashMap<>();
+	private final Map<String, MQTTBrokerSource> mqttBrokerMap = new HashMap<>();
 
 	private boolean webContainer = false;
 
@@ -142,6 +147,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		jmsBrokerMap.clear();
 		databaseServerMap.clear();
 		fileServerMap.clear();
+		mqttBrokerMap.clear();
 
 		gson = new Gson();
 		appContext = new OeeContext();
@@ -185,7 +191,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			messageBrokerMap.put(id, brokerSource);
 		}
 	}
-	
+
 	// collect all JMS broker info
 	private void buildJMSBrokers(EventResolver resolver) throws Exception {
 		JMSSource source = (JMSSource) resolver.getDataSource();
@@ -199,6 +205,23 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			}
 			brokerSource = new JMSBrokerSource(source);
 			jmsBrokerMap.put(id, brokerSource);
+		}
+	}
+
+	// collect all MQTT broker info
+	private void buildMQTTBrokers(EventResolver resolver) throws Exception {
+		MQTTSource source = (MQTTSource) resolver.getDataSource();
+		String id = source.getId();
+
+		MQTTBrokerSource brokerSource = mqttBrokerMap.get(id);
+
+		if (brokerSource == null) {
+			if (logger.isInfoEnabled()) {
+				logger.info(
+						"Found MQTT broker specified for host " + source.getHost() + " on port " + source.getPort());
+			}
+			brokerSource = new MQTTBrokerSource(source);
+			mqttBrokerMap.put(id, brokerSource);
 		}
 	}
 
@@ -258,8 +281,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			List<RoutingKey> routingKeys = new ArrayList<>();
 			routingKeys.add(RoutingKey.EQUIPMENT_SOURCE_EVENT);
 
-			pubsub.connectAndSubscribe(brokerHostName, brokerPort, brokerUser, brokerPassword, queueName, routingKeys,
-					this);
+			pubsub.startUp(brokerHostName, brokerPort, brokerUser, brokerPassword, queueName, routingKeys, this);
 
 			// add to context
 			appContext.getMessagingClients().add(pubsub);
@@ -269,7 +291,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			}
 		}
 	}
-	
+
 	private void connectToJMSBrokers(Map<String, JMSBrokerSource> brokerSources) throws Exception {
 		for (Entry<String, JMSBrokerSource> entry : brokerSources.entrySet()) {
 			JMSSource source = entry.getValue().getSource();
@@ -280,8 +302,8 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			Integer brokerPort = source.getPort();
 			String brokerUser = source.getUserName();
 			String brokerPassword = source.getUserPassword();
-			
-			jmsClient.connectAndConsume(brokerHostName, brokerPort, brokerUser, brokerPassword, this);
+
+			jmsClient.startUp(brokerHostName, brokerPort, brokerUser, brokerPassword, this);
 
 			// add to context
 			appContext.getJMSClients().add(jmsClient);
@@ -292,12 +314,39 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 	}
 
+	private void connectToMQTTBrokers(Map<String, MQTTBrokerSource> brokerSources) throws Exception {
+		for (Entry<String, MQTTBrokerSource> entry : brokerSources.entrySet()) {
+			MQTTSource source = entry.getValue().getSource();
+
+			MQTTClient mqttClient = new MQTTClient();
+
+			String brokerHostName = source.getHost();
+			Integer brokerPort = source.getPort();
+			String brokerUser = source.getUserName();
+			String brokerPassword = source.getUserPassword();
+
+			mqttClient.startUp(brokerHostName, brokerPort, brokerUser, brokerPassword, this);
+
+			// add to context
+			appContext.getMQTTClients().add(mqttClient);
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Started MQTT client: " + source.getId());
+			}
+		}
+	}
+
 	private void connectToDatabaseServers(Map<String, DatabaseServerSource> dbSources) throws Exception {
 		for (Entry<String, DatabaseServerSource> entry : dbSources.entrySet()) {
 			DatabaseServerSource source = entry.getValue();
 			DatabaseEventSource eventSource = source.getSource();
 
-			DatabaseEventClient dbClient = new DatabaseEventClient(this, source.getPollingInterval());
+			Integer pollingInterval = source.getPollingInterval();
+			if (pollingInterval == null) {
+				pollingInterval = CollectorDataSource.DEFAULT_UPDATE_PERIOD_MSEC;
+			}
+
+			DatabaseEventClient dbClient = new DatabaseEventClient(this, pollingInterval);
 
 			dbClient.connectToServer(eventSource.getId(), eventSource.getUserName(), eventSource.getUserPassword());
 
@@ -422,6 +471,10 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		// create the tag info
 		TagItemInfo tagItem = new TagItemInfo(sourceId);
 		Integer updatePeriod = resolver.getUpdatePeriod();
+		
+		if (updatePeriod == null) {
+			updatePeriod = CollectorDataSource.DEFAULT_UPDATE_PERIOD_MSEC;
+		}
 		tagItem.setUpdatePeriod(updatePeriod);
 		daSubscription.addTagItem(equipmentName, tagItem);
 
@@ -530,9 +583,14 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					buildMessagingBrokers(resolver);
 					break;
 				}
-				
+
 				case JMS: {
 					buildJMSBrokers(resolver);
+					break;
+				}
+
+				case MQTT: {
+					buildMQTTBrokers(resolver);
 					break;
 				}
 
@@ -566,12 +624,15 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 		// collect data for RMQ and receive commands
 		connectToEventBrokers(messageBrokerMap);
-		
+
 		// collect equipment events for JMS
 		connectToJMSBrokers(jmsBrokerMap);
 
 		// poll database servers for events in the interface table
 		connectToDatabaseServers(databaseServerMap);
+
+		// collect equipment events for MQTT
+		connectToMQTTBrokers(mqttBrokerMap);
 
 		// poll file servers
 		startFilePolling(fileServerMap);
@@ -696,7 +757,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 				List<RoutingKey> routingKeys = new ArrayList<>();
 				routingKeys.add(RoutingKey.COMMAND_MESSAGE);
 
-				pubsub.connectAndSubscribe(brokerHostName, brokerPort, collector.getBrokerUserName(),
+				pubsub.startUp(brokerHostName, brokerPort, collector.getBrokerUserName(),
 						collector.getBrokerUserPassword(), queueName, routingKeys, this);
 
 				// add to context
@@ -765,7 +826,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 	public synchronized void stopNotifications() throws Exception {
 		for (MessagingClient pubsub : appContext.getMessagingClients()) {
-			pubsub.disconnect();
+			pubsub.shutDown();
 		}
 		appContext.getMessagingClients().clear();
 	}
@@ -812,7 +873,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		// disconnect from RMQ brokers
 		for (MessagingClient pubsub : appContext.getMessagingClients()) {
 			onInformation("Disconnecting from pubsub with binding key " + pubsub.getBindingKey());
-			pubsub.disconnect();
+			pubsub.shutDown();
 		}
 		appContext.getMessagingClients().clear();
 
@@ -1094,12 +1155,17 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		MessageTask task = new MessageTask(channel, envelope, message);
 		executorService.execute(task);
 	}
-	
+
 	@Override
-	public void onEquipmentEvent(EquipmentEventMessage message) {
+	public void onJMSEquipmentEvent(EquipmentEventMessage message) {
 		// execute on worker thread
-		JMSTask task = new JMSTask(message);
-		executorService.execute(task);
+		executorService.execute(new JMSTask(message));
+	}
+
+	@Override
+	public void onMQTTEquipmentEvent(EquipmentEventMessage message) {
+		// execute on worker thread
+		executorService.execute(new MQTTTask(message));
 	}
 
 	@Override
@@ -1184,7 +1250,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			return source;
 		}
 	}
-	
+
 	// JMS brokers
 	private class JMSBrokerSource {
 		private final JMSSource source;
@@ -1194,6 +1260,19 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 
 		private JMSSource getSource() {
+			return source;
+		}
+	}
+
+	// MQTT brokers
+	private class MQTTBrokerSource {
+		private final MQTTSource source;
+
+		MQTTBrokerSource(MQTTSource source) {
+			this.source = source;
+		}
+
+		private MQTTSource getSource() {
 			return source;
 		}
 	}
@@ -1273,15 +1352,8 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 							"HTTP event, source: " + sourceId + ", value: " + dataValue + ", timestamp: " + timestamp);
 				}
 
-				// find resolver
-				EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
-
-				OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue,
-						timestamp);
-
-				if (!eventResolver.isWatchMode()) {
-					recordResolution(resolvedDataItem);
-				}
+				// resolve event
+				resolveEvent(sourceId, dataValue, timestamp);
 
 			} catch (Exception e) {
 				onException("Unable to invoke script resolver.", e);
@@ -1291,35 +1363,29 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 	// handle the OPC UA callback
 	private class OpcUaTask implements Runnable {
-		private final DataValue dataValue;
+		private final DataValue uaValue;
 		private final UaMonitoredItem item;
 
 		OpcUaTask(DataValue dataValue, UaMonitoredItem item) {
-			this.dataValue = dataValue;
+			this.uaValue = dataValue;
 			this.item = item;
 		}
 
 		@Override
 		public void run() {
 			try {
-				Object javaValue = dataValue.getValue().getValue();
-				String itemId = item.getReadValueId().getNodeId().toParseableString();
-				DateTime dt = dataValue.getServerTime();
-				OffsetDateTime odt = DomainUtils.localTimeFromDateTime(dt);
+				Object dataValue = uaValue.getValue().getValue();
+				String sourceId = item.getReadValueId().getNodeId().toParseableString();
+				DateTime dt = uaValue.getServerTime();
+				OffsetDateTime timestamp = DomainUtils.localTimeFromDateTime(dt);
 
 				if (logger.isInfoEnabled()) {
-					logger.info(
-							"OPC UA subscription, node: " + itemId + ", value: " + javaValue + ", timestamp: " + odt);
+					logger.info("OPC UA subscription, node: " + sourceId + ", value: " + dataValue + ", timestamp: "
+							+ timestamp);
 				}
 
-				EventResolver eventResolver = equipmentResolver.getResolver(itemId);
-
-				OeeEvent resolvedEvent = equipmentResolver.invokeResolver(eventResolver, getAppContext(), javaValue,
-						odt);
-
-				if (!eventResolver.isWatchMode()) {
-					recordResolution(resolvedEvent);
-				}
+				// resolve event
+				resolveEvent(sourceId, dataValue, timestamp);
 
 			} catch (Exception e) {
 				onException("Unable to invoke OPC UA script resolver.", e);
@@ -1367,6 +1433,22 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 	}
 
+	private void resolveEvent(String sourceId, Object dataValue, OffsetDateTime timestamp) throws Exception {
+		// find resolver
+		EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
+
+		if (eventResolver == null) {
+			throw new Exception("Unable to find an event resolver for source id " + sourceId);
+		}
+
+		OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue,
+				timestamp);
+
+		if (!eventResolver.isWatchMode()) {
+			recordResolution(resolvedDataItem);
+		}
+	}
+
 	/********************* OPC DA ***********************************/
 
 	// handle the OPC DA callback
@@ -1391,27 +1473,15 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 				}
 
 				String sourceId = item.getPathName();
+				OffsetDateTime timestamp = item.getLocalTimestamp();
 
 				if (logger.isInfoEnabled()) {
 					logger.info("OPC DA data change, group: " + item.getGroup().getName() + ", item: " + sourceId
-							+ ", value: " + item.getValueString() + ", timestamp: " + item.getLocalTimestamp());
+							+ ", value: " + item.getValueString() + ", timestamp: " + timestamp);
 				}
 
-				// get resolver to process data value
-				EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
-
-				if (eventResolver == null) {
-					throw new Exception("The OPC DA script resolver is undefined for source id " + sourceId);
-				}
-
-				// resolver the data
-				OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue,
-						item.getLocalTimestamp());
-
-				// save resolution
-				if (!eventResolver.isWatchMode()) {
-					recordResolution(resolvedDataItem);
-				}
+				// resolve event
+				resolveEvent(sourceId, dataValue, timestamp);
 
 			} catch (Exception e) {
 				onException("Unable to invoke OPC DA script resolver.", e);
@@ -1439,26 +1509,19 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			try {
 				if (type.equals(MessageType.EQUIPMENT_EVENT)) {
 					EquipmentEventMessage eventMessage = (EquipmentEventMessage) message;
-					String dataValue = eventMessage.getValue();
+
 					String sourceId = eventMessage.getSourceId();
-					OffsetDateTime timestamp = DomainUtils.offsetDateTimeFromString(eventMessage.getTimestamp());
+					String dataValue = eventMessage.getValue();
+					OffsetDateTime timestamp = eventMessage.getDateTime();
 
 					if (logger.isInfoEnabled()) {
-						logger.info("RMQ equipment event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "
-								+ timestamp);
+						logger.info("RMQ equipment event, source: " + sourceId + ", value: " + dataValue
+								+ ", timestamp: " + timestamp);
 					}
 
-					// find resolver
-					EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
+					// resolve event
+					resolveEvent(sourceId, dataValue, timestamp);
 
-					if (eventResolver != null) {
-						OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
-								dataValue, timestamp);
-
-						if (!eventResolver.isWatchMode()) {
-							recordResolution(resolvedDataItem);
-						}
-					}
 				} else if (type.equals(MessageType.COMMAND)) {
 					CollectorCommandMessage commandMessage = (CollectorCommandMessage) message;
 
@@ -1483,7 +1546,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			}
 		}
 	}
-	
+
 	/********************* JMS Handler ***********************************/
 	private class JMSTask implements Runnable {
 
@@ -1496,30 +1559,52 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		@Override
 		public void run() {
 			try {
-					String dataValue = eventMessage.getValue();
-					String sourceId = eventMessage.getSourceId();
-					OffsetDateTime timestamp = DomainUtils.offsetDateTimeFromString(eventMessage.getTimestamp());
+				String sourceId = eventMessage.getSourceId();
+				String dataValue = eventMessage.getValue();
+				OffsetDateTime timestamp = eventMessage.getDateTime();
 
-					if (logger.isInfoEnabled()) {
-						logger.info("JMS equipment event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "
-								+ timestamp);
-					}
+				if (logger.isInfoEnabled()) {
+					logger.info("JMS equipment event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "
+							+ timestamp);
+				}
 
-					// find resolver
-					EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
+				// resolve event
+				resolveEvent(sourceId, dataValue, timestamp);
 
-					if (eventResolver != null) {
-						OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
-								dataValue, timestamp);
-
-						if (!eventResolver.isWatchMode()) {
-							recordResolution(resolvedDataItem);
-						}
-					}
- 
 			} catch (Exception e) {
 				// processing failed
-				onException("Unable to process equipemnt event ", e);
+				onException("Unable to process JMS equipment event ", e);
+			}
+		}
+	}
+
+	/********************* MQTT Handler ***********************************/
+	private class MQTTTask implements Runnable {
+
+		private final EquipmentEventMessage eventMessage;
+
+		MQTTTask(EquipmentEventMessage message) {
+			this.eventMessage = message;
+		}
+
+		@Override
+		public void run() {
+			try {
+				String sourceId = eventMessage.getSourceId();
+				String dataValue = eventMessage.getValue();
+				OffsetDateTime timestamp = eventMessage.getDateTime();
+
+				if (logger.isInfoEnabled()) {
+					logger.info("JMS equipment event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "
+							+ timestamp);
+				}
+
+				// resolve event
+				resolveEvent(sourceId, dataValue, timestamp);
+
+			} catch (Exception e) {
+				// processing failed
+				onException("Unable to process MQTT equipment event ", e);
 			}
 		}
 	}
@@ -1566,16 +1651,9 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 				String dataValue = databaseEvent.getInputValue();
 				OffsetDateTime timestamp = databaseEvent.getTime();
 
-				// find resolver
-				EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
-
-				if (eventResolver == null) {
-					throw new Exception("No event resolver found for source id " + sourceId);
-				}
-
 				if (logger.isInfoEnabled()) {
-					logger.info("Database event, source: " + sourceId + ", type: " + eventResolver.getType()
-							+ ", value: " + dataValue + ", timestamp: " + timestamp);
+					logger.info("Database event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "
+							+ timestamp);
 				}
 
 				// set status to processing
@@ -1588,13 +1666,8 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					onException("Unable to save database event.", ex);
 				}
 
-				// invoke the script
-				OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue,
-						timestamp);
-
-				if (!eventResolver.isWatchMode()) {
-					recordResolution(resolvedDataItem);
-				}
+				// resolve event
+				resolveEvent(sourceId, dataValue, timestamp);
 
 				// pass
 				databaseEvent.setStatus(DatabaseEventStatus.PASS);
@@ -1635,16 +1708,9 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					// event time (unless set by script)
 					OffsetDateTime timestamp = fileClient.getFileService().extractTimestamp(file);
 
-					// find resolver
-					EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
-
-					if (eventResolver == null) {
-						throw new Exception("No event resolver found for source id " + sourceId);
-					}
-
 					if (logger.isInfoEnabled()) {
-						logger.info("File event, file: " + file.getName() + ", source: " + sourceId + ", type: "
-								+ eventResolver.getType() + ", timestamp: " + timestamp);
+						logger.info("File event, file: " + file.getName() + ", source: " + sourceId + ", timestamp: "
+								+ timestamp);
 					}
 
 					// read contents in ready folder
@@ -1653,12 +1719,8 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					// move to in-process
 					fileClient.moveFile(file, FileEventClient.READY_FOLDER, FileEventClient.PROCESSING_FOLDER);
 
-					OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(),
-							dataValue, timestamp);
-
-					if (!eventResolver.isWatchMode()) {
-						recordResolution(resolvedDataItem);
-					}
+					// resolve event
+					resolveEvent(sourceId, dataValue, timestamp);
 
 					// move to pass folder
 					fileClient.moveFile(file, FileEventClient.PROCESSING_FOLDER, FileEventClient.PASS_FOLDER);

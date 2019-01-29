@@ -37,6 +37,10 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 			value = DataSourceType.JMS_VALUE;
 			break;
 
+		case MQTT:
+			value = DataSourceType.MQTT_VALUE;
+			break;
+
 		case DATABASE:
 			value = DataSourceType.DATABASE_VALUE;
 			break;
@@ -78,6 +82,10 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 
 		case DataSourceType.JMS_VALUE:
 			state = DataSourceType.JMS;
+			break;
+
+		case DataSourceType.MQTT_VALUE:
+			state = DataSourceType.MQTT;
 			break;
 
 		case DataSourceType.DATABASE_VALUE:

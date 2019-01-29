@@ -67,7 +67,7 @@ public abstract class ApplicationMessage {
 
 	public String getTimestamp() {
 		if (timestamp == null) {
-			setTimestamp(OffsetDateTime.now());
+			setDateTime(OffsetDateTime.now());
 		}
 		return timestamp;
 	}
@@ -76,7 +76,11 @@ public abstract class ApplicationMessage {
 		this.timestamp = timestamp;
 	}
 
-	public void setTimestamp(OffsetDateTime odt) {
-		this.timestamp = DomainUtils.offsetDateTimeToString(odt);
+	public void setDateTime(OffsetDateTime odt) {
+		this.timestamp = DomainUtils.offsetDateTimeToString(odt, DomainUtils.OFFSET_DATE_TIME_8601);
+	}
+	
+	public OffsetDateTime getDateTime() {
+		return DomainUtils.offsetDateTimeFromString(timestamp, DomainUtils.OFFSET_DATE_TIME_8601);
 	}
 }

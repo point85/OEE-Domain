@@ -12,7 +12,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Calendar;
 
+import javax.jms.JMSException;
+import javax.xml.ws.http.HTTPException;
+
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.jinterop.dcom.common.JIException;
 import org.openscada.opc.dcom.common.FILETIME;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.uom.MeasurementSystem;
@@ -22,8 +27,11 @@ public final class DomainUtils {
 	// folder with configuration files
 	public static final String CONFIG_DIR = "config_dir";
 
-	// pattern for OffsetDateTime conversion
-	private static final String OFFSET_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS ZZZZZ";
+	// ISO 8602 datetime format, yyyy-mm-ddThh:mm:ss.nnnnnn+|-hh:mm
+	public static final String OFFSET_DATE_TIME_8601 = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ";
+
+	// pattern for OffsetDateTime display
+	public static final String OFFSET_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS ZZZZZ";
 
 	private DomainUtils() {
 
@@ -65,14 +73,14 @@ public final class DomainUtils {
 		return info;
 	}
 
-	public static String offsetDateTimeToString(OffsetDateTime odt) {
-		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(OFFSET_DATE_TIME_PATTERN);
+	public static String offsetDateTimeToString(OffsetDateTime odt, String pattern) {
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(pattern);
 		return (odt != null) ? odt.format(dtf) : null;
 	}
 
-	public static OffsetDateTime offsetDateTimeFromString(String formatted) {
-		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(OFFSET_DATE_TIME_PATTERN);
-		return (formatted != null) ? OffsetDateTime.parse(formatted.trim(), dtf) : null;
+	public static OffsetDateTime offsetDateTimeFromString(String iso8601, String pattern) {
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(pattern);
+		return (iso8601 != null) ? OffsetDateTime.parse(iso8601.trim(), dtf) : null;
 	}
 
 	// create a UTC OffsetDateTime from the DateTime
@@ -165,5 +173,31 @@ public final class DomainUtils {
 			throw new Exception("Unit of measure with symbol " + symbol + " does not exist.");
 		}
 		return uom;
+	}
+
+	public static String formatException(Exception e) {
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+
+		if (e instanceof MqttException) {
+			MqttException me = (MqttException) e;
+			sb.append("\n\tReason: ").append(me.getReasonCode());
+			sb.append("\n\tCause: ").append(me.getCause());
+		} else if (e instanceof JMSException) {
+			JMSException je = (JMSException) e;
+			sb.append("\n\tCode: ").append(je.getErrorCode());
+			sb.append("\n\tCause: ").append(je.getCause());
+		} else if (e instanceof JIException) {
+			JIException jie = (JIException) e;
+			sb.append("\n\tCode: ").append(jie.getErrorCode());
+			sb.append("\n\tCause: ").append(jie.getCause());
+		} else if (e instanceof HTTPException) {
+			HTTPException he = (HTTPException) e;
+			sb.append("\n\tCode: ").append(he.getStatusCode());
+			sb.append("\n\tCause: ").append(he.getCause());
+		}
+
+		return sb.toString();
 	}
 }

@@ -14,7 +14,7 @@ public class EquipmentEventMessage extends ApplicationMessage {
 		super(MessageType.EQUIPMENT_EVENT);
 		this.sourceId = sourceId;
 		this.value = value;
-		this.setTimestamp(timestamp);
+		this.setDateTime(timestamp);
 	}
 
 	public String getSourceId() {

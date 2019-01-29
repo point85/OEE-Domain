@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 import org.point85.domain.oee.TimeLoss;
@@ -203,7 +202,7 @@ public class OeeHttpServer extends NanoHTTPD {
 		}
 
 		// timestamp
-		OffsetDateTime odt = DomainUtils.offsetDateTimeFromString(dto.getTimestamp());
+		OffsetDateTime odt = dto.getDateTime();
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Data change for source id: " + dto.getSourceId() + ", Value: " + dto.getValue()

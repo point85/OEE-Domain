@@ -14,7 +14,7 @@ public class OffsetDateTimeConverter implements AttributeConverter<OffsetDateTim
 	public String convertToDatabaseColumn(OffsetDateTime time) {
 		String converted = null;
 		if (time != null) {
-			converted = DomainUtils.offsetDateTimeToString(time);
+			converted = DomainUtils.offsetDateTimeToString(time, DomainUtils.OFFSET_DATE_TIME_PATTERN);
 		}
 		return converted;
 	}
@@ -23,7 +23,7 @@ public class OffsetDateTimeConverter implements AttributeConverter<OffsetDateTim
 	public OffsetDateTime convertToEntityAttribute(String timestamp) {
 		OffsetDateTime odt = null;
 		if (timestamp != null) {
-			odt = DomainUtils.offsetDateTimeFromString(timestamp);
+			odt = DomainUtils.offsetDateTimeFromString(timestamp, DomainUtils.OFFSET_DATE_TIME_PATTERN);
 		}
 		return odt;
 	}

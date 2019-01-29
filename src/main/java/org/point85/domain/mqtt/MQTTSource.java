@@ -1,4 +1,4 @@
-package org.point85.domain.messaging;
+package org.point85.domain.mqtt;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -7,17 +7,16 @@ import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 
 @Entity
-@DiscriminatorValue(DataSourceType.MESSAGING_VALUE)
-public class MessagingSource extends CollectorDataSource {
-
-	public MessagingSource() {
+@DiscriminatorValue(DataSourceType.MQTT_VALUE)
+public class MQTTSource extends CollectorDataSource {
+	public MQTTSource() {
 		super();
-		setDataSourceType(DataSourceType.MESSAGING);
+		setDataSourceType(DataSourceType.MQTT);
 	}
 
-	public MessagingSource(String name, String description) {
+	public MQTTSource(String name, String description) {
 		super(name, description);
-		setDataSourceType(DataSourceType.MESSAGING);
+		setDataSourceType(DataSourceType.MQTT);
 	}
 
 	@Override

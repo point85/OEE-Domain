@@ -4,7 +4,6 @@ package org.point85.domain.opc.da;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -196,7 +195,7 @@ public class OpcDaMonitoredGroup {
 
 		WriteRequest[] writeRequests = new WriteRequest[daItems.length];
 		Integer[] serverHandles = new Integer[daItems.length];
-		
+
 		for (int i = 0; i < daItems.length; i++) {
 			if (result.get(i).getErrorCode() != 0) {
 				throw new JIException(result.get(i).getErrorCode());
@@ -210,7 +209,7 @@ public class OpcDaMonitoredGroup {
 		// Perform write
 		OPCSyncIO syncIO = groupManager.getSyncIO();
 		ResultSet<WriteRequest> writeResults = syncIO.write(writeRequests);
-		
+
 		for (int i = 0; i < daItems.length; i++) {
 			Result<WriteRequest> writeResult = writeResults.get(i);
 
@@ -300,7 +299,6 @@ public class OpcDaMonitoredGroup {
 			logger.info(String.format("cancelComplete: %08X, Group: %08X", transactionId, serverGroupHandle));
 		}
 
-		@SuppressWarnings("unused")
 		@Override
 		public void dataChange(int transactionId, int serverGroupHandle, int masterQuality, int masterErrorCode,
 				KeyedResultSet<Integer, ValueData> result) {
@@ -314,11 +312,6 @@ public class OpcDaMonitoredGroup {
 
 			for (final KeyedResult<Integer, ValueData> entry : result) {
 				Integer clientHandle = entry.getKey();
-				int errorCode = entry.getErrorCode();
-				int quality = entry.getValue().getQuality();
-				Date timestamp = entry.getValue().getTimestamp().getTime();
-				JIVariant value = entry.getValue().getValue();
-
 				OpcDaMonitoredItem opcDaItem = itemMap.get(clientHandle);
 
 				if (opcDaItem != null) {
@@ -326,10 +319,15 @@ public class OpcDaMonitoredGroup {
 						opcDaItem.setValueData(entry.getValue());
 					} catch (Exception e) {
 						logger.error(e.getMessage());
+						continue;
 					}
 
 					for (OpcDaDataChangeListener listener : listeners) {
-						listener.onOpcDaDataChange(opcDaItem);
+						try {
+							listener.onOpcDaDataChange(opcDaItem);
+						} catch (Exception e) {
+							logger.error(e.getMessage());
+						}
 					}
 				}
 			}

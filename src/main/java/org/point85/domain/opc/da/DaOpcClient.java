@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.Executors;
@@ -151,6 +152,10 @@ public class DaOpcClient {
 	}
 
 	public void disconnect() throws Exception {
+		for (Entry<String, OpcDaMonitoredGroup> entry : monitoredGroups.entrySet()) {
+			entry.getValue().stopMonitoring();
+		}
+		monitoredGroups.clear();
 
 		if (jiSession != null) {
 			// should it be destroyed?

@@ -144,4 +144,21 @@ public class FileService {
 
 		Files.move(Paths.get(fromPath), Paths.get(toPath), StandardCopyOption.REPLACE_EXISTING);
 	}
+
+	public void moveFile(File file, String toPath) throws IOException {
+		String fromPath = file.getAbsolutePath();
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Moving file " + fromPath + " to " + toPath);
+		}
+
+		// make sure that directory is there
+		int idx = toPath.lastIndexOf(File.separator);
+
+		if (!createDirectory(toPath.substring(0, idx))) {
+			throw new IOException("Cannot create directory " + toPath);
+		}
+
+		Files.move(Paths.get(fromPath), Paths.get(toPath), StandardCopyOption.REPLACE_EXISTING);
+	}
 }

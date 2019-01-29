@@ -47,22 +47,22 @@ public class JMSClient extends BaseMessagingClient {
 	public static final String DEFAULT_TOPIC = "Point85";
 
 	// listener to call back when a message is received
-	private JMSListener jmsListener;
+	private JMSEquipmentEventListener eventListener;
 
 	public JMSClient() {
 
 	}
 
-	public void registerListener(JMSListener listener) {
-		this.jmsListener = listener;
+	public void registerListener(JMSEquipmentEventListener listener) {
+		this.eventListener = listener;
 	}
 
 	public void unregisterListener() {
-		this.jmsListener = null;
+		this.eventListener = null;
 	}
 
-	public void connectAndConsume(String brokerHostName, int port, String userName, String password,
-			JMSListener listener) throws JMSException {
+	public void startUp(String brokerHostName, int port, String userName, String password,
+			JMSEquipmentEventListener listener) throws JMSException {
 		// connect to broker
 		connect(brokerHostName, port, userName, password);
 
@@ -90,7 +90,7 @@ public class JMSClient extends BaseMessagingClient {
 		}
 	}
 
-	public void disconnect() throws JMSException {
+	public void shutDown() throws JMSException {
 		unregisterListener();
 
 		if (connection != null) {
@@ -133,7 +133,9 @@ public class JMSClient extends BaseMessagingClient {
 						EquipmentEventMessage appMessage = (EquipmentEventMessage) deserialize(
 								MessageType.EQUIPMENT_EVENT, json);
 
-						jmsListener.onEquipmentEvent(appMessage);
+						if (eventListener != null) {
+							eventListener.onJMSEquipmentEvent(appMessage);
+						}
 					} catch (JMSException e) {
 						logger.error(e.getMessage());
 						return;

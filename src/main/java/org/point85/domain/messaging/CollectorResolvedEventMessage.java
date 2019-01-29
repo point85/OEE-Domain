@@ -23,7 +23,7 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 	}
 
 	public void fromResolvedEvent(OeeEvent event) {
-		this.setTimestamp(event.getStartTime());
+		this.setDateTime(event.getStartTime());
 		this.setResolverType(event.getEventType());
 
 		// equipment

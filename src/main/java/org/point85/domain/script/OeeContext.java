@@ -11,6 +11,7 @@ import org.point85.domain.file.FileEventClient;
 import org.point85.domain.http.OeeHttpServer;
 import org.point85.domain.jms.JMSClient;
 import org.point85.domain.messaging.MessagingClient;
+import org.point85.domain.mqtt.MQTTClient;
 import org.point85.domain.opc.da.DaOpcClient;
 import org.point85.domain.opc.ua.UaOpcClient;
 import org.point85.domain.persistence.PersistenceService;
@@ -50,6 +51,9 @@ public class OeeContext {
 	// JMS client key
 	private static final String JMS_KEY = "JMS";
 
+	// MQTT client key
+	private static final String MQTT_KEY = "MQTT";
+
 	// database client key
 	private static final String DB_KEY = "DB";
 
@@ -80,6 +84,7 @@ public class OeeContext {
 		setOpcUaClients(new HashSet<UaOpcClient>());
 		setMessagingClients(new HashSet<MessagingClient>());
 		setJMSClients(new HashSet<JMSClient>());
+		setMQTTClients(new HashSet<MQTTClient>());
 		setHttpServers(new HashSet<OeeHttpServer>());
 		setDatabaseEventClients(new HashSet<DatabaseEventClient>());
 		setFileEventClients(new HashSet<FileEventClient>());
@@ -351,6 +356,16 @@ public class OeeContext {
 	}
 
 	/**
+	 * Get a list of the MQTT clients defined for the collector
+	 * 
+	 * @return Collection of {@link MQTTClient}
+	 */
+	@SuppressWarnings("unchecked")
+	public Collection<MQTTClient> getMQTTClients() {
+		return (Collection<MQTTClient>) contextMap.get(MQTT_KEY);
+	}
+
+	/**
 	 * Get a list of the database event clients defined for the collector
 	 * 
 	 * @return Collection of {@link DatabaseEventClient}
@@ -396,6 +411,21 @@ public class OeeContext {
 
 		if (!getJMSClients().isEmpty()) {
 			client = getJMSClients().iterator().next();
+		}
+		return client;
+	}
+
+	/**
+	 * Get the first (only) MQTT client
+	 * 
+	 * @return {@link MQTTClient}
+	 */
+	public MQTTClient getMQTTClient() {
+		// get the first one
+		MQTTClient client = null;
+
+		if (!getMQTTClients().isEmpty()) {
+			client = getMQTTClients().iterator().next();
 		}
 		return client;
 	}
@@ -451,6 +481,16 @@ public class OeeContext {
 	}
 
 	/**
+	 * Set the list of the MQTT clients defined for the collector
+	 * 
+	 * @param clients
+	 *            Set of {@link MQTTClient}
+	 */
+	public void setMQTTClients(Collection<MQTTClient> clients) {
+		contextMap.put(MQTT_KEY, clients);
+	}
+
+	/**
 	 * Set the list of the database event clients defined for the collector
 	 * 
 	 * @param clients
@@ -491,6 +531,18 @@ public class OeeContext {
 	public void addJMSClient(JMSClient client) {
 		if (!getJMSClients().contains(client)) {
 			getJMSClients().add(client);
+		}
+	}
+
+	/**
+	 * Add an MQTT client to the list
+	 * 
+	 * @param client
+	 *            {@link MQTTClient}
+	 */
+	public void addMQTTClient(MQTTClient client) {
+		if (!getMQTTClients().contains(client)) {
+			getMQTTClients().add(client);
 		}
 	}
 
@@ -539,6 +591,18 @@ public class OeeContext {
 	public void removeJMSClient(JMSClient client) {
 		if (getJMSClients().contains(client)) {
 			getJMSClients().remove(client);
+		}
+	}
+
+	/**
+	 * Remove an MQTT client from the list
+	 * 
+	 * @param client
+	 *            {@link MQTTClient}
+	 */
+	public void removeMQTTClient(MQTTClient client) {
+		if (getMQTTClients().contains(client)) {
+			getMQTTClients().remove(client);
 		}
 	}
 
@@ -649,9 +713,24 @@ public class OeeContext {
 			sb.append('\t').append(client.toString());
 		}
 
+		sb.append("\n MQTT clients ...");
+		for (MQTTClient client : getMQTTClients()) {
+			sb.append('\t').append(client.toString());
+		}
+
 		sb.append("\n HTTP servers ...");
-		for (OeeHttpServer server : this.getHttpServers()) {
+		for (OeeHttpServer server : getHttpServers()) {
 			sb.append('\t').append(server.toString());
+		}
+
+		sb.append("\n Database clients ...");
+		for (DatabaseEventClient client : getDatabaseEventClients()) {
+			sb.append('\t').append(client.toString());
+		}
+
+		sb.append("\n File clients ...");
+		for (FileEventClient client : getFileEventClients()) {
+			sb.append('\t').append(client.toString());
 		}
 
 		return sb.toString();

@@ -4,7 +4,7 @@
 
   <groupId>org.point85</groupId>
   <artifactId>oee-domain</artifactId>
-  <version>1.4.1</version>
+  <version>1.5.0</version>
   <packaging>jar</packaging>
   <url>http://maven.apache.org</url>
 
@@ -143,7 +143,15 @@
     <version>5.15.8</version>
 </dependency>
 
-  </dependencies>
+<!-- MQTT -->
+<!-- https://mvnrepository.com/artifact/org.eclipse.paho/org.eclipse.paho.client.mqttv3 -->
+<dependency>
+    <groupId>org.eclipse.paho</groupId>
+    <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+    <version>1.2.0</version>
+</dependency>
+
+</dependencies>
   
   <!-- copy dependent jars -->
     <build>

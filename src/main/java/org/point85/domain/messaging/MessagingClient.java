@@ -81,10 +81,10 @@ public class MessagingClient extends BaseMessagingClient {
 		this.listener = null;
 	}
 
-	public void connectAndSubscribe(String brokerHostName, int port, String userName, String password, String queueName,
+	public void startUp(String hostName, int port, String userName, String password, String queueName,
 			List<RoutingKey> routingKeys, MessageListener listener) throws Exception {
 		// connect to broker
-		connect(brokerHostName, port, userName, password);
+		connect(hostName, port, userName, password);
 
 		// add listener
 		registerListener(listener);
@@ -93,15 +93,15 @@ public class MessagingClient extends BaseMessagingClient {
 		subscribe(queueName, routingKeys);
 	}
 
-	public void connect(String brokerHostName, int port, String userName, String password) throws Exception {
+	public void connect(String hostName, int port, String userName, String password) throws Exception {
 		if (logger.isInfoEnabled()) {
-			logger.info("Connecting to RMQ broker host " + brokerHostName + " on port " + port + ", user " + userName
+			logger.info("Connecting to RMQ broker host " + hostName + " on port " + port + ", user " + userName
 					+ ", exchange " + EXCHANGE_NAME);
 		}
 
 		// factory
 		factory = new ConnectionFactory();
-		factory.setHost(brokerHostName);
+		factory.setHost(hostName);
 		factory.setPort(port);
 		factory.setUsername(userName);
 		factory.setPassword(password);
@@ -117,11 +117,11 @@ public class MessagingClient extends BaseMessagingClient {
 
 		if (logger.isInfoEnabled()) {
 			logger.info(
-					"Connected to broker host " + brokerHostName + " on port " + port + ", exchange " + EXCHANGE_NAME);
+					"Connected to broker host " + hostName + " on port " + port + ", exchange " + EXCHANGE_NAME);
 		}
 	}
 
-	public void disconnect() throws Exception {
+	public void shutDown() throws Exception {
 		if (channel != null) {
 			if (consumerTag != null) {
 				try {

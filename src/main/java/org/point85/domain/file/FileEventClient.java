@@ -9,6 +9,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
+import org.point85.domain.collector.CollectorDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +69,10 @@ public class FileEventClient {
 
 	public void startPolling() {
 		for (int i = 0; i < sourceIds.size(); i++) {
+			if (pollingPeriods.get(i) == null) {
+				pollingPeriods.set(i, new Integer(CollectorDataSource.DEFAULT_UPDATE_PERIOD_MSEC));
+			}
+
 			if (logger.isInfoEnabled()) {
 				logger.info("Starting to poll for new files every " + pollingPeriods.get(i) + " msec. for sourceId "
 						+ sourceIds.get(i));
@@ -159,6 +164,13 @@ public class FileEventClient {
 		return fileSource.getId().equals(otherClient.getFileEventSource().getId());
 	}
 
+	public void moveFile(File file, FileEventSource source, String sourceId, String folder) throws IOException {
+		String toPath = source.getHost() + File.separator + sourceId + File.separator + FileEventClient.READY_FOLDER
+				+ File.separator + file.getName();
+
+		fileService.moveFile(file, toPath);
+	}
+
 	public void moveFile(File file, String fromFolder, String toFolder) throws IOException {
 		this.moveFile(file, fromFolder, toFolder, null);
 	}
@@ -185,7 +197,6 @@ public class FileEventClient {
 
 	public void writeFile(FileEventSource source, String sourceId, String folder, String content) throws IOException {
 		String pathName = source.getHost() + File.separator + sourceId + File.separator + folder;
-
 		fileService.writeFile(pathName, UUID.randomUUID().toString(), content);
 	}
 
