@@ -241,7 +241,7 @@ public class EquipmentEventResolver {
 		event.setMaterial(material);
 		event.setJob(job);
 		event.setEventType(resolverType);
-		event.setItemId(sourceId);
+		event.setSourceId(sourceId);
 		event.setStartTime(eventTime);
 		event.setShift(shift);
 		event.setTeam(team);
@@ -275,7 +275,8 @@ public class EquipmentEventResolver {
 		} else if (outputValue instanceof Byte) {
 			amount = Double.valueOf((Byte) outputValue);
 		} else {
-			throw new Exception("The result " + outputValue + " cannot be converted to a number.");
+			throw new Exception("The result " + outputValue + " of type " + outputValue.getClass().getSimpleName()
+					+ " cannot be converted to a number.");
 		}
 
 		// get UOM from material and equipment

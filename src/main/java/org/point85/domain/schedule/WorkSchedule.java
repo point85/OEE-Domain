@@ -59,7 +59,7 @@ import org.point85.domain.plant.NamedObject;
 @AttributeOverride(name = "primaryKey", column = @Column(name = "WS_KEY"))
 
 public class WorkSchedule extends NamedObject {
-	
+
 	// name of resource bundle with translatable strings for exception messages
 	private static final String MESSAGES_BUNDLE_NAME = "WorkScheduleMessage";
 
@@ -80,6 +80,10 @@ public class WorkSchedule extends NamedObject {
 	// holidays and planned downtime
 	@OneToMany(mappedBy = "workSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
 	private final List<NonWorkingPeriod> nonWorkingPeriods = new ArrayList<>();
+
+	// list of rotations
+	@OneToMany(mappedBy = "workSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
+	private final List<Rotation> rotations = new ArrayList<>();
 
 	public WorkSchedule() {
 		super();
@@ -241,6 +245,19 @@ public class WorkSchedule extends NamedObject {
 		teams.add(team);
 		team.setWorkSchedule(this);
 		return team;
+	}
+
+	public Rotation createRotation(String name, String description) throws Exception {
+		Rotation rotation = new Rotation(name, description);
+
+		if (rotations.contains(rotation)) {
+			String msg = MessageFormat.format(WorkSchedule.getMessage("rotation.already.exists"), name);
+			throw new Exception(msg);
+		}
+
+		rotations.add(rotation);
+		rotation.setWorkSchedule(this);
+		return rotation;
 	}
 
 	/**
@@ -455,6 +472,15 @@ public class WorkSchedule extends NamedObject {
 	 */
 	public List<Shift> getShifts() {
 		return shifts;
+	}
+
+	/**
+	 * Get the list of rotations in this schedule
+	 * 
+	 * @return List of {@link Rotation}
+	 */
+	public List<Rotation> getRotations() {
+		return rotations;
 	}
 
 	/**

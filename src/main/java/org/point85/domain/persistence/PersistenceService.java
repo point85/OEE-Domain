@@ -92,6 +92,11 @@ public final class PersistenceService {
 	// map of named queries
 	private final Map<String, Boolean> namedQueryMap;
 
+	// cached JDBC connection info
+	private static String jdbcConnection;
+	private static String jdbcUserName;
+	private static String jdbcPassword;
+
 	private PersistenceService() {
 		namedQueryMap = new ConcurrentHashMap<>();
 	}
@@ -115,6 +120,11 @@ public final class PersistenceService {
 	}
 
 	public void initialize(String jdbcUrl, String userName, String password) {
+		// cache connection info
+		jdbcConnection = jdbcUrl;
+		jdbcUserName = userName;
+		jdbcPassword = password;
+
 		// create EM on a a background thread
 		emfFuture = CompletableFuture.supplyAsync(() -> {
 			try {
@@ -1107,18 +1117,18 @@ public final class PersistenceService {
 	private Properties createProperties(String jdbcUrl, String userName, String password) throws Exception {
 		DatabaseType databaseType = null;
 
-		if (jdbcUrl.contains("jdbc:sqlserver")) {
+		if (jdbcUrl.contains("sqlserver")) {
 			databaseType = DatabaseType.MSSQL;
-		} else if (jdbcUrl.contains("jdbc:oracle")) {
+		} else if (jdbcUrl.contains("oracle")) {
 			databaseType = DatabaseType.ORACLE;
-		} else if (jdbcUrl.contains("jdbc:hsqldb")) {
+		} else if (jdbcUrl.contains("hsqldb")) {
 			databaseType = DatabaseType.HSQL;
-		} else if (jdbcUrl.contains("jdbc:mysql")) {
+		} else if (jdbcUrl.contains("mysql")) {
 			databaseType = DatabaseType.MYSQL;
-		} else if (jdbcUrl.contains("jdbc:mysql")) {
+		} else if (jdbcUrl.contains("postgresql")) {
 			databaseType = DatabaseType.POSTGRES;
 		} else {
-			throw new Exception("Invalid JDBC URL: " + jdbcUrl);
+			throw new Exception("Unrecognized JDBC URL: " + jdbcUrl);
 		}
 
 		Properties properties = new Properties();
@@ -1127,14 +1137,14 @@ public final class PersistenceService {
 			properties.put("hibernate.dialect", "org.hibernate.dialect.SQLServer2012Dialect");
 			properties.put("javax.persistence.jdbc.driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
 		} else if (databaseType.equals(DatabaseType.ORACLE)) {
-			properties.put("hibernate.dialect", "org.hibernate.dialect.Oracle10gDialect");
+			properties.put("hibernate.dialect", "org.hibernate.dialect.Oracle12cDialect");
 			properties.put("javax.persistence.jdbc.driver", "oracle.jdbc.driver.OracleDriver");
 		} else if (databaseType.equals(DatabaseType.HSQL)) {
 			properties.put("hibernate.dialect", "org.hibernate.dialect.HSQLDialect");
 			properties.put("javax.persistence.jdbc.driver", "org.hsqldb.jdbc.JDBCDriver");
 		} else if (databaseType.equals(DatabaseType.MYSQL)) {
-			properties.put("hibernate.dialect", "org.hibernate.dialect.MySQL57Dialect");
-			properties.put("javax.persistence.jdbc.driver", "com.mysql.jdbc.Driver");
+			properties.put("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
+			properties.put("javax.persistence.jdbc.driver", "com.mysql.cj.jdbc.Driver");
 		} else if (databaseType.equals(DatabaseType.POSTGRES)) {
 			properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQL95Dialect");
 			properties.put("javax.persistence.jdbc.driver", "org.postgresql.Driver");
@@ -1143,7 +1153,10 @@ public final class PersistenceService {
 		// jdbc connection
 		properties.put("javax.persistence.jdbc.url", jdbcUrl);
 		properties.put("javax.persistence.jdbc.user", userName);
-		properties.put("javax.persistence.jdbc.password", password);
+
+		if (password != null) {
+			properties.put("javax.persistence.jdbc.password", password);
+		}
 
 		// lazy loading without a transaction
 		properties.put("hibernate.enable_lazy_load_no_trans", "true");
@@ -1171,14 +1184,14 @@ public final class PersistenceService {
 		if (namedQueryMap.get(AVAIL_RECORDS) == null) {
 			createNamedQuery(AVAIL_RECORDS,
 					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type "
-							+ "AND (e.startTime >= :from AND e.startTime < :to) ORDER BY e.startTime ASC");
+							+ "AND (e.startTime.localDateTime >= :from AND e.startTime.localDateTime < :to) ORDER BY e.startTime.localDateTime ASC");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(AVAIL_RECORDS, OeeEvent.class);
 		query.setParameter("type", OeeEventType.AVAILABILITY);
 		query.setParameter("equipment", equipment);
-		query.setParameter("from", from);
-		query.setParameter("to", to);
+		query.setParameter("from", from.toLocalDateTime());
+		query.setParameter("to", to.toLocalDateTime());
 
 		return query.getResultList();
 	}
@@ -1189,7 +1202,7 @@ public final class PersistenceService {
 
 		if (namedQueryMap.get(PROD_RECORDS) == null) {
 			createNamedQuery(PROD_RECORDS, "SELECT e FROM OeeEvent e WHERE e.equipment = :equipment "
-					+ "AND e.eventType IN :types AND (e.startTime >= :from AND e.startTime < :to) AND e.material = :material ORDER BY e.startTime ASC");
+					+ "AND e.eventType IN :types AND (e.startTime.localDateTime >= :from AND e.startTime.localDateTime < :to) AND e.material = :material ORDER BY e.startTime.localDateTime ASC");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(PROD_RECORDS, OeeEvent.class);
@@ -1197,8 +1210,8 @@ public final class PersistenceService {
 		query.setParameter("types", OeeEventType.getProductionTypes());
 		query.setParameter("equipment", equipment);
 		query.setParameter("material", material);
-		query.setParameter("from", from);
-		query.setParameter("to", to);
+		query.setParameter("from", from.toLocalDateTime());
+		query.setParameter("to", to.toLocalDateTime());
 
 		return query.getResultList();
 	}
@@ -1209,14 +1222,14 @@ public final class PersistenceService {
 		if (namedQueryMap.get(SETUP_PERIOD) == null) {
 			createNamedQuery(SETUP_PERIOD,
 					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type "
-							+ "AND e.startTime  <= :to AND (e.endTime  >= :from OR e.endTime IS NULL)");
+							+ "AND e.startTime.localDateTime  <= :to AND (e.endTime.localDateTime  >= :from OR e.endTime.localDateTime IS NULL)");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(SETUP_PERIOD, OeeEvent.class);
 		query.setParameter("type", OeeEventType.MATL_CHANGE);
 		query.setParameter("equipment", equipment);
-		query.setParameter("from", from);
-		query.setParameter("to", to);
+		query.setParameter("from", from.toLocalDateTime());
+		query.setParameter("to", to.toLocalDateTime());
 
 		return query.getResultList();
 	}
@@ -1228,14 +1241,14 @@ public final class PersistenceService {
 		if (namedQueryMap.get(SETUP_PERIOD_MATL) == null) {
 			createNamedQuery(SETUP_PERIOD_MATL,
 					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type "
-							+ "AND e.startTime  <= :to AND (e.endTime  >= :from OR e.endTime IS NULL) AND e.material = :matl");
+							+ "AND e.startTime.localDateTime  <= :to AND (e.endTime.localDateTime  >= :from OR e.endTime.localDateTime IS NULL) AND e.material = :matl");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(SETUP_PERIOD_MATL, OeeEvent.class);
 		query.setParameter("type", OeeEventType.MATL_CHANGE);
 		query.setParameter("equipment", equipment);
-		query.setParameter("from", from);
-		query.setParameter("to", to);
+		query.setParameter("from", from.toLocalDateTime());
+		query.setParameter("to", to.toLocalDateTime());
 		query.setParameter("matl", material);
 
 		return query.getResultList();
@@ -1246,7 +1259,7 @@ public final class PersistenceService {
 
 		if (namedQueryMap.get(LAST_EVENT) == null) {
 			createNamedQuery(LAST_EVENT,
-					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type ORDER BY e.startTime DESC");
+					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type ORDER BY e.startTime.localDateTime DESC");
 		}
 
 		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(LAST_EVENT, OeeEvent.class);
@@ -1271,12 +1284,12 @@ public final class PersistenceService {
 
 		if (namedQueryMap.get(PURGE_OEE) == null) {
 			createNamedQuery(PURGE_OEE,
-					"DELETE FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType != :type AND e.startTime < :cutoff");
+					"DELETE FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType != :type AND e.startTime.localDateTime < :cutoff");
 		}
 
 		Query purgeOee = em.createNamedQuery(PURGE_OEE);
 		purgeOee.setParameter("equipment", equipment);
-		purgeOee.setParameter("cutoff", cutoff);
+		purgeOee.setParameter("cutoff", cutoff.toLocalDateTime());
 		purgeOee.setParameter("type", OeeEventType.MATL_CHANGE);
 
 		// purge inactive setup records
@@ -1284,11 +1297,11 @@ public final class PersistenceService {
 
 		if (namedQueryMap.get(PURGE_MATL) == null) {
 			createNamedQuery(PURGE_MATL,
-					"DELETE FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type AND e.endTime IS NOT NULL AND e.endTime < :cutoff");
+					"DELETE FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type AND e.endTime.localDateTime IS NOT NULL AND e.endTime.localDateTime < :cutoff");
 		}
 
 		Query purgeMaterial = em.createNamedQuery(PURGE_MATL);
-		purgeMaterial.setParameter("cutoff", cutoff);
+		purgeMaterial.setParameter("cutoff", cutoff.toLocalDateTime());
 		purgeMaterial.setParameter("equipment", equipment);
 		purgeMaterial.setParameter("type", OeeEventType.MATL_CHANGE);
 
@@ -1379,7 +1392,7 @@ public final class PersistenceService {
 
 		if (namedQueryMap.get(NEW_EVENTS) == null) {
 			createNamedQuery(NEW_EVENTS,
-					"SELECT event FROM DatabaseEvent event WHERE status = :status ORDER BY event.time ASC");
+					"SELECT event FROM DatabaseEvent event WHERE status = :status ORDER BY event.eventTime.localDateTime ASC");
 		}
 
 		TypedQuery<DatabaseEvent> query = getEntityManager().createNamedQuery(NEW_EVENTS, DatabaseEvent.class);
@@ -1402,7 +1415,7 @@ public final class PersistenceService {
 
 		if (namedQueryMap.get(NEW_EVENTS_SOURCE) == null) {
 			createNamedQuery(NEW_EVENTS_SOURCE,
-					"SELECT event FROM DatabaseEvent event WHERE status = :status AND sourceId = :sourceId ORDER BY event.time ASC");
+					"SELECT event FROM DatabaseEvent event WHERE status = :status AND sourceId = :sourceId ORDER BY event.eventTime.localDateTime ASC");
 		}
 
 		TypedQuery<DatabaseEvent> query = getEntityManager().createNamedQuery(NEW_EVENTS_SOURCE, DatabaseEvent.class);
@@ -1413,7 +1426,7 @@ public final class PersistenceService {
 	}
 
 	/**
-	 * Fetch OEE events for the equipemnt and event type over the specified period
+	 * Fetch OEE events for the equipment and event type over the specified period
 	 * 
 	 * @param equipment
 	 *            {@link Equipment}
@@ -1429,26 +1442,38 @@ public final class PersistenceService {
 		String qry = "SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type ";
 
 		if (from != null) {
-			qry += "AND e.startTime >= :from ";
+			qry += "AND e.startTime.localDateTime >= :from ";
 		}
 
 		if (to != null) {
-			qry += "AND e.startTime < :to ";
+			qry += "AND e.startTime.localDateTime < :to ";
 		}
-		qry += " ORDER BY e.startTime ASC";
+		qry += " ORDER BY e.startTime.localDateTime ASC";
 
 		TypedQuery<OeeEvent> query = getEntityManager().createQuery(qry, OeeEvent.class);
 		query.setParameter("type", type);
 		query.setParameter("equipment", equipment);
 
 		if (from != null) {
-			query.setParameter("from", from);
+			query.setParameter("from", from.toLocalDateTime());
 		}
 
 		if (to != null) {
-			query.setParameter("to", to);
+			query.setParameter("to", to.toLocalDateTime());
 		}
 
 		return query.getResultList();
+	}
+
+	public static String getJdbcConnection() {
+		return jdbcConnection;
+	}
+
+	public static String getUserName() {
+		return jdbcUserName;
+	}
+
+	public static String getUserPassword() {
+		return jdbcPassword;
 	}
 }

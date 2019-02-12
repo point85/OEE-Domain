@@ -280,11 +280,14 @@ public class OpcDaVariant {
 		Number numberValue = null;
 
 		switch (getJIVariant().getType()) {
+
+		// 1 byte
 		case JIVariant.VT_I1:
 		case JIVariant.VT_UI1:
 			numberValue = new Byte((byte) getJIVariant().getObjectAsChar());
 			break;
 
+		// 2 bytes integer
 		case JIVariant.VT_I2:
 		case JIVariant.VT_UI2:
 			if (getJIVariant().getObject() instanceof JIUnsignedShort) {
@@ -295,26 +298,36 @@ public class OpcDaVariant {
 			}
 			break;
 
+		// four byte integer
 		case JIVariant.VT_INT:
 		case JIVariant.VT_UINT:
 		case JIVariant.VT_UI4:
 		case JIVariant.VT_I4:
-			numberValue = new Integer(getJIVariant().getObjectAsInt());
+			if (getJIVariant().getObject() instanceof JIUnsignedInteger) {
+				// bug? avoid class cast exception
+				numberValue = ((JIUnsignedInteger) getJIVariant().getObject()).getValue();
+			} else {
+				numberValue = new Integer(getJIVariant().getObjectAsInt());
+			}
 			break;
 
+		// 8 byte integer
 		case JIVariant.VT_I8:
 			numberValue = new Long(getJIVariant().getObjectAsLong());
 			break;
 
+		// 4 byte float
 		case JIVariant.VT_R4:
 		case JIVariant.VT_DECIMAL:
 			numberValue = new Float(getJIVariant().getObjectAsFloat());
 			break;
 
+		// 8 byte double
 		case JIVariant.VT_R8:
 			numberValue = new Double(getJIVariant().getObjectAsDouble());
 			break;
 
+		// boolean
 		case JIVariant.VT_BOOL:
 			byte boolValue = 0;
 			if (getJIVariant().getObjectAsBoolean()) {
@@ -323,6 +336,7 @@ public class OpcDaVariant {
 			numberValue = new Byte(boolValue);
 			break;
 
+		// not supported
 		case JIVariant.VT_BSTR:
 		case JIVariant.VT_DATE:
 		default:

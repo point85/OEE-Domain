@@ -4,15 +4,17 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 
 import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Convert;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.point85.domain.persistence.EventTypeConverter;
-import org.point85.domain.persistence.OffsetDateTimeConverter;
+import org.point85.domain.persistence.OffsetTimestamp;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.plant.Material;
@@ -38,13 +40,15 @@ public class OeeEvent extends KeyedObject {
 	@JoinColumn(name = "ENT_KEY")
 	private Equipment equipment;
 
-	@Column(name = "START_TIME")
-	@Convert(converter = OffsetDateTimeConverter.class)
-	private OffsetDateTime startTime;
+	@Embedded
+	@AttributeOverrides({ @AttributeOverride(name = "localDateTime", column = @Column(name = "START_TIME")),
+			@AttributeOverride(name = "utcOffset", column = @Column(name = "START_TIME_OFFSET")) })
+	private OffsetTimestamp startTime;
 
-	@Column(name = "END_TIME")
-	@Convert(converter = OffsetDateTimeConverter.class)
-	private OffsetDateTime endTime;
+	@Embedded
+	@AttributeOverrides({ @AttributeOverride(name = "localDateTime", column = @Column(name = "END_TIME")),
+			@AttributeOverride(name = "utcOffset", column = @Column(name = "END_TIME_OFFSET")) })
+	private OffsetTimestamp endTime;
 
 	@OneToOne
 	@JoinColumn(name = "SHIFT_KEY")
@@ -78,11 +82,12 @@ public class OeeEvent extends KeyedObject {
 	@Column(name = "IN_VALUE")
 	private String input;
 
+	// source identifier
+	@Column(name = "SOURCE_ID")
+	private String sourceId;
+
 	// computed lost time
 	private transient Duration lostTime;
-
-	// source identifier
-	private transient String itemId;
 
 	// output value
 	private transient Object outputValue;
@@ -92,10 +97,12 @@ public class OeeEvent extends KeyedObject {
 	}
 
 	public OeeEvent(Equipment equipment) {
+		super();
 		this.equipment = equipment;
 	}
 
 	public OeeEvent(Equipment equipment, Object inputValue, Object outputValue) {
+		super();
 		this.equipment = equipment;
 		setInputValue(inputValue.toString());
 		this.outputValue = outputValue;
@@ -109,20 +116,40 @@ public class OeeEvent extends KeyedObject {
 		this.equipment = equipment;
 	}
 
-	public OffsetDateTime getStartTime() {
+	public OffsetTimestamp getOffsetStartTime() {
 		return startTime;
 	}
 
-	public void setStartTime(OffsetDateTime startTime) {
-		this.startTime = startTime;
+	public void setOffsetStartTime(OffsetTimestamp offsetTime) {
+		startTime = offsetTime;
 	}
 
-	public OffsetDateTime getEndTime() {
+	public OffsetTimestamp getOffsetEndTime() {
 		return endTime;
 	}
 
-	public void setEndTime(OffsetDateTime endTime) {
-		this.endTime = endTime;
+	public void setOffsetEndTime(OffsetTimestamp offsetTime) {
+		this.endTime = offsetTime;
+	}
+
+	public OffsetDateTime getStartTime() {
+		return startTime != null ? startTime.toOffsetDateTime() : null;
+	}
+
+	public void setStartTime(OffsetDateTime dateTime) {
+		if (dateTime != null) {
+			this.startTime = new OffsetTimestamp(dateTime);
+		}
+	}
+
+	public OffsetDateTime getEndTime() {
+		return endTime != null ? endTime.toOffsetDateTime() : null;
+	}
+
+	public void setEndTime(OffsetDateTime dateTime) {
+		if (dateTime != null) {
+			this.endTime = new OffsetTimestamp(dateTime);
+		}
 	}
 
 	public OeeEventType getEventType() {
@@ -149,12 +176,12 @@ public class OeeEvent extends KeyedObject {
 		this.lostTime = lostTime;
 	}
 
-	public String getItemId() {
-		return itemId;
+	public String getSourceId() {
+		return sourceId;
 	}
 
-	public void setItemId(String itemId) {
-		this.itemId = itemId;
+	public void setSourceId(String sourceId) {
+		this.sourceId = sourceId;
 	}
 
 	public Object getInputValue() {

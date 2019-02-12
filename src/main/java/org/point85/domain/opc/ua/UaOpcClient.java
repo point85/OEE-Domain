@@ -359,37 +359,47 @@ public class UaOpcClient implements SessionActivityListener {
 		});
 	}
 
-	public static Class<?> getJavaDataType(Variant value) {
-		Class<?> javaClass = null;
+	public static Object getJavaObject(Variant value) {
+		Object uaValue = value.getValue();
+		Object javaObject = null;
 		NodeId nodeId = value.getDataType().get();
 		Class<?> clazz = BuiltinDataType.getBackingClass(nodeId);
 
 		if (nodeId.getType().equals(IdType.Numeric)) {
-			if (clazz.equals(Integer.class) || clazz.equals(UInteger.class)) {
-				javaClass = Integer.class;
-			} else if (clazz.equals(Short.class) || clazz.equals(UShort.class)) {
-				javaClass = Short.class;
+			if (clazz.equals(Integer.class)) {
+				javaObject = (Integer) uaValue;
+			} else if (clazz.equals(UInteger.class)) {
+				javaObject = ((UInteger) uaValue).longValue();
+			} else if (clazz.equals(Short.class)) {
+				javaObject = (Short) uaValue;
+			} else if (clazz.equals(UShort.class)) {
+				javaObject = ((UShort) uaValue).intValue();
 			} else if (clazz.equals(Boolean.class)) {
-				javaClass = Boolean.class;
-			} else if (clazz.equals(UByte.class) || clazz.equals(Byte.class)) {
-				javaClass = Byte.class;
-			} else if (clazz.equals(ULong.class) || clazz.equals(Long.class)) {
-				javaClass = Long.class;
+				javaObject = (Boolean) uaValue;
+			} else if (clazz.equals(Byte.class)) {
+				javaObject = (Byte) uaValue;
+			} else if (clazz.equals(UByte.class)) {
+				javaObject = ((UByte) uaValue).shortValue();
+			} else if (clazz.equals(Long.class)) {
+				javaObject = (Long) uaValue;
+			} else if (clazz.equals(ULong.class)) {
+				javaObject = ((ULong) uaValue).doubleValue();
 			} else if (clazz.equals(Float.class)) {
-				javaClass = Float.class;
+				javaObject = (Float) uaValue;
+				;
 			} else if (clazz.equals(Double.class)) {
-				javaClass = Double.class;
+				javaObject = (Double) uaValue;
 			} else if (clazz.equals(DateTime.class)) {
-				javaClass = DateTime.class;
-			} else if (clazz.equals(java.lang.String.class)) {
-				javaClass = String.class;
+				javaObject = (DateTime) uaValue;
+			} else if (clazz.equals(String.class)) {
+				javaObject = (String) uaValue;
 			}
 		} else if (nodeId.getType().equals(IdType.String)) {
-			javaClass = String.class;
+			javaObject = (String) uaValue;
 		} else if (nodeId.getType().equals(IdType.Guid)) {
-			javaClass = UUID.class;
+			javaObject = (UUID) uaValue;
 		}
-		return javaClass;
+		return javaObject;
 	}
 
 	public static NodeId getNodeId(ExpandedNodeId expandedId) {

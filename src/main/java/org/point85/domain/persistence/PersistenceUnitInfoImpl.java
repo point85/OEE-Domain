@@ -19,7 +19,7 @@ import java.util.Properties;
  */
 public class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
 
-	public static final String JPA_VERSION = "2.1";
+	private static final String JPA_VERSION = "2.2";
 
 	private final String persistenceUnitName;
 

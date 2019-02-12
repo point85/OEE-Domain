@@ -51,6 +51,11 @@ public final class EquipmentLossManager {
 			checkTimePeriod(record, equipmentLoss, from, to);
 
 			Quantity quantity = record.getQuantity();
+
+			if (quantity.getUOM() == null) {
+				throw new Exception("Production of " + quantity.getAmount() + " for source " + record.getSourceId()
+						+ " at time " + record.getOffsetStartTime() + " does not have a unit of measure.");
+			}
 			Duration lostTime = null;
 
 			switch (record.getEventType()) {
@@ -80,7 +85,7 @@ public final class EquipmentLossManager {
 			default:
 				break;
 			}
-			
+
 			if (record.getReason() != null && lostTime != null) {
 				// reason map too
 				equipmentLoss.incrementReasonLoss(record.getReason(), lostTime);
@@ -155,7 +160,7 @@ public final class EquipmentLossManager {
 			WorkSchedule schedule = equipment.findWorkSchedule();
 			if (schedule != null) {
 				notScheduled = schedule.calculateNonWorkingTime(odtStart.toLocalDateTime(), odtEnd.toLocalDateTime());
-				
+
 				// add any additional time not scheduled
 				extraNotScheduled = equipmentLoss.getLoss(TimeLoss.NOT_SCHEDULED);
 			}

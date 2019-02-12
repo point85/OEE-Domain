@@ -133,8 +133,6 @@ public class CollectorService
 	private final Map<String, FileServerSource> fileServerMap = new HashMap<>();
 	private final Map<String, MQTTBrokerSource> mqttBrokerMap = new HashMap<>();
 
-	private boolean webContainer = false;
-
 	public CollectorService() {
 		initialize();
 	}
@@ -471,7 +469,7 @@ public class CollectorService
 		// create the tag info
 		TagItemInfo tagItem = new TagItemInfo(sourceId);
 		Integer updatePeriod = resolver.getUpdatePeriod();
-		
+
 		if (updatePeriod == null) {
 			updatePeriod = CollectorDataSource.DEFAULT_UPDATE_PERIOD_MSEC;
 		}
@@ -667,9 +665,6 @@ public class CollectorService
 		// configure all of the data sources
 		buildDataSources();
 
-		// add a collector for a web server container if necessary
-		addWebCollector();
-
 		// connect to broker for notifications and commands
 		startNotifications();
 
@@ -678,57 +673,6 @@ public class CollectorService
 
 		// notify monitors
 		onInformation("Collector server started on host " + getId());
-	}
-
-	public boolean isWebContainer() {
-		return webContainer;
-	}
-
-	public void setWebContainer(boolean web) {
-		this.webContainer = web;
-	}
-
-	private void addWebCollector() {
-		if (!webContainer) {
-			return;
-		}
-
-		// search for a collector on this host
-		DataCollector thisCollector = null;
-
-		for (DataCollector collector : collectors) {
-			if (collector.getHost().equals(hostname)) {
-				thisCollector = collector;
-				break;
-			}
-		}
-
-		if (thisCollector != null) {
-			// already a collector
-			return;
-		}
-
-		// fetch from database
-		List<String> hostNames = new ArrayList<String>();
-		hostNames.add(hostname);
-
-		// get collector on our host
-		List<CollectorState> states = new ArrayList<>();
-		states.add(CollectorState.READY);
-		states.add(CollectorState.RUNNING);
-
-		List<DataCollector> ourCollectors = PersistenceService.instance().fetchCollectorsByHostAndState(hostNames,
-				states);
-
-		if (!ourCollectors.isEmpty()) {
-			DataCollector ourCollector = ourCollectors.get(0);
-			collectors.add(ourCollector);
-
-			if (logger.isInfoEnabled()) {
-				logger.info("Added data collector for this host " + ourCollector.getName() + " in state "
-						+ ourCollector.getCollectorState());
-			}
-		}
 	}
 
 	private synchronized void startNotifications() throws Exception {
@@ -795,7 +739,8 @@ public class CollectorService
 			try {
 				pubSub.publish(message, RoutingKey.NOTIFICATION_MESSAGE, STATUS_TTL_SEC);
 			} catch (Exception e) {
-				onException("Unable to publish notification.", e);
+				// do not attempt to send a notification
+				logger.error("Unable to publish notification.", e);
 			}
 		}
 	}
@@ -816,9 +761,7 @@ public class CollectorService
 				}
 				savedCollectors.add(saved);
 			} else {
-				if (logger.isInfoEnabled()) {
-					logger.info("Invalid state " + state + " from state " + currentState);
-				}
+				logger.warn("Invalid state " + state + " from state " + currentState);
 			}
 		}
 		collectors = savedCollectors;
@@ -1067,12 +1010,12 @@ public class CollectorService
 		// close off previous events if not summarized
 		OeeEventType type = event.getEventType();
 
-		if (!type.isProduction() && event.getEndTime() == null) {
+		if (!type.isProduction() && event.getOffsetEndTime() == null) {
 			// availability, material or job change
 			OeeEvent lastRecord = PersistenceService.instance().fetchLastEvent(event.getEquipment(), type);
 
 			if (lastRecord != null) {
-				lastRecord.setEndTime(event.getStartTime());
+				lastRecord.setOffsetEndTime(event.getOffsetStartTime());
 				Duration duration = Duration.between(lastRecord.getStartTime(), lastRecord.getEndTime());
 				lastRecord.setDuration(duration);
 
@@ -1374,7 +1317,7 @@ public class CollectorService
 		@Override
 		public void run() {
 			try {
-				Object dataValue = uaValue.getValue().getValue();
+				Object dataValue = UaOpcClient.getJavaObject(uaValue.getValue());
 				String sourceId = item.getReadValueId().getNodeId().toParseableString();
 				DateTime dt = uaValue.getServerTime();
 				OffsetDateTime timestamp = DomainUtils.localTimeFromDateTime(dt);
@@ -1394,7 +1337,7 @@ public class CollectorService
 	}
 
 	public synchronized void recordResolution(OeeEvent resolvedEvent) throws Exception {
-		if (resolvedEvent.getEndTime() != null && resolvedEvent.getDuration() != null) {
+		if (resolvedEvent.getOffsetEndTime() != null && resolvedEvent.getDuration() != null) {
 			Duration delta = Duration.between(resolvedEvent.getStartTime(), resolvedEvent.getEndTime());
 
 			if (delta.compareTo(resolvedEvent.getDuration()) < 0) {
@@ -1649,7 +1592,7 @@ public class CollectorService
 			try {
 				String sourceId = databaseEvent.getSourceId();
 				String dataValue = databaseEvent.getInputValue();
-				OffsetDateTime timestamp = databaseEvent.getTime();
+				OffsetDateTime timestamp = databaseEvent.getEventTime();
 
 				if (logger.isInfoEnabled()) {
 					logger.info("Database event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "

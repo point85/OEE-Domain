@@ -34,6 +34,8 @@ import javax.persistence.AttributeOverride;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
@@ -53,6 +55,11 @@ public class Rotation extends Named implements Comparable<Rotation> {
 
 	// 24-hour day off period
 	private static final DayOff DAY_OFF = initializeDayOff();
+
+	// owning work schedule
+	@ManyToOne
+	@JoinColumn(name = "WS_KEY")
+	private WorkSchedule workSchedule;
 
 	// working periods in the rotation
 	@OneToMany(mappedBy = "rotation", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -75,7 +82,7 @@ public class Rotation extends Named implements Comparable<Rotation> {
 	 * @throws Exception
 	 *             Exception
 	 */
-	public Rotation(String name, String description) throws Exception {
+	Rotation(String name, String description) throws Exception {
 		super(name, description);
 	}
 
@@ -186,6 +193,19 @@ public class Rotation extends Named implements Comparable<Rotation> {
 		rotationSegments.add(segment);
 		segment.setSequence(rotationSegments.size());
 		return segment;
+	}
+
+	/**
+	 * Get the work schedule that owns this rotation
+	 * 
+	 * @return {@link WorkSchedule}
+	 */
+	public WorkSchedule getWorkSchedule() {
+		return workSchedule;
+	}
+
+	void setWorkSchedule(WorkSchedule workSchedule) {
+		this.workSchedule = workSchedule;
 	}
 
 	@Override

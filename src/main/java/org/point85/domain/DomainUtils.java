@@ -180,22 +180,22 @@ public final class DomainUtils {
 
 		sb.append(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
 
+		if (e.getCause() != null) {
+			sb.append("\n\tCause: ").append(e.getCause());
+		}
+
 		if (e instanceof MqttException) {
 			MqttException me = (MqttException) e;
 			sb.append("\n\tReason: ").append(me.getReasonCode());
-			sb.append("\n\tCause: ").append(me.getCause());
 		} else if (e instanceof JMSException) {
 			JMSException je = (JMSException) e;
 			sb.append("\n\tCode: ").append(je.getErrorCode());
-			sb.append("\n\tCause: ").append(je.getCause());
 		} else if (e instanceof JIException) {
 			JIException jie = (JIException) e;
 			sb.append("\n\tCode: ").append(jie.getErrorCode());
-			sb.append("\n\tCause: ").append(jie.getCause());
 		} else if (e instanceof HTTPException) {
 			HTTPException he = (HTTPException) e;
 			sb.append("\n\tCode: ").append(he.getStatusCode());
-			sb.append("\n\tCause: ").append(he.getCause());
 		}
 
 		return sb.toString();

@@ -3,13 +3,15 @@ package org.point85.domain.db;
 import java.time.OffsetDateTime;
 
 import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Convert;
+import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
 import org.point85.domain.persistence.DatabaseEventStatusConverter;
-import org.point85.domain.persistence.OffsetDateTimeConverter;
+import org.point85.domain.persistence.OffsetTimestamp;
 import org.point85.domain.plant.KeyedObject;
 
 @Entity
@@ -25,9 +27,10 @@ public class DatabaseEvent extends KeyedObject {
 	@Column(name = "IN_VALUE")
 	private String inputValue;
 
-	@Column(name = "TIME")
-	@Convert(converter = OffsetDateTimeConverter.class)
-	private OffsetDateTime time;
+	@Embedded
+	@AttributeOverrides({ @AttributeOverride(name = "localDateTime", column = @Column(name = "EVENT_TIME")),
+			@AttributeOverride(name = "utcOffset", column = @Column(name = "EVENT_TIME_OFFSET")) })
+	private OffsetTimestamp eventTime;
 
 	@Column(name = "STATUS")
 	@Convert(converter = DatabaseEventStatusConverter.class)
@@ -64,12 +67,22 @@ public class DatabaseEvent extends KeyedObject {
 		this.inputValue = inputValue;
 	}
 
-	public OffsetDateTime getTime() {
-		return time;
+	public OffsetTimestamp getOffsetStartTime() {
+		return eventTime;
 	}
 
-	public void setTime(OffsetDateTime time) {
-		this.time = time;
+	public void setOffsetStartTime(OffsetTimestamp offsetTime) {
+		eventTime = offsetTime;
+	}
+
+	public OffsetDateTime getEventTime() {
+		return eventTime != null ? eventTime.toOffsetDateTime() : null;
+	}
+
+	public void setEventTime(OffsetDateTime dateTime) {
+		if (dateTime != null) {
+			this.eventTime = new OffsetTimestamp(dateTime);
+		}
 	}
 
 	public String getError() {
@@ -87,6 +100,6 @@ public class DatabaseEvent extends KeyedObject {
 
 	@Override
 	public String toString() {
-		return "Source: " + sourceId + ", value: " + inputValue + ", status: " + status + ", time: " + time;
+		return "Source: " + sourceId + ", value: " + inputValue + ", status: " + status + ", time: " + eventTime;
 	}
 }
