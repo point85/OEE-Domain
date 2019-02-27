@@ -1,9 +1,5 @@
 package org.point85.domain.messaging;
 
-import java.time.OffsetDateTime;
-
-import org.point85.domain.DomainUtils;
-
 public abstract class ApplicationMessage {
 	// type of message for deserialization
 	private MessageType messageType;
@@ -66,21 +62,10 @@ public abstract class ApplicationMessage {
 	}
 
 	public String getTimestamp() {
-		if (timestamp == null) {
-			setDateTime(OffsetDateTime.now());
-		}
 		return timestamp;
 	}
 
 	public void setTimestamp(String timestamp) {
 		this.timestamp = timestamp;
-	}
-
-	public void setDateTime(OffsetDateTime odt) {
-		this.timestamp = DomainUtils.offsetDateTimeToString(odt, DomainUtils.OFFSET_DATE_TIME_8601);
-	}
-	
-	public OffsetDateTime getDateTime() {
-		return DomainUtils.offsetDateTimeFromString(timestamp, DomainUtils.OFFSET_DATE_TIME_8601);
 	}
 }

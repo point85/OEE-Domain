@@ -2,7 +2,6 @@ package org.point85.domain.http;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -201,16 +200,13 @@ public class OeeHttpServer extends NanoHTTPD {
 			return responseDto;
 		}
 
-		// timestamp
-		OffsetDateTime odt = dto.getDateTime();
-
 		if (logger.isInfoEnabled()) {
 			logger.info("Data change for source id: " + dto.getSourceId() + ", Value: " + dto.getValue()
-					+ ", Timestamp: " + odt);
+					+ ", Timestamp: " + dto.getTimestamp() + ", Reason: " + dto.getReason());
 		}
 
 		// call listener on same thread
-		eventListener.onHttpEquipmentEvent(dto.getSourceId(), dto.getValue(), odt);
+		eventListener.onHttpEquipmentEvent(dto.getSourceId(), dto.getValue(), dto.getTimestamp(), dto.getReason());
 
 		return responseDto;
 	}

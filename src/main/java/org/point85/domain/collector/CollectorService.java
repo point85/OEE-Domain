@@ -67,6 +67,7 @@ import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentEventResolver;
 import org.point85.domain.plant.KeyedObject;
+import org.point85.domain.plant.Reason;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.OeeContext;
 import org.point85.domain.script.OeeEventType;
@@ -955,8 +956,8 @@ public class CollectorService
 
 	// HTTP request
 	@Override
-	public void onHttpEquipmentEvent(String sourceId, String dataValue, OffsetDateTime timestamp) {
-		getExecutorService().execute(new HttpTask(sourceId, dataValue, timestamp));
+	public void onHttpEquipmentEvent(String sourceId, String dataValue, String timestamp, String reason) {
+		getExecutorService().execute(new HttpTask(sourceId, dataValue, timestamp, reason));
 	}
 
 	// File request
@@ -1279,12 +1280,14 @@ public class CollectorService
 	private class HttpTask implements Runnable {
 		private final String sourceId;
 		private final String dataValue;
-		private final OffsetDateTime timestamp;
+		private final String timestamp;
+		private final String reason;
 
-		HttpTask(String sourceId, String dataValue, OffsetDateTime timestamp) {
+		HttpTask(String sourceId, String dataValue, String timestamp, String reason) {
 			this.sourceId = sourceId;
 			this.dataValue = dataValue;
 			this.timestamp = timestamp;
+			this.reason = reason;
 		}
 
 		@Override
@@ -1296,7 +1299,7 @@ public class CollectorService
 				}
 
 				// resolve event
-				resolveEvent(sourceId, dataValue, timestamp);
+				resolveEvent(sourceId, dataValue, timestamp, reason);
 
 			} catch (Exception e) {
 				onException("Unable to invoke script resolver.", e);
@@ -1328,7 +1331,7 @@ public class CollectorService
 				}
 
 				// resolve event
-				resolveEvent(sourceId, dataValue, timestamp);
+				resolveEvent(sourceId, dataValue, timestamp, null);
 
 			} catch (Exception e) {
 				onException("Unable to invoke OPC UA script resolver.", e);
@@ -1376,19 +1379,40 @@ public class CollectorService
 		}
 	}
 
-	private void resolveEvent(String sourceId, Object dataValue, OffsetDateTime timestamp) throws Exception {
-		// find resolver
+	private void resolveEvent(String sourceId, Object dataValue, String timestamp, String reason) throws Exception {
+		OffsetDateTime odt = null;
+		if (timestamp != null) {
+			odt = DomainUtils.offsetDateTimeFromString(timestamp, DomainUtils.OFFSET_DATE_TIME_8601);
+		}
+		resolveEvent(sourceId, dataValue, odt, reason);
+	}
+
+	private void resolveEvent(String sourceId, Object dataValue, OffsetDateTime timestamp, String reason)
+			throws Exception {
 		EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
 
-		if (eventResolver == null) {
-			throw new Exception("Unable to find an event resolver for source id " + sourceId);
+		// event
+		OeeEvent resolvedEvent = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue, timestamp);
+
+		// reason
+		String reasonName = reason;
+
+		if (reasonName == null) {
+			// could have been set in the resolver script code
+			reasonName = eventResolver.getReason();
 		}
 
-		OeeEvent resolvedDataItem = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue,
-				timestamp);
+		if (reasonName != null) {
+			Reason eventReason = PersistenceService.instance().fetchReasonByName(reasonName);
+			
+			if (eventReason == null) {
+				throw new Exception("Reason " + reasonName + " is not defined.");
+			}
+			resolvedEvent.setReason(eventReason);
+		}
 
 		if (!eventResolver.isWatchMode()) {
-			recordResolution(resolvedDataItem);
+			recordResolution(resolvedEvent);
 		}
 	}
 
@@ -1424,7 +1448,7 @@ public class CollectorService
 				}
 
 				// resolve event
-				resolveEvent(sourceId, dataValue, timestamp);
+				resolveEvent(sourceId, dataValue, timestamp, null);
 
 			} catch (Exception e) {
 				onException("Unable to invoke OPC DA script resolver.", e);
@@ -1455,7 +1479,8 @@ public class CollectorService
 
 					String sourceId = eventMessage.getSourceId();
 					String dataValue = eventMessage.getValue();
-					OffsetDateTime timestamp = eventMessage.getDateTime();
+					String timestamp = eventMessage.getTimestamp();
+					String reason = eventMessage.getReason();
 
 					if (logger.isInfoEnabled()) {
 						logger.info("RMQ equipment event, source: " + sourceId + ", value: " + dataValue
@@ -1463,7 +1488,7 @@ public class CollectorService
 					}
 
 					// resolve event
-					resolveEvent(sourceId, dataValue, timestamp);
+					resolveEvent(sourceId, dataValue, timestamp, reason);
 
 				} else if (type.equals(MessageType.COMMAND)) {
 					CollectorCommandMessage commandMessage = (CollectorCommandMessage) message;
@@ -1504,7 +1529,8 @@ public class CollectorService
 			try {
 				String sourceId = eventMessage.getSourceId();
 				String dataValue = eventMessage.getValue();
-				OffsetDateTime timestamp = eventMessage.getDateTime();
+				String timestamp = eventMessage.getTimestamp();
+				String reason = eventMessage.getReason();
 
 				if (logger.isInfoEnabled()) {
 					logger.info("JMS equipment event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "
@@ -1512,7 +1538,7 @@ public class CollectorService
 				}
 
 				// resolve event
-				resolveEvent(sourceId, dataValue, timestamp);
+				resolveEvent(sourceId, dataValue, timestamp, reason);
 
 			} catch (Exception e) {
 				// processing failed
@@ -1535,7 +1561,8 @@ public class CollectorService
 			try {
 				String sourceId = eventMessage.getSourceId();
 				String dataValue = eventMessage.getValue();
-				OffsetDateTime timestamp = eventMessage.getDateTime();
+				String timestamp = eventMessage.getTimestamp();
+				String reason = eventMessage.getReason();
 
 				if (logger.isInfoEnabled()) {
 					logger.info("JMS equipment event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "
@@ -1543,7 +1570,7 @@ public class CollectorService
 				}
 
 				// resolve event
-				resolveEvent(sourceId, dataValue, timestamp);
+				resolveEvent(sourceId, dataValue, timestamp, reason);
 
 			} catch (Exception e) {
 				// processing failed
@@ -1593,6 +1620,7 @@ public class CollectorService
 				String sourceId = databaseEvent.getSourceId();
 				String dataValue = databaseEvent.getInputValue();
 				OffsetDateTime timestamp = databaseEvent.getEventTime();
+				String reason = databaseEvent.getReason();
 
 				if (logger.isInfoEnabled()) {
 					logger.info("Database event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "
@@ -1610,7 +1638,7 @@ public class CollectorService
 				}
 
 				// resolve event
-				resolveEvent(sourceId, dataValue, timestamp);
+				resolveEvent(sourceId, dataValue, timestamp, reason);
 
 				// pass
 				databaseEvent.setStatus(DatabaseEventStatus.PASS);
@@ -1635,7 +1663,7 @@ public class CollectorService
 	// handle the File event callback
 	private class FileTask implements Runnable {
 		private final FileEventClient fileClient;
-		private String sourceId;
+		private final String sourceId;
 		private final List<File> files;
 
 		FileTask(FileEventClient fileClient, String sourceId, List<File> files) {
@@ -1657,13 +1685,13 @@ public class CollectorService
 					}
 
 					// read contents in ready folder
-					String dataValue = fileClient.readFile(file);
+					String fileContent = fileClient.readFile(file);
 
 					// move to in-process
 					fileClient.moveFile(file, FileEventClient.READY_FOLDER, FileEventClient.PROCESSING_FOLDER);
 
 					// resolve event
-					resolveEvent(sourceId, dataValue, timestamp);
+					resolveEvent(sourceId, fileContent, timestamp, null);
 
 					// move to pass folder
 					fileClient.moveFile(file, FileEventClient.PROCESSING_FOLDER, FileEventClient.PASS_FOLDER);

@@ -1,5 +1,8 @@
 package org.point85.domain.messaging;
 
+import java.time.OffsetDateTime;
+
+import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.plant.Material;
@@ -23,7 +26,9 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 	}
 
 	public void fromResolvedEvent(OeeEvent event) {
-		this.setDateTime(event.getStartTime());
+		OffsetDateTime odt = event.getStartTime();
+		String timestamp = DomainUtils.offsetDateTimeToString(odt, DomainUtils.OFFSET_DATE_TIME_8601);
+		this.setTimestamp(timestamp);
 		this.setResolverType(event.getEventType());
 
 		// equipment

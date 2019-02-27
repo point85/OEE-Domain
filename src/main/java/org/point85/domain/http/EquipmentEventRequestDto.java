@@ -1,9 +1,5 @@
 package org.point85.domain.http;
 
-import java.time.OffsetDateTime;
-
-import org.point85.domain.DomainUtils;
-
 /**
  * Data Transfer Object (DTO) for an equipment event (availability, production
  * of material, setup or job change)
@@ -14,14 +10,13 @@ public class EquipmentEventRequestDto {
 	private String sourceId;
 	private String value;
 	private String timestamp;
+	private String reason;
 
 	/**
 	 * Construct the event
 	 * 
-	 * @param sourceId
-	 *            Data source identifier from the configured event resolver
-	 * @param value
-	 *            Data value
+	 * @param sourceId Data source identifier from the configured event resolver
+	 * @param value    Data value
 	 */
 	public EquipmentEventRequestDto(String sourceId, String value) {
 		this.sourceId = sourceId;
@@ -52,12 +47,11 @@ public class EquipmentEventRequestDto {
 		this.timestamp = timestamp;
 	}
 
-	public void setDateTime(OffsetDateTime odt) {
-		timestamp = DomainUtils.offsetDateTimeToString(odt, DomainUtils.OFFSET_DATE_TIME_8601);
+	public String getReason() {
+		return reason;
 	}
 
-	public OffsetDateTime getDateTime() {
-		return DomainUtils.offsetDateTimeFromString(timestamp, DomainUtils.OFFSET_DATE_TIME_8601);
+	public void setReason(String reason) {
+		this.reason = reason;
 	}
-
 }

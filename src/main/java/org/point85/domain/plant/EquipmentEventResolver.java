@@ -101,14 +101,18 @@ public class EquipmentEventResolver {
 			}
 		}
 
+		if (configuredResolver == null) {
+			throw new Exception("Unable to find an event resolver for source id " + sourceId);
+		}
+
 		return configuredResolver;
 	}
 
 	public OeeEvent invokeResolver(EventResolver eventResolver, OeeContext context, Object sourceValue,
 			OffsetDateTime dateTime) throws Exception {
 
-		Equipment equipment = eventResolver.getEquipment();
 		String sourceId = eventResolver.getSourceId();
+		Equipment equipment = eventResolver.getEquipment();
 		OeeEventType resolverType = eventResolver.getType();
 		String script = eventResolver.getScript();
 
@@ -148,10 +152,13 @@ public class EquipmentEventResolver {
 		}
 
 		// an event time could have been set in the resolver
-		OffsetDateTime eventTime = dateTime != null ? dateTime : OffsetDateTime.now();
-
+		OffsetDateTime eventTime = dateTime;
 		if (eventResolver.getTimestamp() != null) {
 			eventTime = eventResolver.getTimestamp();
+		}
+
+		if (eventTime == null) {
+			eventTime = OffsetDateTime.now();
 		}
 
 		// save last value
@@ -181,10 +188,21 @@ public class EquipmentEventResolver {
 			material = fetchMaterial((String) sourceValue);
 			context.setMaterial(equipment, material);
 		} else {
-			// set material from context
+			// get material from context
 			material = context.getMaterial(equipment);
 
+			if (material == null) {
+				// query for last setup
+				OeeEvent setup = PersistenceService.instance().fetchLastEvent(equipment, OeeEventType.MATL_CHANGE);
+
+				if (setup != null) {
+					material = setup.getMaterial();
+					context.setMaterial(equipment, material);
+				}
+			}
+
 			if (material == null && equipment.getDefaultEquipmentMaterial() != null) {
+				// use the default material if defined
 				material = equipment.getDefaultEquipmentMaterial().getMaterial();
 				context.setMaterial(equipment, material);
 
@@ -204,6 +222,9 @@ public class EquipmentEventResolver {
 			// set job from context
 			job = context.getJob(equipment);
 		}
+
+		// the script could have set a reason name (e.g. for reject production)
+		String reasonName = eventResolver.getReason();
 
 		// fill in resolution
 		OeeEvent event = new OeeEvent(equipment, sourceValue, result);
@@ -227,7 +248,7 @@ public class EquipmentEventResolver {
 			case PROD_GOOD:
 			case PROD_REJECT:
 			case PROD_STARTUP: {
-				processProduction(event, resolverType, material, context);
+				processProduction(event, resolverType, material, context, reasonName);
 				break;
 			}
 
@@ -247,16 +268,16 @@ public class EquipmentEventResolver {
 		event.setTeam(team);
 
 		if (logger.isInfoEnabled()) {
-			logger.info(event.toString());
+			logger.info("Resolved event: " + event.toString());
 		}
 
 		return event;
 	}
 
 	// production counts
-	private void processProduction(OeeEvent resolvedItem, OeeEventType resolverType, Material material,
-			OeeContext context) throws Exception {
-		Object outputValue = resolvedItem.getOutputValue();
+	private void processProduction(OeeEvent resolvedEvent, OeeEventType resolverType, Material material,
+			OeeContext context, String reasonName) throws Exception {
+		Object outputValue = resolvedEvent.getOutputValue();
 		Double amount = null;
 
 		if (outputValue instanceof String) {
@@ -283,7 +304,7 @@ public class EquipmentEventResolver {
 		Material producedMaterial = material;
 
 		if (producedMaterial == null) {
-			EquipmentMaterial eqm = resolvedItem.getEquipment().getDefaultEquipmentMaterial();
+			EquipmentMaterial eqm = resolvedEvent.getEquipment().getDefaultEquipmentMaterial();
 
 			if (eqm != null) {
 				producedMaterial = eqm.getMaterial();
@@ -297,31 +318,22 @@ public class EquipmentEventResolver {
 			}
 		}
 
-		UnitOfMeasure uom = resolvedItem.getEquipment().getUOM(producedMaterial, resolverType);
-		resolvedItem.setAmount(amount);
-		resolvedItem.setUOM(uom);
+		UnitOfMeasure uom = resolvedEvent.getEquipment().getUOM(producedMaterial, resolverType);
+		resolvedEvent.setAmount(amount);
+		resolvedEvent.setUOM(uom);
 
 		if (logger.isInfoEnabled()) {
 			logger.info(resolverType.toString() + " amount is " + amount + " " + uom);
 		}
 
 		// set the quality reason
-		Reason reason = context.getQualityReason(resolvedItem.getEquipment());
-		resolvedItem.setReason(reason);
-
-		// clear reason from context
-		context.setQualityReason(resolvedItem.getEquipment(), null);
+		if (reasonName != null) {
+			Reason reason = fetchReason(reasonName);
+			resolvedEvent.setReason(reason);
+		}
 	}
 
-	// availability
-	private Reason processReason(OeeEvent resolvedItem) throws Exception {
-		if (!(resolvedItem.getOutputValue() instanceof String)) {
-			throw new Exception("The result " + resolvedItem.getOutputValue() + " is not a reason code.");
-		}
-
-		// get the reason
-		String reasonName = (String) resolvedItem.getOutputValue();
-
+	private Reason fetchReason(String reasonName) throws Exception {
 		Reason reason = this.reasonCache.get(reasonName);
 
 		if (reason == null) {
@@ -335,6 +347,18 @@ public class EquipmentEventResolver {
 				throw new Exception(reasonName + " is not a valid reason.");
 			}
 		}
+		return reason;
+	}
+
+	// availability and production
+	private Reason processReason(OeeEvent resolvedItem) throws Exception {
+		if (!(resolvedItem.getOutputValue() instanceof String)) {
+			throw new Exception("The result " + resolvedItem.getOutputValue() + " is not a reason code.");
+		}
+
+		// get the reason
+		String reasonName = (String) resolvedItem.getOutputValue();
+		Reason reason = fetchReason(reasonName);
 		resolvedItem.setReason(reason);
 
 		return reason;

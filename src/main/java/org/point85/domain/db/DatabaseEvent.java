@@ -39,6 +39,9 @@ public class DatabaseEvent extends KeyedObject {
 	@Column(name = "ERROR")
 	private String error;
 
+	@Column(name = "REASON")
+	private String reason;
+
 	public DatabaseEvent() {
 		super();
 	}
@@ -96,6 +99,14 @@ public class DatabaseEvent extends KeyedObject {
 		if (msg != null && msg.length() >= ERROR_LENGTH) {
 			this.error = msg.substring(0, ERROR_LENGTH - 1);
 		}
+	}
+
+	public String getReason() {
+		return reason;
+	}
+
+	public void setReason(String reason) {
+		this.reason = reason;
 	}
 
 	@Override

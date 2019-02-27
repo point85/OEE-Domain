@@ -14,10 +14,8 @@ import org.point85.domain.messaging.MessagingClient;
 import org.point85.domain.mqtt.MQTTClient;
 import org.point85.domain.opc.da.DaOpcClient;
 import org.point85.domain.opc.ua.UaOpcClient;
-import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Material;
-import org.point85.domain.plant.Reason;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,22 +61,14 @@ public class OeeContext {
 	// HTTP server key
 	private static final String HTTP_KEY = "HTTP";
 
-	// external reason key
-	private static final String REASON_KEY = "REASON";
-
 	// hash map of objects exposed to scripting
 	private final ConcurrentMap<String, Object> contextMap;
 
-	// cached reasons
-	private final ConcurrentMap<String, Reason> reasonCache;
-
 	public OeeContext() {
 		contextMap = new ConcurrentHashMap<>();
-		reasonCache = new ConcurrentHashMap<>();
 
 		contextMap.put(MATL_KEY, new ConcurrentHashMap<Equipment, Material>());
 		contextMap.put(JOB_KEY, new ConcurrentHashMap<Equipment, String>());
-		contextMap.put(REASON_KEY, new ConcurrentHashMap<Equipment, Reason>());
 
 		setOpcDaClients(new HashSet<DaOpcClient>());
 		setOpcUaClients(new HashSet<UaOpcClient>());
@@ -93,8 +83,7 @@ public class OeeContext {
 	/**
 	 * Get the job running on this equipment
 	 * 
-	 * @param equipment
-	 *            {@link Equipment}
+	 * @param equipment {@link Equipment}
 	 * @return Job
 	 */
 	public String getJob(Equipment equipment) {
@@ -107,10 +96,8 @@ public class OeeContext {
 	/**
 	 * Set the job running on this equipment
 	 * 
-	 * @param equipment
-	 *            {@link Equipment}
-	 * @param job
-	 *            Job
+	 * @param equipment {@link Equipment}
+	 * @param job       Job
 	 */
 	public void setJob(Equipment equipment, String job) {
 		@SuppressWarnings("unchecked")
@@ -121,8 +108,7 @@ public class OeeContext {
 	/**
 	 * Get the material being produced on this equipment
 	 * 
-	 * @param equipment
-	 *            {@link Equipment}
+	 * @param equipment {@link Equipment}
 	 * @return {@link Material}
 	 */
 	public Material getMaterial(Equipment equipment) {
@@ -135,69 +121,13 @@ public class OeeContext {
 	/**
 	 * Set the material being produced on this equipment
 	 * 
-	 * @param equipment
-	 *            {@link Equipment}
-	 * @param material
-	 *            {@link Material}
+	 * @param equipment {@link Equipment}
+	 * @param material  {@link Material}
 	 */
 	public void setMaterial(Equipment equipment, Material material) {
 		@SuppressWarnings("unchecked")
 		ConcurrentMap<Equipment, Material> materialMap = (ConcurrentMap<Equipment, Material>) contextMap.get(MATL_KEY);
 		materialMap.put(equipment, material);
-	}
-
-	/**
-	 * Get the equipment reason for a quality event
-	 * 
-	 * @param equipment
-	 *            {@link Equipment}
-	 * @return {@link Reason}
-	 */
-	public Reason getQualityReason(Equipment equipment) {
-		@SuppressWarnings("unchecked")
-		ConcurrentMap<Equipment, Reason> reasonMap = (ConcurrentMap<Equipment, Reason>) contextMap.get(REASON_KEY);
-
-		return reasonMap.get(equipment);
-	}
-
-	/**
-	 * Set the equipment reason for a quality event
-	 * 
-	 * @param equipment
-	 *            {@link Equipment}
-	 * @param reasonName
-	 *            Reason id
-	 * @throws Exception
-	 *             Exception
-	 */
-	public void setQualityReason(Equipment equipment, String reasonName) throws Exception {
-		// fetch the reason
-		if (equipment == null || reasonName == null) {
-			return;
-		}
-
-		Reason reason = fetchReason(reasonName);
-
-		@SuppressWarnings("unchecked")
-		ConcurrentMap<Equipment, Reason> reasonMap = (ConcurrentMap<Equipment, Reason>) contextMap.get(REASON_KEY);
-		reasonMap.put(equipment, reason);
-	}
-
-	private Reason fetchReason(String reasonName) throws Exception {
-		Reason reason = reasonCache.get(reasonName);
-
-		if (reason == null) {
-			// fetch from database
-			reason = PersistenceService.instance().fetchReasonByName(reasonName);
-
-			// cache it
-			if (reason != null) {
-				reasonCache.put(reasonName, reason);
-			} else {
-				throw new Exception("Reason " + reasonName + " not found in database.");
-			}
-		}
-		return reason;
 	}
 
 	/**
@@ -245,8 +175,7 @@ public class OeeContext {
 	/**
 	 * Set OPC DA clients
 	 * 
-	 * @param clients
-	 *            Set of {@link DaOpcClient}
+	 * @param clients Set of {@link DaOpcClient}
 	 */
 	public void setOpcDaClients(Set<DaOpcClient> clients) {
 		contextMap.put(OPC_DA_KEY, clients);
@@ -255,8 +184,7 @@ public class OeeContext {
 	/**
 	 * Add an OPC DA client to the list
 	 * 
-	 * @param daClient
-	 *            {@link DaOpcClient}
+	 * @param daClient {@link DaOpcClient}
 	 */
 	public void addOpcDaClient(DaOpcClient daClient) {
 		if (!getOpcDaClients().contains(daClient)) {
@@ -267,8 +195,7 @@ public class OeeContext {
 	/**
 	 * Remove an OPC DA client from the list
 	 * 
-	 * @param daClient
-	 *            {@link DaOpcClient}
+	 * @param daClient {@link DaOpcClient}
 	 */
 	public void removeOpcDaClient(DaOpcClient daClient) {
 		if (getOpcDaClients().contains(daClient)) {
@@ -304,8 +231,7 @@ public class OeeContext {
 	/**
 	 * Set the list of the OPC UA clients defined for the collector
 	 * 
-	 * @param clients
-	 *            Set of {@link UaOpcClient}
+	 * @param clients Set of {@link UaOpcClient}
 	 */
 	public void setOpcUaClients(Set<UaOpcClient> clients) {
 		contextMap.put(OPC_UA_KEY, clients);
@@ -314,8 +240,7 @@ public class OeeContext {
 	/**
 	 * Add an OPC UA client to the list
 	 * 
-	 * @param uaClient
-	 *            {@link UaOpcClient}
+	 * @param uaClient {@link UaOpcClient}
 	 */
 	public void addOpcUaClient(UaOpcClient uaClient) {
 		if (!getOpcUaClients().contains(uaClient)) {
@@ -326,8 +251,7 @@ public class OeeContext {
 	/**
 	 * Remove an OPC UA client from the list
 	 * 
-	 * @param uaClient
-	 *            {@link UaOpcClient}
+	 * @param uaClient {@link UaOpcClient}
 	 */
 	public void removeOpcUaClient(UaOpcClient uaClient) {
 		if (getOpcUaClients().contains(uaClient)) {
@@ -463,8 +387,7 @@ public class OeeContext {
 	/**
 	 * Set the list of the messaging clients defined for the collector
 	 * 
-	 * @param clients
-	 *            Set of {@link MessagingClient}
+	 * @param clients Set of {@link MessagingClient}
 	 */
 	public void setMessagingClients(Collection<MessagingClient> clients) {
 		contextMap.put(MSG_KEY, clients);
@@ -473,8 +396,7 @@ public class OeeContext {
 	/**
 	 * Set the list of the JMS clients defined for the collector
 	 * 
-	 * @param clients
-	 *            Set of {@link JMSClient}
+	 * @param clients Set of {@link JMSClient}
 	 */
 	public void setJMSClients(Collection<JMSClient> clients) {
 		contextMap.put(JMS_KEY, clients);
@@ -483,8 +405,7 @@ public class OeeContext {
 	/**
 	 * Set the list of the MQTT clients defined for the collector
 	 * 
-	 * @param clients
-	 *            Set of {@link MQTTClient}
+	 * @param clients Set of {@link MQTTClient}
 	 */
 	public void setMQTTClients(Collection<MQTTClient> clients) {
 		contextMap.put(MQTT_KEY, clients);
@@ -493,8 +414,7 @@ public class OeeContext {
 	/**
 	 * Set the list of the database event clients defined for the collector
 	 * 
-	 * @param clients
-	 *            Set of {@link DatabaseEventClient}
+	 * @param clients Set of {@link DatabaseEventClient}
 	 */
 	public void setDatabaseEventClients(Collection<DatabaseEventClient> clients) {
 		contextMap.put(DB_KEY, clients);
@@ -503,8 +423,7 @@ public class OeeContext {
 	/**
 	 * Set the list of the file event clients defined for the collector
 	 * 
-	 * @param clients
-	 *            Set of {@link FileEventClient}
+	 * @param clients Set of {@link FileEventClient}
 	 */
 	public void setFileEventClients(Collection<FileEventClient> clients) {
 		contextMap.put(FILE_KEY, clients);
@@ -513,8 +432,7 @@ public class OeeContext {
 	/**
 	 * Add a messaging client to the list
 	 * 
-	 * @param client
-	 *            {@link MessagingClient}
+	 * @param client {@link MessagingClient}
 	 */
 	public void addMessagingClient(MessagingClient client) {
 		if (!getMessagingClients().contains(client)) {
@@ -525,8 +443,7 @@ public class OeeContext {
 	/**
 	 * Add a JMS client to the list
 	 * 
-	 * @param client
-	 *            {@link JMSClient}
+	 * @param client {@link JMSClient}
 	 */
 	public void addJMSClient(JMSClient client) {
 		if (!getJMSClients().contains(client)) {
@@ -537,8 +454,7 @@ public class OeeContext {
 	/**
 	 * Add an MQTT client to the list
 	 * 
-	 * @param client
-	 *            {@link MQTTClient}
+	 * @param client {@link MQTTClient}
 	 */
 	public void addMQTTClient(MQTTClient client) {
 		if (!getMQTTClients().contains(client)) {
@@ -549,8 +465,7 @@ public class OeeContext {
 	/**
 	 * Add a database event client to the list
 	 * 
-	 * @param client
-	 *            {@link DatabaseEventClient}
+	 * @param client {@link DatabaseEventClient}
 	 */
 	public void addDatabaseEventClient(DatabaseEventClient client) {
 		if (!getDatabaseEventClients().contains(client)) {
@@ -561,8 +476,7 @@ public class OeeContext {
 	/**
 	 * Add a file event client to the list
 	 * 
-	 * @param client
-	 *            {@link FileEventClient}
+	 * @param client {@link FileEventClient}
 	 */
 	public void addFileEventClient(FileEventClient client) {
 		if (!getFileEventClients().contains(client)) {
@@ -573,8 +487,7 @@ public class OeeContext {
 	/**
 	 * Remove a messaging client from the list
 	 * 
-	 * @param client
-	 *            {@link MessagingClient}
+	 * @param client {@link MessagingClient}
 	 */
 	public void removeMessagingClient(MessagingClient client) {
 		if (getMessagingClients().contains(client)) {
@@ -585,8 +498,7 @@ public class OeeContext {
 	/**
 	 * Remove a JMS client from the list
 	 * 
-	 * @param client
-	 *            {@link JMSClient}
+	 * @param client {@link JMSClient}
 	 */
 	public void removeJMSClient(JMSClient client) {
 		if (getJMSClients().contains(client)) {
@@ -597,8 +509,7 @@ public class OeeContext {
 	/**
 	 * Remove an MQTT client from the list
 	 * 
-	 * @param client
-	 *            {@link MQTTClient}
+	 * @param client {@link MQTTClient}
 	 */
 	public void removeMQTTClient(MQTTClient client) {
 		if (getMQTTClients().contains(client)) {
@@ -609,8 +520,7 @@ public class OeeContext {
 	/**
 	 * Remove a database event client from the list
 	 * 
-	 * @param client
-	 *            {@link DatabaseEventClient}
+	 * @param client {@link DatabaseEventClient}
 	 */
 	public void removeDatabaseEventClient(DatabaseEventClient client) {
 		if (getDatabaseEventClients().contains(client)) {
@@ -621,8 +531,7 @@ public class OeeContext {
 	/**
 	 * Remove a file event client from the list
 	 * 
-	 * @param client
-	 *            {@link FileEventClient}
+	 * @param client {@link FileEventClient}
 	 */
 	public void removeFileEventClient(FileEventClient client) {
 		if (getFileEventClients().contains(client)) {
@@ -658,8 +567,7 @@ public class OeeContext {
 	/**
 	 * Set a list of the HTTP servers defined for the collector
 	 * 
-	 * @param servers
-	 *            Set of {@link OeeHttpServer}
+	 * @param servers Set of {@link OeeHttpServer}
 	 */
 	public void setHttpServers(Set<OeeHttpServer> servers) {
 		contextMap.put(HTTP_KEY, servers);
@@ -668,8 +576,7 @@ public class OeeContext {
 	/**
 	 * Add an HTTP server to the list
 	 * 
-	 * @param server
-	 *            {@link OeeHttpServer}
+	 * @param server {@link OeeHttpServer}
 	 */
 	public void addHttpServer(OeeHttpServer server) {
 		if (!getHttpServers().contains(server)) {
@@ -680,8 +587,7 @@ public class OeeContext {
 	/**
 	 * Remove an HTTP server from the list
 	 * 
-	 * @param server
-	 *            {@link OeeHttpServer}
+	 * @param server {@link OeeHttpServer}
 	 */
 	public void removeHttpServer(OeeHttpServer server) {
 		if (getHttpServers().contains(server)) {

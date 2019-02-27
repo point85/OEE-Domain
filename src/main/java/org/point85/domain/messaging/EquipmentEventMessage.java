@@ -1,20 +1,19 @@
 package org.point85.domain.messaging;
 
-import java.time.OffsetDateTime;
-
 public class EquipmentEventMessage extends ApplicationMessage {
 	private String sourceId;
 	private String value;
+	private String reason;
 
 	public EquipmentEventMessage() {
 		super(MessageType.EQUIPMENT_EVENT);
 	}
 
-	public EquipmentEventMessage(String sourceId, String value, OffsetDateTime timestamp) {
+	public EquipmentEventMessage(String sourceId, String value, String timestamp) {
 		super(MessageType.EQUIPMENT_EVENT);
 		this.sourceId = sourceId;
 		this.value = value;
-		this.setDateTime(timestamp);
+		this.setTimestamp(timestamp);
 	}
 
 	public String getSourceId() {
@@ -31,6 +30,14 @@ public class EquipmentEventMessage extends ApplicationMessage {
 
 	public void setValue(String value) {
 		this.value = value;
+	}
+	
+	public String getReason() {
+		return reason;
+	}
+
+	public void setReason(String reason) {
+		this.reason = reason;
 	}
 
 	@Override

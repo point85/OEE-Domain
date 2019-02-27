@@ -92,12 +92,9 @@ public class WorkSchedule extends NamedObject {
 	/**
 	 * Construct a work schedule
 	 * 
-	 * @param name
-	 *            Schedule name
-	 * @param description
-	 *            Schedule description
-	 * @throws Exception
-	 *             exception
+	 * @param name        Schedule name
+	 * @param description Schedule description
+	 * @throws Exception exception
 	 */
 	public WorkSchedule(String name, String description) throws Exception {
 		super(name, description);
@@ -111,8 +108,7 @@ public class WorkSchedule extends NamedObject {
 	/**
 	 * Remove this team from the schedule
 	 * 
-	 * @param team
-	 *            {@link Team}
+	 * @param team {@link Team}
 	 */
 	public void deleteTeam(Team team) {
 		if (teams.contains(team)) {
@@ -132,8 +128,7 @@ public class WorkSchedule extends NamedObject {
 	/**
 	 * Remove a non-working period from the schedule
 	 * 
-	 * @param period
-	 *            {@link NonWorkingPeriod}
+	 * @param period {@link NonWorkingPeriod}
 	 */
 	public void deleteNonWorkingPeriod(NonWorkingPeriod period) {
 		if (this.nonWorkingPeriods.contains(period)) {
@@ -154,11 +149,9 @@ public class WorkSchedule extends NamedObject {
 	 * Get the list of shift instances for the specified date that start in that
 	 * date
 	 * 
-	 * @param day
-	 *            LocalDate
+	 * @param day LocalDate
 	 * @return List of {@link ShiftInstance}
-	 * @throws Exception
-	 *             exception
+	 * @throws Exception exception
 	 */
 	public List<ShiftInstance> getShiftInstancesForDay(LocalDate day) throws Exception {
 		List<ShiftInstance> workingShifts = new ArrayList<>();
@@ -196,11 +189,9 @@ public class WorkSchedule extends NamedObject {
 	/**
 	 * Get the list of shift instances for the specified date and time of day
 	 * 
-	 * @param dateTime
-	 *            Date and time of day
+	 * @param dateTime Date and time of day
 	 * @return List of {@link ShiftInstance}
-	 * @throws Exception
-	 *             exception
+	 * @throws Exception exception
 	 */
 	public List<ShiftInstance> getShiftInstancesForTime(LocalDateTime dateTime) throws Exception {
 		List<ShiftInstance> workingShifts = new ArrayList<>();
@@ -221,17 +212,12 @@ public class WorkSchedule extends NamedObject {
 	/**
 	 * Create a team
 	 * 
-	 * @param name
-	 *            Name of team
-	 * @param description
-	 *            Team description
-	 * @param rotation
-	 *            Shift rotation
-	 * @param rotationStart
-	 *            Start of rotation
+	 * @param name          Name of team
+	 * @param description   Team description
+	 * @param rotation      Shift rotation
+	 * @param rotationStart Start of rotation
 	 * @return {@link Team}
-	 * @throws Exception
-	 *             exception
+	 * @throws Exception exception
 	 */
 	public Team createTeam(String name, String description, Rotation rotation, LocalDate rotationStart)
 			throws Exception {
@@ -247,6 +233,14 @@ public class WorkSchedule extends NamedObject {
 		return team;
 	}
 
+	/**
+	 * Create a rotation
+	 * 
+	 * @param name        Name of rotation
+	 * @param description Description of rotation
+	 * @return {@link Rotation}
+	 * @throws Exception exception
+	 */
 	public Rotation createRotation(String name, String description) throws Exception {
 		Rotation rotation = new Rotation(name, description);
 
@@ -263,17 +257,12 @@ public class WorkSchedule extends NamedObject {
 	/**
 	 * Create a shift
 	 * 
-	 * @param name
-	 *            Name of shift
-	 * @param description
-	 *            Description of shift
-	 * @param start
-	 *            Shift start time of day
-	 * @param duration
-	 *            Shift duration
+	 * @param name        Name of shift
+	 * @param description Description of shift
+	 * @param start       Shift start time of day
+	 * @param duration    Shift duration
 	 * @return {@link Shift}
-	 * @throws Exception
-	 *             exception
+	 * @throws Exception exception
 	 */
 	public Shift createShift(String name, String description, LocalTime start, Duration duration) throws Exception {
 		Shift shift = new Shift(name, description, start, duration);
@@ -290,10 +279,8 @@ public class WorkSchedule extends NamedObject {
 	/**
 	 * Delete this shift
 	 * 
-	 * @param shift
-	 *            {@link Shift} to delete
-	 * @throws Exception
-	 *             exception
+	 * @param shift {@link Shift} to delete
+	 * @throws Exception exception
 	 */
 	public void deleteShift(Shift shift) throws Exception {
 		if (!shifts.contains(shift)) {
@@ -320,17 +307,12 @@ public class WorkSchedule extends NamedObject {
 	/**
 	 * Create a non-working period of time
 	 * 
-	 * @param name
-	 *            Name of period
-	 * @param description
-	 *            Description of period
-	 * @param startDateTime
-	 *            Starting date and time of day
-	 * @param duration
-	 *            Duration of period
+	 * @param name          Name of period
+	 * @param description   Description of period
+	 * @param startDateTime Starting date and time of day
+	 * @param duration      Duration of period
 	 * @return {@link NonWorkingPeriod}
-	 * @throws Exception
-	 *             exception
+	 * @throws Exception exception
 	 */
 	public NonWorkingPeriod createNonWorkingPeriod(String name, String description, LocalDateTime startDateTime,
 			Duration duration) throws Exception {
@@ -352,8 +334,7 @@ public class WorkSchedule extends NamedObject {
 	 * Get total duration of rotation across all teams.
 	 * 
 	 * @return Duration of rotation
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public Duration getRotationDuration() throws Exception {
 		Duration sum = Duration.ZERO;
@@ -382,13 +363,10 @@ public class WorkSchedule extends NamedObject {
 	 * Calculate the scheduled working time between the specified dates and times of
 	 * day. Non-working periods are removed.
 	 * 
-	 * @param from
-	 *            Starting date and time
-	 * @param to
-	 *            Ending date and time
+	 * @param from Starting date and time
+	 * @param to   Ending date and time
 	 * @return Working time duration
-	 * @throws Exception
-	 *             exception
+	 * @throws Exception exception
 	 */
 	public Duration calculateWorkingTime(LocalDateTime from, LocalDateTime to) throws Exception {
 		Duration sum = Duration.ZERO;
@@ -413,13 +391,10 @@ public class WorkSchedule extends NamedObject {
 	/**
 	 * Calculate the non-working time between the specified dates and times of day.
 	 * 
-	 * @param from
-	 *            Starting date and time
-	 * @param to
-	 *            Ending date and time
+	 * @param from Starting date and time
+	 * @param to   Ending date and time
 	 * @return Non-working time duration
-	 * @throws Exception
-	 *             exception
+	 * @throws Exception exception
 	 */
 	public Duration calculateNonWorkingTime(LocalDateTime from, LocalDateTime to) throws Exception {
 		Duration sum = Duration.ZERO;
@@ -486,12 +461,9 @@ public class WorkSchedule extends NamedObject {
 	/**
 	 * Print shift instances
 	 * 
-	 * @param start
-	 *            Starting date
-	 * @param end
-	 *            Ending date
-	 * @throws Exception
-	 *             exception
+	 * @param start Starting date
+	 * @param end   Ending date
+	 * @throws Exception exception
 	 */
 	public void printShiftInstances(LocalDate start, LocalDate end) throws Exception {
 		if (start.isAfter(end)) {

@@ -711,6 +711,24 @@ public final class PersistenceService {
 		TypedQuery<String> query = getEntityManager().createNamedQuery(WS_NAMES, String.class);
 		return query.getResultList();
 	}
+	
+	public WorkSchedule fetchWorkScheduleByName(String name) {
+		final String WS_BY_NAME = "WS.ByName";
+
+		if (namedQueryMap.get(WS_BY_NAME) == null) {
+			createNamedQuery(WS_BY_NAME, "SELECT ws FROM WorkSchedule ws WHERE ws.name = :name");
+		}
+
+		WorkSchedule schedule = null;
+		TypedQuery<WorkSchedule> query = getEntityManager().createNamedQuery(WS_BY_NAME, WorkSchedule.class);
+		query.setParameter("name", name);
+		List<WorkSchedule> schedules = query.getResultList();
+
+		if (schedules.size() == 1) {
+			schedule = schedules.get(0);
+		}
+		return schedule;
+	}
 
 	// fetch Team by its primary key
 	public Team fetchTeamByKey(Long key) throws Exception {

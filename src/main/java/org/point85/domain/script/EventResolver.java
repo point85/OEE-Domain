@@ -13,6 +13,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataCollector;
 import org.point85.domain.persistence.EventTypeConverter;
@@ -62,6 +63,9 @@ public class EventResolver extends KeyedObject {
 
 	// time last received
 	private transient OffsetDateTime timestamp;
+
+	// Reason name can be set in script
+	private transient String reason;
 
 	// mode
 	private transient boolean watchMode = false;
@@ -231,8 +235,12 @@ public class EventResolver extends KeyedObject {
 		return timestamp;
 	}
 
-	public void setTimestamp(OffsetDateTime lastTimestamp) {
-		this.timestamp = lastTimestamp;
+	public void setTimestamp(OffsetDateTime timestamp) {
+		this.timestamp = timestamp;
+	}
+
+	public void setIsoTimestamp(String timestamp) {
+		this.timestamp = DomainUtils.offsetDateTimeFromString(timestamp, DomainUtils.OFFSET_DATE_TIME_8601);
 	}
 
 	public boolean isWatchMode() {
@@ -241,5 +249,13 @@ public class EventResolver extends KeyedObject {
 
 	public void setWatchMode(boolean watchMode) {
 		this.watchMode = watchMode;
+	}
+
+	public String getReason() {
+		return reason;
+	}
+
+	public void setReason(String reason) {
+		this.reason = reason;
 	}
 }

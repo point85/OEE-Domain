@@ -78,6 +78,7 @@ public class MQTTClient extends BaseMessagingClient {
 		MqttConnectOptions options = new MqttConnectOptions();
 		options.setAutomaticReconnect(true);
 		options.setCleanSession(CLEAN_SESSION);
+		options.setConnectionTimeout(10);
 
 		if (userName != null && userName.trim().length() > 0) {
 			options.setUserName(userName);
