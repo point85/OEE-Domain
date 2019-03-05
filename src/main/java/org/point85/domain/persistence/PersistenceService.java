@@ -711,7 +711,7 @@ public final class PersistenceService {
 		TypedQuery<String> query = getEntityManager().createNamedQuery(WS_NAMES, String.class);
 		return query.getResultList();
 	}
-	
+
 	public WorkSchedule fetchWorkScheduleByName(String name) {
 		final String WS_BY_NAME = "WS.ByName";
 
@@ -1352,8 +1352,7 @@ public final class PersistenceService {
 	/**
 	 * Execute the SQL insert, update or delete
 	 * 
-	 * @param sql
-	 *            SQL insert, update or delete statement
+	 * @param sql SQL insert, update or delete statement
 	 * @return Number of rows inserted
 	 */
 	public int executeUpdate(String sql) {
@@ -1387,8 +1386,7 @@ public final class PersistenceService {
 	/**
 	 * Execute the SQL query
 	 * 
-	 * @param sql
-	 *            SQL select statement
+	 * @param sql SQL select statement
 	 * @return JSON string of result list
 	 */
 	@SuppressWarnings("unchecked")
@@ -1401,8 +1399,7 @@ public final class PersistenceService {
 	/**
 	 * Fetch database interface table events with the specified status
 	 * 
-	 * @param status
-	 *            {@link DatabaseEventStatus}
+	 * @param status {@link DatabaseEventStatus}
 	 * @return List of {@link DatabaseEvent}
 	 */
 	public List<DatabaseEvent> fetchDatabaseEvents(DatabaseEventStatus status) {
@@ -1422,10 +1419,8 @@ public final class PersistenceService {
 	/**
 	 * Fetch database interface table events with the specified status and source id
 	 * 
-	 * @param status
-	 *            {@link DatabaseEventStatus}
-	 * @param sourceId
-	 *            event source identifier
+	 * @param status   {@link DatabaseEventStatus}
+	 * @param sourceId event source identifier
 	 * @return List of {@link DatabaseEvent}
 	 */
 	public List<DatabaseEvent> fetchDatabaseEvents(DatabaseEventStatus status, String sourceId) {
@@ -1446,14 +1441,10 @@ public final class PersistenceService {
 	/**
 	 * Fetch OEE events for the equipment and event type over the specified period
 	 * 
-	 * @param equipment
-	 *            {@link Equipment}
-	 * @param type
-	 *            {@link OeeEventType}
-	 * @param from
-	 *            starting date and time
-	 * @param to
-	 *            ending date and time
+	 * @param equipment {@link Equipment}
+	 * @param type      {@link OeeEventType}
+	 * @param from      starting date and time
+	 * @param to        ending date and time
 	 * @return List of {@link OeeEvent}
 	 */
 	public List<OeeEvent> fetchEvents(Equipment equipment, OeeEventType type, OffsetDateTime from, OffsetDateTime to) {

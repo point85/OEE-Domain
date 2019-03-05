@@ -24,6 +24,7 @@ SOFTWARE.
 package org.point85.domain.uom;
 
 import java.math.BigInteger;
+import java.text.MessageFormat;
 import java.util.Objects;
 
 import org.point85.domain.DomainUtils;
@@ -61,10 +62,8 @@ public class Quantity {
 	/**
 	 * Create a quantity with an amount and unit of measure
 	 * 
-	 * @param amount
-	 *            Amount
-	 * @param uom
-	 *            {@link UnitOfMeasure}
+	 * @param amount Amount
+	 * @param uom    {@link UnitOfMeasure}
 	 */
 	public Quantity(double amount, UnitOfMeasure uom) {
 		this.amount = amount;
@@ -74,14 +73,10 @@ public class Quantity {
 	/**
 	 * Create a quantity with an amount, prefix and unit
 	 * 
-	 * @param amount
-	 *            Amount
-	 * @param prefix
-	 *            {@link Prefix}
-	 * @param unit
-	 *            {@link Unit}
-	 * @throws Exception
-	 *             Exception
+	 * @param amount Amount
+	 * @param prefix {@link Prefix}
+	 * @param unit   {@link Unit}
+	 * @throws Exception Exception
 	 */
 	public Quantity(double amount, Prefix prefix, Unit unit) throws Exception {
 		this(amount, MeasurementSystem.instance().getUOM(prefix, unit));
@@ -90,12 +85,9 @@ public class Quantity {
 	/**
 	 * Create a quantity with a String amount and unit of measure
 	 * 
-	 * @param amount
-	 *            Amount
-	 * @param uom
-	 *            {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @param amount Amount
+	 * @param uom    {@link UnitOfMeasure}
+	 * @throws Exception Exception
 	 */
 	public Quantity(String amount, UnitOfMeasure uom) throws Exception {
 		this.amount = createAmount(amount);
@@ -105,12 +97,9 @@ public class Quantity {
 	/**
 	 * Create a quantity with an amount and unit
 	 * 
-	 * @param amount
-	 *            Amount
-	 * @param unit
-	 *            {@link Unit}
-	 * @throws Exception
-	 *             Exception
+	 * @param amount Amount
+	 * @param unit   {@link Unit}
+	 * @throws Exception Exception
 	 */
 	public Quantity(double amount, Unit unit) throws Exception {
 		this(amount, MeasurementSystem.instance().getUOM(unit));
@@ -119,12 +108,9 @@ public class Quantity {
 	/**
 	 * Create a quantity with a String amount and unit
 	 * 
-	 * @param amount
-	 *            Amount
-	 * @param unit
-	 *            {@link Unit}
-	 * @throws Exception
-	 *             Exception
+	 * @param amount Amount
+	 * @param unit   {@link Unit}
+	 * @throws Exception Exception
 	 */
 	public Quantity(String amount, Unit unit) throws Exception {
 		this(createAmount(amount), MeasurementSystem.instance().getUOM(unit));
@@ -143,8 +129,7 @@ public class Quantity {
 	/**
 	 * Compare this Quantity to another one
 	 * 
-	 * @param other
-	 *            Quantity
+	 * @param other Quantity
 	 * @return true if equal
 	 */
 	@Override
@@ -174,8 +159,7 @@ public class Quantity {
 	/**
 	 * Set the symbol
 	 * 
-	 * @param symbol
-	 *            Symbol
+	 * @param symbol Symbol
 	 */
 	public void setSymbol(String symbol) {
 		this.symbol = symbol;
@@ -193,8 +177,7 @@ public class Quantity {
 	/**
 	 * Set the name
 	 * 
-	 * @param name
-	 *            Name
+	 * @param name Name
 	 */
 	public void setName(String name) {
 		this.name = name;
@@ -212,8 +195,7 @@ public class Quantity {
 	/**
 	 * Set the description
 	 * 
-	 * @param description
-	 *            Description
+	 * @param description Description
 	 */
 	public void setDescription(String description) {
 		this.description = description;
@@ -222,11 +204,9 @@ public class Quantity {
 	/**
 	 * Create an amount of a quantity from a String
 	 * 
-	 * @param value
-	 *            Text value of amount
+	 * @param value Text value of amount
 	 * @return Amount
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public static double createAmount(String value) throws Exception {
 		if (value == null || value.length() == 0) {
@@ -239,8 +219,7 @@ public class Quantity {
 	 * Create an amount of a quantity that adheres to precision and rounding
 	 * settings from a Number
 	 * 
-	 * @param number
-	 *            Value
+	 * @param number Value
 	 * @return Amount
 	 */
 	public static double createAmount(Number number) {
@@ -284,8 +263,7 @@ public class Quantity {
 	/**
 	 * Set the unit of measure of this quantity
 	 * 
-	 * @param uom
-	 *            {@link UnitOfMeasure}
+	 * @param uom {@link UnitOfMeasure}
 	 */
 	public void setUOM(UnitOfMeasure uom) {
 		this.uom = uom;
@@ -294,11 +272,9 @@ public class Quantity {
 	/**
 	 * Subtract a quantity from this quantity
 	 * 
-	 * @param other
-	 *            quantity
+	 * @param other quantity
 	 * @return New quantity
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public Quantity subtract(Quantity other) throws Exception {
 		Quantity toSubtract = other.convert(getUOM());
@@ -309,11 +285,9 @@ public class Quantity {
 	/**
 	 * Add two quantities
 	 * 
-	 * @param other
-	 *            {@link Quantity}
+	 * @param other {@link Quantity}
 	 * @return Sum {@link Quantity}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public Quantity add(Quantity other) throws Exception {
 		Quantity toAdd = other.convert(getUOM());
@@ -324,17 +298,16 @@ public class Quantity {
 	/**
 	 * Divide two quantities to create a third quantity
 	 * 
-	 * @param other
-	 *            {@link Quantity}
+	 * @param other {@link Quantity}
 	 * @return Quotient {@link Quantity}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public Quantity divide(Quantity other) throws Exception {
 		Quantity toDivide = other;
 
 		if (toDivide.getAmount() == 0.0d) {
-			throw new Exception(MeasurementSystem.getMessage("divisor.cannot.be.zero"));
+			String msg = MessageFormat.format(MeasurementSystem.getMessage("divisor.cannot.be.zero"), toString());
+			throw new Exception(msg);
 		}
 
 		double amount = getAmount() / toDivide.getAmount();
@@ -346,11 +319,9 @@ public class Quantity {
 	/**
 	 * Divide this quantity by the specified amount
 	 * 
-	 * @param divisor
-	 *            Amount
+	 * @param divisor Amount
 	 * @return Quantity {@link Quantity}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public Quantity divide(double divisor) throws Exception {
 		double amount = getAmount() / divisor;
@@ -360,11 +331,9 @@ public class Quantity {
 	/**
 	 * Multiply this quantity by another quantity to create a third quantity
 	 * 
-	 * @param other
-	 *            Quantity
+	 * @param other Quantity
 	 * @return Multiplied quantity
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public Quantity multiply(Quantity other) throws Exception {
 		Quantity toMultiply = other;
@@ -378,11 +347,9 @@ public class Quantity {
 	/**
 	 * Raise this quantity to the specified power
 	 * 
-	 * @param exponent
-	 *            Exponent
+	 * @param exponent Exponent
 	 * @return new Quantity
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public Quantity power(int exponent) throws Exception {
 		double amount = Math.pow(getAmount(), exponent);
@@ -394,11 +361,9 @@ public class Quantity {
 	/**
 	 * Multiply this quantity by the specified amount
 	 * 
-	 * @param multiplier
-	 *            Amount
+	 * @param multiplier Amount
 	 * @return new Quantity
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public Quantity multiply(double multiplier) throws Exception {
 		double amount = getAmount() * multiplier;
@@ -410,8 +375,7 @@ public class Quantity {
 	 * quantity
 	 * 
 	 * @return {@link Quantity}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public Quantity invert() throws Exception {
 		double amount = 1.0d / getAmount();
@@ -423,11 +387,9 @@ public class Quantity {
 	/**
 	 * Convert this quantity to the target UOM
 	 * 
-	 * @param toUOM
-	 *            {@link UnitOfMeasure}
+	 * @param toUOM {@link UnitOfMeasure}
 	 * @return Converted quantity
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public Quantity convert(UnitOfMeasure toUOM) throws Exception {
 
@@ -452,13 +414,10 @@ public class Quantity {
 	 * Convert this quantity with a product or quotient unit of measure to the
 	 * specified units of measure.
 	 * 
-	 * @param uom1
-	 *            Multiplier or dividend {@link UnitOfMeasure}
-	 * @param uom2
-	 *            Multiplicand or divisor {@link UnitOfMeasure}
+	 * @param uom1 Multiplier or dividend {@link UnitOfMeasure}
+	 * @param uom2 Multiplicand or divisor {@link UnitOfMeasure}
 	 * @return Converted quantity
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public Quantity convertToPowerProduct(UnitOfMeasure uom1, UnitOfMeasure uom2) throws Exception {
 		UnitOfMeasure newUOM = getUOM().clonePowerProduct(uom1, uom2);
@@ -469,11 +428,9 @@ public class Quantity {
 	 * Convert this quantity of a power unit using the specified base unit of
 	 * measure.
 	 * 
-	 * @param uom
-	 *            Base {@link UnitOfMeasure}
+	 * @param uom Base {@link UnitOfMeasure}
 	 * @return Converted quantity
-	 * @throws Exception
-	 *             exception
+	 * @throws Exception exception
 	 */
 	public Quantity convertToPower(UnitOfMeasure uom) throws Exception {
 		UnitOfMeasure newUOM = getUOM().clonePower(uom);
@@ -484,11 +441,9 @@ public class Quantity {
 	/**
 	 * Convert this quantity to the target unit
 	 * 
-	 * @param unit
-	 *            {@link Unit}
+	 * @param unit {@link Unit}
 	 * @return {@link Quantity}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public Quantity convert(Unit unit) throws Exception {
 		return convert(MeasurementSystem.instance().getUOM(unit));
@@ -497,13 +452,10 @@ public class Quantity {
 	/**
 	 * Convert this quantity to the target unit with the specified prefix
 	 * 
-	 * @param prefix
-	 *            {@link Prefix}
-	 * @param unit
-	 *            {@link Unit}
+	 * @param prefix {@link Prefix}
+	 * @param unit   {@link Unit}
 	 * @return {@link Quantity}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public Quantity convert(Prefix prefix, Unit unit) throws Exception {
 		return convert(MeasurementSystem.instance().getUOM(prefix, unit));
@@ -545,11 +497,9 @@ public class Quantity {
 	/**
 	 * Compare this quantity to the other quantity
 	 * 
-	 * @param other
-	 *            Quantity
+	 * @param other Quantity
 	 * @return -1 if less than, 0 if equal and 1 if greater than
-	 * @throws Exception
-	 *             If the quantities cannot be compared.
+	 * @throws Exception If the quantities cannot be compared.
 	 */
 	public int compare(Quantity other) throws Exception {
 		Quantity toCompare = other;
