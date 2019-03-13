@@ -365,39 +365,93 @@ public class UaOpcClient implements SessionActivityListener {
 		NodeId nodeId = value.getDataType().get();
 		Class<?> clazz = BuiltinDataType.getBackingClass(nodeId);
 
+		boolean isArray = uaValue.getClass().isArray();
+
 		if (nodeId.getType().equals(IdType.Numeric)) {
+			// Integer and array of
 			if (clazz.equals(Integer.class)) {
-				javaObject = (Integer) uaValue;
+				javaObject = !isArray ? (Integer) uaValue : (Integer[]) uaValue;
 			} else if (clazz.equals(UInteger.class)) {
-				javaObject = ((UInteger) uaValue).longValue();
+				if (!isArray) {
+					javaObject = ((UInteger) uaValue).longValue();
+				} else {
+					// promote type to avoid negative numbers
+					UInteger[] uInts = (UInteger[]) uaValue;
+					Long[] longs = new Long[uInts.length];
+
+					for (int i = 0; i < uInts.length; i++) {
+						longs[i] = uInts[i].longValue();
+					}
+					javaObject = longs;
+				}
+				// Short and array of
 			} else if (clazz.equals(Short.class)) {
-				javaObject = (Short) uaValue;
+				javaObject = !isArray ? (Short) uaValue : (Short[]) uaValue;
 			} else if (clazz.equals(UShort.class)) {
-				javaObject = ((UShort) uaValue).intValue();
+				if (!isArray) {
+					javaObject = ((UShort) uaValue).intValue();
+				} else {
+					// promote type to avoid negative numbers
+					UShort[] uShorts = (UShort[]) uaValue;
+					Integer[] ints = new Integer[uShorts.length];
+
+					for (int i = 0; i < uShorts.length; i++) {
+						ints[i] = uShorts[i].intValue();
+					}
+					javaObject = ints;
+				}
+				// Boolean and array of
 			} else if (clazz.equals(Boolean.class)) {
-				javaObject = (Boolean) uaValue;
+				javaObject = !isArray ? (Boolean) uaValue : (Boolean[]) uaValue;
+				// Byte and array of
 			} else if (clazz.equals(Byte.class)) {
-				javaObject = (Byte) uaValue;
+				javaObject = !isArray ? (Byte) uaValue : (Byte[]) uaValue;
 			} else if (clazz.equals(UByte.class)) {
-				javaObject = ((UByte) uaValue).shortValue();
+				// promote type to avoid negative numbers
+				if (!isArray) {
+					javaObject = ((UByte) uaValue).shortValue();
+				} else {
+					UByte[] uBytes = (UByte[]) uaValue;
+					Short[] shorts = new Short[uBytes.length];
+
+					for (int i = 0; i < uBytes.length; i++) {
+						shorts[i] = uBytes[i].shortValue();
+					}
+					javaObject = shorts;
+				}
+				// Long and array of
 			} else if (clazz.equals(Long.class)) {
-				javaObject = (Long) uaValue;
+				javaObject = !isArray ? (Long) uaValue : (Long[]) uaValue;
 			} else if (clazz.equals(ULong.class)) {
-				javaObject = ((ULong) uaValue).doubleValue();
+				// promote type to avoid negative numbers
+				if (!isArray) {
+					javaObject = ((ULong) uaValue).doubleValue();
+				} else {
+					ULong[] uInts = (ULong[]) uaValue;
+					Double[] doubles = new Double[uInts.length];
+
+					for (int i = 0; i < uInts.length; i++) {
+						doubles[i] = uInts[i].doubleValue();
+					}
+					javaObject = doubles;
+				}
+				// Float and array of
 			} else if (clazz.equals(Float.class)) {
-				javaObject = (Float) uaValue;
-				;
+				javaObject = !isArray ? (Float) uaValue : (Float[]) uaValue;
+				// Double and array of
 			} else if (clazz.equals(Double.class)) {
-				javaObject = (Double) uaValue;
+				javaObject = !isArray ? (Double) uaValue : (Double[]) uaValue;
+				// DateTime and array of
 			} else if (clazz.equals(DateTime.class)) {
-				javaObject = (DateTime) uaValue;
+				javaObject = !isArray ? (DateTime) uaValue : (DateTime[]) uaValue;
+				// String and array of
 			} else if (clazz.equals(String.class)) {
-				javaObject = (String) uaValue;
+				javaObject = !isArray ? (String) uaValue : (String[]) uaValue;
 			}
 		} else if (nodeId.getType().equals(IdType.String)) {
-			javaObject = (String) uaValue;
+			javaObject = !isArray ? (String) uaValue : (String[]) uaValue;
 		} else if (nodeId.getType().equals(IdType.Guid)) {
-			javaObject = (UUID) uaValue;
+			javaObject = !isArray ? (UUID) uaValue : (UUID[]) uaValue;
 		}
 		return javaObject;
 	}

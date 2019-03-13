@@ -268,7 +268,7 @@ public class EquipmentEventResolver {
 		event.setTeam(team);
 
 		if (logger.isInfoEnabled()) {
-			logger.info("Resolved event: " + event.toString());
+			logger.info("Resolved event. " + event.toString());
 		}
 
 		return event;

@@ -67,6 +67,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
+/**
+ * PersistenceService handles all database I/O.  It is a singleton.
+ *
+ */
 public final class PersistenceService {
 	// logger
 	private static Logger logger;

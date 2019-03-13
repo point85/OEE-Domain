@@ -104,7 +104,16 @@ public class OeeEvent extends KeyedObject {
 	public OeeEvent(Equipment equipment, Object inputValue, Object outputValue) {
 		super();
 		this.equipment = equipment;
-		setInputValue(inputValue.toString());
+
+		String inValue = null;
+
+		if (inputValue.getClass().isArray()) {
+			inValue = "[0] = " + ((Object[]) inputValue)[0];
+		} else {
+			inValue = inputValue.toString();
+		}
+		this.input = inValue;
+
 		this.outputValue = outputValue;
 	}
 
