@@ -157,6 +157,42 @@
     <groupId>org.hsqldb</groupId>
     <artifactId>hsqldb</artifactId>
     <version>2.4.1</version>
+    <scope>runtime</scope>
+</dependency>
+
+<!-- SQL Server DATABASE -->
+<!-- https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc -->
+<dependency>
+    <groupId>com.microsoft.sqlserver</groupId>
+    <artifactId>mssql-jdbc</artifactId>
+    <version>7.0.0.jre8</version>
+    <scope>runtime</scope>
+</dependency>
+
+<!-- Oracle DATABASE -->
+<dependency>
+    <groupId>com.oracle.jdbc</groupId>
+    <artifactId>ojdbc8</artifactId>
+    <version>8.0</version>
+    <scope>runtime</scope>
+</dependency>
+
+<!-- MySQL DATABASE -->
+<!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.14</version>
+    <scope>runtime</scope>
+</dependency>
+
+<!-- PostgresQL DATABASE -->
+<!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
+<dependency>
+    <groupId>org.postgresql</groupId>
+    <artifactId>postgresql</artifactId>
+    <version>42.2.5</version>
+    <scope>runtime</scope>
 </dependency>
 
 </dependencies>
