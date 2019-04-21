@@ -36,6 +36,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.persistence.TimeLossConverter;
 
@@ -94,14 +95,12 @@ public class NonWorkingPeriod extends Named implements Comparable<NonWorkingPeri
 	/**
 	 * Set period start date and time
 	 * 
-	 * @param startDateTime
-	 *            Period start
-	 * @throws Exception
-	 *             exception
+	 * @param startDateTime Period start
+	 * @throws Exception exception
 	 */
 	public void setStartDateTime(LocalDateTime startDateTime) throws Exception {
 		if (startDateTime == null) {
-			throw new Exception(WorkSchedule.getMessage("start.not.defined"));
+			throw new Exception(DomainLocalizer.instance().getErrorString("start.not.defined"));
 		}
 
 		this.startDateTime = startDateTime;
@@ -111,8 +110,7 @@ public class NonWorkingPeriod extends Named implements Comparable<NonWorkingPeri
 	 * Get period end date and time
 	 * 
 	 * @return Period end
-	 * @throws Exception
-	 *             exception
+	 * @throws Exception exception
 	 */
 	public LocalDateTime getEndDateTime() throws Exception {
 		return startDateTime.plus(duration);
@@ -130,25 +128,22 @@ public class NonWorkingPeriod extends Named implements Comparable<NonWorkingPeri
 	/**
 	 * Set duration
 	 * 
-	 * @param duration
-	 *            Duration
-	 * @throws Exception
-	 *             exception
+	 * @param duration Duration
+	 * @throws Exception exception
 	 */
 	public void setDuration(Duration duration) throws Exception {
 		if (duration == null || duration.getSeconds() == 0) {
-			throw new Exception(WorkSchedule.getMessage("duration.not.defined"));
+			throw new Exception(DomainLocalizer.instance().getErrorString("duration.not.defined"));
 		}
 
 		this.duration = duration;
 	}
 
 	/**
-	 * Compare this non-working period to another such period by start date and
-	 * time of day
+	 * Compare this non-working period to another such period by start date and time
+	 * of day
 	 * 
-	 * @param other
-	 *            {@link NonWorkingPeriod}
+	 * @param other {@link NonWorkingPeriod}
 	 * @return negative if less than, 0 if equal and positive if greater than
 	 */
 	@Override
@@ -172,11 +167,9 @@ public class NonWorkingPeriod extends Named implements Comparable<NonWorkingPeri
 	/**
 	 * Check to see if this day is contained in the non-working period
 	 * 
-	 * @param day
-	 *            Date to check
+	 * @param day Date to check
 	 * @return True if in the non-working period
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public boolean isInPeriod(LocalDate day) throws Exception {
 		boolean isInPeriod = false;
@@ -205,14 +198,11 @@ public class NonWorkingPeriod extends Named implements Comparable<NonWorkingPeri
 	@Override
 	public String toString() {
 		String text = "";
-		String start = WorkSchedule.getMessage("period.start");
-		String end = WorkSchedule.getMessage("period.end");
 
 		try {
-			text = super.toString() + ", " + start + ": " + getStartDateTime() + " (" + getDuration() + ")" + ", " + end
-					+ ": " + getEndDateTime();
+			text = super.toString() + ", Start: " + getStartDateTime() + " (" + getDuration() + ")" + ", End: "
+					+ getEndDateTime();
 		} catch (Exception e) {
-			// ignore
 		}
 		return text;
 	}

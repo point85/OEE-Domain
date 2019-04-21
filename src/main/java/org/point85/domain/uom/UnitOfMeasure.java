@@ -23,14 +23,12 @@ SOFTWARE.
 */
 package org.point85.domain.uom;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.ResourceBundle;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,6 +43,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.plant.NamedObject;
 
 /**
@@ -102,11 +101,6 @@ import org.point85.domain.plant.NamedObject;
 public class UnitOfMeasure extends NamedObject {
 	// root UOM (not persistent)
 	public static final String ROOT_UOM_NAME = "All Units";
-
-	// UOM types
-	public enum MeasurementType {
-		SCALAR, PRODUCT, QUOTIENT, POWER
-	};
 
 	// maximum length of the symbol
 	private static final int MAX_SYMBOL_LENGTH = 16;
@@ -203,7 +197,7 @@ public class UnitOfMeasure extends NamedObject {
 		super(name, description);
 		this.symbol = symbol.trim();
 		this.unitType = type;
-		this.category = MeasurementSystem.getUnitString("default.category.text");
+		this.category = DomainLocalizer.instance().getUnitString("default.category");
 	}
 
 	/**
@@ -218,8 +212,7 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Set the symbol
 	 * 
-	 * @param symbol
-	 *            Symbol
+	 * @param symbol Symbol
 	 */
 	public void setSymbol(String symbol) {
 		this.symbol = symbol;
@@ -228,8 +221,7 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Check to see if the exponent is valid
 	 * 
-	 * @param exponent
-	 *            Power exponent
+	 * @param exponent Power exponent
 	 * @return True if it is a valid exponent
 	 */
 	public static boolean isValidExponent(Integer exponent) {
@@ -317,14 +309,14 @@ public class UnitOfMeasure extends NamedObject {
 		// check if quotient
 		if (getMeasurementType().equals(MeasurementType.QUOTIENT)) {
 			if (uom2.equals(one)) {
-				String msg = MessageFormat.format(MeasurementSystem.getMessage("incompatible.units"), this, one);
-				throw new Exception(msg);
+				throw new Exception(
+						DomainLocalizer.instance().getErrorString("incompatible.units", getSymbol(), one.getSymbol()));
 			}
 			invert = true;
 		} else {
 			if (uom1.equals(one) || uom2.equals(one)) {
-				String msg = MessageFormat.format(MeasurementSystem.getMessage("incompatible.units"), this, one);
-				throw new Exception(msg);
+				throw new Exception(
+						DomainLocalizer.instance().getErrorString("incompatible.units", getSymbol(), one.getSymbol()));
 			}
 		}
 
@@ -345,8 +337,7 @@ public class UnitOfMeasure extends NamedObject {
 	 * Get the unit of measure corresponding to the base symbol
 	 * 
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure getBaseUOM() throws Exception {
 		String baseSymbol = getBaseSymbol();
@@ -383,14 +374,10 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Set the conversion to another fundamental unit of measure
 	 * 
-	 * @param scalingFactor
-	 *            Scaling factor
-	 * @param abscissaUnit
-	 *            X-axis unit
-	 * @param offset
-	 *            Offset
-	 * @throws Exception
-	 *             Exception
+	 * @param scalingFactor Scaling factor
+	 * @param abscissaUnit  X-axis unit
+	 * @param offset        Offset
+	 * @throws Exception Exception
 	 */
 	public void setBridgeConversion(double scalingFactor, UnitOfMeasure abscissaUnit, double offset) throws Exception {
 		this.bridgeScalingFactor = scalingFactor;
@@ -401,8 +388,7 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Compare this unit of measure to another one.
 	 * 
-	 * @param other
-	 *            unit of measure
+	 * @param other unit of measure
 	 * @return -1 if less than, 0 if equal and 1 if greater than
 	 */
 	@Override
@@ -426,8 +412,7 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Set the unit's enumerated type
 	 * 
-	 * @param unit
-	 *            {@link Unit}
+	 * @param unit {@link Unit}
 	 */
 	public void setEnumeration(Unit unit) {
 		this.unit = unit;
@@ -445,8 +430,7 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Set the type of the unit.
 	 * 
-	 * @param unitType
-	 *            {@link UnitType}
+	 * @param unitType {@link UnitType}
 	 */
 	public void setUnitType(UnitType unitType) {
 		this.unitType = unitType;
@@ -464,8 +448,7 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Set the category
 	 * 
-	 * @param category
-	 *            Category
+	 * @param category Category
 	 */
 	public void setCategory(String category) {
 		this.category = category;
@@ -544,14 +527,13 @@ public class UnitOfMeasure extends NamedObject {
 
 	private void checkOffset(UnitOfMeasure other) throws Exception {
 		if (Double.valueOf(other.getOffset()).compareTo(0.0d) != 0) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("offset.not.supported"), other.toString());
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("offset.not.supported", other.getSymbol()));
 		}
 	}
 
 	private UnitOfMeasure multiplyOrDivide(UnitOfMeasure other, boolean invert) throws Exception {
 		if (other == null) {
-			throw new Exception(MeasurementSystem.getMessage("unit.cannot.be.null"));
+			throw new Exception(DomainLocalizer.instance().getErrorString("unit.cannot.be.null"));
 		}
 
 		checkOffset(this);
@@ -655,11 +637,9 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Multiply two units of measure to create a third one.
 	 * 
-	 * @param multiplicand
-	 *            {@link UnitOfMeasure}
+	 * @param multiplicand {@link UnitOfMeasure}
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure multiply(UnitOfMeasure multiplicand) throws Exception {
 		return multiplyOrDivide(multiplicand, false);
@@ -668,11 +648,9 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Divide two units of measure to create a third one.
 	 * 
-	 * @param divisor
-	 *            {@link UnitOfMeasure}
+	 * @param divisor {@link UnitOfMeasure}
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure divide(UnitOfMeasure divisor) throws Exception {
 		return multiplyOrDivide(divisor, true);
@@ -682,8 +660,7 @@ public class UnitOfMeasure extends NamedObject {
 	 * Invert a unit of measure to create a new one
 	 * 
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure invert() throws Exception {
 		UnitOfMeasure inverted = null;
@@ -702,8 +679,7 @@ public class UnitOfMeasure extends NamedObject {
 	 * For example a Newton is a kg.m/s2.
 	 * 
 	 * @return Base symbol
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public synchronized String getBaseSymbol() throws Exception {
 		if (baseSymbol == null) {
@@ -723,24 +699,20 @@ public class UnitOfMeasure extends NamedObject {
 	 * Define a conversion with the specified scaling factor, abscissa unit of
 	 * measure and scaling factor.
 	 * 
-	 * @param scalingFactor
-	 *            Factor
-	 * @param abscissaUnit
-	 *            {@link UnitOfMeasure}
-	 * @param offset
-	 *            Offset
-	 * @throws Exception
-	 *             Exception
+	 * @param scalingFactor Factor
+	 * @param abscissaUnit  {@link UnitOfMeasure}
+	 * @param offset        Offset
+	 * @throws Exception Exception
 	 */
 	public void setConversion(double scalingFactor, UnitOfMeasure abscissaUnit, double offset) throws Exception {
 		if (abscissaUnit == null) {
-			throw new Exception(MeasurementSystem.getMessage("unit.cannot.be.null"));
+			throw new Exception(DomainLocalizer.instance().getErrorString("unit.cannot.be.null"));
 		}
 
 		// self conversion is special
 		if (this.equals(abscissaUnit)) {
 			if (Double.valueOf(scalingFactor).compareTo(1.0d) != 0 || Double.valueOf(offset).compareTo(0.0d) != 0) {
-				throw new Exception(MeasurementSystem.getMessage("conversion.not.allowed"));
+				throw new Exception(DomainLocalizer.instance().getErrorString("conversion.not.allowed"));
 			}
 		}
 
@@ -760,10 +732,8 @@ public class UnitOfMeasure extends NamedObject {
 	 * Define a conversion with a scaling factor of 1 and offset of 0 for the
 	 * specified abscissa unit of measure.
 	 * 
-	 * @param abscissaUnit
-	 *            {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @param abscissaUnit {@link UnitOfMeasure}
+	 * @throws Exception Exception
 	 */
 	public void setConversion(UnitOfMeasure abscissaUnit) throws Exception {
 		this.setConversion(1.0d, abscissaUnit, 0.0d);
@@ -773,12 +743,9 @@ public class UnitOfMeasure extends NamedObject {
 	 * Define a conversion with an offset of 0 for the specified scaling factor and
 	 * abscissa unit of measure.
 	 * 
-	 * @param scalingFactor
-	 *            Factor
-	 * @param abscissaUnit
-	 *            {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @param scalingFactor Factor
+	 * @param abscissaUnit  {@link UnitOfMeasure}
+	 * @throws Exception Exception
 	 */
 	public void setConversion(double scalingFactor, UnitOfMeasure abscissaUnit) throws Exception {
 		this.setConversion(scalingFactor, abscissaUnit, 0.0d);
@@ -796,8 +763,7 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Set the unit of measure's 'b' offset (intercept) for the relation y = ax + b.
 	 * 
-	 * @param offset
-	 *            Offset
+	 * @param offset Offset
 	 */
 	public void setOffset(double offset) {
 		this.offset = offset;
@@ -815,8 +781,7 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Set the unit of measure's 'a' factor (slope) for the relation y = ax + b.
 	 * 
-	 * @param scalingFactor
-	 *            Scaling factor
+	 * @param scalingFactor Scaling factor
 	 */
 	public void setScalingFactor(double scalingFactor) {
 		this.scalingFactor = scalingFactor;
@@ -834,8 +799,7 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Set the unit of measure's x-axis unit of measure for the relation y = ax + b.
 	 * 
-	 * @param abscissaUnit
-	 *            {@link UnitOfMeasure}
+	 * @param abscissaUnit {@link UnitOfMeasure}
 	 */
 	public void setAbscissaUnit(UnitOfMeasure abscissaUnit) {
 		this.abscissaUnit = abscissaUnit;
@@ -886,24 +850,21 @@ public class UnitOfMeasure extends NamedObject {
 
 		if (thisType != UnitType.UNCLASSIFIED && targetType != UnitType.UNCLASSIFIED && !thisType.equals(UnitType.UNITY)
 				&& !targetType.equals(UnitType.UNITY) && !thisType.equals(targetType)) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("must.be.same.as"), uom1, uom1.getUnitType(),
-					uom2, uom2.getUnitType());
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("must.be.same.as", uom1.getSymbol(),
+					uom1.getUnitType(), uom2.getSymbol(), uom2.getUnitType()));
 		}
 	}
 
 	/**
 	 * Get the factor to convert to the unit of measure
 	 * 
-	 * @param targetUOM
-	 *            Target {@link UnitOfMeasure}
+	 * @param targetUOM Target {@link UnitOfMeasure}
 	 * @return conversion factor
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public double getConversionFactor(UnitOfMeasure targetUOM) throws Exception {
 		if (targetUOM == null) {
-			throw new Exception(MeasurementSystem.getMessage("unit.cannot.be.null"));
+			throw new Exception(DomainLocalizer.instance().getErrorString("unit.cannot.be.null"));
 		}
 
 		// first check the cache
@@ -922,8 +883,8 @@ public class UnitOfMeasure extends NamedObject {
 		Map<UnitOfMeasure, Integer> toMap = toReducer.getTerms();
 
 		if (fromMap.size() != toMap.size()) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("incompatible.units"), this, targetUOM);
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("incompatible.units", getSymbol(),
+					targetUOM.getSymbol()));
 		}
 
 		double fromFactor = fromReducer.getScalingFactor();
@@ -954,8 +915,8 @@ public class UnitOfMeasure extends NamedObject {
 		} // from map
 
 		if (matchCount != fromMap.size()) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("incompatible.units"), this, targetUOM);
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("incompatible.units", getSymbol(),
+					targetUOM.getSymbol()));
 		}
 
 		double scaling = fromFactor / toFactor;
@@ -1006,22 +967,23 @@ public class UnitOfMeasure extends NamedObject {
 	 */
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		ResourceBundle symbolBundle = MeasurementSystem.instance().getSymbols();
 
 		// type
 		UnitType type = getUnitType();
-		sb.append(symbolBundle.getString("unit.type.text")).append(' ').append(type.toString()).append(", ");
+		sb.append(DomainLocalizer.instance().getUnitString("unit.type")).append(' ').append(type.toString())
+				.append(", ");
 
 		// unit enumeration
 		Unit enumeration = getEnumeration();
 		if (enumeration != null) {
-			sb.append(symbolBundle.getString("enum.text")).append(' ').append(enumeration.toString()).append(", ");
+			sb.append(DomainLocalizer.instance().getUnitString("enum")).append(' ').append(enumeration.toString())
+					.append(", ");
 		}
 
 		// symbol
 		String symbol = getSymbol();
-		sb.append(symbolBundle.getString("symbol.text")).append(' ').append(symbol);
-		sb.append(", ").append(symbolBundle.getString("conversion.text")).append(' ');
+		sb.append(DomainLocalizer.instance().getUnitString("symbol")).append(' ').append(symbol);
+		sb.append(", ").append(DomainLocalizer.instance().getUnitString("conversion")).append(' ');
 
 		// scaling factor
 		double factor = getScalingFactor();
@@ -1041,7 +1003,7 @@ public class UnitOfMeasure extends NamedObject {
 			sb.append(" + ").append(Double.valueOf(getOffset()).toString());
 		}
 
-		sb.append(", ").append(symbolBundle.getString("base.text")).append(' ');
+		sb.append(", ").append(DomainLocalizer.instance().getUnitString("base")).append(' ');
 
 		// base symbol
 		try {
@@ -1056,17 +1018,13 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Set the base unit of measure and exponent
 	 * 
-	 * @param base
-	 *            Base unit of measure
-	 * @param exponent
-	 *            Exponent
-	 * @throws Exception
-	 *             Exception
+	 * @param base     Base unit of measure
+	 * @param exponent Exponent
+	 * @throws Exception Exception
 	 */
 	public void setPowerUnit(UnitOfMeasure base, Integer exponent) throws Exception {
 		if (base == null) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("base.cannot.be.null"), getSymbol());
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("base.cannot.be.null", getSymbol()));
 		}
 
 		// special cases
@@ -1128,22 +1086,17 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Set the multiplier and multiplicand
 	 * 
-	 * @param multiplier
-	 *            Multiplier
-	 * @param multiplicand
-	 *            Multiplicand
-	 * @throws Exception
-	 *             Exception
+	 * @param multiplier   Multiplier
+	 * @param multiplicand Multiplicand
+	 * @throws Exception Exception
 	 */
 	public void setProductUnits(UnitOfMeasure multiplier, UnitOfMeasure multiplicand) throws Exception {
 		if (multiplier == null) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("multiplier.cannot.be.null"), getSymbol());
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("multiplier.cannot.be.null"));
 		}
 
 		if (multiplicand == null) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("multiplicand.cannot.be.null"), getSymbol());
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("multiplicand.cannot.be.null"));
 		}
 
 		setPowerProduct(multiplier, 1, multiplicand, 1);
@@ -1170,22 +1123,17 @@ public class UnitOfMeasure extends NamedObject {
 	/**
 	 * Set the dividend and divisor
 	 * 
-	 * @param dividend
-	 *            Dividend
-	 * @param divisor
-	 *            Divisor
-	 * @throws Exception
-	 *             Exception
+	 * @param dividend Dividend
+	 * @param divisor  Divisor
+	 * @throws Exception Exception
 	 */
 	public void setQuotientUnits(UnitOfMeasure dividend, UnitOfMeasure divisor) throws Exception {
 		if (dividend == null) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("dividend.cannot.be.null"), getSymbol());
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("dividend.cannot.be.null"));
 		}
 
 		if (divisor == null) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("divisor.cannot.be.null"), getSymbol());
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("divisor.cannot.be.null"));
 		}
 
 		setPowerProduct(dividend, 1, divisor, -1);
@@ -1285,9 +1233,7 @@ public class UnitOfMeasure extends NamedObject {
 
 		private void explodeRecursively(UnitOfMeasure unit, int level) throws Exception {
 			if (++counter > MAX_RECURSIONS) {
-				String msg = MessageFormat.format(MeasurementSystem.getMessage("circular.references"),
-						unit.getSymbol());
-				throw new Exception(msg);
+				throw new Exception(DomainLocalizer.instance().getErrorString("circular.references", unit.getSymbol()));
 			}
 
 			// down a level

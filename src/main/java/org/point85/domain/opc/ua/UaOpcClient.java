@@ -65,6 +65,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.MonitoredItemCreateReq
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoringParameters;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
+import org.point85.domain.i18n.DomainLocalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,6 +75,7 @@ public class UaOpcClient implements SessionActivityListener {
 	// logging utility
 	private static final Logger logger = LoggerFactory.getLogger(UaOpcClient.class);
 
+	// UA application (not localizable)
 	private static final String APP_NAME = "Point85 OEE OPC UA Client";
 
 	private static final String APP_URI = "urn:point85:oee:client";
@@ -109,7 +111,6 @@ public class UaOpcClient implements SessionActivityListener {
 	private OpcUaSource connectedSource;
 
 	public UaOpcClient() {
-		// nothing to initialize
 	}
 
 	public OpcUaClient getNativeClient() {
@@ -199,8 +200,7 @@ public class UaOpcClient implements SessionActivityListener {
 		}
 
 		if (endpointDescription == null) {
-			String msg = "Unable to find a matching endpoint for security policy " + policyUri + " and mode "
-					+ messageSecurityMode;
+			String msg = DomainLocalizer.instance().getErrorString("no.endpoint", policyUri, messageSecurityMode);
 			logger.error(msg);
 			throw new Exception(msg);
 		}
@@ -259,7 +259,7 @@ public class UaOpcClient implements SessionActivityListener {
 
 	private void checkPreconditions() throws Exception {
 		if (opcUaClient == null) {
-			throw new Exception("Not connected to an OPC UA server.");
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.connection"));
 		}
 	}
 
@@ -535,8 +535,8 @@ public class UaOpcClient implements SessionActivityListener {
 			if (item.getStatusCode().isGood()) {
 				logger.info("Monitored item created for nodeId: " + item.getReadValueId().getNodeId());
 			} else {
-				throw new Exception("Failed to create monitored item for nodeId: " + item.getReadValueId().getNodeId()
-						+ ", code: " + item.getStatusCode());
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.item",
+						item.getReadValueId().getNodeId(), item.getStatusCode()));
 			}
 		}
 
@@ -581,7 +581,7 @@ public class UaOpcClient implements SessionActivityListener {
 
 		for (StatusCode code : codes) {
 			if (!code.isGood()) {
-				throw new Exception("Unable to unsubscribe from node " + nodeId + ": " + code);
+				throw new Exception(DomainLocalizer.instance().getErrorString("can.not.unsubscribe", nodeId, code));
 			}
 		}
 

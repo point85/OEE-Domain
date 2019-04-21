@@ -3,6 +3,8 @@ package org.point85.domain.script;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.point85.domain.i18n.DomainLocalizer;
+
 public enum OeeEventType {
 	AVAILABILITY, PROD_GOOD, PROD_REJECT, PROD_STARTUP, MATL_CHANGE, JOB_CHANGE, CUSTOM;
 
@@ -37,5 +39,37 @@ public enum OeeEventType {
 		types.add(OeeEventType.PROD_REJECT);
 		types.add(OeeEventType.PROD_STARTUP);
 		return types;
+	}
+
+	@Override
+	public String toString() {
+		String key = null;
+
+		switch (this) {
+		case AVAILABILITY:
+			key = "availability.type";
+			break;
+		case CUSTOM:
+			key = "custom.type";
+			break;
+		case JOB_CHANGE:
+			key = "job.type";
+			break;
+		case MATL_CHANGE:
+			key = "setup.type";
+			break;
+		case PROD_GOOD:
+			key = "good.type";
+			break;
+		case PROD_REJECT:
+			key = "reject.type";
+			break;
+		case PROD_STARTUP:
+			key = "startup.type";
+			break;
+		default:
+			break;
+		}
+		return DomainLocalizer.instance().getLangString(key);
 	}
 }

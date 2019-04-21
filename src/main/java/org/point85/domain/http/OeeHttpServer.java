@@ -10,6 +10,7 @@ import java.util.Objects;
 
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Material;
@@ -49,11 +50,6 @@ public class OeeHttpServer extends NanoHTTPD {
 
 	// JSON parser
 	private final Gson gson = new Gson();
-
-	// server state
-	public enum ServerState {
-		STARTED, STOPPED
-	};
 
 	private ServerState state = ServerState.STOPPED;
 
@@ -239,12 +235,12 @@ public class OeeHttpServer extends NanoHTTPD {
 
 			String equipmentName = queryParameters.get(OeeHttpServer.EQUIP_ATTRIB);
 			if (equipmentName == null || equipmentName.length() == 0) {
-				throw new Exception("The name of the equipment must be specified.");
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.equipment"));
 			}
 
 			String sourceType = queryParameters.get(OeeHttpServer.DS_TYPE_ATTRIB);
 			if (sourceType == null || sourceType.length() == 0) {
-				throw new Exception("The data source type must be specified.");
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.data.source"));
 			}
 
 			List<String> sourceIds = PersistenceService.instance().fetchResolverSourceIds(equipmentName,
@@ -268,7 +264,7 @@ public class OeeHttpServer extends NanoHTTPD {
 
 			String sourceType = queryParameters.get(OeeHttpServer.DS_TYPE_ATTRIB);
 			if (sourceType == null || sourceType.length() == 0) {
-				throw new Exception("The data source type must be specified.");
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.data.source"));
 			}
 
 			List<CollectorDataSource> dataSources = PersistenceService.instance()
@@ -368,7 +364,7 @@ public class OeeHttpServer extends NanoHTTPD {
 		for (PlantEntity entity : allEntities) {
 			// this entity
 			PlantEntityDto entityDto = new PlantEntityDto(entity.getName(), entity.getDescription(),
-					entity.getLevel().toString());
+					entity.getLevel().name());
 
 			// parent entity
 			if (entity.getParent() == null) {

@@ -4,6 +4,7 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.messaging.ApplicationMessage;
 import org.point85.domain.messaging.BaseMessagingClient;
 import org.point85.domain.messaging.EquipmentEventMessage;
@@ -21,7 +22,7 @@ public class MQTTClient extends BaseMessagingClient {
 	// true = non durable subscriptions
 	private static final boolean CLEAN_SESSION = true;
 
-	// temporary directory for inflight messages
+	// temporary directory for in flight messages
 	private static String TEMP_DIR = System.getProperty("java.io.tmpdir");
 
 	// protocol
@@ -102,7 +103,7 @@ public class MQTTClient extends BaseMessagingClient {
 			}
 
 			if (!json.contains(MessageType.EQUIPMENT_EVENT.name())) {
-				throw new Exception("Unable to handle message \n\t" + json);
+				throw new Exception(DomainLocalizer.instance().getErrorString("bad.message") + "\n\t" + json);
 			}
 
 			// equipment event

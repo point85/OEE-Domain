@@ -33,6 +33,7 @@ import org.point85.domain.db.DatabaseEventSource;
 import org.point85.domain.db.DatabaseEventStatus;
 import org.point85.domain.file.FileEventSource;
 import org.point85.domain.http.HttpSource;
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.jms.JMSSource;
 import org.point85.domain.messaging.MessagingSource;
 import org.point85.domain.mqtt.MQTTSource;
@@ -58,9 +59,9 @@ import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.OeeEventType;
 import org.point85.domain.uom.MeasurementSystem;
+import org.point85.domain.uom.MeasurementType;
 import org.point85.domain.uom.Unit;
 import org.point85.domain.uom.UnitOfMeasure;
-import org.point85.domain.uom.UnitOfMeasure.MeasurementType;
 import org.point85.domain.uom.UnitType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +69,7 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 
 /**
- * PersistenceService handles all database I/O.  It is a singleton.
+ * PersistenceService handles all database I/O. It is a singleton.
  *
  */
 public final class PersistenceService {
@@ -333,7 +334,7 @@ public final class PersistenceService {
 					refs += team.getName();
 				}
 				throw new Exception(
-						"Rotation " + rotation.getName() + " cannot be deleted.  It is referenced by team(s) " + refs);
+						DomainLocalizer.instance().getErrorString("can.not.delete.rotation", rotation.getName(), refs));
 			}
 		} else if (keyed instanceof CollectorDataSource) {
 			CollectorDataSource source = (CollectorDataSource) keyed;
@@ -349,8 +350,8 @@ public final class PersistenceService {
 					}
 					refs += resolver.getSourceId();
 				}
-				throw new Exception("Collector source " + source.getName()
-						+ " cannot be deleted.  It is being referenced by these script resolvers: " + refs);
+				throw new Exception(
+						DomainLocalizer.instance().getErrorString("can.not.delete.collector", source.getName(), refs));
 			}
 		} else if (keyed instanceof WorkSchedule) {
 			WorkSchedule schedule = (WorkSchedule) keyed;
@@ -366,8 +367,8 @@ public final class PersistenceService {
 					}
 					refs += entity.getName();
 				}
-				throw new Exception("Work schedule " + schedule.getName()
-						+ " cannot be deleted.  It is being referenced by these plant entities: " + refs);
+				throw new Exception(
+						DomainLocalizer.instance().getErrorString("can.not.delete.schedule", schedule.getName(), refs));
 			}
 		} else if (keyed instanceof UnitOfMeasure) {
 			UnitOfMeasure uom = (UnitOfMeasure) keyed;
@@ -384,8 +385,8 @@ public final class PersistenceService {
 
 					refs += eqms.get(i).getEquipment().getName();
 				}
-				throw new Exception("Unit of measure " + uom.getSymbol()
-						+ " cannot be deleted.  It is being referenced by this equipment: " + refs);
+				throw new Exception(
+						DomainLocalizer.instance().getErrorString("can.not.delete.uom", uom.getSymbol(), refs));
 			}
 
 			// check for usage by UOM
@@ -404,8 +405,8 @@ public final class PersistenceService {
 				}
 
 				if (refs.length() > 0) {
-					throw new Exception("Unit of measure " + uom.getSymbol()
-							+ " cannot be deleted.  It is being referenced by these units of measure: " + refs);
+					throw new Exception(
+							DomainLocalizer.instance().getErrorString("can.not.delete.ref.uom", uom.getSymbol(), refs));
 				}
 			}
 		}
@@ -1150,7 +1151,7 @@ public final class PersistenceService {
 		} else if (jdbcUrl.contains("postgresql")) {
 			databaseType = DatabaseType.POSTGRES;
 		} else {
-			throw new Exception("Unrecognized JDBC URL: " + jdbcUrl);
+			throw new Exception(DomainLocalizer.instance().getErrorString("bad.jdbc", jdbcUrl));
 		}
 
 		Properties properties = new Properties();

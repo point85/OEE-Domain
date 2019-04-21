@@ -10,6 +10,7 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
 import org.point85.domain.DomainUtils;
+import org.point85.domain.i18n.DomainLocalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +36,7 @@ public class X509KeyStoreLoader {
 		logger.info("Loading KeyStore at {}", serverKeyStore);
 
 		if (!serverKeyStore.exists()) {
-			throw new Exception("KeyStore " + serverKeyStore + " does not exist.");
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.keystore", serverKeyStore));
 		}
 
 		// read existing file
@@ -44,7 +45,7 @@ public class X509KeyStoreLoader {
 		Key serverPrivateKey = keyStore.getKey(KEYSTORE_ALIAS, password.toCharArray());
 
 		if (serverPrivateKey == null) {
-			throw new Exception("Private key not found with alias " + KEYSTORE_ALIAS);
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.private.key", KEYSTORE_ALIAS));
 		}
 
 		if (serverPrivateKey instanceof PrivateKey) {

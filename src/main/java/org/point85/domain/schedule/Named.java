@@ -29,6 +29,7 @@ import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.plant.KeyedObject;
 
 /**
@@ -46,9 +47,8 @@ abstract class Named extends KeyedObject {
 	// description
 	@Column(name = "DESCRIPTION")
 	private String description;
-	
+
 	protected Named() {
-		// nothing to initialize
 	}
 
 	protected Named(String name, String description) throws Exception {
@@ -68,14 +68,12 @@ abstract class Named extends KeyedObject {
 	/**
 	 * Set name
 	 * 
-	 * @param name
-	 *            Name
-	 * @throws Exception
-	 *             exception
+	 * @param name Name
+	 * @throws Exception exception
 	 */
 	public void setName(String name) throws Exception {
 		if (name == null) {
-			throw new Exception(WorkSchedule.getMessage("name.not.defined"));
+			throw new Exception(DomainLocalizer.instance().getErrorString("name.not.defined"));
 		}
 		this.name = name;
 	}
@@ -92,8 +90,7 @@ abstract class Named extends KeyedObject {
 	/**
 	 * Set description
 	 * 
-	 * @param description
-	 *            Description
+	 * @param description Description
 	 */
 	public void setDescription(String description) {
 		this.description = description;

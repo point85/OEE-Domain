@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.point85.domain.collector.OeeEvent;
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentMaterial;
 import org.point85.domain.plant.Material;
@@ -213,7 +214,7 @@ public class EquipmentLoss {
 
 	public float calculateHighLevelOeePercentage() throws Exception {
 		if (getAvailableTime() == null || goodQuantity == null) {
-			throw new Exception("No available time has been recorded.");
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.time"));
 		}
 
 		Quantity availableQty = new Quantity(getAvailableTime().getSeconds(), Unit.SECOND);

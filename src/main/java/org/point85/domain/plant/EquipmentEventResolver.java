@@ -11,6 +11,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.point85.domain.collector.OeeEvent;
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.schedule.Shift;
 import org.point85.domain.schedule.ShiftInstance;
@@ -102,7 +103,7 @@ public class EquipmentEventResolver {
 		}
 
 		if (configuredResolver == null) {
-			throw new Exception("Unable to find an event resolver for source id " + sourceId);
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.resolver", sourceId));
 		}
 
 		return configuredResolver;
@@ -117,8 +118,7 @@ public class EquipmentEventResolver {
 		String script = eventResolver.getScript();
 
 		if (script == null || script.length() == 0) {
-			throw new Exception("The event script is not defined for source id " + sourceId + " for equipment "
-					+ equipment.getName());
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.script", sourceId, equipment.getName()));
 		}
 
 		if (logger.isInfoEnabled()) {
@@ -296,8 +296,8 @@ public class EquipmentEventResolver {
 		} else if (outputValue instanceof Byte) {
 			amount = Double.valueOf((Byte) outputValue);
 		} else {
-			throw new Exception("The result " + outputValue + " of type " + outputValue.getClass().getSimpleName()
-					+ " cannot be converted to a number.");
+			throw new Exception(DomainLocalizer.instance().getErrorString("can.not.convert", outputValue,
+					outputValue.getClass().getSimpleName()));
 		}
 
 		// get UOM from material and equipment
@@ -344,7 +344,7 @@ public class EquipmentEventResolver {
 			if (reason != null) {
 				reasonCache.put(reason.getName(), reason);
 			} else {
-				throw new Exception(reasonName + " is not a valid reason.");
+				throw new Exception(DomainLocalizer.instance().getErrorString("invalid.reason", reasonName));
 			}
 		}
 		return reason;
@@ -353,7 +353,8 @@ public class EquipmentEventResolver {
 	// availability and production
 	private Reason processReason(OeeEvent resolvedItem) throws Exception {
 		if (!(resolvedItem.getOutputValue() instanceof String)) {
-			throw new Exception("The result " + resolvedItem.getOutputValue() + " is not a reason code.");
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("invalid.code", resolvedItem.getOutputValue()));
 		}
 
 		// get the reason
@@ -367,7 +368,8 @@ public class EquipmentEventResolver {
 	// job
 	private String processJob(OeeEvent resolvedItem) throws Exception {
 		if (!(resolvedItem.getOutputValue() instanceof String)) {
-			throw new Exception("The result " + resolvedItem.getOutputValue() + " is not a job identifier.");
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("invalid.job", resolvedItem.getOutputValue()));
 		}
 		String job = (String) resolvedItem.getOutputValue();
 		resolvedItem.setJob(job);
@@ -391,7 +393,7 @@ public class EquipmentEventResolver {
 			if (material != null) {
 				materialCache.put(material.getName(), material);
 			} else {
-				throw new Exception("Material " + materialName + " not found in database.");
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.material", materialName));
 			}
 		}
 		return material;
@@ -401,7 +403,8 @@ public class EquipmentEventResolver {
 	private Material processMaterial(OeeEvent resolvedItem) throws Exception {
 
 		if (!(resolvedItem.getOutputValue() instanceof String)) {
-			throw new Exception(resolvedItem.getOutputValue() + " is not the name of a material.");
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("invalid.material", resolvedItem.getOutputValue()));
 		}
 
 		// get the material

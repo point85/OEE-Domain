@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormatSymbols;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -19,9 +20,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.jinterop.dcom.common.JIException;
 import org.openscada.opc.dcom.common.FILETIME;
-import org.point85.domain.persistence.PersistenceService;
-import org.point85.domain.uom.MeasurementSystem;
-import org.point85.domain.uom.UnitOfMeasure;
+import org.point85.domain.i18n.DomainLocalizer;
 
 public final class DomainUtils {
 	// folder with configuration files
@@ -33,8 +32,9 @@ public final class DomainUtils {
 	// pattern for OffsetDateTime display
 	public static final String OFFSET_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS ZZZZZ";
 
-	private DomainUtils() {
-
+	public static String getVersionInfo() {
+		return DomainLocalizer.instance().getLangString("version") + " 2.3.0, "
+				+ LocalDate.of(2019, 4, 21).format(DateTimeFormatter.ISO_DATE);
 	}
 
 	// format a Duration
@@ -154,25 +154,6 @@ public final class DomainUtils {
 			decoded = new String(decodedBytes);
 		}
 		return decoded;
-	}
-
-	public static UnitOfMeasure getUomBySymbol(String symbol) throws Exception {
-		if (symbol == null) {
-			throw new Exception("The unit of measure symbol cannot be null.");
-		}
-
-		// try cache
-		UnitOfMeasure uom = MeasurementSystem.instance().getUOM(symbol);
-
-		if (uom == null) {
-			// not cached
-			uom = PersistenceService.instance().fetchUomBySymbol(symbol);
-		}
-
-		if (uom == null) {
-			throw new Exception("Unit of measure with symbol " + symbol + " does not exist.");
-		}
-		return uom;
 	}
 
 	public static String formatException(Exception e) {

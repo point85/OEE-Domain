@@ -30,6 +30,8 @@ import java.time.LocalTime;
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 
+import org.point85.domain.i18n.DomainLocalizer;
+
 /**
  * Class TimePeriod is a named period of time with a specified duration and
  * starting time of day.
@@ -40,7 +42,7 @@ import javax.persistence.MappedSuperclass;
 @MappedSuperclass
 abstract class TimePeriod extends Named {
 	private static final int SECONDS_PER_DAY = 24 * 60 * 60;
-	
+
 	// starting time of day
 	@Column(name = "START_TIME")
 	private LocalTime startTime;
@@ -52,7 +54,7 @@ abstract class TimePeriod extends Named {
 	protected TimePeriod() {
 		super();
 	}
-	
+
 	protected TimePeriod(String name, String description, LocalTime startTime, Duration duration) throws Exception {
 		super(name, description);
 		this.startTime = startTime;
@@ -67,21 +69,20 @@ abstract class TimePeriod extends Named {
 	public Duration getDuration() {
 		return duration;
 	}
-	
+
 	/**
 	 * Set duration
 	 * 
-	 * @param duration
-	 *            Period duration
+	 * @param duration Period duration
 	 * @throws Exception exception
 	 */
 	public void setDuration(Duration duration) throws Exception {
 		if (duration == null || duration.getSeconds() == 0) {
-			throw new Exception(WorkSchedule.getMessage("duration.not.defined"));
+			throw new Exception(DomainLocalizer.instance().getErrorString("duration.not.defined"));
 		}
-		
+
 		if (duration.getSeconds() > SECONDS_PER_DAY) {
-			throw new Exception(WorkSchedule.getMessage("duration.not.allowed"));
+			throw new Exception(DomainLocalizer.instance().getErrorString("duration.not.allowed"));
 		}
 		this.duration = duration;
 	}
@@ -94,17 +95,16 @@ abstract class TimePeriod extends Named {
 	public LocalTime getStart() {
 		return startTime;
 	}
-	
+
 	/**
 	 * Set period start time
 	 * 
-	 * @param startTime
-	 *            Start time
+	 * @param startTime Start time
 	 * @throws Exception exception
 	 */
 	public void setStart(LocalTime startTime) throws Exception {
 		if (startTime == null) {
-			throw new Exception(WorkSchedule.getMessage("start.not.defined"));
+			throw new Exception(DomainLocalizer.instance().getErrorString("start.not.defined"));
 		}
 		this.startTime = startTime;
 	}
@@ -128,14 +128,10 @@ abstract class TimePeriod extends Named {
 	@Override
 	public String toString() {
 		String text = "";
-		String start = WorkSchedule.getMessage("period.start");
-		String end = WorkSchedule.getMessage("period.end");
 
 		try {
-			text = super.toString() + ", " + start + ": " + getStart() + " (" + getDuration() + ")" + ", " + end + ": "
-					+ getEnd();
+			text = super.toString() + ", Start: " + getStart() + " (" + getDuration() + ")" + ", End: " + getEnd();
 		} catch (Exception e) {
-			// ignore
 		}
 
 		return text;

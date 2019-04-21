@@ -24,16 +24,16 @@ SOFTWARE.
 
 package org.point85.domain.uom;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.point85.domain.i18n.DomainLocalizer;
+import org.point85.domain.persistence.PersistenceService;
 
 /**
  * A MeasurementSystem is a collection of units of measure that have a linear
@@ -75,30 +75,14 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 
 public class MeasurementSystem {
-	// name of resource bundle with translatable strings for exception messages
-	private static final String MESSAGE_BUNDLE_NAME = "UomMessage";
-
-	// resource bundle for exception messages
-	private static ResourceBundle messages;
-
-	// standard unified system
+	// standard unified system Singleton
 	private static MeasurementSystem unifiedSystem;
-
-	// name of resource bundle with translatable strings for UOMs (e.g. time)
-	private static final String UNIT_BUNDLE_NAME = "Unit";
-
-	// unit resource bundle (e.g. time units)
-	private static ResourceBundle units;
 
 	// UOM cache manager
 	private final CacheManager cacheManager;
 
 	private MeasurementSystem() {
 		cacheManager = new CacheManager();
-
-		// common unit strings
-		units = ResourceBundle.getBundle(UNIT_BUNDLE_NAME, Locale.getDefault());
-		messages = ResourceBundle.getBundle(MESSAGE_BUNDLE_NAME, Locale.getDefault());
 	}
 
 	/**
@@ -112,16 +96,6 @@ public class MeasurementSystem {
 			unifiedSystem = new MeasurementSystem();
 		}
 		return unifiedSystem;
-	}
-
-	// get a particular message by its key
-	static String getMessage(String key) {
-		return messages.getString(key);
-	}
-
-	// get a particular unit string by its key
-	static String getUnitString(String key) {
-		return units.getString(key);
 	}
 
 	private UnitOfMeasure createUOM(Unit enumeration) throws Exception {
@@ -162,13 +136,37 @@ public class MeasurementSystem {
 	}
 
 	/**
+	 * Fetch a unit of measure by its symbol
+	 * 
+	 * @param symbol Symbol
+	 * @return {@link UnitOfMeasure}
+	 * @throws Exception Exception
+	 */
+	public UnitOfMeasure getUomBySymbol(String symbol) throws Exception {
+		if (symbol == null) {
+			throw new Exception(DomainLocalizer.instance().getErrorString("symbol.cannot.be.null"));
+		}
+
+		// try cache
+		UnitOfMeasure uom = getUOM(symbol);
+
+		if (uom == null) {
+			// not cached
+			uom = PersistenceService.instance().fetchUomBySymbol(symbol);
+		}
+
+		if (uom == null) {
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.uom", symbol));
+		}
+		return uom;
+	}
+
+	/**
 	 * Get the quantity defined as a contant value
 	 * 
-	 * @param constant
-	 *            {@link Constant}
+	 * @param constant {@link Constant}
 	 * @return {@link Quantity}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public final Quantity getQuantity(Constant constant) throws Exception {
 		Quantity named = null;
@@ -176,82 +174,82 @@ public class MeasurementSystem {
 		switch (constant) {
 		case LIGHT_VELOCITY:
 			named = new Quantity(299792458d, getUOM(Unit.METRE_PER_SEC));
-			named.setName(units.getString("light.name"));
-			named.setSymbol(units.getString("light.symbol"));
-			named.setDescription(units.getString("light.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("light.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("light.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("light.desc"));
 			break;
 
 		case LIGHT_YEAR:
 			Quantity year = new Quantity(1.0, getUOM(Unit.JULIAN_YEAR));
 			named = getQuantity(Constant.LIGHT_VELOCITY).multiply(year);
-			named.setName(units.getString("ly.name"));
-			named.setSymbol(units.getString("ly.symbol"));
-			named.setDescription(units.getString("ly.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("ly.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("ly.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("ly.desc"));
 			break;
 
 		case GRAVITY:
 			named = new Quantity(9.80665, getUOM(Unit.METRE_PER_SEC_SQUARED));
-			named.setName(units.getString("gravity.name"));
-			named.setSymbol(units.getString("gravity.symbol"));
-			named.setDescription(units.getString("gravity.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("gravity.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("gravity.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("gravity.desc"));
 			break;
 
 		case PLANCK_CONSTANT:
 			UnitOfMeasure js = createProductUOM(getUOM(Unit.JOULE), getSecond());
 			named = new Quantity(6.62607015E-34, js);
-			named.setName(units.getString("planck.name"));
-			named.setSymbol(units.getString("planck.symbol"));
-			named.setDescription(units.getString("planck.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("planck.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("planck.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("planck.desc"));
 			break;
 
 		case BOLTZMANN_CONSTANT:
 			UnitOfMeasure jk = createQuotientUOM(getUOM(Unit.JOULE), getUOM(Unit.KELVIN));
 			named = new Quantity(1.380649E-23, jk);
-			named.setName(units.getString("boltzmann.name"));
-			named.setSymbol(units.getString("boltzmann.symbol"));
-			named.setDescription(units.getString("boltzmann.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("boltzmann.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("boltzmann.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("boltzmann.desc"));
 			break;
 
 		case AVAGADRO_CONSTANT:
 			// NA
 			named = new Quantity(6.02214076E+23, getOne());
-			named.setName(units.getString("avo.name"));
-			named.setSymbol(units.getString("avo.symbol"));
-			named.setDescription(units.getString("avo.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("avo.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("avo.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("avo.desc"));
 			break;
 
 		case GAS_CONSTANT:
 			// R
 			named = getQuantity(Constant.BOLTZMANN_CONSTANT).multiply(getQuantity(Constant.AVAGADRO_CONSTANT));
-			named.setName(units.getString("gas.name"));
-			named.setSymbol(units.getString("gas.symbol"));
-			named.setDescription(units.getString("gas.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("gas.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("gas.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("gas.desc"));
 			break;
 
 		case ELEMENTARY_CHARGE:
 			// e
 			named = new Quantity(1.602176634E-19, getUOM(Unit.COULOMB));
-			named.setName(units.getString("e.name"));
-			named.setSymbol(units.getString("e.symbol"));
-			named.setDescription(units.getString("e.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("e.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("e.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("e.desc"));
 			break;
 
 		case FARADAY_CONSTANT:
 			// F = e.NA
 			Quantity qe = getQuantity(Constant.ELEMENTARY_CHARGE);
 			named = qe.multiply(getQuantity(Constant.AVAGADRO_CONSTANT));
-			named.setName(units.getString("faraday.name"));
-			named.setSymbol(units.getString("faraday.symbol"));
-			named.setDescription(units.getString("faraday.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("faraday.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("faraday.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("faraday.desc"));
 			break;
 
 		case ELECTRIC_PERMITTIVITY:
 			// epsilon0 = 1/(mu0*c^2)
 			Quantity vc = getQuantity(Constant.LIGHT_VELOCITY);
 			named = getQuantity(Constant.MAGNETIC_PERMEABILITY).multiply(vc).multiply(vc).invert();
-			named.setName(units.getString("eps0.name"));
-			named.setSymbol(units.getString("eps0.symbol"));
-			named.setDescription(units.getString("eps0.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("eps0.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("eps0.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("eps0.desc"));
 			break;
 
 		case MAGNETIC_PERMEABILITY:
@@ -259,34 +257,34 @@ public class MeasurementSystem {
 			UnitOfMeasure hm = createQuotientUOM(getUOM(Unit.HENRY), getUOM(Unit.METRE));
 			double fourPi = 4.0 * Math.PI * 1.0E-07;
 			named = new Quantity(fourPi, hm);
-			named.setName(units.getString("mu0.name"));
-			named.setSymbol(units.getString("mu0.symbol"));
-			named.setDescription(units.getString("mu0.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("mu0.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("mu0.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("mu0.desc"));
 			break;
 
 		case ELECTRON_MASS:
 			// me
 			named = new Quantity(9.1093835611E-28, getUOM(Unit.GRAM));
-			named.setName(units.getString("me.name"));
-			named.setSymbol(units.getString("me.symbol"));
-			named.setDescription(units.getString("me.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("me.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("me.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("me.desc"));
 			break;
 
 		case PROTON_MASS:
 			// mp
 			named = new Quantity(1.67262189821E-24, getUOM(Unit.GRAM));
-			named.setName(units.getString("mp.name"));
-			named.setSymbol(units.getString("mp.symbol"));
-			named.setDescription(units.getString("mp.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("mp.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("mp.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("mp.desc"));
 			break;
 
 		case STEFAN_BOLTZMANN:
 			UnitOfMeasure k4 = createPowerUOM(getUOM(Unit.KELVIN), 4);
 			UnitOfMeasure sb = createQuotientUOM(getUOM(Unit.WATTS_PER_SQ_METRE), k4);
 			named = new Quantity(5.67036713E-08, sb);
-			named.setName(units.getString("sb.name"));
-			named.setSymbol(units.getString("sb.symbol"));
-			named.setDescription(units.getString("sb.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("sb.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("sb.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("sb.desc"));
 			break;
 
 		case HUBBLE_CONSTANT:
@@ -294,24 +292,24 @@ public class MeasurementSystem {
 			UnitOfMeasure mpc = getUOM(Prefix.MEGA, getUOM(Unit.PARSEC));
 			UnitOfMeasure hubble = createQuotientUOM(kps, mpc);
 			named = new Quantity(71.9, hubble);
-			named.setName(units.getString("hubble.name"));
-			named.setSymbol(units.getString("hubble.symbol"));
-			named.setDescription(units.getString("hubble.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("hubble.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("hubble.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("hubble.desc"));
 			break;
 
 		case CAESIUM_FREQUENCY:
 			named = new Quantity(9192631770d, getUOM(Unit.HERTZ));
-			named.setName(units.getString("caesium.name"));
-			named.setSymbol(units.getString("caesium.symbol"));
-			named.setDescription(units.getString("caesium.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("caesium.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("caesium.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("caesium.desc"));
 			break;
 
 		case LUMINOUS_EFFICACY:
 			UnitOfMeasure kcd = createQuotientUOM(getUOM(Unit.LUMEN), getUOM(Unit.WATT));
 			named = new Quantity(683d, kcd);
-			named.setName(units.getString("kcd.name"));
-			named.setSymbol(units.getString("kcd.symbol"));
-			named.setDescription(units.getString("kcd.desc"));
+			named.setName(DomainLocalizer.instance().getUnitString("kcd.name"));
+			named.setSymbol(DomainLocalizer.instance().getUnitString("kcd.symbol"));
+			named.setDescription(DomainLocalizer.instance().getUnitString("kcd.desc"));
 			break;
 
 		default:
@@ -333,502 +331,616 @@ public class MeasurementSystem {
 
 		case ONE:
 			// unity
-			uom = createScalarUOM(UnitType.UNITY, Unit.ONE, units.getString("one.name"), units.getString("one.symbol"),
-					units.getString("one.desc"));
+			uom = createScalarUOM(UnitType.UNITY, Unit.ONE, DomainLocalizer.instance().getUnitString("one.name"),
+					DomainLocalizer.instance().getUnitString("one.symbol"),
+					DomainLocalizer.instance().getUnitString("one.desc"));
 			break;
 
 		case PERCENT:
-			uom = createScalarUOM(UnitType.UNITY, Unit.PERCENT, units.getString("percent.name"),
-					units.getString("percent.symbol"), units.getString("percent.desc"));
+			uom = createScalarUOM(UnitType.UNITY, Unit.PERCENT,
+					DomainLocalizer.instance().getUnitString("percent.name"),
+					DomainLocalizer.instance().getUnitString("percent.symbol"),
+					DomainLocalizer.instance().getUnitString("percent.desc"));
 			uom.setConversion(0.01, getOne());
 			break;
 
 		case SECOND:
 			// second
-			uom = createScalarUOM(UnitType.TIME, Unit.SECOND, units.getString("sec.name"),
-					units.getString("sec.symbol"), units.getString("sec.desc"));
+			uom = createScalarUOM(UnitType.TIME, Unit.SECOND, DomainLocalizer.instance().getUnitString("sec.name"),
+					DomainLocalizer.instance().getUnitString("sec.symbol"),
+					DomainLocalizer.instance().getUnitString("sec.desc"));
 			break;
 
 		case MINUTE:
 			// minute
-			uom = createScalarUOM(UnitType.TIME, Unit.MINUTE, units.getString("min.name"),
-					units.getString("min.symbol"), units.getString("min.desc"));
+			uom = createScalarUOM(UnitType.TIME, Unit.MINUTE, DomainLocalizer.instance().getUnitString("min.name"),
+					DomainLocalizer.instance().getUnitString("min.symbol"),
+					DomainLocalizer.instance().getUnitString("min.desc"));
 			uom.setConversion(60d, getUOM(Unit.SECOND));
 			break;
 
 		case HOUR:
 			// hour
-			uom = createScalarUOM(UnitType.TIME, Unit.HOUR, units.getString("hr.name"), units.getString("hr.symbol"),
-					units.getString("hr.desc"));
+			uom = createScalarUOM(UnitType.TIME, Unit.HOUR, DomainLocalizer.instance().getUnitString("hr.name"),
+					DomainLocalizer.instance().getUnitString("hr.symbol"),
+					DomainLocalizer.instance().getUnitString("hr.desc"));
 			uom.setConversion(3600d, getUOM(Unit.SECOND));
 			break;
 
 		case DAY:
 			// day
-			uom = createScalarUOM(UnitType.TIME, Unit.DAY, units.getString("day.name"), units.getString("day.symbol"),
-					units.getString("day.desc"));
+			uom = createScalarUOM(UnitType.TIME, Unit.DAY, DomainLocalizer.instance().getUnitString("day.name"),
+					DomainLocalizer.instance().getUnitString("day.symbol"),
+					DomainLocalizer.instance().getUnitString("day.desc"));
 			uom.setConversion(86400d, getUOM(Unit.SECOND));
 			break;
 
 		case WEEK:
 			// week
-			uom = createScalarUOM(UnitType.TIME, Unit.WEEK, units.getString("week.name"),
-					units.getString("week.symbol"), units.getString("week.desc"));
+			uom = createScalarUOM(UnitType.TIME, Unit.WEEK, DomainLocalizer.instance().getUnitString("week.name"),
+					DomainLocalizer.instance().getUnitString("week.symbol"),
+					DomainLocalizer.instance().getUnitString("week.desc"));
 			uom.setConversion(604800d, getUOM(Unit.SECOND));
 			break;
 
 		case JULIAN_YEAR:
 			// Julian year
-			uom = createScalarUOM(UnitType.TIME, Unit.JULIAN_YEAR, units.getString("jyear.name"),
-					units.getString("jyear.symbol"), units.getString("jyear.desc"));
+			uom = createScalarUOM(UnitType.TIME, Unit.JULIAN_YEAR,
+					DomainLocalizer.instance().getUnitString("jyear.name"),
+					DomainLocalizer.instance().getUnitString("jyear.symbol"),
+					DomainLocalizer.instance().getUnitString("jyear.desc"));
 			uom.setConversion(3.1557600E+07, getUOM(Unit.SECOND));
 			break;
 
 		case SQUARE_SECOND:
 			// square second
-			uom = createPowerUOM(UnitType.TIME_SQUARED, Unit.SQUARE_SECOND, units.getString("s2.name"),
-					units.getString("s2.symbol"), units.getString("s2.desc"), getUOM(Unit.SECOND), 2);
+			uom = createPowerUOM(UnitType.TIME_SQUARED, Unit.SQUARE_SECOND,
+					DomainLocalizer.instance().getUnitString("s2.name"),
+					DomainLocalizer.instance().getUnitString("s2.symbol"),
+					DomainLocalizer.instance().getUnitString("s2.desc"), getUOM(Unit.SECOND), 2);
 			break;
 
 		case MOLE:
 			// substance amount
-			uom = createScalarUOM(UnitType.SUBSTANCE_AMOUNT, Unit.MOLE, units.getString("mole.name"),
-					units.getString("mole.symbol"), units.getString("mole.desc"));
+			uom = createScalarUOM(UnitType.SUBSTANCE_AMOUNT, Unit.MOLE,
+					DomainLocalizer.instance().getUnitString("mole.name"),
+					DomainLocalizer.instance().getUnitString("mole.symbol"),
+					DomainLocalizer.instance().getUnitString("mole.desc"));
 			break;
 
 		case EQUIVALENT:
 			// substance amount
-			uom = createScalarUOM(UnitType.SUBSTANCE_AMOUNT, Unit.EQUIVALENT, units.getString("equivalent.name"),
-					units.getString("equivalent.symbol"), units.getString("equivalent.desc"));
+			uom = createScalarUOM(UnitType.SUBSTANCE_AMOUNT, Unit.EQUIVALENT,
+					DomainLocalizer.instance().getUnitString("equivalent.name"),
+					DomainLocalizer.instance().getUnitString("equivalent.symbol"),
+					DomainLocalizer.instance().getUnitString("equivalent.desc"));
 			break;
 
 		case DECIBEL:
 			// decibel
-			uom = createScalarUOM(UnitType.INTENSITY, Unit.DECIBEL, units.getString("db.name"),
-					units.getString("db.symbol"), units.getString("db.desc"));
+			uom = createScalarUOM(UnitType.INTENSITY, Unit.DECIBEL, DomainLocalizer.instance().getUnitString("db.name"),
+					DomainLocalizer.instance().getUnitString("db.symbol"),
+					DomainLocalizer.instance().getUnitString("db.desc"));
 			break;
 
 		case RADIAN:
 			// plane angle radian (rad)
-			uom = createScalarUOM(UnitType.PLANE_ANGLE, Unit.RADIAN, units.getString("radian.name"),
-					units.getString("radian.symbol"), units.getString("radian.desc"));
+			uom = createScalarUOM(UnitType.PLANE_ANGLE, Unit.RADIAN,
+					DomainLocalizer.instance().getUnitString("radian.name"),
+					DomainLocalizer.instance().getUnitString("radian.symbol"),
+					DomainLocalizer.instance().getUnitString("radian.desc"));
 			uom.setConversion(getOne());
 			break;
 
 		case STERADIAN:
 			// solid angle steradian (sr)
-			uom = createScalarUOM(UnitType.SOLID_ANGLE, Unit.STERADIAN, units.getString("steradian.name"),
-					units.getString("steradian.symbol"), units.getString("steradian.desc"));
+			uom = createScalarUOM(UnitType.SOLID_ANGLE, Unit.STERADIAN,
+					DomainLocalizer.instance().getUnitString("steradian.name"),
+					DomainLocalizer.instance().getUnitString("steradian.symbol"),
+					DomainLocalizer.instance().getUnitString("steradian.desc"));
 			uom.setConversion(getOne());
 			break;
 
 		case DEGREE:
 			// degree of arc
-			uom = createScalarUOM(UnitType.PLANE_ANGLE, Unit.DEGREE, units.getString("degree.name"),
-					units.getString("degree.symbol"), units.getString("degree.desc"));
+			uom = createScalarUOM(UnitType.PLANE_ANGLE, Unit.DEGREE,
+					DomainLocalizer.instance().getUnitString("degree.name"),
+					DomainLocalizer.instance().getUnitString("degree.symbol"),
+					DomainLocalizer.instance().getUnitString("degree.desc"));
 			uom.setConversion(Math.PI / 180d, getUOM(Unit.RADIAN));
 			break;
 
 		case ARC_SECOND:
 			// degree of arc
-			uom = createScalarUOM(UnitType.PLANE_ANGLE, Unit.ARC_SECOND, units.getString("arcsec.name"),
-					units.getString("arcsec.symbol"), units.getString("arcsec.desc"));
+			uom = createScalarUOM(UnitType.PLANE_ANGLE, Unit.ARC_SECOND,
+					DomainLocalizer.instance().getUnitString("arcsec.name"),
+					DomainLocalizer.instance().getUnitString("arcsec.symbol"),
+					DomainLocalizer.instance().getUnitString("arcsec.desc"));
 			uom.setConversion(Math.PI / 648000d, getUOM(Unit.RADIAN));
 			break;
 
 		case METRE:
 			// fundamental length
-			uom = createScalarUOM(UnitType.LENGTH, Unit.METRE, units.getString("m.name"), units.getString("m.symbol"),
-					units.getString("m.desc"));
+			uom = createScalarUOM(UnitType.LENGTH, Unit.METRE, DomainLocalizer.instance().getUnitString("m.name"),
+					DomainLocalizer.instance().getUnitString("m.symbol"),
+					DomainLocalizer.instance().getUnitString("m.desc"));
 			break;
 
 		case DIOPTER:
 			// per metre
-			uom = createQuotientUOM(UnitType.RECIPROCAL_LENGTH, Unit.DIOPTER, units.getString("diopter.name"),
-					units.getString("diopter.symbol"), units.getString("diopter.desc"), getOne(), getUOM(Unit.METRE));
+			uom = createQuotientUOM(UnitType.RECIPROCAL_LENGTH, Unit.DIOPTER,
+					DomainLocalizer.instance().getUnitString("diopter.name"),
+					DomainLocalizer.instance().getUnitString("diopter.symbol"),
+					DomainLocalizer.instance().getUnitString("diopter.desc"), getOne(), getUOM(Unit.METRE));
 			break;
 
 		case KILOGRAM:
 			// fundamental mass
-			uom = createScalarUOM(UnitType.MASS, Unit.KILOGRAM, units.getString("kg.name"),
-					units.getString("kg.symbol"), units.getString("kg.desc"));
+			uom = createScalarUOM(UnitType.MASS, Unit.KILOGRAM, DomainLocalizer.instance().getUnitString("kg.name"),
+					DomainLocalizer.instance().getUnitString("kg.symbol"),
+					DomainLocalizer.instance().getUnitString("kg.desc"));
 			break;
 
 		case TONNE:
 			// mass
-			uom = createScalarUOM(UnitType.MASS, Unit.TONNE, units.getString("tonne.name"),
-					units.getString("tonne.symbol"), units.getString("tonne.desc"));
+			uom = createScalarUOM(UnitType.MASS, Unit.TONNE, DomainLocalizer.instance().getUnitString("tonne.name"),
+					DomainLocalizer.instance().getUnitString("tonne.symbol"),
+					DomainLocalizer.instance().getUnitString("tonne.desc"));
 			uom.setConversion(Prefix.KILO.getFactor(), getUOM(Unit.KILOGRAM));
 			break;
 
 		case KELVIN:
 			// fundamental temperature
-			uom = createScalarUOM(UnitType.TEMPERATURE, Unit.KELVIN, units.getString("kelvin.name"),
-					units.getString("kelvin.symbol"), units.getString("kelvin.desc"));
+			uom = createScalarUOM(UnitType.TEMPERATURE, Unit.KELVIN,
+					DomainLocalizer.instance().getUnitString("kelvin.name"),
+					DomainLocalizer.instance().getUnitString("kelvin.symbol"),
+					DomainLocalizer.instance().getUnitString("kelvin.desc"));
 			break;
 
 		case AMPERE:
 			// electric current
-			uom = createScalarUOM(UnitType.ELECTRIC_CURRENT, Unit.AMPERE, units.getString("amp.name"),
-					units.getString("amp.symbol"), units.getString("amp.desc"));
+			uom = createScalarUOM(UnitType.ELECTRIC_CURRENT, Unit.AMPERE,
+					DomainLocalizer.instance().getUnitString("amp.name"),
+					DomainLocalizer.instance().getUnitString("amp.symbol"),
+					DomainLocalizer.instance().getUnitString("amp.desc"));
 			break;
 
 		case CANDELA:
 			// luminosity
-			uom = createScalarUOM(UnitType.LUMINOSITY, Unit.CANDELA, units.getString("cd.name"),
-					units.getString("cd.symbol"), units.getString("cd.desc"));
+			uom = createScalarUOM(UnitType.LUMINOSITY, Unit.CANDELA,
+					DomainLocalizer.instance().getUnitString("cd.name"),
+					DomainLocalizer.instance().getUnitString("cd.symbol"),
+					DomainLocalizer.instance().getUnitString("cd.desc"));
 			break;
 
 		case PH:
 			// molar concentration
-			uom = createScalarUOM(UnitType.MOLAR_CONCENTRATION, Unit.PH, units.getString("ph.name"),
-					units.getString("ph.symbol"), units.getString("ph.desc"));
+			uom = createScalarUOM(UnitType.MOLAR_CONCENTRATION, Unit.PH,
+					DomainLocalizer.instance().getUnitString("ph.name"),
+					DomainLocalizer.instance().getUnitString("ph.symbol"),
+					DomainLocalizer.instance().getUnitString("ph.desc"));
 			break;
 
 		case GRAM: // gram
-			uom = createScalarUOM(UnitType.MASS, Unit.GRAM, units.getString("gram.name"),
-					units.getString("gram.symbol"), units.getString("gram.desc"));
+			uom = createScalarUOM(UnitType.MASS, Unit.GRAM, DomainLocalizer.instance().getUnitString("gram.name"),
+					DomainLocalizer.instance().getUnitString("gram.symbol"),
+					DomainLocalizer.instance().getUnitString("gram.desc"));
 			uom.setConversion(Prefix.MILLI.getFactor(), getUOM(Unit.KILOGRAM));
 			break;
 
 		case CARAT:
 			// carat
-			uom = createScalarUOM(UnitType.MASS, Unit.CARAT, units.getString("carat.name"),
-					units.getString("carat.symbol"), units.getString("carat.desc"));
+			uom = createScalarUOM(UnitType.MASS, Unit.CARAT, DomainLocalizer.instance().getUnitString("carat.name"),
+					DomainLocalizer.instance().getUnitString("carat.symbol"),
+					DomainLocalizer.instance().getUnitString("carat.desc"));
 			uom.setConversion(0.2, getUOM(Unit.GRAM));
 			break;
 
 		case SQUARE_METRE:
 			// square metre
-			uom = createPowerUOM(UnitType.AREA, Unit.SQUARE_METRE, units.getString("m2.name"),
-					units.getString("m2.symbol"), units.getString("m2.desc"), getUOM(Unit.METRE), 2);
+			uom = createPowerUOM(UnitType.AREA, Unit.SQUARE_METRE, DomainLocalizer.instance().getUnitString("m2.name"),
+					DomainLocalizer.instance().getUnitString("m2.symbol"),
+					DomainLocalizer.instance().getUnitString("m2.desc"), getUOM(Unit.METRE), 2);
 			break;
 
 		case HECTARE:
 			// hectare
-			uom = createScalarUOM(UnitType.AREA, Unit.HECTARE, units.getString("hectare.name"),
-					units.getString("hectare.symbol"), units.getString("hectare.desc"));
+			uom = createScalarUOM(UnitType.AREA, Unit.HECTARE, DomainLocalizer.instance().getUnitString("hectare.name"),
+					DomainLocalizer.instance().getUnitString("hectare.symbol"),
+					DomainLocalizer.instance().getUnitString("hectare.desc"));
 			uom.setConversion(10000d, getUOM(Unit.SQUARE_METRE));
 			break;
 
 		case METRE_PER_SEC:
 			// velocity
-			uom = createQuotientUOM(UnitType.VELOCITY, Unit.METRE_PER_SEC, units.getString("mps.name"),
-					units.getString("mps.symbol"), units.getString("mps.desc"), getUOM(Unit.METRE), getSecond());
+			uom = createQuotientUOM(UnitType.VELOCITY, Unit.METRE_PER_SEC,
+					DomainLocalizer.instance().getUnitString("mps.name"),
+					DomainLocalizer.instance().getUnitString("mps.symbol"),
+					DomainLocalizer.instance().getUnitString("mps.desc"), getUOM(Unit.METRE), getSecond());
 			break;
 
 		case METRE_PER_SEC_SQUARED:
 			// acceleration
-			uom = createQuotientUOM(UnitType.ACCELERATION, Unit.METRE_PER_SEC_SQUARED, units.getString("mps2.name"),
-					units.getString("mps2.symbol"), units.getString("mps2.desc"), getUOM(Unit.METRE),
+			uom = createQuotientUOM(UnitType.ACCELERATION, Unit.METRE_PER_SEC_SQUARED,
+					DomainLocalizer.instance().getUnitString("mps2.name"),
+					DomainLocalizer.instance().getUnitString("mps2.symbol"),
+					DomainLocalizer.instance().getUnitString("mps2.desc"), getUOM(Unit.METRE),
 					getUOM(Unit.SQUARE_SECOND));
 			break;
 
 		case CUBIC_METRE:
 			// cubic metre
-			uom = createPowerUOM(UnitType.VOLUME, Unit.CUBIC_METRE, units.getString("m3.name"),
-					units.getString("m3.symbol"), units.getString("m3.desc"), getUOM(Unit.METRE), 3);
+			uom = createPowerUOM(UnitType.VOLUME, Unit.CUBIC_METRE, DomainLocalizer.instance().getUnitString("m3.name"),
+					DomainLocalizer.instance().getUnitString("m3.symbol"),
+					DomainLocalizer.instance().getUnitString("m3.desc"), getUOM(Unit.METRE), 3);
 			break;
 
 		case LITRE:
 			// litre
-			uom = createScalarUOM(UnitType.VOLUME, Unit.LITRE, units.getString("litre.name"),
-					units.getString("litre.symbol"), units.getString("litre.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.LITRE, DomainLocalizer.instance().getUnitString("litre.name"),
+					DomainLocalizer.instance().getUnitString("litre.symbol"),
+					DomainLocalizer.instance().getUnitString("litre.desc"));
 			uom.setConversion(Prefix.MILLI.getFactor(), getUOM(Unit.CUBIC_METRE));
 			break;
 
 		case CUBIC_METRE_PER_SEC:
 			// flow (volume)
 			uom = createQuotientUOM(UnitType.VOLUMETRIC_FLOW, Unit.CUBIC_METRE_PER_SEC,
-					units.getString("m3PerSec.name"), units.getString("m3PerSec.symbol"),
-					units.getString("m3PerSec.desc"), getUOM(Unit.CUBIC_METRE), getSecond());
+					DomainLocalizer.instance().getUnitString("m3PerSec.name"),
+					DomainLocalizer.instance().getUnitString("m3PerSec.symbol"),
+					DomainLocalizer.instance().getUnitString("m3PerSec.desc"), getUOM(Unit.CUBIC_METRE), getSecond());
 			break;
 
 		case KILOGRAM_PER_SEC:
 			// flow (mass)
-			uom = createQuotientUOM(UnitType.MASS_FLOW, Unit.KILOGRAM_PER_SEC, units.getString("kgPerSec.name"),
-					units.getString("kgPerSec.symbol"), units.getString("kgPerSec.desc"), getUOM(Unit.KILOGRAM),
-					getSecond());
+			uom = createQuotientUOM(UnitType.MASS_FLOW, Unit.KILOGRAM_PER_SEC,
+					DomainLocalizer.instance().getUnitString("kgPerSec.name"),
+					DomainLocalizer.instance().getUnitString("kgPerSec.symbol"),
+					DomainLocalizer.instance().getUnitString("kgPerSec.desc"), getUOM(Unit.KILOGRAM), getSecond());
 			break;
 
 		case KILOGRAM_PER_CU_METRE:
 			// kg/m^3
-			uom = createQuotientUOM(UnitType.DENSITY, Unit.KILOGRAM_PER_CU_METRE, units.getString("kg_m3.name"),
-					units.getString("kg_m3.symbol"), units.getString("kg_m3.desc"), getUOM(Unit.KILOGRAM),
+			uom = createQuotientUOM(UnitType.DENSITY, Unit.KILOGRAM_PER_CU_METRE,
+					DomainLocalizer.instance().getUnitString("kg_m3.name"),
+					DomainLocalizer.instance().getUnitString("kg_m3.symbol"),
+					DomainLocalizer.instance().getUnitString("kg_m3.desc"), getUOM(Unit.KILOGRAM),
 					getUOM(Unit.CUBIC_METRE));
 			break;
 
 		case PASCAL_SECOND:
 			// dynamic viscosity
-			uom = createProductUOM(UnitType.DYNAMIC_VISCOSITY, Unit.PASCAL_SECOND, units.getString("pascal_sec.name"),
-					units.getString("pascal_sec.symbol"), units.getString("pascal_sec.desc"), getUOM(Unit.PASCAL),
-					getSecond());
+			uom = createProductUOM(UnitType.DYNAMIC_VISCOSITY, Unit.PASCAL_SECOND,
+					DomainLocalizer.instance().getUnitString("pascal_sec.name"),
+					DomainLocalizer.instance().getUnitString("pascal_sec.symbol"),
+					DomainLocalizer.instance().getUnitString("pascal_sec.desc"), getUOM(Unit.PASCAL), getSecond());
 			break;
 
 		case SQUARE_METRE_PER_SEC:
 			// kinematic viscosity
 			uom = createQuotientUOM(UnitType.KINEMATIC_VISCOSITY, Unit.SQUARE_METRE_PER_SEC,
-					units.getString("m2PerSec.name"), units.getString("m2PerSec.symbol"),
-					units.getString("m2PerSec.desc"), getUOM(Unit.SQUARE_METRE), getSecond());
+					DomainLocalizer.instance().getUnitString("m2PerSec.name"),
+					DomainLocalizer.instance().getUnitString("m2PerSec.symbol"),
+					DomainLocalizer.instance().getUnitString("m2PerSec.desc"), getUOM(Unit.SQUARE_METRE), getSecond());
 			break;
 
 		case CALORIE:
 			// thermodynamic calorie
-			uom = createScalarUOM(UnitType.ENERGY, Unit.CALORIE, units.getString("calorie.name"),
-					units.getString("calorie.symbol"), units.getString("calorie.desc"));
+			uom = createScalarUOM(UnitType.ENERGY, Unit.CALORIE,
+					DomainLocalizer.instance().getUnitString("calorie.name"),
+					DomainLocalizer.instance().getUnitString("calorie.symbol"),
+					DomainLocalizer.instance().getUnitString("calorie.desc"));
 			uom.setConversion(4.184, getUOM(Unit.JOULE));
 			break;
 
 		case NEWTON:
 			// force F = m�A (newton)
-			uom = createProductUOM(UnitType.FORCE, Unit.NEWTON, units.getString("newton.name"),
-					units.getString("newton.symbol"), units.getString("newton.desc"), getUOM(Unit.KILOGRAM),
+			uom = createProductUOM(UnitType.FORCE, Unit.NEWTON, DomainLocalizer.instance().getUnitString("newton.name"),
+					DomainLocalizer.instance().getUnitString("newton.symbol"),
+					DomainLocalizer.instance().getUnitString("newton.desc"), getUOM(Unit.KILOGRAM),
 					getUOM(Unit.METRE_PER_SEC_SQUARED));
 			break;
 
 		case NEWTON_METRE:
 			// newton-metre
-			uom = createProductUOM(UnitType.ENERGY, Unit.NEWTON_METRE, units.getString("n_m.name"),
-					units.getString("n_m.symbol"), units.getString("n_m.desc"), getUOM(Unit.NEWTON),
-					getUOM(Unit.METRE));
+			uom = createProductUOM(UnitType.ENERGY, Unit.NEWTON_METRE,
+					DomainLocalizer.instance().getUnitString("n_m.name"),
+					DomainLocalizer.instance().getUnitString("n_m.symbol"),
+					DomainLocalizer.instance().getUnitString("n_m.desc"), getUOM(Unit.NEWTON), getUOM(Unit.METRE));
 			break;
 
 		case JOULE:
 			// energy (joule)
-			uom = createProductUOM(UnitType.ENERGY, Unit.JOULE, units.getString("joule.name"),
-					units.getString("joule.symbol"), units.getString("joule.desc"), getUOM(Unit.NEWTON),
-					getUOM(Unit.METRE));
+			uom = createProductUOM(UnitType.ENERGY, Unit.JOULE, DomainLocalizer.instance().getUnitString("joule.name"),
+					DomainLocalizer.instance().getUnitString("joule.symbol"),
+					DomainLocalizer.instance().getUnitString("joule.desc"), getUOM(Unit.NEWTON), getUOM(Unit.METRE));
 			break;
 
 		case ELECTRON_VOLT:
 			// ev
 			Quantity e = this.getQuantity(Constant.ELEMENTARY_CHARGE);
-			uom = createProductUOM(UnitType.ENERGY, Unit.ELECTRON_VOLT, units.getString("ev.name"),
-					units.getString("ev.symbol"), units.getString("ev.desc"), e.getUOM(), getUOM(Unit.VOLT));
+			uom = createProductUOM(UnitType.ENERGY, Unit.ELECTRON_VOLT,
+					DomainLocalizer.instance().getUnitString("ev.name"),
+					DomainLocalizer.instance().getUnitString("ev.symbol"),
+					DomainLocalizer.instance().getUnitString("ev.desc"), e.getUOM(), getUOM(Unit.VOLT));
 			uom.setScalingFactor(e.getAmount());
 			break;
 
 		case WATT_HOUR:
 			// watt-hour
-			uom = createProductUOM(UnitType.ENERGY, Unit.WATT_HOUR, units.getString("wh.name"),
-					units.getString("wh.symbol"), units.getString("wh.desc"), getUOM(Unit.WATT), getHour());
+			uom = createProductUOM(UnitType.ENERGY, Unit.WATT_HOUR, DomainLocalizer.instance().getUnitString("wh.name"),
+					DomainLocalizer.instance().getUnitString("wh.symbol"),
+					DomainLocalizer.instance().getUnitString("wh.desc"), getUOM(Unit.WATT), getHour());
 			break;
 
 		case WATT:
 			// power (watt)
-			uom = createQuotientUOM(UnitType.POWER, Unit.WATT, units.getString("watt.name"),
-					units.getString("watt.symbol"), units.getString("watt.desc"), getUOM(Unit.JOULE), getSecond());
+			uom = createQuotientUOM(UnitType.POWER, Unit.WATT, DomainLocalizer.instance().getUnitString("watt.name"),
+					DomainLocalizer.instance().getUnitString("watt.symbol"),
+					DomainLocalizer.instance().getUnitString("watt.desc"), getUOM(Unit.JOULE), getSecond());
 			break;
 
 		case HERTZ:
 			// frequency (hertz)
-			uom = createQuotientUOM(UnitType.FREQUENCY, Unit.HERTZ, units.getString("hertz.name"),
-					units.getString("hertz.symbol"), units.getString("hertz.desc"), getOne(), getSecond());
+			uom = createQuotientUOM(UnitType.FREQUENCY, Unit.HERTZ,
+					DomainLocalizer.instance().getUnitString("hertz.name"),
+					DomainLocalizer.instance().getUnitString("hertz.symbol"),
+					DomainLocalizer.instance().getUnitString("hertz.desc"), getOne(), getSecond());
 			break;
 
 		case RAD_PER_SEC:
 			// angular frequency
-			uom = createQuotientUOM(UnitType.FREQUENCY, Unit.RAD_PER_SEC, units.getString("radpers.name"),
-					units.getString("radpers.symbol"), units.getString("radpers.desc"), getUOM(Unit.RADIAN),
-					getSecond());
+			uom = createQuotientUOM(UnitType.FREQUENCY, Unit.RAD_PER_SEC,
+					DomainLocalizer.instance().getUnitString("radpers.name"),
+					DomainLocalizer.instance().getUnitString("radpers.symbol"),
+					DomainLocalizer.instance().getUnitString("radpers.desc"), getUOM(Unit.RADIAN), getSecond());
 			uom.setConversion(1.0 / (2.0d * Math.PI), getUOM(Unit.HERTZ));
 			break;
 
 		case PASCAL:
 			// pressure
-			uom = createQuotientUOM(UnitType.PRESSURE, Unit.PASCAL, units.getString("pascal.name"),
-					units.getString("pascal.symbol"), units.getString("pascal.desc"), getUOM(Unit.NEWTON),
+			uom = createQuotientUOM(UnitType.PRESSURE, Unit.PASCAL,
+					DomainLocalizer.instance().getUnitString("pascal.name"),
+					DomainLocalizer.instance().getUnitString("pascal.symbol"),
+					DomainLocalizer.instance().getUnitString("pascal.desc"), getUOM(Unit.NEWTON),
 					getUOM(Unit.SQUARE_METRE));
 			break;
 
 		case ATMOSPHERE:
 			// pressure
-			uom = createScalarUOM(UnitType.PRESSURE, Unit.ATMOSPHERE, units.getString("atm.name"),
-					units.getString("atm.symbol"), units.getString("atm.desc"));
+			uom = createScalarUOM(UnitType.PRESSURE, Unit.ATMOSPHERE,
+					DomainLocalizer.instance().getUnitString("atm.name"),
+					DomainLocalizer.instance().getUnitString("atm.symbol"),
+					DomainLocalizer.instance().getUnitString("atm.desc"));
 			uom.setConversion(101325d, getUOM(Unit.PASCAL));
 			break;
 
 		case BAR:
 			// pressure
-			uom = createScalarUOM(UnitType.PRESSURE, Unit.BAR, units.getString("bar.name"),
-					units.getString("bar.symbol"), units.getString("bar.desc"));
+			uom = createScalarUOM(UnitType.PRESSURE, Unit.BAR, DomainLocalizer.instance().getUnitString("bar.name"),
+					DomainLocalizer.instance().getUnitString("bar.symbol"),
+					DomainLocalizer.instance().getUnitString("bar.desc"));
 			uom.setConversion(1.0, getUOM(Unit.PASCAL), 1.0E+05);
 			break;
 
 		case COULOMB:
 			// charge (coulomb)
-			uom = createProductUOM(UnitType.ELECTRIC_CHARGE, Unit.COULOMB, units.getString("coulomb.name"),
-					units.getString("coulomb.symbol"), units.getString("coulomb.desc"), getUOM(Unit.AMPERE),
-					getSecond());
+			uom = createProductUOM(UnitType.ELECTRIC_CHARGE, Unit.COULOMB,
+					DomainLocalizer.instance().getUnitString("coulomb.name"),
+					DomainLocalizer.instance().getUnitString("coulomb.symbol"),
+					DomainLocalizer.instance().getUnitString("coulomb.desc"), getUOM(Unit.AMPERE), getSecond());
 			break;
 
 		case VOLT:
 			// voltage (volt)
-			uom = createQuotientUOM(UnitType.ELECTROMOTIVE_FORCE, Unit.VOLT, units.getString("volt.name"),
-					units.getString("volt.symbol"), units.getString("volt.desc"), getUOM(Unit.WATT),
-					getUOM(Unit.AMPERE));
+			uom = createQuotientUOM(UnitType.ELECTROMOTIVE_FORCE, Unit.VOLT,
+					DomainLocalizer.instance().getUnitString("volt.name"),
+					DomainLocalizer.instance().getUnitString("volt.symbol"),
+					DomainLocalizer.instance().getUnitString("volt.desc"), getUOM(Unit.WATT), getUOM(Unit.AMPERE));
 			break;
 
 		case OHM:
 			// resistance (ohm)
-			uom = createQuotientUOM(UnitType.ELECTRIC_RESISTANCE, Unit.OHM, units.getString("ohm.name"),
-					units.getString("ohm.symbol"), units.getString("ohm.desc"), getUOM(Unit.VOLT), getUOM(Unit.AMPERE));
+			uom = createQuotientUOM(UnitType.ELECTRIC_RESISTANCE, Unit.OHM,
+					DomainLocalizer.instance().getUnitString("ohm.name"),
+					DomainLocalizer.instance().getUnitString("ohm.symbol"),
+					DomainLocalizer.instance().getUnitString("ohm.desc"), getUOM(Unit.VOLT), getUOM(Unit.AMPERE));
 			break;
 
 		case FARAD:
 			// capacitance (farad)
-			uom = createQuotientUOM(UnitType.ELECTRIC_CAPACITANCE, Unit.FARAD, units.getString("farad.name"),
-					units.getString("farad.symbol"), units.getString("farad.desc"), getUOM(Unit.COULOMB),
-					getUOM(Unit.VOLT));
+			uom = createQuotientUOM(UnitType.ELECTRIC_CAPACITANCE, Unit.FARAD,
+					DomainLocalizer.instance().getUnitString("farad.name"),
+					DomainLocalizer.instance().getUnitString("farad.symbol"),
+					DomainLocalizer.instance().getUnitString("farad.desc"), getUOM(Unit.COULOMB), getUOM(Unit.VOLT));
 			break;
 
 		case FARAD_PER_METRE:
 			// electric permittivity (farad/metre)
-			uom = createQuotientUOM(UnitType.ELECTRIC_PERMITTIVITY, Unit.FARAD_PER_METRE, units.getString("fperm.name"),
-					units.getString("fperm.symbol"), units.getString("fperm.desc"), getUOM(Unit.FARAD),
-					getUOM(Unit.METRE));
+			uom = createQuotientUOM(UnitType.ELECTRIC_PERMITTIVITY, Unit.FARAD_PER_METRE,
+					DomainLocalizer.instance().getUnitString("fperm.name"),
+					DomainLocalizer.instance().getUnitString("fperm.symbol"),
+					DomainLocalizer.instance().getUnitString("fperm.desc"), getUOM(Unit.FARAD), getUOM(Unit.METRE));
 			break;
 
 		case AMPERE_PER_METRE:
 			// electric field strength(ampere/metre)
 			uom = createQuotientUOM(UnitType.ELECTRIC_FIELD_STRENGTH, Unit.AMPERE_PER_METRE,
-					units.getString("aperm.name"), units.getString("aperm.symbol"), units.getString("aperm.desc"),
-					getUOM(Unit.AMPERE), getUOM(Unit.METRE));
+					DomainLocalizer.instance().getUnitString("aperm.name"),
+					DomainLocalizer.instance().getUnitString("aperm.symbol"),
+					DomainLocalizer.instance().getUnitString("aperm.desc"), getUOM(Unit.AMPERE), getUOM(Unit.METRE));
 			break;
 
 		case WEBER:
 			// magnetic flux (weber)
-			uom = createProductUOM(UnitType.MAGNETIC_FLUX, Unit.WEBER, units.getString("weber.name"),
-					units.getString("weber.symbol"), units.getString("weber.desc"), getUOM(Unit.VOLT), getSecond());
+			uom = createProductUOM(UnitType.MAGNETIC_FLUX, Unit.WEBER,
+					DomainLocalizer.instance().getUnitString("weber.name"),
+					DomainLocalizer.instance().getUnitString("weber.symbol"),
+					DomainLocalizer.instance().getUnitString("weber.desc"), getUOM(Unit.VOLT), getSecond());
 			break;
 
 		case TESLA:
 			// magnetic flux density (tesla)
-			uom = createQuotientUOM(UnitType.MAGNETIC_FLUX_DENSITY, Unit.TESLA, units.getString("tesla.name"),
-					units.getString("tesla.symbol"), units.getString("tesla.desc"), getUOM(Unit.WEBER),
+			uom = createQuotientUOM(UnitType.MAGNETIC_FLUX_DENSITY, Unit.TESLA,
+					DomainLocalizer.instance().getUnitString("tesla.name"),
+					DomainLocalizer.instance().getUnitString("tesla.symbol"),
+					DomainLocalizer.instance().getUnitString("tesla.desc"), getUOM(Unit.WEBER),
 					getUOM(Unit.SQUARE_METRE));
 			break;
 
 		case HENRY:
 			// inductance (henry)
-			uom = createQuotientUOM(UnitType.ELECTRIC_INDUCTANCE, Unit.HENRY, units.getString("henry.name"),
-					units.getString("henry.symbol"), units.getString("henry.desc"), getUOM(Unit.WEBER),
-					getUOM(Unit.AMPERE));
+			uom = createQuotientUOM(UnitType.ELECTRIC_INDUCTANCE, Unit.HENRY,
+					DomainLocalizer.instance().getUnitString("henry.name"),
+					DomainLocalizer.instance().getUnitString("henry.symbol"),
+					DomainLocalizer.instance().getUnitString("henry.desc"), getUOM(Unit.WEBER), getUOM(Unit.AMPERE));
 			break;
 
 		case SIEMENS:
 			// electrical conductance (siemens)
-			uom = createQuotientUOM(UnitType.ELECTRIC_CONDUCTANCE, Unit.SIEMENS, units.getString("siemens.name"),
-					units.getString("siemens.symbol"), units.getString("siemens.desc"), getUOM(Unit.AMPERE),
-					getUOM(Unit.VOLT));
+			uom = createQuotientUOM(UnitType.ELECTRIC_CONDUCTANCE, Unit.SIEMENS,
+					DomainLocalizer.instance().getUnitString("siemens.name"),
+					DomainLocalizer.instance().getUnitString("siemens.symbol"),
+					DomainLocalizer.instance().getUnitString("siemens.desc"), getUOM(Unit.AMPERE), getUOM(Unit.VOLT));
 			break;
 
 		case CELSIUS:
 			// �C = �K - 273.15
-			uom = createScalarUOM(UnitType.TEMPERATURE, Unit.CELSIUS, units.getString("celsius.name"),
-					units.getString("celsius.symbol"), units.getString("celsius.desc"));
+			uom = createScalarUOM(UnitType.TEMPERATURE, Unit.CELSIUS,
+					DomainLocalizer.instance().getUnitString("celsius.name"),
+					DomainLocalizer.instance().getUnitString("celsius.symbol"),
+					DomainLocalizer.instance().getUnitString("celsius.desc"));
 			uom.setConversion(1.0, getUOM(Unit.KELVIN), 273.15);
 			break;
 
 		case LUMEN:
 			// luminous flux (lumen)
-			uom = createProductUOM(UnitType.LUMINOUS_FLUX, Unit.LUMEN, units.getString("lumen.name"),
-					units.getString("lumen.symbol"), units.getString("lumen.desc"), getUOM(Unit.CANDELA),
+			uom = createProductUOM(UnitType.LUMINOUS_FLUX, Unit.LUMEN,
+					DomainLocalizer.instance().getUnitString("lumen.name"),
+					DomainLocalizer.instance().getUnitString("lumen.symbol"),
+					DomainLocalizer.instance().getUnitString("lumen.desc"), getUOM(Unit.CANDELA),
 					getUOM(Unit.STERADIAN));
 			break;
 
 		case LUX:
 			// illuminance (lux)
-			uom = createQuotientUOM(UnitType.ILLUMINANCE, Unit.LUX, units.getString("lux.name"),
-					units.getString("lux.symbol"), units.getString("lux.desc"), getUOM(Unit.LUMEN),
+			uom = createQuotientUOM(UnitType.ILLUMINANCE, Unit.LUX,
+					DomainLocalizer.instance().getUnitString("lux.name"),
+					DomainLocalizer.instance().getUnitString("lux.symbol"),
+					DomainLocalizer.instance().getUnitString("lux.desc"), getUOM(Unit.LUMEN),
 					getUOM(Unit.SQUARE_METRE));
 			break;
 
 		case BECQUEREL:
 			// radioactivity (becquerel). Same base symbol as Hertz
-			uom = createScalarUOM(UnitType.RADIOACTIVITY, Unit.BECQUEREL, units.getString("becquerel.name"),
-					units.getString("becquerel.symbol"), units.getString("becquerel.desc"));
+			uom = createScalarUOM(UnitType.RADIOACTIVITY, Unit.BECQUEREL,
+					DomainLocalizer.instance().getUnitString("becquerel.name"),
+					DomainLocalizer.instance().getUnitString("becquerel.symbol"),
+					DomainLocalizer.instance().getUnitString("becquerel.desc"));
 			break;
 
 		case GRAY:
 			// gray (Gy)
-			uom = createQuotientUOM(UnitType.RADIATION_DOSE_ABSORBED, Unit.GRAY, units.getString("gray.name"),
-					units.getString("gray.symbol"), units.getString("gray.desc"), getUOM(Unit.JOULE),
-					getUOM(Unit.KILOGRAM));
+			uom = createQuotientUOM(UnitType.RADIATION_DOSE_ABSORBED, Unit.GRAY,
+					DomainLocalizer.instance().getUnitString("gray.name"),
+					DomainLocalizer.instance().getUnitString("gray.symbol"),
+					DomainLocalizer.instance().getUnitString("gray.desc"), getUOM(Unit.JOULE), getUOM(Unit.KILOGRAM));
 			break;
 
 		case SIEVERT:
 			// sievert (Sv)
-			uom = createQuotientUOM(UnitType.RADIATION_DOSE_EFFECTIVE, Unit.SIEVERT, units.getString("sievert.name"),
-					units.getString("sievert.symbol"), units.getString("sievert.desc"), getUOM(Unit.JOULE),
+			uom = createQuotientUOM(UnitType.RADIATION_DOSE_EFFECTIVE, Unit.SIEVERT,
+					DomainLocalizer.instance().getUnitString("sievert.name"),
+					DomainLocalizer.instance().getUnitString("sievert.symbol"),
+					DomainLocalizer.instance().getUnitString("sievert.desc"), getUOM(Unit.JOULE),
 					getUOM(Unit.KILOGRAM));
 			break;
 
 		case SIEVERTS_PER_HOUR:
-			uom = createQuotientUOM(UnitType.RADIATION_DOSE_RATE, Unit.SIEVERTS_PER_HOUR, units.getString("sph.name"),
-					units.getString("sph.symbol"), units.getString("sph.desc"), getUOM(Unit.SIEVERT), getHour());
+			uom = createQuotientUOM(UnitType.RADIATION_DOSE_RATE, Unit.SIEVERTS_PER_HOUR,
+					DomainLocalizer.instance().getUnitString("sph.name"),
+					DomainLocalizer.instance().getUnitString("sph.symbol"),
+					DomainLocalizer.instance().getUnitString("sph.desc"), getUOM(Unit.SIEVERT), getHour());
 			break;
 
 		case KATAL:
 			// katal (kat)
-			uom = createQuotientUOM(UnitType.CATALYTIC_ACTIVITY, Unit.KATAL, units.getString("katal.name"),
-					units.getString("katal.symbol"), units.getString("katal.desc"), getUOM(Unit.MOLE), getSecond());
+			uom = createQuotientUOM(UnitType.CATALYTIC_ACTIVITY, Unit.KATAL,
+					DomainLocalizer.instance().getUnitString("katal.name"),
+					DomainLocalizer.instance().getUnitString("katal.symbol"),
+					DomainLocalizer.instance().getUnitString("katal.desc"), getUOM(Unit.MOLE), getSecond());
 			break;
 
 		case UNIT:
 			// Unit (U)
-			uom = createScalarUOM(UnitType.CATALYTIC_ACTIVITY, Unit.UNIT, units.getString("unit.name"),
-					units.getString("unit.symbol"), units.getString("unit.desc"));
+			uom = createScalarUOM(UnitType.CATALYTIC_ACTIVITY, Unit.UNIT,
+					DomainLocalizer.instance().getUnitString("unit.name"),
+					DomainLocalizer.instance().getUnitString("unit.symbol"),
+					DomainLocalizer.instance().getUnitString("unit.desc"));
 			uom.setConversion(1.0E-06 / 60d, getUOM(Unit.KATAL));
 			break;
 
 		case INTERNATIONAL_UNIT:
-			uom = createScalarUOM(UnitType.SUBSTANCE_AMOUNT, Unit.INTERNATIONAL_UNIT, units.getString("iu.name"),
-					units.getString("iu.symbol"), units.getString("iu.desc"));
+			uom = createScalarUOM(UnitType.SUBSTANCE_AMOUNT, Unit.INTERNATIONAL_UNIT,
+					DomainLocalizer.instance().getUnitString("iu.name"),
+					DomainLocalizer.instance().getUnitString("iu.symbol"),
+					DomainLocalizer.instance().getUnitString("iu.desc"));
 			break;
 
 		case ANGSTROM:
 			// length
-			uom = createScalarUOM(UnitType.LENGTH, Unit.ANGSTROM, units.getString("angstrom.name"),
-					units.getString("angstrom.symbol"), units.getString("angstrom.desc"));
+			uom = createScalarUOM(UnitType.LENGTH, Unit.ANGSTROM,
+					DomainLocalizer.instance().getUnitString("angstrom.name"),
+					DomainLocalizer.instance().getUnitString("angstrom.symbol"),
+					DomainLocalizer.instance().getUnitString("angstrom.desc"));
 			uom.setConversion(0.1, getUOM(Prefix.NANO, getUOM(Unit.METRE)));
 			break;
 
 		case BIT:
 			// computer bit
-			uom = createScalarUOM(UnitType.COMPUTER_SCIENCE, Unit.BIT, units.getString("bit.name"),
-					units.getString("bit.symbol"), units.getString("bit.desc"));
+			uom = createScalarUOM(UnitType.COMPUTER_SCIENCE, Unit.BIT,
+					DomainLocalizer.instance().getUnitString("bit.name"),
+					DomainLocalizer.instance().getUnitString("bit.symbol"),
+					DomainLocalizer.instance().getUnitString("bit.desc"));
 			break;
 
 		case BYTE:
 			// computer byte
-			uom = createScalarUOM(UnitType.COMPUTER_SCIENCE, Unit.BYTE, units.getString("byte.name"),
-					units.getString("byte.symbol"), units.getString("byte.desc"));
+			uom = createScalarUOM(UnitType.COMPUTER_SCIENCE, Unit.BYTE,
+					DomainLocalizer.instance().getUnitString("byte.name"),
+					DomainLocalizer.instance().getUnitString("byte.symbol"),
+					DomainLocalizer.instance().getUnitString("byte.desc"));
 			uom.setConversion(8d, getUOM(Unit.BIT));
 			break;
 
 		case WATTS_PER_SQ_METRE:
-			uom = createQuotientUOM(UnitType.IRRADIANCE, Unit.WATTS_PER_SQ_METRE, units.getString("wsm.name"),
-					units.getString("wsm.symbol"), units.getString("wsm.desc"), getUOM(Unit.WATT),
-					getUOM(Unit.SQUARE_METRE));
+			uom = createQuotientUOM(UnitType.IRRADIANCE, Unit.WATTS_PER_SQ_METRE,
+					DomainLocalizer.instance().getUnitString("wsm.name"),
+					DomainLocalizer.instance().getUnitString("wsm.symbol"),
+					DomainLocalizer.instance().getUnitString("wsm.desc"), getUOM(Unit.WATT), getUOM(Unit.SQUARE_METRE));
 			break;
 
 		case PARSEC:
-			uom = createScalarUOM(UnitType.LENGTH, Unit.PARSEC, units.getString("parsec.name"),
-					units.getString("parsec.symbol"), units.getString("parsec.desc"));
+			uom = createScalarUOM(UnitType.LENGTH, Unit.PARSEC, DomainLocalizer.instance().getUnitString("parsec.name"),
+					DomainLocalizer.instance().getUnitString("parsec.symbol"),
+					DomainLocalizer.instance().getUnitString("parsec.desc"));
 			uom.setConversion(3.08567758149137E+16, getUOM(Unit.METRE));
 			break;
 
 		case ASTRONOMICAL_UNIT:
-			uom = createScalarUOM(UnitType.LENGTH, Unit.ASTRONOMICAL_UNIT, units.getString("au.name"),
-					units.getString("au.symbol"), units.getString("au.desc"));
+			uom = createScalarUOM(UnitType.LENGTH, Unit.ASTRONOMICAL_UNIT,
+					DomainLocalizer.instance().getUnitString("au.name"),
+					DomainLocalizer.instance().getUnitString("au.symbol"),
+					DomainLocalizer.instance().getUnitString("au.desc"));
 			uom.setConversion(1.49597870700E+11, getUOM(Unit.METRE));
 			break;
 
 		case NORMALITY:
 			// equivalent concentration
-			uom = createScalarUOM(UnitType.MOLAR_CONCENTRATION, Unit.NORMALITY, units.getString("normal.name"),
-					units.getString("normal.symbol"), units.getString("normal.desc"));
+			uom = createScalarUOM(UnitType.MOLAR_CONCENTRATION, Unit.NORMALITY,
+					DomainLocalizer.instance().getUnitString("normal.name"),
+					DomainLocalizer.instance().getUnitString("normal.symbol"),
+					DomainLocalizer.instance().getUnitString("normal.desc"));
 			break;
 
 		default:
@@ -845,8 +957,10 @@ public class MeasurementSystem {
 
 		case RANKINE:
 			// Rankine (base)
-			uom = createScalarUOM(UnitType.TEMPERATURE, Unit.RANKINE, units.getString("rankine.name"),
-					units.getString("rankine.symbol"), units.getString("rankine.desc"));
+			uom = createScalarUOM(UnitType.TEMPERATURE, Unit.RANKINE,
+					DomainLocalizer.instance().getUnitString("rankine.name"),
+					DomainLocalizer.instance().getUnitString("rankine.symbol"),
+					DomainLocalizer.instance().getUnitString("rankine.desc"));
 
 			// create bridge to SI
 			uom.setBridgeConversion(5d / 9d, getUOM(Unit.KELVIN), 0.0d);
@@ -854,15 +968,18 @@ public class MeasurementSystem {
 
 		case FAHRENHEIT:
 			// Fahrenheit
-			uom = createScalarUOM(UnitType.TEMPERATURE, Unit.FAHRENHEIT, units.getString("fahrenheit.name"),
-					units.getString("fahrenheit.symbol"), units.getString("fahrenheit.desc"));
+			uom = createScalarUOM(UnitType.TEMPERATURE, Unit.FAHRENHEIT,
+					DomainLocalizer.instance().getUnitString("fahrenheit.name"),
+					DomainLocalizer.instance().getUnitString("fahrenheit.symbol"),
+					DomainLocalizer.instance().getUnitString("fahrenheit.desc"));
 			uom.setConversion(1.0, getUOM(Unit.RANKINE), 459.67);
 			break;
 
 		case POUND_MASS:
 			// lb mass (base)
-			uom = createScalarUOM(UnitType.MASS, Unit.POUND_MASS, units.getString("lbm.name"),
-					units.getString("lbm.symbol"), units.getString("lbm.desc"));
+			uom = createScalarUOM(UnitType.MASS, Unit.POUND_MASS, DomainLocalizer.instance().getUnitString("lbm.name"),
+					DomainLocalizer.instance().getUnitString("lbm.symbol"),
+					DomainLocalizer.instance().getUnitString("lbm.desc"));
 
 			// create bridge to SI
 			uom.setBridgeConversion(0.45359237, getUOM(Unit.KILOGRAM), 0.0d);
@@ -870,30 +987,35 @@ public class MeasurementSystem {
 
 		case OUNCE:
 			// ounce
-			uom = createScalarUOM(UnitType.MASS, Unit.OUNCE, units.getString("ounce.name"),
-					units.getString("ounce.symbol"), units.getString("ounce.desc"));
+			uom = createScalarUOM(UnitType.MASS, Unit.OUNCE, DomainLocalizer.instance().getUnitString("ounce.name"),
+					DomainLocalizer.instance().getUnitString("ounce.symbol"),
+					DomainLocalizer.instance().getUnitString("ounce.desc"));
 			uom.setConversion(0.0625, getUOM(Unit.POUND_MASS));
 			break;
 
 		case TROY_OUNCE:
 			// troy ounce
-			uom = createScalarUOM(UnitType.MASS, Unit.TROY_OUNCE, units.getString("troy_oz.name"),
-					units.getString("troy_oz.symbol"), units.getString("troy_oz.desc"));
+			uom = createScalarUOM(UnitType.MASS, Unit.TROY_OUNCE,
+					DomainLocalizer.instance().getUnitString("troy_oz.name"),
+					DomainLocalizer.instance().getUnitString("troy_oz.symbol"),
+					DomainLocalizer.instance().getUnitString("troy_oz.desc"));
 			uom.setConversion(31.1034768, getUOM(Unit.GRAM));
 			break;
 
 		case SLUG:
 			// slug
-			uom = createScalarUOM(UnitType.MASS, Unit.SLUG, units.getString("slug.name"),
-					units.getString("slug.symbol"), units.getString("slug.desc"));
+			uom = createScalarUOM(UnitType.MASS, Unit.SLUG, DomainLocalizer.instance().getUnitString("slug.name"),
+					DomainLocalizer.instance().getUnitString("slug.symbol"),
+					DomainLocalizer.instance().getUnitString("slug.desc"));
 			Quantity g = getQuantity(Constant.GRAVITY).convert(getUOM(Unit.FEET_PER_SEC_SQUARED));
 			uom.setConversion(g.getAmount(), getUOM(Unit.POUND_MASS));
 			break;
 
 		case FOOT:
 			// foot (foot is base conversion unit)
-			uom = createScalarUOM(UnitType.LENGTH, Unit.FOOT, units.getString("foot.name"),
-					units.getString("foot.symbol"), units.getString("foot.desc"));
+			uom = createScalarUOM(UnitType.LENGTH, Unit.FOOT, DomainLocalizer.instance().getUnitString("foot.name"),
+					DomainLocalizer.instance().getUnitString("foot.symbol"),
+					DomainLocalizer.instance().getUnitString("foot.desc"));
 
 			// bridge to SI
 			uom.setBridgeConversion(0.3048, getUOM(Unit.METRE), 0);
@@ -901,172 +1023,203 @@ public class MeasurementSystem {
 
 		case INCH:
 			// inch
-			uom = createScalarUOM(UnitType.LENGTH, Unit.INCH, units.getString("inch.name"),
-					units.getString("inch.symbol"), units.getString("inch.desc"));
+			uom = createScalarUOM(UnitType.LENGTH, Unit.INCH, DomainLocalizer.instance().getUnitString("inch.name"),
+					DomainLocalizer.instance().getUnitString("inch.symbol"),
+					DomainLocalizer.instance().getUnitString("inch.desc"));
 			uom.setConversion(1d / 12d, getUOM(Unit.FOOT));
 			break;
 
 		case MIL:
 			// inch
-			uom = createScalarUOM(UnitType.LENGTH, Unit.MIL, units.getString("mil.name"), units.getString("mil.symbol"),
-					units.getString("mil.desc"));
+			uom = createScalarUOM(UnitType.LENGTH, Unit.MIL, DomainLocalizer.instance().getUnitString("mil.name"),
+					DomainLocalizer.instance().getUnitString("mil.symbol"),
+					DomainLocalizer.instance().getUnitString("mil.desc"));
 			uom.setConversion(Prefix.MILLI.getFactor(), getUOM(Unit.INCH));
 			break;
 
 		case POINT:
 			// point
-			uom = createScalarUOM(UnitType.LENGTH, Unit.POINT, units.getString("point.name"),
-					units.getString("point.symbol"), units.getString("point.desc"));
+			uom = createScalarUOM(UnitType.LENGTH, Unit.POINT, DomainLocalizer.instance().getUnitString("point.name"),
+					DomainLocalizer.instance().getUnitString("point.symbol"),
+					DomainLocalizer.instance().getUnitString("point.desc"));
 			uom.setConversion(1d / 72d, getUOM(Unit.INCH));
 			break;
 
 		case YARD:
 			// yard
-			uom = createScalarUOM(UnitType.LENGTH, Unit.YARD, units.getString("yard.name"),
-					units.getString("yard.symbol"), units.getString("yard.desc"));
+			uom = createScalarUOM(UnitType.LENGTH, Unit.YARD, DomainLocalizer.instance().getUnitString("yard.name"),
+					DomainLocalizer.instance().getUnitString("yard.symbol"),
+					DomainLocalizer.instance().getUnitString("yard.desc"));
 			uom.setConversion(3d, getUOM(Unit.FOOT));
 			break;
 
 		case MILE:
 			// mile
-			uom = createScalarUOM(UnitType.LENGTH, Unit.MILE, units.getString("mile.name"),
-					units.getString("mile.symbol"), units.getString("mile.desc"));
+			uom = createScalarUOM(UnitType.LENGTH, Unit.MILE, DomainLocalizer.instance().getUnitString("mile.name"),
+					DomainLocalizer.instance().getUnitString("mile.symbol"),
+					DomainLocalizer.instance().getUnitString("mile.desc"));
 			uom.setConversion(5280d, getUOM(Unit.FOOT));
 			break;
 
 		case NAUTICAL_MILE:
 			// nautical mile
-			uom = createScalarUOM(UnitType.LENGTH, Unit.NAUTICAL_MILE, units.getString("NM.name"),
-					units.getString("NM.symbol"), units.getString("NM.desc"));
+			uom = createScalarUOM(UnitType.LENGTH, Unit.NAUTICAL_MILE,
+					DomainLocalizer.instance().getUnitString("NM.name"),
+					DomainLocalizer.instance().getUnitString("NM.symbol"),
+					DomainLocalizer.instance().getUnitString("NM.desc"));
 			uom.setConversion(6080d, getUOM(Unit.FOOT));
 			break;
 
 		case FATHOM:
 			// fathom
-			uom = createScalarUOM(UnitType.LENGTH, Unit.FATHOM, units.getString("fth.name"),
-					units.getString("fth.symbol"), units.getString("fth.desc"));
+			uom = createScalarUOM(UnitType.LENGTH, Unit.FATHOM, DomainLocalizer.instance().getUnitString("fth.name"),
+					DomainLocalizer.instance().getUnitString("fth.symbol"),
+					DomainLocalizer.instance().getUnitString("fth.desc"));
 			uom.setConversion(6d, getUOM(Unit.FOOT));
 
 			break;
 
 		case PSI:
 			// psi
-			uom = createQuotientUOM(UnitType.PRESSURE, Unit.PSI, units.getString("psi.name"),
-					units.getString("psi.symbol"), units.getString("psi.desc"), getUOM(Unit.POUND_FORCE),
+			uom = createQuotientUOM(UnitType.PRESSURE, Unit.PSI, DomainLocalizer.instance().getUnitString("psi.name"),
+					DomainLocalizer.instance().getUnitString("psi.symbol"),
+					DomainLocalizer.instance().getUnitString("psi.desc"), getUOM(Unit.POUND_FORCE),
 					getUOM(Unit.SQUARE_INCH));
 			break;
 
 		case IN_HG:
 			// inches of Mercury
-			uom = createScalarUOM(UnitType.PRESSURE, Unit.IN_HG, units.getString("inhg.name"),
-					units.getString("inhg.symbol"), units.getString("inhg.desc"));
+			uom = createScalarUOM(UnitType.PRESSURE, Unit.IN_HG, DomainLocalizer.instance().getUnitString("inhg.name"),
+					DomainLocalizer.instance().getUnitString("inhg.symbol"),
+					DomainLocalizer.instance().getUnitString("inhg.desc"));
 			uom.setConversion(0.4911531047, getUOM(Unit.PSI));
 			break;
 
 		case SQUARE_INCH:
 			// square inch
-			uom = createPowerUOM(UnitType.AREA, Unit.SQUARE_INCH, units.getString("in2.name"),
-					units.getString("in2.symbol"), units.getString("in2.desc"), getUOM(Unit.INCH), 2);
+			uom = createPowerUOM(UnitType.AREA, Unit.SQUARE_INCH, DomainLocalizer.instance().getUnitString("in2.name"),
+					DomainLocalizer.instance().getUnitString("in2.symbol"),
+					DomainLocalizer.instance().getUnitString("in2.desc"), getUOM(Unit.INCH), 2);
 			uom.setConversion(1d / 144d, getUOM(Unit.SQUARE_FOOT));
 			break;
 
 		case SQUARE_FOOT:
 			// square foot
-			uom = createPowerUOM(UnitType.AREA, Unit.SQUARE_FOOT, units.getString("ft2.name"),
-					units.getString("ft2.symbol"), units.getString("ft2.desc"), getUOM(Unit.FOOT), 2);
+			uom = createPowerUOM(UnitType.AREA, Unit.SQUARE_FOOT, DomainLocalizer.instance().getUnitString("ft2.name"),
+					DomainLocalizer.instance().getUnitString("ft2.symbol"),
+					DomainLocalizer.instance().getUnitString("ft2.desc"), getUOM(Unit.FOOT), 2);
 			break;
 
 		case SQUARE_YARD:
 			// square yard
-			uom = createPowerUOM(UnitType.AREA, Unit.SQUARE_YARD, units.getString("yd2.name"),
-					units.getString("yd2.symbol"), units.getString("yd2.desc"), getUOM(Unit.YARD), 2);
+			uom = createPowerUOM(UnitType.AREA, Unit.SQUARE_YARD, DomainLocalizer.instance().getUnitString("yd2.name"),
+					DomainLocalizer.instance().getUnitString("yd2.symbol"),
+					DomainLocalizer.instance().getUnitString("yd2.desc"), getUOM(Unit.YARD), 2);
 			break;
 
 		case ACRE:
 			// acre
-			uom = createScalarUOM(UnitType.AREA, Unit.ACRE, units.getString("acre.name"),
-					units.getString("acre.symbol"), units.getString("acre.desc"));
+			uom = createScalarUOM(UnitType.AREA, Unit.ACRE, DomainLocalizer.instance().getUnitString("acre.name"),
+					DomainLocalizer.instance().getUnitString("acre.symbol"),
+					DomainLocalizer.instance().getUnitString("acre.desc"));
 			uom.setConversion(43560d, getUOM(Unit.SQUARE_FOOT));
 			break;
 
 		case CUBIC_INCH:
 			// cubic inch
-			uom = createPowerUOM(UnitType.VOLUME, Unit.CUBIC_INCH, units.getString("in3.name"),
-					units.getString("in3.symbol"), units.getString("in3.desc"), getUOM(Unit.INCH), 3);
+			uom = createPowerUOM(UnitType.VOLUME, Unit.CUBIC_INCH, DomainLocalizer.instance().getUnitString("in3.name"),
+					DomainLocalizer.instance().getUnitString("in3.symbol"),
+					DomainLocalizer.instance().getUnitString("in3.desc"), getUOM(Unit.INCH), 3);
 			uom.setConversion(1d / 1728d, getUOM(Unit.CUBIC_FOOT));
 			break;
 
 		case CUBIC_FOOT:
 			// cubic feet
-			uom = createPowerUOM(UnitType.VOLUME, Unit.CUBIC_FOOT, units.getString("ft3.name"),
-					units.getString("ft3.symbol"), units.getString("ft3.desc"), getUOM(Unit.FOOT), 3);
+			uom = createPowerUOM(UnitType.VOLUME, Unit.CUBIC_FOOT, DomainLocalizer.instance().getUnitString("ft3.name"),
+					DomainLocalizer.instance().getUnitString("ft3.symbol"),
+					DomainLocalizer.instance().getUnitString("ft3.desc"), getUOM(Unit.FOOT), 3);
 			break;
 
 		case CUBIC_FEET_PER_SEC:
 			// flow (volume)
 			uom = createQuotientUOM(UnitType.VOLUMETRIC_FLOW, Unit.CUBIC_FEET_PER_SEC,
-					units.getString("ft3PerSec.name"), units.getString("ft3PerSec.symbol"),
-					units.getString("ft3PerSec.desc"), getUOM(Unit.CUBIC_FOOT), getSecond());
+					DomainLocalizer.instance().getUnitString("ft3PerSec.name"),
+					DomainLocalizer.instance().getUnitString("ft3PerSec.symbol"),
+					DomainLocalizer.instance().getUnitString("ft3PerSec.desc"), getUOM(Unit.CUBIC_FOOT), getSecond());
 			break;
 
 		case CORD:
 			// cord
-			uom = createScalarUOM(UnitType.VOLUME, Unit.CORD, units.getString("cord.name"),
-					units.getString("cord.symbol"), units.getString("cord.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.CORD, DomainLocalizer.instance().getUnitString("cord.name"),
+					DomainLocalizer.instance().getUnitString("cord.symbol"),
+					DomainLocalizer.instance().getUnitString("cord.desc"));
 			uom.setConversion(128d, getUOM(Unit.CUBIC_FOOT));
 			break;
 
 		case CUBIC_YARD:
 			// cubic yard
-			uom = createPowerUOM(UnitType.VOLUME, Unit.CUBIC_YARD, units.getString("yd3.name"),
-					units.getString("yd3.symbol"), units.getString("yd3.desc"), getUOM(Unit.YARD), 3);
+			uom = createPowerUOM(UnitType.VOLUME, Unit.CUBIC_YARD, DomainLocalizer.instance().getUnitString("yd3.name"),
+					DomainLocalizer.instance().getUnitString("yd3.symbol"),
+					DomainLocalizer.instance().getUnitString("yd3.desc"), getUOM(Unit.YARD), 3);
 			break;
 
 		case FEET_PER_SEC:
 			// feet/sec
-			uom = createQuotientUOM(UnitType.VELOCITY, Unit.FEET_PER_SEC, units.getString("fps.name"),
-					units.getString("fps.symbol"), units.getString("fps.desc"), getUOM(Unit.FOOT), getSecond());
+			uom = createQuotientUOM(UnitType.VELOCITY, Unit.FEET_PER_SEC,
+					DomainLocalizer.instance().getUnitString("fps.name"),
+					DomainLocalizer.instance().getUnitString("fps.symbol"),
+					DomainLocalizer.instance().getUnitString("fps.desc"), getUOM(Unit.FOOT), getSecond());
 			break;
 
 		case KNOT:
 			// knot
-			uom = createScalarUOM(UnitType.VELOCITY, Unit.KNOT, units.getString("knot.name"),
-					units.getString("knot.symbol"), units.getString("knot.desc"));
+			uom = createScalarUOM(UnitType.VELOCITY, Unit.KNOT, DomainLocalizer.instance().getUnitString("knot.name"),
+					DomainLocalizer.instance().getUnitString("knot.symbol"),
+					DomainLocalizer.instance().getUnitString("knot.desc"));
 			uom.setConversion(6080d / 3600d, getUOM(Unit.FEET_PER_SEC));
 			break;
 
 		case FEET_PER_SEC_SQUARED:
 			// acceleration
-			uom = createQuotientUOM(UnitType.ACCELERATION, Unit.FEET_PER_SEC_SQUARED, units.getString("ftps2.name"),
-					units.getString("ftps2.symbol"), units.getString("ftps2.desc"), getUOM(Unit.FOOT),
+			uom = createQuotientUOM(UnitType.ACCELERATION, Unit.FEET_PER_SEC_SQUARED,
+					DomainLocalizer.instance().getUnitString("ftps2.name"),
+					DomainLocalizer.instance().getUnitString("ftps2.symbol"),
+					DomainLocalizer.instance().getUnitString("ftps2.desc"), getUOM(Unit.FOOT),
 					getUOM(Unit.SQUARE_SECOND));
 			break;
 
 		case HP:
 			// HP (mechanical)
-			uom = createProductUOM(UnitType.POWER, Unit.HP, units.getString("hp.name"), units.getString("hp.symbol"),
-					units.getString("hp.desc"), getUOM(Unit.POUND_FORCE), getUOM(Unit.FEET_PER_SEC));
+			uom = createProductUOM(UnitType.POWER, Unit.HP, DomainLocalizer.instance().getUnitString("hp.name"),
+					DomainLocalizer.instance().getUnitString("hp.symbol"),
+					DomainLocalizer.instance().getUnitString("hp.desc"), getUOM(Unit.POUND_FORCE),
+					getUOM(Unit.FEET_PER_SEC));
 			uom.setScalingFactor(550d);
 			break;
 
 		case BTU:
 			// BTU = 1055.056 Joules (778.169 ft-lbf)
-			uom = createScalarUOM(UnitType.ENERGY, Unit.BTU, units.getString("btu.name"), units.getString("btu.symbol"),
-					units.getString("btu.desc"));
+			uom = createScalarUOM(UnitType.ENERGY, Unit.BTU, DomainLocalizer.instance().getUnitString("btu.name"),
+					DomainLocalizer.instance().getUnitString("btu.symbol"),
+					DomainLocalizer.instance().getUnitString("btu.desc"));
 			uom.setConversion(778.1692622659652, getUOM(Unit.FOOT_POUND_FORCE));
 			break;
 
 		case FOOT_POUND_FORCE:
 			// ft-lbf
-			uom = createProductUOM(UnitType.ENERGY, Unit.FOOT_POUND_FORCE, units.getString("ft_lbf.name"),
-					units.getString("ft_lbf.symbol"), units.getString("ft_lbf.desc"), getUOM(Unit.FOOT),
+			uom = createProductUOM(UnitType.ENERGY, Unit.FOOT_POUND_FORCE,
+					DomainLocalizer.instance().getUnitString("ft_lbf.name"),
+					DomainLocalizer.instance().getUnitString("ft_lbf.symbol"),
+					DomainLocalizer.instance().getUnitString("ft_lbf.desc"), getUOM(Unit.FOOT),
 					getUOM(Unit.POUND_FORCE));
 			break;
 
 		case POUND_FORCE:
 			// force F = m�A (lbf)
-			uom = createProductUOM(UnitType.FORCE, Unit.POUND_FORCE, units.getString("lbf.name"),
-					units.getString("lbf.symbol"), units.getString("lbf.desc"), getUOM(Unit.POUND_MASS),
+			uom = createProductUOM(UnitType.FORCE, Unit.POUND_FORCE,
+					DomainLocalizer.instance().getUnitString("lbf.name"),
+					DomainLocalizer.instance().getUnitString("lbf.symbol"),
+					DomainLocalizer.instance().getUnitString("lbf.desc"), getUOM(Unit.POUND_MASS),
 					getUOM(Unit.FEET_PER_SEC_SQUARED));
 
 			// factor is acceleration of gravity
@@ -1076,22 +1229,27 @@ public class MeasurementSystem {
 
 		case GRAIN:
 			// mass
-			uom = createScalarUOM(UnitType.MASS, Unit.GRAIN, units.getString("grain.name"),
-					units.getString("grain.symbol"), units.getString("grain.desc"));
+			uom = createScalarUOM(UnitType.MASS, Unit.GRAIN, DomainLocalizer.instance().getUnitString("grain.name"),
+					DomainLocalizer.instance().getUnitString("grain.symbol"),
+					DomainLocalizer.instance().getUnitString("grain.desc"));
 			uom.setConversion(1d / 7000d, getUOM(Unit.POUND_MASS));
 			break;
 
 		case MILES_PER_HOUR:
 			// velocity
-			uom = createScalarUOM(UnitType.VELOCITY, Unit.MILES_PER_HOUR, units.getString("mph.name"),
-					units.getString("mph.symbol"), units.getString("mph.desc"));
+			uom = createScalarUOM(UnitType.VELOCITY, Unit.MILES_PER_HOUR,
+					DomainLocalizer.instance().getUnitString("mph.name"),
+					DomainLocalizer.instance().getUnitString("mph.symbol"),
+					DomainLocalizer.instance().getUnitString("mph.desc"));
 			uom.setConversion(5280d / 3600d, getUOM(Unit.FEET_PER_SEC));
 			break;
 
 		case REV_PER_MIN:
 			// rpm
-			uom = createQuotientUOM(UnitType.FREQUENCY, Unit.REV_PER_MIN, units.getString("rpm.name"),
-					units.getString("rpm.symbol"), units.getString("rpm.desc"), getOne(), getMinute());
+			uom = createQuotientUOM(UnitType.FREQUENCY, Unit.REV_PER_MIN,
+					DomainLocalizer.instance().getUnitString("rpm.name"),
+					DomainLocalizer.instance().getUnitString("rpm.symbol"),
+					DomainLocalizer.instance().getUnitString("rpm.desc"), getOne(), getMinute());
 			break;
 
 		default:
@@ -1108,71 +1266,89 @@ public class MeasurementSystem {
 
 		case US_GALLON:
 			// gallon
-			uom = createScalarUOM(UnitType.VOLUME, Unit.US_GALLON, units.getString("us_gallon.name"),
-					units.getString("us_gallon.symbol"), units.getString("us_gallon.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.US_GALLON,
+					DomainLocalizer.instance().getUnitString("us_gallon.name"),
+					DomainLocalizer.instance().getUnitString("us_gallon.symbol"),
+					DomainLocalizer.instance().getUnitString("us_gallon.desc"));
 			uom.setConversion(231d, getUOM(Unit.CUBIC_INCH));
 			break;
 
 		case US_BARREL:
 			// barrel
-			uom = createScalarUOM(UnitType.VOLUME, Unit.US_BARREL, units.getString("us_bbl.name"),
-					units.getString("us_bbl.symbol"), units.getString("us_bbl.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.US_BARREL,
+					DomainLocalizer.instance().getUnitString("us_bbl.name"),
+					DomainLocalizer.instance().getUnitString("us_bbl.symbol"),
+					DomainLocalizer.instance().getUnitString("us_bbl.desc"));
 			uom.setConversion(42d, getUOM(Unit.US_GALLON));
 			break;
 
 		case US_BUSHEL:
 			// bushel
-			uom = createScalarUOM(UnitType.VOLUME, Unit.US_BUSHEL, units.getString("us_bu.name"),
-					units.getString("us_bu.symbol"), units.getString("us_bu.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.US_BUSHEL,
+					DomainLocalizer.instance().getUnitString("us_bu.name"),
+					DomainLocalizer.instance().getUnitString("us_bu.symbol"),
+					DomainLocalizer.instance().getUnitString("us_bu.desc"));
 			uom.setConversion(2150.42058, getUOM(Unit.CUBIC_INCH));
 			break;
 
 		case US_FLUID_OUNCE:
 			// fluid ounce
-			uom = createScalarUOM(UnitType.VOLUME, Unit.US_FLUID_OUNCE, units.getString("us_fl_oz.name"),
-					units.getString("us_fl_oz.symbol"), units.getString("us_fl_oz.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.US_FLUID_OUNCE,
+					DomainLocalizer.instance().getUnitString("us_fl_oz.name"),
+					DomainLocalizer.instance().getUnitString("us_fl_oz.symbol"),
+					DomainLocalizer.instance().getUnitString("us_fl_oz.desc"));
 			uom.setConversion(0.0078125, getUOM(Unit.US_GALLON));
 			break;
 
 		case US_CUP:
 			// cup
-			uom = createScalarUOM(UnitType.VOLUME, Unit.US_CUP, units.getString("us_cup.name"),
-					units.getString("us_cup.symbol"), units.getString("us_cup.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.US_CUP, DomainLocalizer.instance().getUnitString("us_cup.name"),
+					DomainLocalizer.instance().getUnitString("us_cup.symbol"),
+					DomainLocalizer.instance().getUnitString("us_cup.desc"));
 			uom.setConversion(8d, getUOM(Unit.US_FLUID_OUNCE));
 			break;
 
 		case US_PINT:
 			// pint
-			uom = createScalarUOM(UnitType.VOLUME, Unit.US_PINT, units.getString("us_pint.name"),
-					units.getString("us_pint.symbol"), units.getString("us_pint.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.US_PINT,
+					DomainLocalizer.instance().getUnitString("us_pint.name"),
+					DomainLocalizer.instance().getUnitString("us_pint.symbol"),
+					DomainLocalizer.instance().getUnitString("us_pint.desc"));
 			uom.setConversion(16d, getUOM(Unit.US_FLUID_OUNCE));
 			break;
 
 		case US_QUART:
 			// quart
-			uom = createScalarUOM(UnitType.VOLUME, Unit.US_QUART, units.getString("us_quart.name"),
-					units.getString("us_quart.symbol"), units.getString("us_quart.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.US_QUART,
+					DomainLocalizer.instance().getUnitString("us_quart.name"),
+					DomainLocalizer.instance().getUnitString("us_quart.symbol"),
+					DomainLocalizer.instance().getUnitString("us_quart.desc"));
 			uom.setConversion(32d, getUOM(Unit.US_FLUID_OUNCE));
 			break;
 
 		case US_TABLESPOON:
 			// tablespoon
-			uom = createScalarUOM(UnitType.VOLUME, Unit.US_TABLESPOON, units.getString("us_tbsp.name"),
-					units.getString("us_tbsp.symbol"), units.getString("us_tbsp.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.US_TABLESPOON,
+					DomainLocalizer.instance().getUnitString("us_tbsp.name"),
+					DomainLocalizer.instance().getUnitString("us_tbsp.symbol"),
+					DomainLocalizer.instance().getUnitString("us_tbsp.desc"));
 			uom.setConversion(0.5, getUOM(Unit.US_FLUID_OUNCE));
 			break;
 
 		case US_TEASPOON:
 			// teaspoon
-			uom = createScalarUOM(UnitType.VOLUME, Unit.US_TEASPOON, units.getString("us_tsp.name"),
-					units.getString("us_tsp.symbol"), units.getString("us_tsp.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.US_TEASPOON,
+					DomainLocalizer.instance().getUnitString("us_tsp.name"),
+					DomainLocalizer.instance().getUnitString("us_tsp.symbol"),
+					DomainLocalizer.instance().getUnitString("us_tsp.desc"));
 			uom.setConversion(1d / 6d, getUOM(Unit.US_FLUID_OUNCE));
 			break;
 
 		case US_TON:
 			// ton
-			uom = createScalarUOM(UnitType.MASS, Unit.US_TON, units.getString("us_ton.name"),
-					units.getString("us_ton.symbol"), units.getString("us_ton.desc"));
+			uom = createScalarUOM(UnitType.MASS, Unit.US_TON, DomainLocalizer.instance().getUnitString("us_ton.name"),
+					DomainLocalizer.instance().getUnitString("us_ton.symbol"),
+					DomainLocalizer.instance().getUnitString("us_ton.desc"));
 			uom.setConversion(2000d, getUOM(Unit.POUND_MASS));
 			break;
 
@@ -1190,64 +1366,80 @@ public class MeasurementSystem {
 		switch (unit) {
 		case BR_GALLON:
 			// gallon
-			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_GALLON, units.getString("br_gallon.name"),
-					units.getString("br_gallon.symbol"), units.getString("br_gallon.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_GALLON,
+					DomainLocalizer.instance().getUnitString("br_gallon.name"),
+					DomainLocalizer.instance().getUnitString("br_gallon.symbol"),
+					DomainLocalizer.instance().getUnitString("br_gallon.desc"));
 			uom.setConversion(277.4194327916215, getUOM(Unit.CUBIC_INCH));
 			break;
 
 		case BR_BUSHEL:
 			// bushel
-			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_BUSHEL, units.getString("br_bu.name"),
-					units.getString("br_bu.symbol"), units.getString("br_bu.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_BUSHEL,
+					DomainLocalizer.instance().getUnitString("br_bu.name"),
+					DomainLocalizer.instance().getUnitString("br_bu.symbol"),
+					DomainLocalizer.instance().getUnitString("br_bu.desc"));
 			uom.setConversion(8d, getUOM(Unit.BR_GALLON));
 			break;
 
 		case BR_FLUID_OUNCE:
 			// fluid ounce
-			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_FLUID_OUNCE, units.getString("br_fl_oz.name"),
-					units.getString("br_fl_oz.symbol"), units.getString("br_fl_oz.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_FLUID_OUNCE,
+					DomainLocalizer.instance().getUnitString("br_fl_oz.name"),
+					DomainLocalizer.instance().getUnitString("br_fl_oz.symbol"),
+					DomainLocalizer.instance().getUnitString("br_fl_oz.desc"));
 			uom.setConversion(0.00625, getUOM(Unit.BR_GALLON));
 			break;
 
 		case BR_CUP:
 			// cup
-			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_CUP, units.getString("br_cup.name"),
-					units.getString("br_cup.symbol"), units.getString("br_cup.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_CUP, DomainLocalizer.instance().getUnitString("br_cup.name"),
+					DomainLocalizer.instance().getUnitString("br_cup.symbol"),
+					DomainLocalizer.instance().getUnitString("br_cup.desc"));
 			uom.setConversion(8d, getUOM(Unit.BR_FLUID_OUNCE));
 			break;
 
 		case BR_PINT:
 			// pint
-			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_PINT, units.getString("br_pint.name"),
-					units.getString("br_pint.symbol"), units.getString("br_pint.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_PINT,
+					DomainLocalizer.instance().getUnitString("br_pint.name"),
+					DomainLocalizer.instance().getUnitString("br_pint.symbol"),
+					DomainLocalizer.instance().getUnitString("br_pint.desc"));
 			uom.setConversion(20d, getUOM(Unit.BR_FLUID_OUNCE));
 			break;
 
 		case BR_QUART:
 			// quart
-			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_QUART, units.getString("br_quart.name"),
-					units.getString("br_quart.symbol"), units.getString("br_quart.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_QUART,
+					DomainLocalizer.instance().getUnitString("br_quart.name"),
+					DomainLocalizer.instance().getUnitString("br_quart.symbol"),
+					DomainLocalizer.instance().getUnitString("br_quart.desc"));
 			uom.setConversion(40d, getUOM(Unit.BR_FLUID_OUNCE));
 			break;
 
 		case BR_TABLESPOON:
 			// tablespoon
-			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_TABLESPOON, units.getString("br_tbsp.name"),
-					units.getString("br_tbsp.symbol"), units.getString("br_tbsp.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_TABLESPOON,
+					DomainLocalizer.instance().getUnitString("br_tbsp.name"),
+					DomainLocalizer.instance().getUnitString("br_tbsp.symbol"),
+					DomainLocalizer.instance().getUnitString("br_tbsp.desc"));
 			uom.setConversion(0.625, getUOM(Unit.BR_FLUID_OUNCE));
 			break;
 
 		case BR_TEASPOON:
 			// teaspoon
-			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_TEASPOON, units.getString("br_tsp.name"),
-					units.getString("br_tsp.symbol"), units.getString("br_tsp.desc"));
+			uom = createScalarUOM(UnitType.VOLUME, Unit.BR_TEASPOON,
+					DomainLocalizer.instance().getUnitString("br_tsp.name"),
+					DomainLocalizer.instance().getUnitString("br_tsp.symbol"),
+					DomainLocalizer.instance().getUnitString("br_tsp.desc"));
 			uom.setConversion(5d / 24d, getUOM(Unit.BR_FLUID_OUNCE));
 			break;
 
 		case BR_TON:
 			// ton
-			uom = createScalarUOM(UnitType.MASS, Unit.BR_TON, units.getString("br_ton.name"),
-					units.getString("br_ton.symbol"), units.getString("br_ton.desc"));
+			uom = createScalarUOM(UnitType.MASS, Unit.BR_TON, DomainLocalizer.instance().getUnitString("br_ton.name"),
+					DomainLocalizer.instance().getUnitString("br_ton.symbol"),
+					DomainLocalizer.instance().getUnitString("br_ton.desc"));
 			uom.setConversion(2240d, getUOM(Unit.POUND_MASS));
 			break;
 
@@ -1264,18 +1456,22 @@ public class MeasurementSystem {
 		switch (unit) {
 
 		case US_DOLLAR:
-			uom = createScalarUOM(UnitType.CURRENCY, Unit.US_DOLLAR, units.getString("us_dollar.name"),
-					units.getString("us_dollar.symbol"), units.getString("us_dollar.desc"));
+			uom = createScalarUOM(UnitType.CURRENCY, Unit.US_DOLLAR,
+					DomainLocalizer.instance().getUnitString("us_dollar.name"),
+					DomainLocalizer.instance().getUnitString("us_dollar.symbol"),
+					DomainLocalizer.instance().getUnitString("us_dollar.desc"));
 			break;
 
 		case EURO:
-			uom = createScalarUOM(UnitType.CURRENCY, Unit.EURO, units.getString("euro.name"),
-					units.getString("euro.symbol"), units.getString("euro.desc"));
+			uom = createScalarUOM(UnitType.CURRENCY, Unit.EURO, DomainLocalizer.instance().getUnitString("euro.name"),
+					DomainLocalizer.instance().getUnitString("euro.symbol"),
+					DomainLocalizer.instance().getUnitString("euro.desc"));
 			break;
 
 		case YUAN:
-			uom = createScalarUOM(UnitType.CURRENCY, Unit.YUAN, units.getString("yuan.name"),
-					units.getString("yuan.symbol"), units.getString("yuan.desc"));
+			uom = createScalarUOM(UnitType.CURRENCY, Unit.YUAN, DomainLocalizer.instance().getUnitString("yuan.name"),
+					DomainLocalizer.instance().getUnitString("yuan.symbol"),
+					DomainLocalizer.instance().getUnitString("yuan.desc"));
 			break;
 
 		default:
@@ -1288,11 +1484,9 @@ public class MeasurementSystem {
 	/**
 	 * Get the unit of measure with this unique enumerated type
 	 * 
-	 * @param unit
-	 *            {@link Unit}
+	 * @param unit {@link Unit}
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception Exception
+	 * @throws Exception Exception Exception
 	 */
 	public UnitOfMeasure getUOM(Unit unit) throws Exception {
 		UnitOfMeasure uom = cacheManager.getUOM(unit);
@@ -1307,8 +1501,7 @@ public class MeasurementSystem {
 	 * Get the fundamental unit of measure of time
 	 * 
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception Exception
+	 * @throws Exception Exception Exception
 	 */
 	public UnitOfMeasure getSecond() throws Exception {
 		return getUOM(Unit.SECOND);
@@ -1318,8 +1511,7 @@ public class MeasurementSystem {
 	 * Get the unit of measure for a minute (60 seconds)
 	 * 
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure getMinute() throws Exception {
 		return getUOM(Unit.MINUTE);
@@ -1329,8 +1521,7 @@ public class MeasurementSystem {
 	 * Get the unit of measure for an hour (60 minutes)
 	 * 
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure getHour() throws Exception {
 		return getUOM(Unit.HOUR);
@@ -1340,8 +1531,7 @@ public class MeasurementSystem {
 	 * Get the unit of measure for one day (24 hours)
 	 * 
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure getDay() throws Exception {
 		return getUOM(Unit.DAY);
@@ -1351,8 +1541,7 @@ public class MeasurementSystem {
 	 * Get the unit of measure for unity 'one'
 	 * 
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure getOne() throws Exception {
 		return getUOM(Unit.ONE);
@@ -1361,8 +1550,7 @@ public class MeasurementSystem {
 	/**
 	 * Get the unit of measure with this unique symbol
 	 * 
-	 * @param symbol
-	 *            Symbol
+	 * @param symbol Symbol
 	 * @return {@link UnitOfMeasure}
 	 */
 	public UnitOfMeasure getUOM(String symbol) {
@@ -1372,8 +1560,7 @@ public class MeasurementSystem {
 	/**
 	 * Get the unit of measure with this base symbol
 	 * 
-	 * @param symbol
-	 *            Base symbol
+	 * @param symbol Base symbol
 	 * @return {@link UnitOfMeasure}
 	 */
 	public UnitOfMeasure getBaseUOM(String symbol) {
@@ -1435,10 +1622,8 @@ public class MeasurementSystem {
 	/**
 	 * Remove a unit from the cache
 	 * 
-	 * @param uom
-	 *            {@link UnitOfMeasure} to remove
-	 * @throws Exception
-	 *             Exception
+	 * @param uom {@link UnitOfMeasure} to remove
+	 * @throws Exception Exception
 	 */
 	public synchronized void unregisterUnit(UnitOfMeasure uom) throws Exception {
 		if (uom == null) {
@@ -1447,17 +1632,11 @@ public class MeasurementSystem {
 		cacheManager.unregisterUnit(uom);
 	}
 
-	ResourceBundle getSymbols() {
-		return units;
-	}
-
 	/**
 	 * Cache this unit of measure
 	 * 
-	 * @param uom
-	 *            {@link UnitOfMeasure} to cache
-	 * @throws Exception
-	 *             Exception
+	 * @param uom {@link UnitOfMeasure} to cache
+	 * @throws Exception Exception
 	 */
 	public void registerUnit(UnitOfMeasure uom) throws Exception {
 		cacheManager.registerUnit(uom);
@@ -1467,11 +1646,11 @@ public class MeasurementSystem {
 			throws Exception {
 
 		if (symbol == null || symbol.length() == 0) {
-			throw new Exception(MeasurementSystem.getMessage("symbol.cannot.be.null"));
+			throw new Exception(DomainLocalizer.instance().getErrorString("symbol.cannot.be.null"));
 		}
 
 		if (type == null) {
-			throw new Exception(getMessage("unit.type.cannot.be.null"));
+			throw new Exception(DomainLocalizer.instance().getErrorString("unit.type.cannot.be.null"));
 		}
 
 		UnitOfMeasure uom = cacheManager.getUOM(symbol);
@@ -1497,17 +1676,12 @@ public class MeasurementSystem {
 	/**
 	 * Create a unit of measure that is not a power, product or quotient
 	 * 
-	 * @param type
-	 *            {@link UnitType}
-	 * @param name
-	 *            Name of unit of measure
-	 * @param symbol
-	 *            Symbol (must be unique)
-	 * @param description
-	 *            Description of unit of measure
+	 * @param type        {@link UnitType}
+	 * @param name        Name of unit of measure
+	 * @param symbol      Symbol (must be unique)
+	 * @param description Description of unit of measure
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure createScalarUOM(UnitType type, String name, String symbol, String description)
 			throws Exception {
@@ -1517,23 +1691,15 @@ public class MeasurementSystem {
 	/**
 	 * Create a unit of measure that is a unit divided by another unit
 	 * 
-	 * @param type
-	 *            {@link UnitType}
-	 * @param id
-	 *            {@link Unit}
-	 * @param name
-	 *            Name of unit of measure
-	 * @param symbol
-	 *            Symbol (must be unique)
-	 * @param description
-	 *            Description of unit of measure
-	 * @param dividend
-	 *            {@link UnitOfMeasure}
-	 * @param divisor
-	 *            {@link UnitOfMeasure}
+	 * @param type        {@link UnitType}
+	 * @param id          {@link Unit}
+	 * @param name        Name of unit of measure
+	 * @param symbol      Symbol (must be unique)
+	 * @param description Description of unit of measure
+	 * @param dividend    {@link UnitOfMeasure}
+	 * @param divisor     {@link UnitOfMeasure}
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure createQuotientUOM(UnitType type, Unit id, String name, String symbol, String description,
 			UnitOfMeasure dividend, UnitOfMeasure divisor) throws Exception {
@@ -1548,21 +1714,14 @@ public class MeasurementSystem {
 	/**
 	 * Create a unit of measure that is a unit divided by another unit
 	 * 
-	 * @param type
-	 *            {@link UnitType}
-	 * @param name
-	 *            Name of unit of measure
-	 * @param symbol
-	 *            Symbol (must be unique)
-	 * @param description
-	 *            Description of unit of measure
-	 * @param dividend
-	 *            {@link UnitOfMeasure}
-	 * @param divisor
-	 *            {@link UnitOfMeasure}
+	 * @param type        {@link UnitType}
+	 * @param name        Name of unit of measure
+	 * @param symbol      Symbol (must be unique)
+	 * @param description Description of unit of measure
+	 * @param dividend    {@link UnitOfMeasure}
+	 * @param divisor     {@link UnitOfMeasure}
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure createQuotientUOM(UnitType type, String name, String symbol, String description,
 			UnitOfMeasure dividend, UnitOfMeasure divisor) throws Exception {
@@ -1572,23 +1731,18 @@ public class MeasurementSystem {
 	/**
 	 * Create a unit of measure that is a unit divided by another unit
 	 * 
-	 * @param dividend
-	 *            {@link UnitOfMeasure}
-	 * @param divisor
-	 *            {@link UnitOfMeasure}
+	 * @param dividend {@link UnitOfMeasure}
+	 * @param divisor  {@link UnitOfMeasure}
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure createQuotientUOM(UnitOfMeasure dividend, UnitOfMeasure divisor) throws Exception {
 		if (dividend == null) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("dividend.cannot.be.null"), "");
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("dividend.cannot.be.null"));
 		}
 
 		if (divisor == null) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("divisor.cannot.be.null"), "");
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("divisor.cannot.be.null"));
 		}
 
 		String symbol = UnitOfMeasure.generateQuotientSymbol(dividend, divisor);
@@ -1598,23 +1752,15 @@ public class MeasurementSystem {
 	/**
 	 * Create a unit of measure that is the product of two other units of measure
 	 * 
-	 * @param type
-	 *            {@link UnitType}
-	 * @param id
-	 *            {@link Unit}
-	 * @param name
-	 *            Name of unit of measure
-	 * @param symbol
-	 *            Symbol (must be unique)
-	 * @param description
-	 *            Description of unit of measure
-	 * @param multiplier
-	 *            {@link UnitOfMeasure} multiplier
-	 * @param multiplicand
-	 *            {@link UnitOfMeasure} multiplicand
+	 * @param type         {@link UnitType}
+	 * @param id           {@link Unit}
+	 * @param name         Name of unit of measure
+	 * @param symbol       Symbol (must be unique)
+	 * @param description  Description of unit of measure
+	 * @param multiplier   {@link UnitOfMeasure} multiplier
+	 * @param multiplicand {@link UnitOfMeasure} multiplicand
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure createProductUOM(UnitType type, Unit id, String name, String symbol, String description,
 			UnitOfMeasure multiplier, UnitOfMeasure multiplicand) throws Exception {
@@ -1629,21 +1775,14 @@ public class MeasurementSystem {
 	/**
 	 * Create a unit of measure that is the product of two other units of measure
 	 * 
-	 * @param type
-	 *            {@link UnitType}
-	 * @param name
-	 *            Name of unit of measure
-	 * @param symbol
-	 *            Symbol (must be unique)
-	 * @param description
-	 *            Description of unit of measure
-	 * @param multiplier
-	 *            {@link UnitOfMeasure} multiplier
-	 * @param multiplicand
-	 *            {@link UnitOfMeasure} multiplicand
+	 * @param type         {@link UnitType}
+	 * @param name         Name of unit of measure
+	 * @param symbol       Symbol (must be unique)
+	 * @param description  Description of unit of measure
+	 * @param multiplier   {@link UnitOfMeasure} multiplier
+	 * @param multiplicand {@link UnitOfMeasure} multiplicand
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure createProductUOM(UnitType type, String name, String symbol, String description,
 			UnitOfMeasure multiplier, UnitOfMeasure multiplicand) throws Exception {
@@ -1653,23 +1792,18 @@ public class MeasurementSystem {
 	/**
 	 * Create a unit of measure that is the product of two other units of measure
 	 * 
-	 * @param multiplier
-	 *            {@link UnitOfMeasure} multiplier
-	 * @param multiplicand
-	 *            {@link UnitOfMeasure} multiplicand
+	 * @param multiplier   {@link UnitOfMeasure} multiplier
+	 * @param multiplicand {@link UnitOfMeasure} multiplicand
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure createProductUOM(UnitOfMeasure multiplier, UnitOfMeasure multiplicand) throws Exception {
 		if (multiplier == null) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("multiplier.cannot.be.null"), "");
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("multiplier.cannot.be.null"));
 		}
 
 		if (multiplicand == null) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("multiplicand.cannot.be.null"), "");
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("multiplicand.cannot.be.null"));
 		}
 
 		String symbol = UnitOfMeasure.generateProductSymbol(multiplier, multiplicand);
@@ -1679,23 +1813,15 @@ public class MeasurementSystem {
 	/**
 	 * Create a unit of measure with a base raised to an integral power
 	 * 
-	 * @param type
-	 *            {@link UnitType}
-	 * @param id
-	 *            {@link Unit}
-	 * @param name
-	 *            Name of unit of measure
-	 * @param symbol
-	 *            Symbol (must be unique)
-	 * @param description
-	 *            Description of unit of measure
-	 * @param base
-	 *            {@link UnitOfMeasure}
-	 * @param exponent
-	 *            Exponent
+	 * @param type        {@link UnitType}
+	 * @param id          {@link Unit}
+	 * @param name        Name of unit of measure
+	 * @param symbol      Symbol (must be unique)
+	 * @param description Description of unit of measure
+	 * @param base        {@link UnitOfMeasure}
+	 * @param exponent    Exponent
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure createPowerUOM(UnitType type, Unit id, String name, String symbol, String description,
 			UnitOfMeasure base, int exponent) throws Exception {
@@ -1710,21 +1836,14 @@ public class MeasurementSystem {
 	/**
 	 * Create a unit of measure with a base raised to an integral exponent
 	 * 
-	 * @param type
-	 *            {@link UnitType}
-	 * @param name
-	 *            Name of unit of measure
-	 * @param symbol
-	 *            Symbol (must be unique)
-	 * @param description
-	 *            Description of unit of measure
-	 * @param base
-	 *            {@link UnitOfMeasure}
-	 * @param exponent
-	 *            Exponent
+	 * @param type        {@link UnitType}
+	 * @param name        Name of unit of measure
+	 * @param symbol      Symbol (must be unique)
+	 * @param description Description of unit of measure
+	 * @param base        {@link UnitOfMeasure}
+	 * @param exponent    Exponent
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure createPowerUOM(UnitType type, String name, String symbol, String description,
 			UnitOfMeasure base, int exponent) throws Exception {
@@ -1734,18 +1853,14 @@ public class MeasurementSystem {
 	/**
 	 * Create a unit of measure with a base raised to an integral exponent
 	 * 
-	 * @param base
-	 *            {@link UnitOfMeasure}
-	 * @param exponent
-	 *            Exponent
+	 * @param base     {@link UnitOfMeasure}
+	 * @param exponent Exponent
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure createPowerUOM(UnitOfMeasure base, int exponent) throws Exception {
 		if (base == null) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("base.cannot.be.null"), "");
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("base.cannot.be.null"));
 		}
 
 		String symbol = UnitOfMeasure.generatePowerSymbol(base, exponent);
@@ -1756,13 +1871,11 @@ public class MeasurementSystem {
 	 * Create or fetch a unit of measure linearly scaled by the {@link Prefix}
 	 * against the target unit of measure.
 	 * 
-	 * @param prefix
-	 *            {@link Prefix} Scaling prefix with the scaling factor, e.g. 1000
-	 * @param targetUOM
-	 *            abscissa {@link UnitOfMeasure}
+	 * @param prefix    {@link Prefix} Scaling prefix with the scaling factor, e.g.
+	 *                  1000
+	 * @param targetUOM abscissa {@link UnitOfMeasure}
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure getUOM(Prefix prefix, UnitOfMeasure targetUOM) throws Exception {
 		String symbol = prefix.getSymbol() + targetUOM.getSymbol();
@@ -1789,13 +1902,11 @@ public class MeasurementSystem {
 	 * Create or fetch a unit of measure linearly scaled by the {@link Prefix}
 	 * against the target unit of measure.
 	 * 
-	 * @param prefix
-	 *            {@link Prefix} Scaling prefix with the scaling factor, e.g. 1000
-	 * @param unit
-	 *            {@link Unit}
+	 * @param prefix {@link Prefix} Scaling prefix with the scaling factor, e.g.
+	 *               1000
+	 * @param unit   {@link Unit}
 	 * @return {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure getUOM(Prefix prefix, Unit unit) throws Exception {
 		return getUOM(prefix, MeasurementSystem.instance().getUOM(unit));
@@ -1804,11 +1915,9 @@ public class MeasurementSystem {
 	/**
 	 * Get all the units of measure of the specified type
 	 * 
-	 * @param type
-	 *            {@link UnitType}
+	 * @param type {@link UnitType}
 	 * @return List of {@link UnitOfMeasure}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public List<UnitOfMeasure> getUnitsOfMeasure(UnitType type) throws Exception {
 		List<UnitOfMeasure> units = new ArrayList<UnitOfMeasure>();

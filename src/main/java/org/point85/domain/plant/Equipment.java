@@ -11,6 +11,7 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.OeeEventType;
 import org.point85.domain.uom.UnitOfMeasure;
@@ -19,11 +20,9 @@ import org.point85.domain.uom.UnitOfMeasure;
 @DiscriminatorValue(Equipment.EQUIP_VALUE)
 
 public class Equipment extends PlantEntity {
+	// discriminator
 	public static final String EQUIP_VALUE = "EQ";
-	public static final String DEFAULT_NAME = "Equipment";
-	public static final String DEFAULT_DESC = "Default equipment";
-	public static final Duration MIN_DURATION = Duration.ofSeconds(5);
-	
+
 	// default and minimum periods for retaining OEE records in the database
 	public static final Duration DEFAULT_RETENTION_PERIOD = Duration.ofDays(30);
 
@@ -165,7 +164,7 @@ public class Equipment extends PlantEntity {
 				uom = equipmentMaterial.getRejectUOM();
 				break;
 			default:
-				throw new Exception("Invalid resolver type " + resolverType);
+				throw new Exception(DomainLocalizer.instance().getErrorString("invalid.resolver", resolverType));
 			}
 		}
 		return uom;

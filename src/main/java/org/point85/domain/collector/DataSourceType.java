@@ -1,5 +1,7 @@
 package org.point85.domain.collector;
 
+import org.point85.domain.i18n.DomainLocalizer;
+
 public enum DataSourceType {
 	OPC_DA, OPC_UA, HTTP, MESSAGING, JMS, DATABASE, FILE, MQTT;
 
@@ -11,4 +13,39 @@ public enum DataSourceType {
 	public static final String DATABASE_VALUE = "DB";
 	public static final String FILE_VALUE = "FILE";
 	public static final String MQTT_VALUE = "MQTT";
+
+	@Override
+	public String toString() {
+		String key = null;
+
+		switch (this) {
+		case DATABASE:
+			key = "db.type";
+			break;
+		case FILE:
+			key = "file.type";
+			break;
+		case HTTP:
+			key = "http.type";
+			break;
+		case JMS:
+			key = "jms.type";
+			break;
+		case MESSAGING:
+			key = "rmq.type";
+			break;
+		case MQTT:
+			key = "mqtt.type";
+			break;
+		case OPC_DA:
+			key = "opc.da.type";
+			break;
+		case OPC_UA:
+			key = "opc.ua.type";
+			break;
+		default:
+			break;
+		}
+		return DomainLocalizer.instance().getLangString(key);
+	}
 }

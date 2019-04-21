@@ -58,7 +58,6 @@ public class MessagingClient extends BaseMessagingClient {
 	private MessageListener listener;
 
 	public MessagingClient() {
-		// nothing to initialize
 	}
 
 	public String getBindingKey() {
@@ -303,11 +302,12 @@ public class MessagingClient extends BaseMessagingClient {
 			// message type
 			MessageType type = MessageType.fromString(properties.getType());
 
-			ApplicationMessage message = deserialize(type, new String(body));
+			String payload = new String(body);
+			ApplicationMessage message = deserialize(type, payload);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Received message of type " + type + " from sender " + message.getSenderHostName() + " ("
-						+ message.getSenderHostAddress() + ")");
+						+ message.getSenderHostAddress() + ")" + " payload: \n" + payload);
 			}
 
 			if (listener != null) {

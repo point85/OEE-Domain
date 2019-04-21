@@ -24,10 +24,10 @@ SOFTWARE.
 package org.point85.domain.uom;
 
 import java.math.BigInteger;
-import java.text.MessageFormat;
 import java.util.Objects;
 
 import org.point85.domain.DomainUtils;
+import org.point85.domain.i18n.DomainLocalizer;
 
 /**
  * The Quantity class represents an amount and {@link UnitOfMeasure}. A constant
@@ -210,7 +210,7 @@ public class Quantity {
 	 */
 	public static double createAmount(String value) throws Exception {
 		if (value == null || value.length() == 0) {
-			throw new Exception(MeasurementSystem.getMessage("amount.cannot.be.null"));
+			throw new Exception(DomainLocalizer.instance().getErrorString("amount.cannot.be.null"));
 		}
 		return Double.valueOf(DomainUtils.removeThousandsSeparator(value));
 	}
@@ -306,8 +306,7 @@ public class Quantity {
 		Quantity toDivide = other;
 
 		if (toDivide.getAmount() == 0.0d) {
-			String msg = MessageFormat.format(MeasurementSystem.getMessage("divisor.cannot.be.zero"), toString());
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("divisor.cannot.be.zero"));
 		}
 
 		double amount = getAmount() / toDivide.getAmount();

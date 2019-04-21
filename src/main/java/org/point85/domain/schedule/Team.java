@@ -25,7 +25,6 @@ SOFTWARE.
 package org.point85.domain.schedule;
 
 import java.text.DecimalFormat;
-import java.text.MessageFormat;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -39,6 +38,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+
+import org.point85.domain.i18n.DomainLocalizer;
 
 /**
  * Class Team is a named group of individuals who rotate through a shift
@@ -90,8 +91,7 @@ public class Team extends Named implements Comparable<Team> {
 	/**
 	 * Get rotation start
 	 * 
-	 * @param rotationStart
-	 *            Starting date of rotation
+	 * @param rotationStart Starting date of rotation
 	 */
 	public void setRotationStart(LocalDate rotationStart) {
 		this.rotationStart = rotationStart;
@@ -113,8 +113,7 @@ public class Team extends Named implements Comparable<Team> {
 	/**
 	 * Set the shift rotation for this team
 	 * 
-	 * @param rotation
-	 *            {@link Rotation}
+	 * @param rotation {@link Rotation}
 	 */
 	public void setRotation(Rotation rotation) {
 		this.rotation = rotation;
@@ -124,8 +123,7 @@ public class Team extends Named implements Comparable<Team> {
 	 * Get the duration of the shift rotation
 	 * 
 	 * @return Duration
-	 * @throws Exception
-	 *             exception
+	 * @throws Exception exception
 	 */
 	public Duration getRotationDuration() throws Exception {
 		return getRotation().getDuration();
@@ -136,8 +134,7 @@ public class Team extends Named implements Comparable<Team> {
 	 * duration
 	 * 
 	 * @return Percentage
-	 * @throws Exception
-	 *             exception
+	 * @throws Exception exception
 	 */
 	public float getPercentageWorked() throws Exception {
 		return ((float) getRotation().getWorkingTime().getSeconds()) / ((float) getRotationDuration().getSeconds())
@@ -158,11 +155,9 @@ public class Team extends Named implements Comparable<Team> {
 	/**
 	 * Get the day number in the rotation for this local date
 	 * 
-	 * @param date
-	 *            LocalDate
+	 * @param date LocalDate
 	 * @return day number in the rotation, starting at 1
-	 * @throws Exception
-	 *             exception
+	 * @throws Exception exception
 	 */
 	public int getDayInRotation(LocalDate date) throws Exception {
 		// calculate total number of days from start of rotation
@@ -170,8 +165,8 @@ public class Team extends Named implements Comparable<Team> {
 		long deltaDays = dayTo - getDayFrom();
 
 		if (deltaDays < 0) {
-			String msg = MessageFormat.format(WorkSchedule.getMessage("end.earlier.than.start"), rotationStart, date);
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("end.earlier.than.start", rotationStart, date,
+					getName()));
 		}
 
 		return (int) (deltaDays % getRotation().getDuration().toDays()) + 1;
@@ -180,22 +175,20 @@ public class Team extends Named implements Comparable<Team> {
 	/**
 	 * Get the {@link ShiftInstance} for the specified day
 	 * 
-	 * @param day
-	 *            Day with a shift instance
+	 * @param day Day with a shift instance
 	 * @return {@link ShiftInstance}
-	 * @throws Exception
-	 *             exception
+	 * @throws Exception exception
 	 */
 	public ShiftInstance getShiftInstanceForDay(LocalDate day) throws Exception {
 		ShiftInstance instance = null;
 
 		Rotation shiftRotation = getRotation();
-		
+
 		if (shiftRotation.getDuration().equals(Duration.ZERO)) {
 			// no instance for that day
 			return instance;
 		}
-		
+
 		int dayInRotation = getDayInRotation(day);
 
 		// shift or off shift
@@ -212,11 +205,9 @@ public class Team extends Named implements Comparable<Team> {
 	/**
 	 * Check to see if this day is a day off
 	 * 
-	 * @param day
-	 *            Date to check
+	 * @param day Date to check
 	 * @return True if a day off
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public boolean isDayOff(LocalDate day) throws Exception {
 
@@ -239,18 +230,15 @@ public class Team extends Named implements Comparable<Team> {
 	/**
 	 * Calculate the schedule working time between the specified dates and times
 	 * 
-	 * @param from
-	 *            Starting date and time of day
-	 * @param to
-	 *            Ending date and time of day
+	 * @param from Starting date and time of day
+	 * @param to   Ending date and time of day
 	 * @return Duration of working time
-	 * @throws Exception
-	 *             exception
+	 * @throws Exception exception
 	 */
 	public Duration calculateWorkingTime(LocalDateTime from, LocalDateTime to) throws Exception {
 		if (from.isAfter(to)) {
-			String msg = MessageFormat.format(WorkSchedule.getMessage("end.earlier.than.start"), to, from);
-			throw new Exception(msg);
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("end.earlier.than.start", to, from, getName()));
 		}
 
 		Duration sum = Duration.ZERO;
@@ -351,20 +339,16 @@ public class Team extends Named implements Comparable<Team> {
 	 */
 	@Override
 	public String toString() {
-		String rpct = WorkSchedule.getMessage("rotation.percentage");
 		DecimalFormat df = new DecimalFormat();
 		df.setMaximumFractionDigits(2);
 
-		String rs = WorkSchedule.getMessage("rotation.start");
-		String avg = WorkSchedule.getMessage("team.hours");
-
 		String text = "";
 		try {
-			text = super.toString() + ", " + rs + ": " + getRotationStart() + ", " + getRotation() + ", " + rpct + ": "
-					+ df.format(getPercentageWorked()) + "%" + ", " + avg + ": " + getHoursWorkedPerWeek();
+			text = super.toString() + ", Rotation start: " + getRotationStart() + ", " + getRotation()
+					+ ", Percentage worked: " + df.format(getPercentageWorked()) + "%"
+					+ ", Average hours worked per week: " + getHoursWorkedPerWeek();
 
 		} catch (Exception e) {
-			// ignore
 		}
 
 		return text;

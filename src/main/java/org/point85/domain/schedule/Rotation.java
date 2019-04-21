@@ -39,6 +39,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import org.point85.domain.i18n.DomainLocalizer;
+
 /**
  * Class Rotation maintains a sequenced list of shift and off-shift time
  * periods.
@@ -75,12 +77,9 @@ public class Rotation extends Named implements Comparable<Rotation> {
 	/**
 	 * Constructor
 	 * 
-	 * @param name
-	 *            Rotation name
-	 * @param description
-	 *            Description
-	 * @throws Exception
-	 *             Exception
+	 * @param name        Rotation name
+	 * @param description Description
+	 * @throws Exception Exception
 	 */
 	Rotation(String name, String description) throws Exception {
 		super(name, description);
@@ -175,19 +174,15 @@ public class Rotation extends Named implements Comparable<Rotation> {
 	 * Add a working period to this rotation. A working period starts with a shift
 	 * and specifies the number of days on and days off
 	 * 
-	 * @param startingShift
-	 *            {@link Shift} that starts the period
-	 * @param daysOn
-	 *            Number of days on shift
-	 * @param daysOff
-	 *            Number of days off shift
+	 * @param startingShift {@link Shift} that starts the period
+	 * @param daysOn        Number of days on shift
+	 * @param daysOff       Number of days off shift
 	 * @return {@link RotationSegment}
-	 * @throws Exception
-	 *             Exception
+	 * @throws Exception Exception
 	 */
 	public RotationSegment addSegment(Shift startingShift, int daysOn, int daysOff) throws Exception {
 		if (startingShift == null) {
-			throw new Exception("The starting shift must be specified.");
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.starting.shift"));
 		}
 		RotationSegment segment = new RotationSegment(startingShift, daysOn, daysOff, this);
 		rotationSegments.add(segment);
@@ -218,14 +213,6 @@ public class Rotation extends Named implements Comparable<Rotation> {
 	 */
 	@Override
 	public String toString() {
-		String named = super.toString();
-		String rd = WorkSchedule.getMessage("rotation.duration");
-		String rda = WorkSchedule.getMessage("rotation.days");
-		String rw = WorkSchedule.getMessage("rotation.working");
-		String rper = WorkSchedule.getMessage("rotation.periods");
-		String on = WorkSchedule.getMessage("rotation.on");
-		String off = WorkSchedule.getMessage("rotation.off");
-
 		String periodsString = "";
 
 		for (TimePeriod period : getPeriods()) {
@@ -233,11 +220,12 @@ public class Rotation extends Named implements Comparable<Rotation> {
 				periodsString += ", ";
 			}
 
-			String onOff = period.isWorkingPeriod() ? on : off;
+			String onOff = period.isWorkingPeriod() ? "on" : "off";
 			periodsString += period.getName() + " (" + onOff + ")";
 		}
 
-		return named + "\n" + rper + ": [" + periodsString + "], " + rd + ": " + getDuration() + ", " + rda + ": "
-				+ getDuration().toDays() + ", " + rw + ": " + getWorkingTime();
+		return super.toString() + "\n" + "Rotation periods: [" + periodsString + "], Rotation duration: "
+				+ getDuration() + ", Days in rotation: " + getDuration().toDays() + ", Scheduled working time: "
+				+ getWorkingTime();
 	}
 }

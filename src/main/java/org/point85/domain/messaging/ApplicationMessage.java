@@ -1,5 +1,7 @@
 package org.point85.domain.messaging;
 
+import org.point85.domain.i18n.DomainLocalizer;
+
 public abstract class ApplicationMessage {
 	// type of message for deserialization
 	private MessageType messageType;
@@ -41,7 +43,7 @@ public abstract class ApplicationMessage {
 
 	public void validate() throws Exception {
 		if (messageType == null) {
-			throw new Exception("The message type cannot be null");
+			throw new Exception(DomainLocalizer.instance().getErrorString("null.type"));
 		}
 	}
 

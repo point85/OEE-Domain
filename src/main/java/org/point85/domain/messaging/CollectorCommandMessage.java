@@ -1,5 +1,7 @@
 package org.point85.domain.messaging;
 
+import org.point85.domain.i18n.DomainLocalizer;
+
 public class CollectorCommandMessage extends ApplicationMessage {
 	public static final String CMD_RESTART = "RESTART";
 
@@ -22,8 +24,7 @@ public class CollectorCommandMessage extends ApplicationMessage {
 		super.validate();
 
 		if (command == null) {
-			throw new Exception("The commnd text cannot be null");
+			throw new Exception(DomainLocalizer.instance().getErrorString("null.command"));
 		}
 	}
-
 }

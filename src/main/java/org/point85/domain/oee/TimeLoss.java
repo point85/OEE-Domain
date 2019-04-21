@@ -3,13 +3,13 @@ package org.point85.domain.oee;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.point85.domain.i18n.DomainLocalizer;
+
 import javafx.scene.paint.Color;
 
 public enum TimeLoss {
-	NO_LOSS("Value Adding"), NOT_SCHEDULED("Not Scheduled"), UNSCHEDULED("Unscheduled"), PLANNED_DOWNTIME(
-			"Planned Downtime"), SETUP("Setup"), UNPLANNED_DOWNTIME("Unplanned Downtime"), MINOR_STOPPAGES(
-					"Minor Stoppages"), REDUCED_SPEED(
-							"Reduced Speed"), REJECT_REWORK("Reject/Rework"), STARTUP_YIELD("Startup/Yield");
+	NO_LOSS, NOT_SCHEDULED, UNSCHEDULED, PLANNED_DOWNTIME, SETUP, UNPLANNED_DOWNTIME, MINOR_STOPPAGES, REDUCED_SPEED,
+	REJECT_REWORK, STARTUP_YIELD;
 
 	// database values
 	public static final String NO_LOSS_VALUE = "NLOSS";
@@ -22,21 +22,6 @@ public enum TimeLoss {
 	public static final String REDUCED_SPEED_VALUE = "SPEED";
 	public static final String REJECT_REWORK_VALUE = "REJECT";
 	public static final String STARTUP_YIELD_VALUE = "START";
-	
-	private String displayString;
-
-	private TimeLoss(String displayString) {
-		this.displayString = displayString;
-	}
-
-	public String getDisplayString() {
-		return displayString;
-	}
-	
-	@Override
-	public String toString() {
-		return displayString;
-	}
 
 	public static List<TimeLoss> getAvailabilityLosses() {
 		List<TimeLoss> losses = new ArrayList<>(3);
@@ -66,7 +51,7 @@ public enum TimeLoss {
 		losses.add(UNSCHEDULED);
 		return losses;
 	}
-	
+
 	public static TimeLoss getNoLoss() {
 		return NO_LOSS;
 	}
@@ -116,5 +101,46 @@ public enum TimeLoss {
 
 		}
 		return color;
+	}
+
+	@Override
+	public String toString() {
+		String key = null;
+
+		switch (this) {
+		case MINOR_STOPPAGES:
+			key = "minor.loss";
+			break;
+		case NOT_SCHEDULED:
+			key = "not.scheduled.loss";
+			break;
+		case NO_LOSS:
+			key = "no.loss";
+			break;
+		case PLANNED_DOWNTIME:
+			key = "planned.loss";
+			break;
+		case REDUCED_SPEED:
+			key = "speed.loss";
+			break;
+		case REJECT_REWORK:
+			key = "reject.loss";
+			break;
+		case SETUP:
+			key = "setup.loss";
+			break;
+		case STARTUP_YIELD:
+			key = "startup.loss";
+			break;
+		case UNPLANNED_DOWNTIME:
+			key = "unplanned.loss";
+			break;
+		case UNSCHEDULED:
+			key = "unscheduled.loss";
+			break;
+		default:
+			break;
+		}
+		return DomainLocalizer.instance().getLangString(key);
 	}
 }

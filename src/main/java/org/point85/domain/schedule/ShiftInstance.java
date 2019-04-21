@@ -86,8 +86,7 @@ public class ShiftInstance implements Comparable<ShiftInstance> {
 	}
 
 	/**
-	 * Compare this non-working period to another such period by start time of
-	 * day
+	 * Compare this non-working period to another such period by start time of day
 	 * 
 	 * @return -1 if less than, 0 if equal and 1 if greater than
 	 */
@@ -97,17 +96,26 @@ public class ShiftInstance implements Comparable<ShiftInstance> {
 	}
 
 	/**
+	 * Determine if this time falls within the shift instance period
+	 * 
+	 * @param dateTime Date and time to check
+	 * @return True if the specified time is in this shift instance
+	 */
+	public boolean isInShiftInstance(LocalDateTime dateTime) {
+		if (dateTime.compareTo(startDateTime) >= 0 && dateTime.compareTo(getEndTime()) <= 0) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/**
 	 * Build a string representation of a shift instance
 	 */
 	@Override
 	public String toString() {
-		String t = WorkSchedule.getMessage("team");
-		String s = WorkSchedule.getMessage("shift");
-		String ps = WorkSchedule.getMessage("period.start");
-		String pe = WorkSchedule.getMessage("period.end");
-
-		return " " + t + ": " + getTeam().getName() + ", " + s + ": " + getShift().getName() + ", " + ps + ": "
-				+ getStartTime() + ", " + pe + ": " + getEndTime();
+		return "Team: " + getTeam().getName() + ", Shift: " + getShift().getName() + ", Start: " + getStartTime()
+				+ ", End: " + getEndTime();
 	}
 
 }

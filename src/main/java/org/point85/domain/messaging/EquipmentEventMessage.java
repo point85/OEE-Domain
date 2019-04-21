@@ -1,5 +1,7 @@
 package org.point85.domain.messaging;
 
+import org.point85.domain.i18n.DomainLocalizer;
+
 public class EquipmentEventMessage extends ApplicationMessage {
 	private String sourceId;
 	private String value;
@@ -31,7 +33,7 @@ public class EquipmentEventMessage extends ApplicationMessage {
 	public void setValue(String value) {
 		this.value = value;
 	}
-	
+
 	public String getReason() {
 		return reason;
 	}
@@ -45,11 +47,11 @@ public class EquipmentEventMessage extends ApplicationMessage {
 		super.validate();
 
 		if (sourceId == null) {
-			throw new Exception("The source id cannot be null");
+			throw new Exception(DomainLocalizer.instance().getErrorString("null.source"));
 		}
 
 		if (value == null) {
-			throw new Exception("The value cannot be null");
+			throw new Exception(DomainLocalizer.instance().getErrorString("null.value"));
 		}
 	}
 

@@ -33,6 +33,7 @@ import org.point85.domain.file.FileEventSource;
 import org.point85.domain.http.HttpEventListener;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.http.OeeHttpServer;
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.jms.JMSClient;
 import org.point85.domain.jms.JMSEquipmentEventListener;
 import org.point85.domain.jms.JMSSource;
@@ -124,6 +125,9 @@ public class CollectorService
 	// JVM host IP address
 	private String ip;
 
+	// flag for manual collector
+	private boolean isManual = false;
+
 	// data source information
 	private final Map<String, OpcDaInfo> opcDaSubscriptionMap = new HashMap<>();
 	private final Map<String, OpcUaInfo> opcUaSubscriptionMap = new HashMap<>();
@@ -135,6 +139,11 @@ public class CollectorService
 	private final Map<String, MQTTBrokerSource> mqttBrokerMap = new HashMap<>();
 
 	public CollectorService() {
+		initialize();
+	}
+
+	public CollectorService(boolean isManual) {
+		this.isManual = isManual;
 		initialize();
 	}
 
@@ -152,6 +161,10 @@ public class CollectorService
 		appContext = new OeeContext();
 		equipmentResolver = new EquipmentEventResolver();
 		collectors = new ArrayList<>();
+	}
+
+	public boolean isManual() {
+		return this.isManual;
 	}
 
 	public OeeContext getAppContext() {
@@ -649,22 +662,35 @@ public class CollectorService
 	}
 
 	public void startup() throws Exception {
-
 		if (logger.isInfoEnabled()) {
-			logger.info("Beginning startup");
+			logger.info("Beginning startup for version " + DomainUtils.getVersionInfo());
 		}
 
 		// our host
-		InetAddress address = InetAddress.getLocalHost();
-		hostname = address.getHostName();
-		ip = address.getHostAddress();
+		if (!isManual) {
+			InetAddress address = InetAddress.getLocalHost();
+			hostname = address.getHostName();
+			ip = address.getHostAddress();
 
-		if (logger.isInfoEnabled()) {
-			logger.info("Configuring server for host " + getId());
+			if (logger.isInfoEnabled()) {
+				logger.info("Configuring server for host " + getId());
+			}
+
+			// configure all of the data sources
+			buildDataSources();
+		} else {
+			// manual data collection
+			List<CollectorState> states = new ArrayList<>();
+			states.add(CollectorState.READY);
+			states.add(CollectorState.RUNNING);
+
+			// look for manual data collector
+			for (DataCollector collector : PersistenceService.instance().fetchCollectorsByState(states)) {
+				if (collector.getHost() == null || collector.getHost().trim().length() == 0) {
+					collectors.add(collector);
+				}
+			}
 		}
-
-		// configure all of the data sources
-		buildDataSources();
 
 		// connect to broker for notifications and commands
 		startNotifications();
@@ -1344,8 +1370,8 @@ public class CollectorService
 			Duration delta = Duration.between(resolvedEvent.getStartTime(), resolvedEvent.getEndTime());
 
 			if (delta.compareTo(resolvedEvent.getDuration()) < 0) {
-				throw new Exception("The event duration of " + resolvedEvent.getDuration()
-						+ " cannot be greater than the time period duration of " + delta);
+				throw new Exception(DomainLocalizer.instance().getErrorString("invalid.duration",
+						resolvedEvent.getDuration(), delta));
 			}
 		}
 
@@ -1404,9 +1430,9 @@ public class CollectorService
 
 		if (reasonName != null) {
 			Reason eventReason = PersistenceService.instance().fetchReasonByName(reasonName);
-			
+
 			if (eventReason == null) {
-				throw new Exception("Reason " + reasonName + " is not defined.");
+				throw new Exception(DomainLocalizer.instance().getErrorString("undefined.reason", reasonName));
 			}
 			resolvedEvent.setReason(eventReason);
 		}
@@ -1585,6 +1611,11 @@ public class CollectorService
 		public void run() {
 			try {
 				if (appContext.getMessagingClients().size() == 0) {
+					return;
+				}
+
+				if (hostname == null || ip == null) {
+					// unidentified sender
 					return;
 				}
 

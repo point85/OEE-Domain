@@ -1,5 +1,7 @@
 package org.point85.domain.messaging;
 
+import org.point85.domain.i18n.DomainLocalizer;
+
 public class CollectorNotificationMessage extends ApplicationMessage {
 
 	private NotificationSeverity severity;
@@ -30,7 +32,7 @@ public class CollectorNotificationMessage extends ApplicationMessage {
 		super.validate();
 		
 		if (text == null) {
-			throw new Exception("The notification text cannot be null");
+			throw new Exception(DomainLocalizer.instance().getErrorString("null.notification"));
 		}
 	}
 }

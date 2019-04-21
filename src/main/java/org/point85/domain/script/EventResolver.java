@@ -16,6 +16,7 @@ import javax.persistence.Table;
 import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataCollector;
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.persistence.EventTypeConverter;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.KeyedObject;
@@ -164,8 +165,7 @@ public class EventResolver extends KeyedObject {
 
 	public void setUpdatePeriod(Integer period) throws Exception {
 		if (period < 0) {
-			throw new Exception(
-					"The specified update period of " + period + " msec() must be greater than or equal to zero");
+			throw new Exception(DomainLocalizer.instance().getErrorString("invalid.period", period));
 		}
 		this.updatePeriod = period;
 	}

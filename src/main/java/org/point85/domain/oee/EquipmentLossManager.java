@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.point85.domain.collector.OeeEvent;
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentMaterial;
@@ -23,7 +24,6 @@ public final class EquipmentLossManager {
 	private static final Logger logger = LoggerFactory.getLogger(EquipmentLossManager.class);
 
 	private EquipmentLossManager() {
-
 	}
 
 	public static void calculateEquipmentLoss(EquipmentLoss equipmentLoss, OffsetDateTime from, OffsetDateTime to)
@@ -35,8 +35,8 @@ public final class EquipmentLossManager {
 		EquipmentMaterial eqm = equipment.getEquipmentMaterial(material);
 
 		if (eqm == null || eqm.getRunRate() == null) {
-			throw new Exception("The design speed must be defined for equipment " + equipment.getName()
-					+ " and material " + material.getDisplayString());
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.speed", equipment.getName(),
+					material.getDisplayString()));
 		}
 
 		// IRR
@@ -53,8 +53,8 @@ public final class EquipmentLossManager {
 			Quantity quantity = record.getQuantity();
 
 			if (quantity.getUOM() == null) {
-				throw new Exception("Production of " + quantity.getAmount() + " for source " + record.getSourceId()
-						+ " at time " + record.getOffsetStartTime() + " does not have a unit of measure.");
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.uom.production", quantity.getAmount(),
+						record.getSourceId(), record.getOffsetStartTime()));
 			}
 			Duration lostTime = null;
 

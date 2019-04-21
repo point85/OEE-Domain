@@ -1,5 +1,7 @@
 package org.point85.domain.collector;
 
+import org.point85.domain.i18n.DomainLocalizer;
+
 public enum CollectorState {
 	DEV, READY, RUNNING;
 
@@ -32,5 +34,25 @@ public enum CollectorState {
 
 		}
 		return answer;
+	}
+	
+	@Override
+	public String toString() {
+		String key = null;
+		
+		switch (this) {
+		case DEV:
+			key = "dev.state";
+			break;
+		case READY:
+			key = "ready.state";
+			break;
+		case RUNNING:
+			key = "running.state";
+			break;
+		default:
+			break;
+		}
+		return DomainLocalizer.instance().getLangString(key);
 	}
 }

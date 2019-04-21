@@ -1,47 +1,49 @@
 package org.point85.domain.oee;
 
+import org.point85.domain.i18n.DomainLocalizer;
+
 public enum TimeCategory {
-	TOTAL, REQUIRED_OPERATIONS, AVAILABLE, SCHEDULED_PRODUCTION, PRODUCTION, REPORTED_PRODUCTION, NET_PRODUCTION, EFFICIENT_NET_PRODUCTION, EFFECTIVE_NET_PRODUCTION, VALUE_ADDING;
+	TOTAL, REQUIRED_OPERATIONS, AVAILABLE, SCHEDULED_PRODUCTION, PRODUCTION, REPORTED_PRODUCTION, NET_PRODUCTION,
+	EFFICIENT_NET_PRODUCTION, EFFECTIVE_NET_PRODUCTION, VALUE_ADDING;
 
 	@Override
 	public String toString() {
-		String value = "Undefined";
+		String key = null;
 
 		switch (this) {
 		case TOTAL:
-			value = "Total";
+			key = "total.cat";
 			break;
 		case REQUIRED_OPERATIONS:
-			value = "Required Operations";
+			key = "required.cat";
 			break;
 		case AVAILABLE:
-			value = "Available";
+			key = "available.cat";
 			break;
 		case SCHEDULED_PRODUCTION:
-			value = "Scheduled Production";
+			key = "scheduled.cat";
 			break;
 		case PRODUCTION:
-			value = "Production";
+			key = "production.cat";
 			break;
 		case REPORTED_PRODUCTION:
-			value = "Reported Production";
+			key = "reported.cat";
 			break;
 		case NET_PRODUCTION:
-			value = "Net Production";
+			key = "net.cat";
 			break;
 		case EFFICIENT_NET_PRODUCTION:
-			value = "Efficient Production";
+			key = "efficient.cat";
 			break;
 		case EFFECTIVE_NET_PRODUCTION:
-			value = "Effective Production";
+			key = "effective.cat";
 			break;
 		case VALUE_ADDING:
-			value = "Value Adding";
+			key = "value.cat";
 			break;
 		default:
 			break;
 		}
-
-		return value;
+		return DomainLocalizer.instance().getLangString(key);
 	}
 }

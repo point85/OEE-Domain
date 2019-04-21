@@ -27,6 +27,7 @@ import org.openscada.opc.dcom.da.WriteRequest;
 import org.openscada.opc.dcom.da.impl.OPCGroupStateMgt;
 import org.openscada.opc.dcom.da.impl.OPCItemMgt;
 import org.openscada.opc.dcom.da.impl.OPCSyncIO;
+import org.point85.domain.i18n.DomainLocalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,9 +108,8 @@ public class OpcDaMonitoredGroup {
 
 		for (KeyedResult<OPCITEMDEF, OPCITEMRESULT> resultEntry : result) {
 			if (resultEntry.isFailed()) {
-				String msg = String.format("Error Code: %08x", resultEntry.getErrorCode());
-				throw new Exception(
-						"Validation failed for item " + resultEntry.getKey().getItemID() + " with error " + msg);
+				throw new Exception(DomainLocalizer.instance().getErrorString("validation.failed",
+						resultEntry.getKey().getItemID(), String.format("%08X", resultEntry.getErrorCode())));
 			}
 		}
 
@@ -122,13 +122,12 @@ public class OpcDaMonitoredGroup {
 			OPCITEMRESULT itemResult = resultEntry.getValue();
 
 			if (resultEntry.isFailed()) {
-				String msg = "Add item failed.  "
-						+ String.format("Server Handle: %08X", resultEntry.getValue().getServerHandle())
-						+ String.format(", Data Type: %d", resultEntry.getValue().getCanonicalDataType())
-						+ String.format(", Access Rights: %d", resultEntry.getValue().getAccessRights())
-						+ String.format("Reserved: %d", resultEntry.getValue().getReserved());
 
-				throw new Exception(msg);
+				throw new Exception(DomainLocalizer.instance().getErrorString("add.item.failed",
+						String.format("%08X", resultEntry.getValue().getServerHandle()),
+						String.format("%d", resultEntry.getValue().getCanonicalDataType()),
+						String.format("%d", resultEntry.getValue().getAccessRights()),
+						String.format("%d", resultEntry.getValue().getReserved())));
 			} else {
 				String pathName = itemIds[i].getPathName();
 				OpcDaMonitoredItem opcDaItem = new OpcDaMonitoredItem(itemDef, itemResult);
@@ -146,9 +145,9 @@ public class OpcDaMonitoredGroup {
 
 		for (Result<Integer> resultEntry : resultSet) {
 			if (resultEntry.getErrorCode() != 0) {
-				String msg = String.format("Item: %08X, Error: %08X", resultEntry.getValue(),
-						resultEntry.getErrorCode());
-				throw new Exception("Set active failed with error " + msg);
+				throw new Exception(DomainLocalizer.instance().getErrorString("set.active.failed",
+						String.format("%08X", resultEntry.getValue()),
+						String.format("%08X", resultEntry.getErrorCode())));
 			}
 		}
 
@@ -157,9 +156,9 @@ public class OpcDaMonitoredGroup {
 
 		for (Result<Integer> resultEntry : handleSet) {
 			if (resultEntry.getErrorCode() != 0) {
-				String msg = String.format("Item: %08X, Error: %08X", resultEntry.getValue(),
-						resultEntry.getErrorCode());
-				throw new Exception("Set client handles failed with error " + msg);
+				throw new Exception(DomainLocalizer.instance().getErrorString("set.handles.failed",
+						String.format("%08X", resultEntry.getValue()),
+						String.format("%08X", resultEntry.getErrorCode())));
 			}
 		}
 	}
@@ -214,8 +213,8 @@ public class OpcDaMonitoredGroup {
 			Result<WriteRequest> writeResult = writeResults.get(i);
 
 			if (writeResult.getErrorCode() != 0) {
-				throw new Exception((String.format("ItemID: %s, ErrorCode: %08X", daItems[i].getItemId(),
-						writeResult.getErrorCode())));
+				throw new Exception(DomainLocalizer.instance().getErrorString("can.not.write", daItems[i].getItemId(),
+						String.format("%08X", writeResult.getErrorCode())));
 			}
 		}
 	}

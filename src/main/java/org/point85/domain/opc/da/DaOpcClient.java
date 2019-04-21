@@ -37,6 +37,7 @@ import org.openscada.opc.lib.da.browser.TreeBrowser;
 import org.openscada.opc.lib.list.Category;
 import org.openscada.opc.lib.list.ServerList;
 import org.point85.domain.DomainUtils;
+import org.point85.domain.i18n.DomainLocalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -68,7 +69,6 @@ public class DaOpcClient {
 	private final Map<String, OpcDaMonitoredGroup> monitoredGroups = new HashMap<>();
 
 	public DaOpcClient() {
-		// nothing to initialize
 	}
 
 	public Collection<OpcDaMonitoredGroup> getMonitoredGroups() {
@@ -92,7 +92,7 @@ public class DaOpcClient {
 			JIClsid jiClsid = JIClsid.valueOf(classId);
 			comServer = new JIComServer(jiClsid, host, jiSession);
 		} else {
-			throw new Exception("Either a progId or classId must be specified");
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.progid"));
 		}
 
 		IJIComObject serverObject = comServer.createInstance();
@@ -170,16 +170,16 @@ public class DaOpcClient {
 		if (tagTreeBrowser == null) {
 
 			if (opcServer == null) {
-				throw new Exception("Not connected to an OPC server.");
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.server"));
 			}
 
 			OPCBrowseServerAddressSpace addressSpace = opcServer.getBrowser();
 			if (addressSpace == null) {
-				throw new Exception("Unable to obtain a tag browser.");
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.browser"));
 			}
 
 			if (addressSpace.queryOrganization() != OPCNAMESPACETYPE.OPC_NS_HIERARCHIAL) {
-				throw new Exception("OPC server must have a hierarchical name space organization.");
+				throw new Exception(DomainLocalizer.instance().getErrorString("must.be.hierarchical"));
 			}
 
 			TreeBrowser treeBrowser = new TreeBrowser(addressSpace);
@@ -198,7 +198,7 @@ public class DaOpcClient {
 			throws Exception {
 
 		if (opcServer == null) {
-			throw new Exception("There is no connection to an OPC server.");
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.connection"));
 		}
 
 		int clientHandle = intGenerator.nextInt();
@@ -321,7 +321,7 @@ public class DaOpcClient {
 			OpcDaBrowserLeaf tag = browser.findTag(tagItem.getPathName());
 
 			if (tag == null) {
-				throw new Exception("Unable to find tag with access path " + tagItem.getPathName());
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.tag", tagItem.getPathName()));
 			}
 			tagArray[i] = tag;
 		}
@@ -337,7 +337,7 @@ public class DaOpcClient {
 
 	public OpcDaVariant synchRead(String itemId) throws Exception {
 		if (connectedSource == null) {
-			throw new Exception("The OPC DA client is not connected to a server.");
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.server"));
 		}
 
 		String[] userInfo = DomainUtils.parseDomainAndUser(connectedSource.getUserName());
@@ -370,7 +370,8 @@ public class DaOpcClient {
 
 		int errorCode = itemState.getErrorCode();
 		if (errorCode != 0) {
-			throw new Exception("Unable to read " + itemId + ", error code: " + String.format("%08X", errorCode));
+			throw new Exception(DomainLocalizer.instance().getErrorString("can.not.read", itemId,
+					String.format("%08X", errorCode)));
 		}
 
 		return new OpcDaVariant(itemState.getValue());
@@ -378,7 +379,7 @@ public class DaOpcClient {
 
 	public void writeSynch(String itemId, OpcDaVariant variant) throws Exception {
 		if (connectedSource == null) {
-			throw new Exception("The OPC DA client is not connected to a server.");
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.server"));
 		}
 
 		String[] userInfo = DomainUtils.parseDomainAndUser(connectedSource.getUserName());
@@ -410,8 +411,8 @@ public class DaOpcClient {
 		server.disconnect();
 
 		if (errorCode != 0) {
-			throw new Exception("Unable to write to " + itemId + ", error code: " + String.format("%08X", errorCode));
+			throw new Exception(DomainLocalizer.instance().getErrorString("can.not.write", itemId,
+					String.format("%08X", errorCode)));
 		}
 	}
-
 }

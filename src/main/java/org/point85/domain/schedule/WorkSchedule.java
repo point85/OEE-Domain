@@ -25,7 +25,6 @@ SOFTWARE.
 package org.point85.domain.schedule;
 
 import java.text.DecimalFormat;
-import java.text.MessageFormat;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -34,8 +33,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
-import java.util.ResourceBundle;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.CascadeType;
@@ -44,6 +41,7 @@ import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.plant.NamedObject;
 
 /**
@@ -59,13 +57,6 @@ import org.point85.domain.plant.NamedObject;
 @AttributeOverride(name = "primaryKey", column = @Column(name = "WS_KEY"))
 
 public class WorkSchedule extends NamedObject {
-
-	// name of resource bundle with translatable strings for exception messages
-	private static final String MESSAGES_BUNDLE_NAME = "WorkScheduleMessage";
-
-	// resource bundle for exception messages
-	private static final ResourceBundle messages = ResourceBundle.getBundle(MESSAGES_BUNDLE_NAME, Locale.getDefault());
-
 	// cached UTC time zone for working time calculations
 	private static final ZoneId ZONE_ID = ZoneId.of("Z");
 
@@ -98,11 +89,6 @@ public class WorkSchedule extends NamedObject {
 	 */
 	public WorkSchedule(String name, String description) throws Exception {
 		super(name, description);
-	}
-
-	// get a particular message by its key
-	static String getMessage(String key) {
-		return messages.getString(key);
 	}
 
 	/**
@@ -187,6 +173,33 @@ public class WorkSchedule extends NamedObject {
 	}
 
 	/**
+	 * Get the list of shift instances for the specified date that start in that
+	 * date or cross over from midnight the previous day
+	 * 
+	 * @param day LocalDate
+	 * @return List of {@link ShiftInstance}
+	 * @throws Exception exception
+	 */
+	public List<ShiftInstance> getAllShiftInstancesForDay(LocalDate day) throws Exception {
+		// starting in this day
+		List<ShiftInstance> workingShifts = getShiftInstancesForDay(day);
+
+		// now check previous day
+		LocalDate yesterday = day.minusDays(1);
+
+		for (ShiftInstance instance : getShiftInstancesForDay(yesterday)) {
+			if (instance.getEndTime().toLocalDate().equals(day)) {
+				// shift ends in this day
+				workingShifts.add(instance);
+			}
+		}
+
+		Collections.sort(workingShifts);
+
+		return workingShifts;
+	}
+
+	/**
 	 * Get the list of shift instances for the specified date and time of day
 	 * 
 	 * @param dateTime Date and time of day
@@ -196,15 +209,16 @@ public class WorkSchedule extends NamedObject {
 	public List<ShiftInstance> getShiftInstancesForTime(LocalDateTime dateTime) throws Exception {
 		List<ShiftInstance> workingShifts = new ArrayList<>();
 
-		// day
-		List<ShiftInstance> candidateShifts = getShiftInstancesForDay(dateTime.toLocalDate());
+		// shifts from this date and yesterday
+		List<ShiftInstance> candidateShifts = getAllShiftInstancesForDay(dateTime.toLocalDate());
 
-		// check time now
 		for (ShiftInstance instance : candidateShifts) {
-			if (instance.getShift().isInShift(dateTime.toLocalTime())) {
+			if (instance.isInShiftInstance(dateTime)) {
 				workingShifts.add(instance);
 			}
 		}
+
+		Collections.sort(workingShifts);
 
 		return workingShifts;
 	}
@@ -224,8 +238,7 @@ public class WorkSchedule extends NamedObject {
 		Team team = new Team(name, description, rotation, rotationStart);
 
 		if (teams.contains(team)) {
-			String msg = MessageFormat.format(WorkSchedule.getMessage("team.already.exists"), name);
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("team.already.exists", name));
 		}
 
 		teams.add(team);
@@ -245,8 +258,7 @@ public class WorkSchedule extends NamedObject {
 		Rotation rotation = new Rotation(name, description);
 
 		if (rotations.contains(rotation)) {
-			String msg = MessageFormat.format(WorkSchedule.getMessage("rotation.already.exists"), name);
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("rotation.already.exists", name));
 		}
 
 		rotations.add(rotation);
@@ -268,8 +280,7 @@ public class WorkSchedule extends NamedObject {
 		Shift shift = new Shift(name, description, start, duration);
 
 		if (shifts.contains(shift)) {
-			String msg = MessageFormat.format(WorkSchedule.getMessage("shift.already.exists"), name);
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("shift.already.exists", name));
 		}
 		shifts.add(shift);
 		shift.setWorkSchedule(this);
@@ -294,8 +305,7 @@ public class WorkSchedule extends NamedObject {
 
 				for (TimePeriod period : rotation.getPeriods()) {
 					if (period.equals(inUseShift)) {
-						String msg = MessageFormat.format(WorkSchedule.getMessage("shift.in.use"), shift.getName());
-						throw new Exception(msg);
+						throw new Exception(DomainLocalizer.instance().getErrorString("shift.in.use", shift.getName()));
 					}
 				}
 			}
@@ -319,8 +329,7 @@ public class WorkSchedule extends NamedObject {
 		NonWorkingPeriod period = new NonWorkingPeriod(name, description, startDateTime, duration);
 
 		if (nonWorkingPeriods.contains(period)) {
-			String msg = MessageFormat.format(WorkSchedule.getMessage("nonworking.period.already.exists"), name);
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("nonworking.period.already.exists", name));
 		}
 		period.setWorkSchedule(this);
 		nonWorkingPeriods.add(period);
@@ -467,22 +476,22 @@ public class WorkSchedule extends NamedObject {
 	 */
 	public void printShiftInstances(LocalDate start, LocalDate end) throws Exception {
 		if (start.isAfter(end)) {
-			String msg = MessageFormat.format(WorkSchedule.getMessage("end.earlier.than.start"), start, end);
-			throw new Exception(msg);
+			throw new Exception(DomainLocalizer.instance().getErrorString("print.end.earlier.than.start", start, end));
 		}
 
 		long days = end.toEpochDay() - start.toEpochDay() + 1;
 
 		LocalDate day = start;
 
-		System.out.println(getMessage("shifts.working"));
+		System.out.println(DomainLocalizer.instance().getLangString("shifts.working"));
 		for (long i = 0; i < days; i++) {
-			System.out.println("[" + (i + 1) + "] " + getMessage("shifts.day") + ": " + day);
+			System.out.println(
+					"[" + (i + 1) + "] " + DomainLocalizer.instance().getLangString("shifts.day") + ": " + day);
 
 			List<ShiftInstance> instances = getShiftInstancesForDay(day);
 
 			if (instances.isEmpty()) {
-				System.out.println("   " + getMessage("shifts.non.working"));
+				System.out.println("   " + DomainLocalizer.instance().getLangString("shifts.non.working"));
 			} else {
 				int count = 1;
 				for (ShiftInstance instance : instances) {
@@ -503,21 +512,14 @@ public class WorkSchedule extends NamedObject {
 	public String toString() {
 		DecimalFormat df = new DecimalFormat();
 		df.setMaximumFractionDigits(2);
-		String sch = getMessage("schedule");
-		String rd = getMessage("rotation.duration");
-		String sw = getMessage("schedule.working");
-		String sf = getMessage("schedule.shifts");
-		String st = getMessage("schedule.teams");
-		String sc = getMessage("schedule.coverage");
-		String sn = getMessage("schedule.non");
-		String stn = getMessage("schedule.total");
 
-		String text = sch + ": " + super.toString();
+		String text = "Schedule: " + super.toString();
 		try {
-			text += "\n" + rd + ": " + getRotationDuration() + ", " + sw + ": " + getRotationWorkingTime();
+			text += "\nRotation duration: " + getRotationDuration() + ", Scheduled working time: "
+					+ getRotationWorkingTime();
 
 			// shifts
-			text += "\n" + sf + ": ";
+			text += "\nShifts: ";
 			int count = 1;
 			for (Shift shift : getShifts()) {
 				text += "\n   (" + count + ") " + shift;
@@ -525,7 +527,7 @@ public class WorkSchedule extends NamedObject {
 			}
 
 			// teams
-			text += "\n" + st + ": ";
+			text += "\nTeams: ";
 			count = 1;
 			float teamPercent = 0.0f;
 			for (Team team : this.getTeams()) {
@@ -533,13 +535,13 @@ public class WorkSchedule extends NamedObject {
 				teamPercent += team.getPercentageWorked();
 				count++;
 			}
-			text += "\n" + sc + ": " + df.format(teamPercent) + "%";
+			text += "\nTotal team coverage: " + df.format(teamPercent) + "%";
 
 			// non-working periods
 			List<NonWorkingPeriod> periods = getNonWorkingPeriods();
 
 			if (!periods.isEmpty()) {
-				text += "\n" + sn + ":";
+				text += "\nNon-working periods:";
 
 				Duration totalMinutes = Duration.ZERO;
 
@@ -549,10 +551,9 @@ public class WorkSchedule extends NamedObject {
 					text += "\n   (" + count + ") " + period;
 					count++;
 				}
-				text += "\n" + stn + ": " + totalMinutes;
+				text += "\nTotal non-working time: " + totalMinutes;
 			}
 		} catch (Exception e) {
-			// ignore
 		}
 
 		return text;
