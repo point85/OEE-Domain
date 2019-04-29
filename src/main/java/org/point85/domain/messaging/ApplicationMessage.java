@@ -2,6 +2,10 @@ package org.point85.domain.messaging;
 
 import org.point85.domain.i18n.DomainLocalizer;
 
+/**
+ * Base class for Point85 application messages
+ *
+ */
 public abstract class ApplicationMessage {
 	// type of message for deserialization
 	private MessageType messageType;

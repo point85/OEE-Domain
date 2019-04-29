@@ -2,33 +2,20 @@ package org.point85.domain.db;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import org.point85.domain.persistence.PersistenceService;
+import org.point85.domain.polling.PollingClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Class to connect to a database server with the event interface table and poll
- * for new records
+ * for new records for the specified source id.
  *
  */
-public class DatabaseEventClient {
+public class DatabaseEventClient extends PollingClient {
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(DatabaseEventClient.class);
-
-	// time between polling queries
-	private static final int DEFAULT_POLLING_MSEC = 10000;
-
-	// polling interval in msec
-	private int pollingMillis = DEFAULT_POLLING_MSEC;
-
-	// polling timer
-	private Timer pollingTimer;
-
-	// polling task
-	private PollingTask pollingTask;
 
 	// service handling the queried data
 	private DatabaseEventListener eventListener;
@@ -39,12 +26,10 @@ public class DatabaseEventClient {
 	// JDBC connection URL
 	private String jdbcUrl;
 
-	// the source id of interest
-	private String sourceId;
-
-	public DatabaseEventClient(DatabaseEventListener eventListener, int pollingMillis) {
+	public DatabaseEventClient(DatabaseEventListener eventListener, DatabaseEventSource eventSource,
+			List<String> sourceIds, List<Integer> pollingPeriods) {
+		super(eventSource, sourceIds, pollingPeriods);
 		this.eventListener = eventListener;
-		this.pollingMillis = pollingMillis;
 	}
 
 	public String getJdbcUrl() {
@@ -66,77 +51,22 @@ public class DatabaseEventClient {
 			logger.info("Disconnecting from database");
 		}
 
-		if (pollingTimer != null) {
-			pollingTimer.cancel();
-		}
+		cancelPolling();
 
 		if (persistenceService != null) {
 			persistenceService.close();
 		}
 	}
 
-	public void startPolling() {
+	@Override
+	protected void onPoll(String sourceId) {
 		if (logger.isInfoEnabled()) {
-			logger.info("Starting to poll for events every " + pollingMillis + " msec.");
-		}
-
-		startPollingTimer();
-	}
-
-	public void stopPolling() {
-		stopPollingTimer();
-
-		if (logger.isInfoEnabled()) {
-			logger.info("Stopped polling for events");
-		}
-	}
-
-	private void initializePollingTimer() {
-		// create timer and task
-		pollingTimer = new Timer();
-		pollingTask = new PollingTask();
-	}
-
-	private void startPollingTimer() {
-		if (pollingTimer == null) {
-			initializePollingTimer();
-		}
-		pollingTimer.schedule(pollingTask, 1000, pollingMillis);
-	}
-
-	private void stopPollingTimer() {
-		if (pollingTimer != null) {
-			pollingTimer.cancel();
-		}
-		pollingTimer = null;
-	}
-
-	private void onPoll() {
-		if (logger.isInfoEnabled()) {
-			String msg = "Querying for READY events";
-
-			if (getSourceId() != null) {
-				msg += " for source " + getSourceId();
-			}
-			logger.info(msg);
+			logger.info("Querying for READY events for source " + sourceId);
 		}
 
 		// query database interface table for new records
-		List<DatabaseEvent> events = null;
-
-		if (getSourceId() != null) {
-			events = persistenceService.fetchDatabaseEvents(DatabaseEventStatus.READY, getSourceId());
-		} else {
-			events = persistenceService.fetchDatabaseEvents(DatabaseEventStatus.READY);
-		}
+		List<DatabaseEvent> events = persistenceService.fetchDatabaseEvents(DatabaseEventStatus.READY, sourceId);
 		eventListener.resolveDatabaseEvents(this, events);
-	}
-
-	private class PollingTask extends TimerTask {
-		@Override
-		public void run() {
-			onPoll();
-		}
 	}
 
 	@Override
@@ -157,13 +87,5 @@ public class DatabaseEventClient {
 
 	public synchronized DatabaseEvent save(DatabaseEvent event) throws Exception {
 		return (DatabaseEvent) persistenceService.save(event);
-	}
-
-	public String getSourceId() {
-		return sourceId;
-	}
-
-	public void setSourceId(String sourceId) {
-		this.sourceId = sourceId;
 	}
 }

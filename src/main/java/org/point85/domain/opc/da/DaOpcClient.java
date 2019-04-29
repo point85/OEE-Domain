@@ -335,7 +335,7 @@ public class DaOpcClient {
 		return opcServer;
 	}
 
-	public OpcDaVariant synchRead(String itemId) throws Exception {
+	public OpcDaVariant readSynch(String itemId) throws Exception {
 		if (connectedSource == null) {
 			throw new Exception(DomainLocalizer.instance().getErrorString("no.server"));
 		}

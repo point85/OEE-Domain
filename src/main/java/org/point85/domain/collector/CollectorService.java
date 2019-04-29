@@ -58,7 +58,6 @@ import org.point85.domain.opc.da.OpcDaMonitoredGroup;
 import org.point85.domain.opc.da.OpcDaMonitoredItem;
 import org.point85.domain.opc.da.OpcDaSource;
 import org.point85.domain.opc.da.OpcDaVariant;
-import org.point85.domain.opc.da.OpcDaVariantType;
 import org.point85.domain.opc.da.TagGroupInfo;
 import org.point85.domain.opc.da.TagItemInfo;
 import org.point85.domain.opc.ua.OpcUaAsynchListener;
@@ -128,17 +127,25 @@ public class CollectorService
 	// flag for manual collector
 	private boolean isManual = false;
 
+	// name of a specific collector on this host
+	private String collectorName;
+
 	// data source information
 	private final Map<String, OpcDaInfo> opcDaSubscriptionMap = new HashMap<>();
 	private final Map<String, OpcUaInfo> opcUaSubscriptionMap = new HashMap<>();
 	private final Map<String, HttpServerSource> httpServerMap = new HashMap<>();
 	private final Map<String, MessageBrokerSource> messageBrokerMap = new HashMap<>();
 	private final Map<String, JMSBrokerSource> jmsBrokerMap = new HashMap<>();
-	private final Map<String, DatabaseServerSource> databaseServerMap = new HashMap<>();
-	private final Map<String, FileServerSource> fileServerMap = new HashMap<>();
+	private final Map<String, PolledSource> databaseServerMap = new HashMap<>();
+	private final Map<String, PolledSource> fileServerMap = new HashMap<>();
 	private final Map<String, MQTTBrokerSource> mqttBrokerMap = new HashMap<>();
 
 	public CollectorService() {
+		initialize();
+	}
+
+	public CollectorService(String collectorName) {
+		this.collectorName = collectorName;
 		initialize();
 	}
 
@@ -239,19 +246,23 @@ public class CollectorService
 
 	// collect all database server sources
 	private void buildDatabaseServers(EventResolver resolver) {
-		DatabaseEventSource source = (DatabaseEventSource) resolver.getDataSource();
-		String id = source.getId();
+		DatabaseEventSource eventSource = (DatabaseEventSource) resolver.getDataSource();
+		String sourceId = resolver.getSourceId();
+		Integer pollingMillis = resolver.getUpdatePeriod();
+		String id = eventSource.getId();
 
-		DatabaseServerSource dbSource = databaseServerMap.get(id);
+		PolledSource dbSource = databaseServerMap.get(id);
 
 		if (dbSource == null) {
 			if (logger.isInfoEnabled()) {
-				logger.info("Found database server specified for host " + source.getHost());
+				logger.info("Found database server specified for host " + eventSource.getHost());
 			}
-			dbSource = new DatabaseServerSource(source, resolver.getUpdatePeriod());
 
+			dbSource = new PolledSource(eventSource);
 			databaseServerMap.put(id, dbSource);
 		}
+		dbSource.getSourceIds().add(sourceId);
+		dbSource.getPollingIntervals().add(pollingMillis);
 	}
 
 	// collect all file server info
@@ -259,17 +270,16 @@ public class CollectorService
 		FileEventSource eventSource = (FileEventSource) resolver.getDataSource();
 		String sourceId = resolver.getSourceId();
 		Integer pollingMillis = resolver.getUpdatePeriod();
-
 		String id = eventSource.getId();
 
-		FileServerSource serverSource = fileServerMap.get(id);
+		PolledSource serverSource = fileServerMap.get(id);
 
 		if (serverSource == null) {
 			if (logger.isInfoEnabled()) {
 				logger.info("Found file server specified for host " + eventSource.getHost());
 			}
 
-			serverSource = new FileServerSource(eventSource);
+			serverSource = new PolledSource(eventSource);
 			fileServerMap.put(id, serverSource);
 		}
 		serverSource.getSourceIds().add(sourceId);
@@ -348,36 +358,36 @@ public class CollectorService
 		}
 	}
 
-	private void connectToDatabaseServers(Map<String, DatabaseServerSource> dbSources) throws Exception {
-		for (Entry<String, DatabaseServerSource> entry : dbSources.entrySet()) {
-			DatabaseServerSource source = entry.getValue();
-			DatabaseEventSource eventSource = source.getSource();
+	private void connectToDatabaseServers(Map<String, PolledSource> dbSources) throws Exception {
+		for (Entry<String, PolledSource> entry : dbSources.entrySet()) {
+			// source of database interface table events
+			PolledSource databaseSource = entry.getValue();
+			DatabaseEventSource databaseEventSource = (DatabaseEventSource) databaseSource.getEventSource();
+			List<String> sourceIds = databaseSource.getSourceIds();
+			List<Integer> pollingIntervals = databaseSource.getPollingIntervals();
 
-			Integer pollingInterval = source.getPollingInterval();
-			if (pollingInterval == null) {
-				pollingInterval = CollectorDataSource.DEFAULT_UPDATE_PERIOD_MSEC;
-			}
+			DatabaseEventClient dbClient = new DatabaseEventClient(this, databaseEventSource, sourceIds,
+					pollingIntervals);
 
-			DatabaseEventClient dbClient = new DatabaseEventClient(this, pollingInterval);
-
-			dbClient.connectToServer(eventSource.getId(), eventSource.getUserName(), eventSource.getUserPassword());
-
-			dbClient.startPolling();
+			dbClient.connectToServer(databaseEventSource.getId(), databaseEventSource.getUserName(),
+					databaseEventSource.getUserPassword());
 
 			// add to context
 			appContext.getDatabaseEventClients().add(dbClient);
 
+			dbClient.startPolling();
+
 			if (logger.isInfoEnabled()) {
-				logger.info("Connnected to database server: " + eventSource.getId());
+				logger.info("Polling interface table for database server: " + databaseEventSource.getId());
 			}
 		}
 	}
 
-	private void startFilePolling(Map<String, FileServerSource> fileSources) throws Exception {
-		for (Entry<String, FileServerSource> entry : fileSources.entrySet()) {
+	private void startFilePolling(Map<String, PolledSource> fileSources) throws Exception {
+		for (Entry<String, PolledSource> entry : fileSources.entrySet()) {
 			// source of file events
-			FileServerSource fileSource = entry.getValue();
-			FileEventSource fileEventSource = fileSource.getEventSource();
+			PolledSource fileSource = entry.getValue();
+			FileEventSource fileEventSource = (FileEventSource) fileSource.getEventSource();
 			List<String> sourceIds = fileSource.getSourceIds();
 			List<Integer> pollingIntervals = fileSource.getPollingIntervals();
 
@@ -498,7 +508,6 @@ public class CollectorService
 
 	private void monitorOpcDaTags(Map<String, OpcDaInfo> daSubscriptions) throws Exception {
 		for (Entry<String, OpcDaInfo> entry : daSubscriptions.entrySet()) {
-
 			// connect to data source
 			OpcDaInfo subscribingClient = entry.getValue();
 			OpcDaSource daSource = subscribingClient.getSource();
@@ -564,13 +573,23 @@ public class CollectorService
 			// build list of runnable collectors
 			DataCollector collector = resolver.getCollector();
 
+			// check if a specific collector is named
+			if (collectorName != null) {
+				if (!collector.getName().equals(collectorName)) {
+					logger.info("Collector named " + collectorName + " is specified.  Skipping collector "
+							+ collector.getName());
+					continue;
+				}
+			}
+
+			// add to our collectors
 			if (!collectors.contains(collector)) {
 				collectors.add(collector);
+			}
 
-				if (logger.isInfoEnabled()) {
-					logger.info("Found data collector " + collector.getName() + ", for host " + collector.getHost()
-							+ " in state " + collector.getCollectorState() + ", resolver: " + resolver);
-				}
+			if (logger.isInfoEnabled()) {
+				logger.info("Found data collector '" + collector.getName() + "', for host " + collector.getHost()
+						+ " in state " + collector.getCollectorState() + ", resolver: " + resolver);
 			}
 
 			// gather data for each data source
@@ -663,7 +682,7 @@ public class CollectorService
 
 	public void startup() throws Exception {
 		if (logger.isInfoEnabled()) {
-			logger.info("Beginning startup for version " + DomainUtils.getVersionInfo());
+			logger.info("Beginning startup for " + DomainUtils.getVersionInfo());
 		}
 
 		// our host
@@ -796,7 +815,7 @@ public class CollectorService
 
 	public synchronized void stopNotifications() throws Exception {
 		for (MessagingClient pubsub : appContext.getMessagingClients()) {
-			pubsub.shutDown();
+			pubsub.disconnect();
 		}
 		appContext.getMessagingClients().clear();
 	}
@@ -843,7 +862,7 @@ public class CollectorService
 		// disconnect from RMQ brokers
 		for (MessagingClient pubsub : appContext.getMessagingClients()) {
 			onInformation("Disconnecting from pubsub with binding key " + pubsub.getBindingKey());
-			pubsub.shutDown();
+			pubsub.disconnect();
 		}
 		appContext.getMessagingClients().clear();
 
@@ -1261,35 +1280,45 @@ public class CollectorService
 	}
 
 	// database servers
-	private class DatabaseServerSource {
-		private final DatabaseEventSource source;
-		private final Integer pollingInterval;
-
-		DatabaseServerSource(DatabaseEventSource source, Integer pollingInterval) {
-			this.source = source;
-			this.pollingInterval = pollingInterval;
-		}
-
-		private DatabaseEventSource getSource() {
-			return source;
-		}
-
-		private Integer getPollingInterval() {
-			return pollingInterval;
-		}
-	}
+	/*
+	 * private class DatabaseServerSource { private final DatabaseEventSource
+	 * source; private final Integer pollingInterval;
+	 * 
+	 * DatabaseServerSource(DatabaseEventSource source, Integer pollingInterval) {
+	 * this.source = source; this.pollingInterval = pollingInterval; }
+	 * 
+	 * private DatabaseEventSource getSource() { return source; }
+	 * 
+	 * private Integer getPollingInterval() { return pollingInterval; } }
+	 */
 
 	// file servers
-	private class FileServerSource {
-		private final FileEventSource eventSource;
+	/*
+	 * private class FileServerSource { private final FileEventSource eventSource;
+	 * private final List<String> sourceIds = new ArrayList<>(); private final
+	 * List<Integer> pollingIntervals = new ArrayList<>();
+	 * 
+	 * private FileServerSource(FileEventSource eventSource) { this.eventSource =
+	 * eventSource; }
+	 * 
+	 * private FileEventSource getEventSource() { return eventSource; }
+	 * 
+	 * private List<String> getSourceIds() { return sourceIds; }
+	 * 
+	 * private List<Integer> getPollingIntervals() { return pollingIntervals; } }
+	 */
+
+	// polled event source
+	private class PolledSource {
+		private final CollectorDataSource eventSource;
 		private final List<String> sourceIds = new ArrayList<>();
 		private final List<Integer> pollingIntervals = new ArrayList<>();
 
-		private FileServerSource(FileEventSource eventSource) {
+		private PolledSource(CollectorDataSource eventSource) {
 			this.eventSource = eventSource;
 		}
 
-		private FileEventSource getEventSource() {
+		private CollectorDataSource getEventSource() {
 			return eventSource;
 		}
 
@@ -1442,6 +1471,14 @@ public class CollectorService
 		}
 	}
 
+	public String getCollectorName() {
+		return collectorName;
+	}
+
+	public void setCollectorName(String collectorName) {
+		this.collectorName = collectorName;
+	}
+
 	/********************* OPC DA ***********************************/
 
 	// handle the OPC DA callback
@@ -1455,15 +1492,8 @@ public class CollectorService
 		@Override
 		public void run() {
 			try {
-				OpcDaVariant varientValue = item.getValue();
-
-				Object dataValue = null;
-
-				if (varientValue.getDataType().equals(OpcDaVariantType.STRING)) {
-					dataValue = varientValue.getValueAsString();
-				} else {
-					dataValue = varientValue.getValueAsNumber();
-				}
+				OpcDaVariant variantValue = item.getValue();
+				Object dataValue = variantValue.getValueAsObject();
 
 				String sourceId = item.getPathName();
 				OffsetDateTime timestamp = item.getLocalTimestamp();

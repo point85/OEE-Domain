@@ -317,98 +317,238 @@ public final class PersistenceService {
 		}
 	}
 
-	public void checkReferences(KeyedObject keyed) throws Exception {
-		if (keyed instanceof Rotation) {
-			Rotation rotation = (Rotation) keyed;
+	private void checkRotationReferences(Rotation rotation) throws Exception {
+		// check for team reference
+		List<Team> referencingTeams = fetchTeamCrossReferences(rotation);
 
-			// check for team reference
-			List<Team> referencingTeams = fetchTeamCrossReferences(rotation);
+		if (!referencingTeams.isEmpty()) {
+			String refs = "";
 
-			if (!referencingTeams.isEmpty()) {
-				String refs = "";
-
-				for (Team team : referencingTeams) {
-					if (refs.length() > 0) {
-						refs += ", ";
-					}
-					refs += team.getName();
+			for (Team team : referencingTeams) {
+				if (refs.length() > 0) {
+					refs += ", ";
 				}
-				throw new Exception(
-						DomainLocalizer.instance().getErrorString("can.not.delete.rotation", rotation.getName(), refs));
+				refs += team.getName();
 			}
-		} else if (keyed instanceof CollectorDataSource) {
-			CollectorDataSource source = (CollectorDataSource) keyed;
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("can.not.delete.rotation", rotation.getName(), refs));
+		}
+	}
 
-			// check for script resolver references
-			List<EventResolver> resolvers = fetchResolverCrossReferences(source);
+	private void checkDataSourceReferences(CollectorDataSource source) throws Exception {
+		// check for script resolver references
+		List<EventResolver> resolvers = fetchResolverCrossReferences(source);
 
-			if (!resolvers.isEmpty()) {
-				String refs = "";
-				for (EventResolver resolver : resolvers) {
-					if (refs.length() > 0) {
-						refs += ", ";
-					}
-					refs += resolver.getSourceId();
+		if (!resolvers.isEmpty()) {
+			String refs = "";
+			for (EventResolver resolver : resolvers) {
+				if (refs.length() > 0) {
+					refs += ", ";
 				}
-				throw new Exception(
-						DomainLocalizer.instance().getErrorString("can.not.delete.collector", source.getName(), refs));
+				refs += resolver.getSourceId();
 			}
-		} else if (keyed instanceof WorkSchedule) {
-			WorkSchedule schedule = (WorkSchedule) keyed;
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("can.not.delete.collector", source.getName(), refs));
+		}
+	}
+	
+	private long fetchRotationSegmentCount(Shift shift) throws Exception {
+		final String SEG_SHIFT_XREF = "Seg.Shift.XRef";
 
-			// check for plant entity references
-			List<PlantEntity> entities = fetchEntityCrossReferences(schedule);
+		if (namedQueryMap.get(SEG_SHIFT_XREF) == null) {
+			createNamedQuery(SEG_SHIFT_XREF, "SELECT COUNT(rs) FROM RotationSegment rs WHERE startingShift = :shift");
+		}
 
-			if (!entities.isEmpty()) {
-				String refs = "";
-				for (PlantEntity entity : entities) {
-					if (refs.length() > 0) {
-						refs += ", ";
-					}
-					refs += entity.getName();
+		Query query = getEntityManager().createNamedQuery(SEG_SHIFT_XREF);
+		query.setParameter("shift", shift);
+		return (long) query.getSingleResult();
+	}
+
+	private void checkShiftReferences(Shift shift) throws Exception {
+		// check for usage by OEE event
+		long count = fetchEventCount(shift);
+
+		if (count > 0) {
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("can.not.delete.event.shift", shift.getName(), count));
+		}
+		
+		// by rotation segment
+		count = fetchRotationSegmentCount(shift);
+		
+		if (count > 0) {
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("can.not.delete.rs.shift", shift.getName(), count));
+		}
+	}
+
+	private void checkTeamReferences(Team team) throws Exception {
+		// check for usage by OEE event
+		long count = fetchEventCount(team);
+
+		if (count > 0) {
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("can.not.delete.event.team", team.getName(), count));
+		}
+	}
+
+	private void checkWorkScheduleReferences(WorkSchedule schedule) throws Exception {
+		// check for plant entity references
+		List<PlantEntity> entities = fetchEntityCrossReferences(schedule);
+
+		if (!entities.isEmpty()) {
+			String refs = "";
+			for (PlantEntity entity : entities) {
+				if (refs.length() > 0) {
+					refs += ", ";
 				}
-				throw new Exception(
-						DomainLocalizer.instance().getErrorString("can.not.delete.schedule", schedule.getName(), refs));
+				refs += entity.getName();
 			}
-		} else if (keyed instanceof UnitOfMeasure) {
-			UnitOfMeasure uom = (UnitOfMeasure) keyed;
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("can.not.delete.schedule", schedule.getName(), refs));
+		}
 
-			// check for usage by equipment material
-			List<EquipmentMaterial> eqms = fetchEquipmentMaterials(uom);
+		// check for shift references
+		for (Shift shift : schedule.getShifts()) {
+			checkShiftReferences(shift);
+		}
 
-			if (!eqms.isEmpty()) {
-				String refs = "";
-				for (int i = 0; i < eqms.size(); i++) {
+		// check for team references
+		for (Team team : schedule.getTeams()) {
+			checkTeamReferences(team);
+		}
+	}
+
+	private void checkUomReferences(UnitOfMeasure uom) throws Exception {
+		// check for usage by OEE event
+		long count = fetchEventCount(uom);
+
+		if (count > 0) {
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("can.not.delete.event.uom", uom.getSymbol(), count));
+		}
+
+		// check for usage by equipment material
+		List<EquipmentMaterial> eqms = fetchEquipmentMaterials(uom);
+
+		if (!eqms.isEmpty()) {
+			String refs = "";
+			for (int i = 0; i < eqms.size(); i++) {
+				if (i > 0) {
+					refs += ", ";
+				}
+
+				refs += eqms.get(i).getEquipment().getName();
+			}
+			throw new Exception(DomainLocalizer.instance().getErrorString("can.not.delete.uom", uom.getSymbol(), refs));
+		}
+
+		// check for usage by UOM
+		List<UnitOfMeasure> uoms = PersistenceService.instance().fetchUomCrossReferences(uom);
+
+		if (!uoms.isEmpty()) {
+			String refs = "";
+			for (int i = 0; i < uoms.size(); i++) {
+				if (!uom.equals(uoms.get(i))) {
 					if (i > 0) {
 						refs += ", ";
 					}
 
-					refs += eqms.get(i).getEquipment().getName();
+					refs += uoms.get(i).getSymbol();
 				}
+			}
+
+			if (refs.length() > 0) {
 				throw new Exception(
-						DomainLocalizer.instance().getErrorString("can.not.delete.uom", uom.getSymbol(), refs));
+						DomainLocalizer.instance().getErrorString("can.not.delete.ref.uom", uom.getSymbol(), refs));
 			}
+		}
+	}
 
-			// check for usage by UOM
-			List<UnitOfMeasure> uoms = PersistenceService.instance().fetchUomCrossReferences(uom);
+	private void checkMaterialReferences(Material material) throws Exception {
+		// check for usage by OEE event
+		long count = fetchEventCount(material);
 
-			if (!uoms.isEmpty()) {
-				String refs = "";
-				for (int i = 0; i < uoms.size(); i++) {
-					if (!uom.equals(uoms.get(i))) {
-						if (i > 0) {
-							refs += ", ";
-						}
+		if (count > 0) {
+			throw new Exception(DomainLocalizer.instance().getErrorString("can.not.delete.event.material",
+					material.getName(), count));
+		}
 
-						refs += uoms.get(i).getSymbol();
-					}
+		// check for usage by equipment material
+		List<EquipmentMaterial> eqms = fetchEquipmentMaterials(material);
+
+		if (!eqms.isEmpty()) {
+			String refs = "";
+			for (int i = 0; i < eqms.size(); i++) {
+				if (i > 0) {
+					refs += ", ";
 				}
 
+				refs += eqms.get(i).getEquipment().getName();
+			}
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("can.not.delete.material", material.getName(), refs));
+		}
+	}
+
+	private void checkEquipmentReferences(Equipment equipment) throws Exception {
+		// check for usage by OEE event
+		long count = fetchEventCount(equipment);
+
+		if (count > 0) {
+			throw new Exception(DomainLocalizer.instance().getErrorString("can.not.delete.event.equip",
+					equipment.getName(), count));
+		}
+	}
+
+	private void checkReasonReferences(Reason reason) throws Exception {
+		// check for usage by OEE event
+		long count = fetchEventCount(reason);
+
+		if (count > 0) {
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("can.not.delete.event.reason", reason.getName(), count));
+		}
+	}
+
+	private void checkDataCollectorReferences(DataCollector collector) throws Exception {
+		// check for script resolver references
+		List<EventResolver> resolvers = fetchResolverCrossReferences(collector);
+
+		if (!resolvers.isEmpty()) {
+			String refs = "";
+			for (EventResolver resolver : resolvers) {
 				if (refs.length() > 0) {
-					throw new Exception(
-							DomainLocalizer.instance().getErrorString("can.not.delete.ref.uom", uom.getSymbol(), refs));
+					refs += ", ";
 				}
+				refs += resolver.getSourceId();
 			}
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("can.not.delete.collector", collector.getName(), refs));
+		}
+	}
+
+	public void checkReferences(KeyedObject keyed) throws Exception {
+		if (keyed instanceof Rotation) {
+			checkRotationReferences((Rotation) keyed);
+		} else if (keyed instanceof CollectorDataSource) {
+			checkDataSourceReferences((CollectorDataSource) keyed);
+		} else if (keyed instanceof WorkSchedule) {
+			checkWorkScheduleReferences((WorkSchedule) keyed);
+		} else if (keyed instanceof UnitOfMeasure) {
+			checkUomReferences((UnitOfMeasure) keyed);
+		} else if (keyed instanceof Material) {
+			checkMaterialReferences((Material) keyed);
+		} else if (keyed instanceof Equipment) {
+			checkEquipmentReferences((Equipment) keyed);
+		} else if (keyed instanceof DataCollector) {
+			checkDataCollectorReferences((DataCollector) keyed);
+		} else if (keyed instanceof Reason) {
+			checkReasonReferences((Reason) keyed);
+		} else if (keyed instanceof Shift) {
+			checkShiftReferences((Shift) keyed);
+		} else if (keyed instanceof Team) {
+			checkTeamReferences((Team) keyed);
 		}
 	}
 
@@ -996,16 +1136,102 @@ public final class PersistenceService {
 	}
 
 	public List<EquipmentMaterial> fetchEquipmentMaterials(UnitOfMeasure uom) throws Exception {
-		final String EQM_XREF = "EQM.XRef";
+		final String EQM_UOM_XREF = "EQM.UOM.XRef";
 
-		if (namedQueryMap.get(EQM_XREF) == null) {
-			createNamedQuery(EQM_XREF,
+		if (namedQueryMap.get(EQM_UOM_XREF) == null) {
+			createNamedQuery(EQM_UOM_XREF,
 					"SELECT eqm FROM EquipmentMaterial eqm WHERE runRateUOM = :uom OR rejectUOM = :uom");
 		}
 
-		TypedQuery<EquipmentMaterial> query = getEntityManager().createNamedQuery(EQM_XREF, EquipmentMaterial.class);
+		TypedQuery<EquipmentMaterial> query = getEntityManager().createNamedQuery(EQM_UOM_XREF,
+				EquipmentMaterial.class);
 		query.setParameter("uom", uom);
 		return query.getResultList();
+	}
+
+	public List<EquipmentMaterial> fetchEquipmentMaterials(Material material) throws Exception {
+		final String EQM_MAT_XREF = "EQM.Mat.XRef";
+
+		if (namedQueryMap.get(EQM_MAT_XREF) == null) {
+			createNamedQuery(EQM_MAT_XREF, "SELECT eqm FROM EquipmentMaterial eqm WHERE material = :material");
+		}
+
+		TypedQuery<EquipmentMaterial> query = getEntityManager().createNamedQuery(EQM_MAT_XREF,
+				EquipmentMaterial.class);
+		query.setParameter("material", material);
+		return query.getResultList();
+	}
+
+	public long fetchEventCount(Material material) throws Exception {
+		final String EVENT_MAT_XREF = "Event.Mat.XRef";
+
+		if (namedQueryMap.get(EVENT_MAT_XREF) == null) {
+			createNamedQuery(EVENT_MAT_XREF, "SELECT COUNT(event) FROM OeeEvent event WHERE material = :material");
+		}
+
+		Query query = getEntityManager().createNamedQuery(EVENT_MAT_XREF);
+		query.setParameter("material", material);
+		return (long) query.getSingleResult();
+	}
+
+	public long fetchEventCount(Equipment equipment) throws Exception {
+		final String EVENT_EQ_XREF = "Event.Equip.XRef";
+
+		if (namedQueryMap.get(EVENT_EQ_XREF) == null) {
+			createNamedQuery(EVENT_EQ_XREF, "SELECT COUNT(event) FROM OeeEvent event WHERE equipment = :equipment");
+		}
+
+		Query query = getEntityManager().createNamedQuery(EVENT_EQ_XREF);
+		query.setParameter("equipment", equipment);
+		return (long) query.getSingleResult();
+	}
+
+	public long fetchEventCount(UnitOfMeasure uom) throws Exception {
+		final String EVENT_UOM_XREF = "Event.Uom.XRef";
+
+		if (namedQueryMap.get(EVENT_UOM_XREF) == null) {
+			createNamedQuery(EVENT_UOM_XREF, "SELECT COUNT(event) FROM OeeEvent event WHERE uom = :uom");
+		}
+
+		Query query = getEntityManager().createNamedQuery(EVENT_UOM_XREF);
+		query.setParameter("uom", uom);
+		return (long) query.getSingleResult();
+	}
+
+	public long fetchEventCount(Reason reason) throws Exception {
+		final String EVENT_REASON_XREF = "Event.Reason.XRef";
+
+		if (namedQueryMap.get(EVENT_REASON_XREF) == null) {
+			createNamedQuery(EVENT_REASON_XREF, "SELECT COUNT(event) FROM OeeEvent event WHERE reason = :reason");
+		}
+
+		Query query = getEntityManager().createNamedQuery(EVENT_REASON_XREF);
+		query.setParameter("reason", reason);
+		return (long) query.getSingleResult();
+	}
+
+	public long fetchEventCount(Shift shift) throws Exception {
+		final String EVENT_SHIFT_XREF = "Event.Shift.XRef";
+
+		if (namedQueryMap.get(EVENT_SHIFT_XREF) == null) {
+			createNamedQuery(EVENT_SHIFT_XREF, "SELECT COUNT(event) FROM OeeEvent event WHERE shift = :shift");
+		}
+
+		Query query = getEntityManager().createNamedQuery(EVENT_SHIFT_XREF);
+		query.setParameter("shift", shift);
+		return (long) query.getSingleResult();
+	}
+
+	public long fetchEventCount(Team team) throws Exception {
+		final String EVENT_TEAM_XREF = "Event.Team.XRef";
+
+		if (namedQueryMap.get(EVENT_TEAM_XREF) == null) {
+			createNamedQuery(EVENT_TEAM_XREF, "SELECT COUNT(event) FROM OeeEvent event WHERE team = :team");
+		}
+
+		Query query = getEntityManager().createNamedQuery(EVENT_TEAM_XREF);
+		query.setParameter("team", team);
+		return (long) query.getSingleResult();
 	}
 
 	public List<UnitOfMeasure> fetchUomCrossReferences(UnitOfMeasure uom) throws Exception {
@@ -1051,6 +1277,19 @@ public final class PersistenceService {
 
 		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(COLLECT_RES_XREF, EventResolver.class);
 		query.setParameter("source", source);
+		return query.getResultList();
+	}
+
+	public List<EventResolver> fetchResolverCrossReferences(DataCollector collector) {
+		final String COLLECT_RES_XREF = "Collector.Resolver.CrossRef";
+
+		if (namedQueryMap.get(COLLECT_RES_XREF) == null) {
+			createNamedQuery(COLLECT_RES_XREF,
+					"SELECT resolver FROM EventResolver resolver WHERE resolver.collector = :collector");
+		}
+
+		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(COLLECT_RES_XREF, EventResolver.class);
+		query.setParameter("collector", collector);
 		return query.getResultList();
 	}
 

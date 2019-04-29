@@ -1,6 +1,7 @@
 package org.point85.domain.messaging;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +93,15 @@ public class MessagingClient extends BaseMessagingClient {
 		subscribe(queueName, routingKeys);
 	}
 
+	/**
+	 * Connect to the RMQ broker
+	 * 
+	 * @param hostName Host name or IP address
+	 * @param port     Host port
+	 * @param userName User name
+	 * @param password User password
+	 * @throws Exception Exception
+	 */
 	public void connect(String hostName, int port, String userName, String password) throws Exception {
 		if (logger.isInfoEnabled()) {
 			logger.info("Connecting to RMQ broker host " + hostName + " on port " + port + ", user " + userName
@@ -115,12 +125,16 @@ public class MessagingClient extends BaseMessagingClient {
 		channel.exchangeDeclare(EXCHANGE_NAME, EXCHANGE_TYPE, DURABLE_EXCHANGE);
 
 		if (logger.isInfoEnabled()) {
-			logger.info(
-					"Connected to broker host " + hostName + " on port " + port + ", exchange " + EXCHANGE_NAME);
+			logger.info("Connected to broker host " + hostName + " on port " + port + ", exchange " + EXCHANGE_NAME);
 		}
 	}
 
-	public void shutDown() throws Exception {
+	/**
+	 * Disconnect from the RMQ broker
+	 * 
+	 * @throws Exception Exception
+	 */
+	public void disconnect() throws Exception {
 		if (channel != null) {
 			if (consumerTag != null) {
 				try {
@@ -147,6 +161,30 @@ public class MessagingClient extends BaseMessagingClient {
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Disconnected from " + factory.getHost() + " on port " + factory.getPort());
+		}
+	}
+
+	/**
+	 * Send an RMQ message of type notification to subscribers.
+	 * 
+	 * @param text     Text of message.
+	 * @param severity {@link NotificationSeverity}
+	 * @throws Exception Exception
+	 */
+	public void sendNotification(String text, NotificationSeverity severity) throws Exception {
+		final int STATUS_TTL_SEC = 3600;
+
+		InetAddress address = InetAddress.getLocalHost();
+
+		CollectorNotificationMessage message = new CollectorNotificationMessage(address.getHostName(),
+				address.getHostAddress());
+		message.setText(text);
+		message.setSeverity(severity);
+
+		try {
+			publish(message, RoutingKey.NOTIFICATION_MESSAGE, STATUS_TTL_SEC);
+		} catch (Exception e) {
+			logger.error("Unable to publish notification.", e);
 		}
 	}
 

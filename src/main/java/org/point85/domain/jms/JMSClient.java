@@ -62,7 +62,7 @@ public class JMSClient extends BaseMessagingClient {
 	}
 
 	public void startUp(String brokerHostName, int port, String userName, String password,
-			JMSEquipmentEventListener listener) throws JMSException {
+			JMSEquipmentEventListener listener) throws Exception {
 		// connect to broker
 		connect(brokerHostName, port, userName, password);
 
@@ -73,7 +73,16 @@ public class JMSClient extends BaseMessagingClient {
 		consume();
 	}
 
-	public void connect(String brokerHostName, int port, String userName, String password) throws JMSException {
+	/**
+	 * Connect to the JMS broker
+	 * 
+	 * @param brokerHostName Host name
+	 * @param port           Host port
+	 * @param userName       User name
+	 * @param password       User password
+	 * @throws Exception Exception
+	 */
+	public void connect(String brokerHostName, int port, String userName, String password) throws Exception {
 		if (logger.isInfoEnabled()) {
 			logger.info("Connecting to AMQ broker host " + brokerHostName + " on port " + port + ", user " + userName);
 		}
@@ -90,7 +99,12 @@ public class JMSClient extends BaseMessagingClient {
 		}
 	}
 
-	public void shutDown() throws JMSException {
+	/**
+	 * Disconnect from the JMS broker
+	 * 
+	 * @throws Exception Exception
+	 */
+	public void disconnect() throws Exception {
 		unregisterListener();
 
 		if (connection != null) {

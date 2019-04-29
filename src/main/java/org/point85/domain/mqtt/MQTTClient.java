@@ -62,6 +62,15 @@ public class MQTTClient extends BaseMessagingClient {
 
 	}
 
+	/**
+	 * Connect to the MQTT server
+	 * 
+	 * @param hostName Host name
+	 * @param port     Host port
+	 * @param userName User name
+	 * @param password User password
+	 * @throws Exception Exception
+	 */
 	public void connect(String hostName, int port, String userName, String password) throws Exception {
 		// use TCP protocol
 		String url = TCP_PROTOCOL + hostName + ":" + port;
@@ -134,7 +143,12 @@ public class MQTTClient extends BaseMessagingClient {
 		}
 	}
 
-	public void shutDown() throws Exception {
+	/**
+	 * Disconnect from the MQTT server
+	 * 
+	 * @throws Exception Exception
+	 */
+	public void disconnect() throws Exception {
 		mqttClient.unsubscribe(POINT85_TOPIC);
 		mqttClient.disconnect();
 		mqttClient.close(true);
@@ -143,5 +157,4 @@ public class MQTTClient extends BaseMessagingClient {
 			logger.info("Shut down MQTT client");
 		}
 	}
-
 }

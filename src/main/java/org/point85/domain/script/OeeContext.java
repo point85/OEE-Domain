@@ -90,7 +90,7 @@ public class OeeContext {
 		@SuppressWarnings("unchecked")
 		ConcurrentMap<Equipment, String> jobMap = (ConcurrentMap<Equipment, String>) contextMap.get(JOB_KEY);
 
-		return jobMap.get(equipment);
+		return equipment != null ? jobMap.get(equipment) : null;
 	}
 
 	/**
@@ -115,7 +115,7 @@ public class OeeContext {
 		@SuppressWarnings("unchecked")
 		ConcurrentMap<Equipment, Material> materialMap = (ConcurrentMap<Equipment, Material>) contextMap.get(MATL_KEY);
 
-		return materialMap.get(equipment);
+		return equipment != null ? materialMap.get(equipment) : null;
 	}
 
 	/**

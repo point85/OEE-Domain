@@ -2,6 +2,10 @@ package org.point85.domain.messaging;
 
 import org.point85.domain.i18n.DomainLocalizer;
 
+/**
+ * Message sent from a collector as an event notification
+ *
+ */
 public class CollectorNotificationMessage extends ApplicationMessage {
 
 	private NotificationSeverity severity;

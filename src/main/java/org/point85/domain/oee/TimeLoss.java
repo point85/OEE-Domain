@@ -98,7 +98,6 @@ public enum TimeLoss {
 			break;
 		default:
 			break;
-
 		}
 		return color;
 	}

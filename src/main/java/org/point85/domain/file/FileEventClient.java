@@ -5,18 +5,22 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.UUID;
 
-import org.point85.domain.collector.CollectorDataSource;
+import org.point85.domain.polling.PollingClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FileEventClient {
+/**
+ * Class to connect to a file share server and poll for new files for the
+ * specified source id.
+ *
+ */
+public class FileEventClient extends PollingClient {
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(FileEventClient.class);
 
+	// not localizable
 	public static final String READY_FOLDER = "ready";
 	public static final String PROCESSING_FOLDER = "processing";
 	public static final String PASS_FOLDER = "pass";
@@ -24,39 +28,20 @@ public class FileEventClient {
 
 	private static final String ERROR_EXT = ".error";
 
-	// polling interval in msec
-	private List<Integer> pollingPeriods;
-
-	// polling timer
-	private List<Timer> pollingTimers;
-
-	// polling task
-	private List<PollingTask> pollingTasks;
-
 	// service handling the queried data
 	private FileEventListener eventListener;
 
 	// file service
 	private FileService fileService;
 
-	// the source id of interest
-	private List<String> sourceIds;
-
-	// the file share
-	private FileEventSource fileSource;
-
 	// files being worked on
 	private List<String> inProcessFiles = new ArrayList<>();
 
-	public FileEventClient(FileEventListener eventListener, FileEventSource fileSource, List<String> sourceIds,
+	public FileEventClient(FileEventListener eventListener, FileEventSource eventSource, List<String> sourceIds,
 			List<Integer> pollingPeriods) {
+		super(eventSource, sourceIds, pollingPeriods);
 		this.fileService = new FileService();
 		this.eventListener = eventListener;
-		this.pollingTimers = new ArrayList<>();
-		this.pollingTasks = new ArrayList<>();
-		this.pollingPeriods = pollingPeriods;
-		this.fileSource = fileSource;
-		this.sourceIds = sourceIds;
 	}
 
 	public FileService getFileService() {
@@ -67,90 +52,26 @@ public class FileEventClient {
 		return fileService.readFile(file);
 	}
 
-	public void startPolling() {
-		for (int i = 0; i < sourceIds.size(); i++) {
-			if (pollingPeriods.get(i) == null) {
-				pollingPeriods.set(i, new Integer(CollectorDataSource.DEFAULT_UPDATE_PERIOD_MSEC));
-			}
-
-			if (logger.isInfoEnabled()) {
-				logger.info("Starting to poll for new files every " + pollingPeriods.get(i) + " msec. for sourceId "
-						+ sourceIds.get(i));
-			}
-
-			startPollingTimer(i);
-		}
-	}
-
-	public void stopPolling() {
-		for (int i = 0; i < sourceIds.size(); i++) {
-			stopPollingTimer(i);
-
-			if (logger.isInfoEnabled()) {
-				logger.info("Stopped polling for new files from sourceId " + sourceIds.get(i));
-			}
-		}
-		pollingTimers.clear();
-	}
-
-	private void initializePollingTimer(int i) {
-		// create timer and task
-		pollingTimers.add(i, new Timer());
-		pollingTasks.add(i, new PollingTask(sourceIds.get(i)));
-	}
-
-	private void startPollingTimer(int i) {
-		if (pollingTimers.size() == i) {
-			initializePollingTimer(i);
-		}
-
-		long delay = (long) (Math.random() * 5000.0d);
-		pollingTimers.get(i).schedule(pollingTasks.get(i), delay, pollingPeriods.get(i));
-	}
-
-	private void stopPollingTimer(int i) {
-		if (pollingTimers.size() > i) {
-			pollingTimers.get(i).cancel();
-		}
-	}
-
-	private void onPoll(String sourceId) {
-		if (sourceId == null) {
-			logger.error("The file source id is null.");
-			return;
-		}
-
+	@Override
+	protected void onPoll(String sourceId) {
 		if (logger.isInfoEnabled()) {
 			logger.info("Querying for new files for source " + sourceId);
 		}
 
 		// query file server for new files
-		String filePath = fileSource.getNetworkPath(sourceId) + File.separator + READY_FOLDER;
+		String filePath = getFileEventSource().getNetworkPath(sourceId) + File.separator + READY_FOLDER;
 		List<File> files = fileService.getFiles(filePath);
 
 		eventListener.resolveFileEvents(this, sourceId, files);
 	}
 
 	public FileEventSource getFileEventSource() {
-		return fileSource;
-	}
-
-	private class PollingTask extends TimerTask {
-		private String sourceId;
-
-		private PollingTask(String sourceId) {
-			this.sourceId = sourceId;
-		}
-
-		@Override
-		public void run() {
-			onPoll(sourceId);
-		}
+		return (FileEventSource) dataSource;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(fileSource.getId());
+		return Objects.hash(dataSource.getId());
 	}
 
 	@Override
@@ -161,7 +82,7 @@ public class FileEventClient {
 		}
 		FileEventClient otherClient = (FileEventClient) other;
 
-		return fileSource.getId().equals(otherClient.getFileEventSource().getId());
+		return getFileEventSource().getId().equals(otherClient.getFileEventSource().getId());
 	}
 
 	public void moveFile(File file, FileEventSource source, String sourceId, String folder) throws IOException {

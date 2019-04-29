@@ -117,6 +117,11 @@ public class EquipmentEventResolver {
 		OeeEventType resolverType = eventResolver.getType();
 		String script = eventResolver.getScript();
 
+		if (sourceValue == null) {
+			throw new Exception(
+					DomainLocalizer.instance().getErrorString("no.source.value", sourceId, equipment.getName()));
+		}
+
 		if (script == null || script.length() == 0) {
 			throw new Exception(DomainLocalizer.instance().getErrorString("no.script", sourceId, equipment.getName()));
 		}
@@ -216,7 +221,7 @@ public class EquipmentEventResolver {
 		String job = null;
 		if (eventResolver.getType().equals(OeeEventType.JOB_CHANGE)) {
 			// set job from event
-			job = (String) sourceValue;
+			job = (String) result;
 			context.setJob(equipment, job);
 		} else {
 			// set job from context

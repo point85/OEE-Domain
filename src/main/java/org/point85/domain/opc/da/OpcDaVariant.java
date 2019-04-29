@@ -10,6 +10,7 @@ import org.jinterop.dcom.core.JIUnsignedByte;
 import org.jinterop.dcom.core.JIUnsignedInteger;
 import org.jinterop.dcom.core.JIUnsignedShort;
 import org.jinterop.dcom.core.JIVariant;
+import org.point85.domain.i18n.DomainLocalizer;
 
 /**
  *
@@ -280,7 +281,6 @@ public class OpcDaVariant {
 		Number numberValue = null;
 
 		switch (getJIVariant().getType()) {
-
 		// 1 byte
 		case JIVariant.VT_I1:
 		case JIVariant.VT_UI1:
@@ -400,6 +400,43 @@ public class OpcDaVariant {
 
 	public boolean isNumeric() throws JIException {
 		return getValueAsNumber() != null ? true : false;
+	}
+
+	public Object getValueAsObject() throws Exception {
+		Object dataValue = null;
+
+		if (!isArray()) {
+			// scalar
+			if (getDataType().equals(OpcDaVariantType.STRING)) {
+				dataValue = getValueAsString();
+			} else {
+				dataValue = getValueAsNumber();
+			}
+		} else {
+			// array
+			JIArray jiArray = getJIVariant().getObjectAsArray();
+			if (jiArray.getDimensions() != 1) {
+				throw new Exception(
+						DomainLocalizer.instance().getErrorString("must.be.one.dim", jiArray.getDimensions()));
+			}
+			int len = jiArray.getUpperBounds()[0];
+
+			Object[] values = new Object[len];
+			Object[] array = (Object[]) jiArray.getArrayInstance();
+
+			for (int i = 0; i < len; i++) {
+				if (array instanceof JIString[]) {
+					// string
+					JIString jis = ((JIString[]) array)[i];
+					values[i] = jis.getString();
+				} else {
+					// number
+					values[i] = array[i];
+				}
+			}
+			dataValue = values;
+		}
+		return dataValue;
 	}
 
 	@Override

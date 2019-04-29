@@ -23,6 +23,8 @@ SOFTWARE.
 */
 package org.point85.domain.uom;
 
+import org.point85.domain.i18n.DomainLocalizer;
+
 /**
  * UnitType is an enumeration of unit of measure types. Only units of measure
  * with the same type can be converted.
@@ -48,5 +50,163 @@ public enum UnitType {
 	CURRENCY,
 	
 	// unclassified.  Reserved for use when creating custom units of measure.
-	UNCLASSIFIED
+	UNCLASSIFIED;
+	
+	@Override
+	public String toString() {
+		String key = null;
+		
+		switch (this) {
+		case ACCELERATION:
+			key = "ut.acceleration";
+			break;
+		case AREA:
+			key = "ut.area";
+			break;
+		case CATALYTIC_ACTIVITY:
+			key = "ut.cat.activity";
+			break;
+		case COMPUTER_SCIENCE:
+			key = "ut.comp.sci";
+			break;
+		case CURRENCY:
+			key = "ut.currency";
+			break;
+		case DENSITY:
+			key = "ut.density";
+			break;
+		case DYNAMIC_VISCOSITY:
+			key = "ut.dyn.vis";
+			break;
+		case ELECTRIC_CAPACITANCE:
+			key = "ut.elec.cap";
+			break;
+		case ELECTRIC_CHARGE:
+			key = "ut.elec.charge";
+			break;
+		case ELECTRIC_CONDUCTANCE:
+			key = "ut.elec.cond";
+			break;
+		case ELECTRIC_CURRENT:
+			key = "ut.elec.cur";
+			break;
+		case ELECTRIC_FIELD_STRENGTH:
+			key = "ut.elec.field";
+			break;
+		case ELECTRIC_INDUCTANCE:
+			key = "ut.elec.ind";
+			break;
+		case ELECTRIC_PERMITTIVITY:
+			key = "ut.elec.perm";
+			break;
+		case ELECTRIC_RESISTANCE:
+			key = "ut.elec.res";
+			break;
+		case ELECTROMOTIVE_FORCE:
+			key = "ut.emf";
+			break;
+		case ENERGY:
+			key = "ut.energy";
+			break;
+		case FORCE:
+			key = "ut.force";
+			break;
+		case FREQUENCY:
+			key = "ut.freq";
+			break;
+		case ILLUMINANCE:
+			key = "ut.illum";
+			break;
+		case INTENSITY:
+			key = "ut.intent";
+			break;
+		case IRRADIANCE:
+			key = "ut.irrad";
+			break;
+		case KINEMATIC_VISCOSITY:
+			key = "ut.kin.vis";
+			break;
+		case LENGTH:
+			key = "ut.length";
+			break;
+		case LUMINOSITY:
+			key = "ut.lumin";
+			break;
+		case LUMINOUS_FLUX:
+			key = "ut.lumin.flux";
+			break;
+		case MAGNETIC_FLUX:
+			key = "ut.mag.flux";
+			break;
+		case MAGNETIC_FLUX_DENSITY:
+			key = "ut.mag.flux.den";
+			break;
+		case MASS:
+			key = "ut.mass";
+			break;
+		case MASS_FLOW:
+			key = "ut.mass.flow";
+			break;
+		case MOLAR_CONCENTRATION:
+			key = "ut.mol.conc";
+			break;
+		case PLANE_ANGLE:
+			key = "ut.plane.angle";
+			break;
+		case POWER:
+			key = "ut.power";
+			break;
+		case PRESSURE:
+			key = "ut.pressure";
+			break;
+		case RADIATION_DOSE_ABSORBED:
+			key = "ut.rad.dose.abs";
+			break;
+		case RADIATION_DOSE_EFFECTIVE:
+			key = "ut.rad.dose.eff";
+			break;
+		case RADIATION_DOSE_RATE:
+			key = "ut.rad.dose.rate";
+			break;
+		case RADIOACTIVITY:
+			key = "ut.radio";
+			break;
+		case RECIPROCAL_LENGTH:
+			key = "ut.recip.len";
+			break;
+		case SOLID_ANGLE:
+			key = "ut.solid.angle";
+			break;
+		case SUBSTANCE_AMOUNT:
+			key = "ut.sub.amount";
+			break;
+		case TEMPERATURE:
+			key = "ut.temperature";
+			break;
+		case TIME:
+			key = "ut.time";
+			break;
+		case TIME_SQUARED:
+			key = "ut.sq.time";
+			break;
+		case UNCLASSIFIED:
+			key = "ut.unclassified";
+			break;
+		case UNITY:
+			key = "ut.unity";
+			break;
+		case VELOCITY:
+			key = "ut.velocity";
+			break;
+		case VOLUME:
+			key = "ut.volume";
+			break;
+		case VOLUMETRIC_FLOW:
+			key = "ut.vol.flow";
+			break;
+		default:
+			break;
+		}
+		return DomainLocalizer.instance().getUnitString(key);
+	}
 }
