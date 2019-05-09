@@ -4,7 +4,7 @@
 
   <groupId>org.point85</groupId>
   <artifactId>oee-domain</artifactId>
-  <version>2.3.1</version>
+  <version>2.3.2</version>
   <packaging>jar</packaging>
   <url>http://maven.apache.org</url>
 

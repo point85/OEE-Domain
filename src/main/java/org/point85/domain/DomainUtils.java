@@ -33,8 +33,8 @@ public final class DomainUtils {
 	public static final String OFFSET_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS ZZZZZ";
 
 	public static String getVersionInfo() {
-		return DomainLocalizer.instance().getLangString("version") + " 2.3.1, "
-				+ LocalDate.of(2019, 4, 28).format(DateTimeFormatter.ISO_DATE);
+		return DomainLocalizer.instance().getLangString("version") + " 2.3.2, "
+				+ LocalDate.of(2019, 5, 10).format(DateTimeFormatter.ISO_DATE);
 	}
 
 	// format a Duration
@@ -180,5 +180,10 @@ public final class DomainUtils {
 		}
 
 		return sb.toString();
+	}
+
+	public static String getJVMInfo() {
+		return System.getProperty("java.version") + ", " + System.getProperty("java.vm.name") + ", "
+				+ System.getProperty("java.runtime.version");
 	}
 }

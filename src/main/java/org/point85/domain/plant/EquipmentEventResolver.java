@@ -201,8 +201,12 @@ public class EquipmentEventResolver {
 				OeeEvent setup = PersistenceService.instance().fetchLastEvent(equipment, OeeEventType.MATL_CHANGE);
 
 				if (setup != null) {
+					// material
 					material = setup.getMaterial();
 					context.setMaterial(equipment, material);
+					
+					// job name
+					context.setJob(equipment, setup.getJob());
 				}
 			}
 

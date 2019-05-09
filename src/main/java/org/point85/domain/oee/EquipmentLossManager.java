@@ -29,6 +29,10 @@ public final class EquipmentLossManager {
 	public static void calculateEquipmentLoss(EquipmentLoss equipmentLoss, OffsetDateTime from, OffsetDateTime to)
 			throws Exception {
 
+		// time period
+		equipmentLoss.setStartDateTime(from);
+		equipmentLoss.setEndDateTime(to);
+
 		Equipment equipment = equipmentLoss.getEquipment();
 		Material material = equipmentLoss.getMaterial();
 
@@ -42,14 +46,12 @@ public final class EquipmentLossManager {
 		// IRR
 		equipmentLoss.setDesignSpeed(eqm.getRunRate());
 
-		// time from measured production
+		// material production
 		List<OeeEvent> productions = PersistenceService.instance().fetchProduction(equipment, material, from, to);
 
 		equipmentLoss.getEventRecords().addAll(productions);
 
 		for (OeeEvent record : productions) {
-			checkTimePeriod(record, equipmentLoss, from, to);
-
 			Quantity quantity = record.getQuantity();
 
 			if (quantity.getUOM() == null) {
@@ -92,7 +94,7 @@ public final class EquipmentLossManager {
 			}
 		}
 
-		// time from measured availability losses
+		// availability losses
 		List<OeeEvent> records = PersistenceService.instance().fetchAvailability(equipment, from, to);
 
 		equipmentLoss.getEventRecords().addAll(records);
@@ -106,8 +108,6 @@ public final class EquipmentLossManager {
 			if (lossCategory.equals(TimeLoss.NO_LOSS)) {
 				continue;
 			}
-
-			checkTimePeriod(record, equipmentLoss, from, to);
 
 			Duration eventDuration = record.getDuration();
 			Duration duration = eventDuration;
@@ -172,40 +172,6 @@ public final class EquipmentLossManager {
 		}
 	}
 
-	private static void checkTimePeriod(OeeEvent record, EquipmentLoss equipmentLoss, OffsetDateTime from,
-			OffsetDateTime to) {
-		// beginning time
-		OffsetDateTime recordStart = record.getStartTime();
-		OffsetDateTime recordEnd = record.getEndTime();
-
-		if (recordStart.isBefore(from)) {
-			recordStart = from;
-		}
-
-		if (recordEnd == null || recordEnd.isAfter(to)) {
-			recordEnd = to;
-		}
-
-		OffsetDateTime lossStart = equipmentLoss.getStartDateTime();
-		OffsetDateTime lossEnd = equipmentLoss.getEndDateTime();
-
-		if (lossStart == null) {
-			equipmentLoss.setStartDateTime(recordStart);
-		} else {
-			if (recordStart.isBefore(lossStart)) {
-				equipmentLoss.setStartDateTime(recordStart);
-			}
-		}
-
-		if (lossEnd == null) {
-			equipmentLoss.setEndDateTime(recordEnd);
-		} else {
-			if (recordEnd != null && recordEnd.isAfter(lossEnd)) {
-				equipmentLoss.setEndDateTime(recordEnd);
-			}
-		}
-	}
-
 	public static List<ParetoItem> getParetoData(EquipmentLoss equipmentLoss, TimeLoss loss) throws Exception {
 		// create the items to chart
 		Map<Reason, Duration> reasonMap = equipmentLoss.getLossReasonsByCategory(loss);
@@ -218,7 +184,6 @@ public final class EquipmentLossManager {
 
 			logger.info("Pareto Reason: " + entry.getKey().getName() + ", duration: " + entry.getValue());
 		}
-
 		return items;
 	}
 }

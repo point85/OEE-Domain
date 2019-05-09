@@ -351,7 +351,7 @@ public final class PersistenceService {
 					DomainLocalizer.instance().getErrorString("can.not.delete.collector", source.getName(), refs));
 		}
 	}
-	
+
 	private long fetchRotationSegmentCount(Shift shift) throws Exception {
 		final String SEG_SHIFT_XREF = "Seg.Shift.XRef";
 
@@ -372,10 +372,10 @@ public final class PersistenceService {
 			throw new Exception(
 					DomainLocalizer.instance().getErrorString("can.not.delete.event.shift", shift.getName(), count));
 		}
-		
+
 		// by rotation segment
 		count = fetchRotationSegmentCount(shift);
-		
+
 		if (count > 0) {
 			throw new Exception(
 					DomainLocalizer.instance().getErrorString("can.not.delete.rs.shift", shift.getName(), count));
@@ -1514,6 +1514,30 @@ public final class PersistenceService {
 		query.setParameter("matl", material);
 
 		return query.getResultList();
+	}
+
+	public OeeEvent fetchLastBoundEvent(Equipment equipment, OeeEventType type, OffsetDateTime dateTime) {
+		final String LAST_EVENT = "Event.Last.Bound";
+
+		if (namedQueryMap.get(LAST_EVENT) == null) {
+			createNamedQuery(LAST_EVENT,
+					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type "
+							+ "AND e.startTime.localDateTime <= :dateTime ORDER BY e.startTime.localDateTime DESC");
+		}
+
+		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(LAST_EVENT, OeeEvent.class);
+		query.setParameter("equipment", equipment);
+		query.setParameter("type", type);
+		query.setParameter("dateTime", dateTime.toLocalDateTime());
+		query.setMaxResults(1);
+		List<OeeEvent> records = query.getResultList();
+
+		OeeEvent record = null;
+		if (records.size() == 1) {
+			record = records.get(0);
+		}
+
+		return record;
 	}
 
 	public OeeEvent fetchLastEvent(Equipment equipment, OeeEventType type) {
