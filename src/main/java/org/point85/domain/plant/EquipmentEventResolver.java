@@ -137,23 +137,19 @@ public class EquipmentEventResolver {
 
 		ResolverFunction resolverFunction = new ResolverFunction(script);
 
-		// for production counts
-		if (resolverType.isProduction() && eventResolver.getLastValue() == null) {
-			// fetch from database
-			OeeEvent event = PersistenceService.instance().fetchLastEvent(equipment, resolverType);
-
-			if (event != null) {
-				eventResolver.setLastValue(event.getOutputValue());
-			} else {
-				eventResolver.setLastValue(sourceValue);
-			}
-		}
-
 		// result of script execution
 		Object result = resolverFunction.invoke(getScriptEngine(), context, sourceValue, eventResolver);
 
+		// set last value
+		eventResolver.setLastValue(sourceValue);
+
 		if (logger.isInfoEnabled()) {
 			logger.info("Result: " + result);
+		}
+
+		// a null result means to ignore the script execution
+		if (result == null) {
+			return null;
 		}
 
 		// an event time could have been set in the resolver
@@ -204,7 +200,7 @@ public class EquipmentEventResolver {
 					// material
 					material = setup.getMaterial();
 					context.setMaterial(equipment, material);
-					
+
 					// job name
 					context.setJob(equipment, setup.getJob());
 				}

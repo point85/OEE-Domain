@@ -11,6 +11,7 @@ import org.point85.domain.file.FileEventClient;
 import org.point85.domain.http.OeeHttpServer;
 import org.point85.domain.jms.JMSClient;
 import org.point85.domain.messaging.MessagingClient;
+import org.point85.domain.modbus.ModbusMaster;
 import org.point85.domain.mqtt.MQTTClient;
 import org.point85.domain.opc.da.DaOpcClient;
 import org.point85.domain.opc.ua.UaOpcClient;
@@ -61,6 +62,9 @@ public class OeeContext {
 	// HTTP server key
 	private static final String HTTP_KEY = "HTTP";
 
+	// Modbus key
+	private static final String MODBUS_KEY = "MODBUS";
+
 	// hash map of objects exposed to scripting
 	private final ConcurrentMap<String, Object> contextMap;
 
@@ -78,6 +82,7 @@ public class OeeContext {
 		setHttpServers(new HashSet<OeeHttpServer>());
 		setDatabaseEventClients(new HashSet<DatabaseEventClient>());
 		setFileEventClients(new HashSet<FileEventClient>());
+		setModbusMasters(new HashSet<ModbusMaster>());
 	}
 
 	/**
@@ -310,6 +315,16 @@ public class OeeContext {
 	}
 
 	/**
+	 * Get a list of Modbus masters defined for the collector
+	 * 
+	 * @return Collection of {@link ModbusMaster}
+	 */
+	@SuppressWarnings("unchecked")
+	public Collection<ModbusMaster> getModbusMasters() {
+		return (Collection<ModbusMaster>) contextMap.get(MODBUS_KEY);
+	}
+
+	/**
 	 * Get the first (only) messaging client
 	 * 
 	 * @return {@link MessagingClient}
@@ -385,6 +400,21 @@ public class OeeContext {
 	}
 
 	/**
+	 * Get the first (only) Modbus master
+	 * 
+	 * @return {@link ModbusMaster}
+	 */
+	public ModbusMaster getModbusMaster() {
+		// get the first one
+		ModbusMaster master = null;
+
+		if (!getModbusMasters().isEmpty()) {
+			master = getModbusMasters().iterator().next();
+		}
+		return master;
+	}
+
+	/**
 	 * Set the list of the messaging clients defined for the collector
 	 * 
 	 * @param clients Set of {@link MessagingClient}
@@ -427,6 +457,15 @@ public class OeeContext {
 	 */
 	public void setFileEventClients(Collection<FileEventClient> clients) {
 		contextMap.put(FILE_KEY, clients);
+	}
+
+	/**
+	 * Set the list of the Modbus masters defined for the collector
+	 * 
+	 * @param masters Set of {@link ModbusMaster}
+	 */
+	public void setModbusMasters(Collection<ModbusMaster> masters) {
+		contextMap.put(MODBUS_KEY, masters);
 	}
 
 	/**
@@ -485,6 +524,17 @@ public class OeeContext {
 	}
 
 	/**
+	 * Add a Modbus master to the list
+	 * 
+	 * @param master {@link ModbusMaster}
+	 */
+	public void addModbusMaster(ModbusMaster master) {
+		if (!getModbusMasters().contains(master)) {
+			getModbusMasters().add(master);
+		}
+	}
+
+	/**
 	 * Remove a messaging client from the list
 	 * 
 	 * @param client {@link MessagingClient}
@@ -536,6 +586,17 @@ public class OeeContext {
 	public void removeFileEventClient(FileEventClient client) {
 		if (getFileEventClients().contains(client)) {
 			getFileEventClients().remove(client);
+		}
+	}
+
+	/**
+	 * Remove a Modbus master from the list
+	 * 
+	 * @param master {@link ModbusMaster}
+	 */
+	public void removeModbusMaster(ModbusMaster master) {
+		if (getModbusMasters().contains(master)) {
+			getModbusMasters().remove(master);
 		}
 	}
 

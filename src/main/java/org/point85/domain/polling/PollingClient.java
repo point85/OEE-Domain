@@ -21,10 +21,10 @@ public abstract class PollingClient {
 	protected List<Integer> pollingPeriods;
 
 	// polling timer
-	protected List<Timer> pollingTimers;
+	protected List<Timer> pollingTimers = new ArrayList<>();
 
 	// polling task
-	protected List<PollingTask> pollingTasks;
+	protected List<PollingTask> pollingTasks = new ArrayList<>();
 
 	// the source ids of interest
 	protected List<String> sourceIds;
@@ -32,38 +32,68 @@ public abstract class PollingClient {
 	// collector data source
 	protected CollectorDataSource dataSource;
 
+	// polling flag
+	private boolean isPolling = false;
+
+	protected PollingClient() {
+	}
+
 	protected PollingClient(CollectorDataSource dataSource, List<String> sourceIds, List<Integer> pollingPeriods) {
-		this.pollingTimers = new ArrayList<>();
-		this.pollingTasks = new ArrayList<>();
 		this.pollingPeriods = pollingPeriods;
 		this.dataSource = dataSource;
 		this.sourceIds = sourceIds;
 	}
 
+	public List<String> getSourceIds() {
+		return sourceIds;
+	}
+
+	public void setSourceIds(List<String> ids) {
+		this.sourceIds = ids;
+	}
+
+	public List<Integer> getPollingsPeriods() {
+		return pollingPeriods;
+	}
+
+	public void setPollingPeriods(List<Integer> periods) {
+		this.pollingPeriods = periods;
+	}
+
 	public void startPolling() {
+		if (sourceIds == null) {
+			return;
+		}
+
 		for (int i = 0; i < sourceIds.size(); i++) {
 			if (pollingPeriods.get(i) == null) {
 				pollingPeriods.set(i, new Integer(CollectorDataSource.DEFAULT_UPDATE_PERIOD_MSEC));
 			}
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Starting to poll for new files every " + pollingPeriods.get(i) + " msec. for sourceId "
+				logger.info("Starting to poll source every " + pollingPeriods.get(i) + " msec. for sourceId "
 						+ sourceIds.get(i));
 			}
 
 			startPollingTimer(i);
 		}
+		isPolling = true;
 	}
 
 	public void stopPolling() {
+		if (sourceIds == null) {
+			return;
+		}
+
 		for (int i = 0; i < sourceIds.size(); i++) {
 			stopPollingTimer(i);
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Stopped polling for new files from sourceId " + sourceIds.get(i));
+				logger.info("Stopped polling source for sourceId " + sourceIds.get(i));
 			}
 		}
 		pollingTimers.clear();
+		isPolling = false;
 	}
 
 	public void cancelPolling() {
@@ -83,6 +113,7 @@ public abstract class PollingClient {
 			initializePollingTimer(i);
 		}
 
+		// delay up to 5 sec
 		long delay = (long) (Math.random() * 5000.0d);
 		pollingTimers.get(i).schedule(pollingTasks.get(i), delay, pollingPeriods.get(i));
 	}
@@ -93,7 +124,19 @@ public abstract class PollingClient {
 		}
 	}
 
+	public CollectorDataSource getDataSource() {
+		return dataSource;
+	}
+
+	public void setDataSource(CollectorDataSource source) {
+		this.dataSource = source;
+	}
+
 	protected abstract void onPoll(String sourceId);
+
+	public boolean isPolling() {
+		return isPolling;
+	}
 
 	private class PollingTask extends TimerTask {
 		private String sourceId;

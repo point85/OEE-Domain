@@ -36,6 +36,7 @@ import org.point85.domain.http.HttpSource;
 import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.jms.JMSSource;
 import org.point85.domain.messaging.MessagingSource;
+import org.point85.domain.modbus.ModbusSource;
 import org.point85.domain.mqtt.MQTTSource;
 import org.point85.domain.opc.da.OpcDaSource;
 import org.point85.domain.opc.ua.OpcUaSource;
@@ -1361,7 +1362,7 @@ public final class PersistenceService {
 				Equipment.class, EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class,
 				Reason.class, Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class,
 				NonWorkingPeriod.class, Rotation.class, RotationSegment.class, Shift.class, Team.class,
-				WorkSchedule.class };
+				WorkSchedule.class, ModbusSource.class };
 	}
 
 	private Class<?>[] getDatabaseEventEntityClasses() {

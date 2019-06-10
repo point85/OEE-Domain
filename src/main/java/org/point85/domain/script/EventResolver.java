@@ -123,16 +123,8 @@ public class EventResolver extends KeyedObject {
 	 * @return JavaScript function
 	 */
 	public static String createDefaultProductionFunction() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("var ROLLOVER = 0;");
-		sb.append('\n').append("var lastValue = resolver.getLastValue();");
-		sb.append('\n').append("var delta = value - lastValue;");
-		sb.append('\n').append("if (value < lastValue) {");
-		sb.append('\n').append("    delta += ROLLOVER;");
-		sb.append('\n').append('}');
-		sb.append('\n').append("return delta;");
-
-		return ResolverFunction.functionFromBody(sb.toString());
+		String body = "return value;";
+		return ResolverFunction.functionFromBody(body);
 	}
 
 	/**
@@ -153,6 +145,18 @@ public class EventResolver extends KeyedObject {
 	 * @return JavaScript function
 	 */
 	public static String createDefaultJobFunction() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("return value;");
+
+		return ResolverFunction.functionFromBody(sb.toString());
+	}
+
+	/**
+	 * Create the default function for an event
+	 * 
+	 * @return JavaScript function
+	 */
+	public static String createDefaultFunction() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("return value;");
 

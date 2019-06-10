@@ -40,6 +40,9 @@ public abstract class CollectorDataSource extends NamedObject {
 	@Column(name = "PORT")
 	private Integer port;
 
+	@Column(name = "END_PATH")
+	private String endpointPath;
+
 	public CollectorDataSource() {
 		super();
 	}
@@ -90,6 +93,14 @@ public abstract class CollectorDataSource extends NamedObject {
 
 	public void setPort(Integer port) {
 		this.port = port;
+	}
+
+	public String getEndpointPath() {
+		return endpointPath;
+	}
+
+	public void setEndpointPath(String path) {
+		this.endpointPath = path;
 	}
 
 	@Override

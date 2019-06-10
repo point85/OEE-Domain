@@ -49,6 +49,10 @@ import org.point85.domain.messaging.MessagingClient;
 import org.point85.domain.messaging.MessagingSource;
 import org.point85.domain.messaging.NotificationSeverity;
 import org.point85.domain.messaging.RoutingKey;
+import org.point85.domain.modbus.ModbusEvent;
+import org.point85.domain.modbus.ModbusEventListener;
+import org.point85.domain.modbus.ModbusMaster;
+import org.point85.domain.modbus.ModbusSource;
 import org.point85.domain.mqtt.MQTTClient;
 import org.point85.domain.mqtt.MQTTEquipmentEventListener;
 import org.point85.domain.mqtt.MQTTSource;
@@ -78,9 +82,9 @@ import com.google.gson.Gson;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Envelope;
 
-public class CollectorService
-		implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener, MessageListener,
-		JMSEquipmentEventListener, DatabaseEventListener, FileEventListener, MQTTEquipmentEventListener {
+public class CollectorService implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener,
+		MessageListener, JMSEquipmentEventListener, DatabaseEventListener, FileEventListener,
+		MQTTEquipmentEventListener, ModbusEventListener {
 
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
@@ -138,6 +142,7 @@ public class CollectorService
 	private final Map<String, JMSBrokerSource> jmsBrokerMap = new HashMap<>();
 	private final Map<String, PolledSource> databaseServerMap = new HashMap<>();
 	private final Map<String, PolledSource> fileServerMap = new HashMap<>();
+	private final Map<String, PolledSource> modbusSlaveMap = new HashMap<>();
 	private final Map<String, MQTTBrokerSource> mqttBrokerMap = new HashMap<>();
 
 	public CollectorService() {
@@ -286,6 +291,27 @@ public class CollectorService
 		serverSource.getPollingIntervals().add(pollingMillis);
 	}
 
+	// collect all Modbus slave info
+	private void buildModbusSlaves(EventResolver resolver) throws Exception {
+		ModbusSource eventSource = (ModbusSource) resolver.getDataSource();
+		String sourceId = resolver.getSourceId();
+		Integer pollingMillis = resolver.getUpdatePeriod();
+		String id = eventSource.getId();
+
+		PolledSource serverSource = modbusSlaveMap.get(id);
+
+		if (serverSource == null) {
+			if (logger.isInfoEnabled()) {
+				logger.info("Found Modbus slave specified for host " + eventSource.getHost());
+			}
+
+			serverSource = new PolledSource(eventSource);
+			modbusSlaveMap.put(id, serverSource);
+		}
+		serverSource.getSourceIds().add(sourceId);
+		serverSource.getPollingIntervals().add(pollingMillis);
+	}
+
 	private void connectToEventBrokers(Map<String, MessageBrokerSource> brokerSources) throws Exception {
 		for (Entry<String, MessageBrokerSource> entry : brokerSources.entrySet()) {
 			MessagingSource source = entry.getValue().getSource();
@@ -379,6 +405,28 @@ public class CollectorService
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Polling interface table for database server: " + databaseEventSource.getId());
+			}
+		}
+	}
+
+	private void startModbusPolling(Map<String, PolledSource> slaveSources) throws Exception {
+		for (Entry<String, PolledSource> entry : slaveSources.entrySet()) {
+			// source of Modbus slave events
+			PolledSource slaveSource = entry.getValue();
+			ModbusSource modbusSource = (ModbusSource) slaveSource.getEventSource();
+			List<String> sourceIds = slaveSource.getSourceIds();
+			List<Integer> pollingIntervals = slaveSource.getPollingIntervals();
+
+			ModbusMaster modbusMaster = new ModbusMaster(this, modbusSource, sourceIds, pollingIntervals);
+			modbusMaster.connect();
+
+			// add to context
+			appContext.getModbusMasters().add(modbusMaster);
+
+			modbusMaster.startPolling();
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Polling Modbus slave: " + modbusSource.getId());
 			}
 		}
 	}
@@ -635,6 +683,11 @@ public class CollectorService
 					break;
 				}
 
+				case MODBUS: {
+					buildModbusSlaves(resolver);
+					break;
+				}
+
 				default:
 					break;
 				}
@@ -667,6 +720,9 @@ public class CollectorService
 
 		// poll file servers
 		startFilePolling(fileServerMap);
+
+		// connect to Modbus slaves
+		startModbusPolling(modbusSlaveMap);
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Startup finished.");
@@ -866,6 +922,13 @@ public class CollectorService
 		}
 		appContext.getMessagingClients().clear();
 
+		// stop polling Modbus slaves
+		for (ModbusMaster master : appContext.getModbusMasters()) {
+			master.stopPolling();
+			onInformation("Stopped polling for Modbus master " + master.getDataSource().getHost());
+		}
+		appContext.getModbusMasters().clear();
+
 		// set back to ready
 		saveCollectorState(CollectorState.READY);
 	}
@@ -952,6 +1015,11 @@ public class CollectorService
 			fileClient.stopPolling();
 		}
 
+		// Modbus polling
+		for (ModbusMaster master : appContext.getModbusMasters()) {
+			master.stopPolling();
+		}
+
 		// HTTP servers
 		for (OeeHttpServer httpServer : appContext.getHttpServers()) {
 			httpServer.shutdown();
@@ -990,6 +1058,11 @@ public class CollectorService
 			httpServer.startup();
 		}
 
+		// Modbus slave polling
+		for (ModbusMaster master : appContext.getModbusMasters()) {
+			master.startPolling();
+		}
+
 		if (logger.isInfoEnabled()) {
 			logger.info("Subscribed to data sources.");
 		}
@@ -1009,6 +1082,12 @@ public class CollectorService
 	@Override
 	public void resolveFileEvents(FileEventClient client, String sourceId, List<File> files) {
 		getExecutorService().execute(new FileTask(client, sourceId, files));
+	}
+
+	// Modbus event
+	@Override
+	public void resolveModbusEvents(ModbusEvent event) {
+		getExecutorService().execute(new ModbusTask(event));
 	}
 
 	@Override
@@ -1279,35 +1358,6 @@ public class CollectorService
 		}
 	}
 
-	// database servers
-	/*
-	 * private class DatabaseServerSource { private final DatabaseEventSource
-	 * source; private final Integer pollingInterval;
-	 * 
-	 * DatabaseServerSource(DatabaseEventSource source, Integer pollingInterval) {
-	 * this.source = source; this.pollingInterval = pollingInterval; }
-	 * 
-	 * private DatabaseEventSource getSource() { return source; }
-	 * 
-	 * private Integer getPollingInterval() { return pollingInterval; } }
-	 */
-
-	// file servers
-	/*
-	 * private class FileServerSource { private final FileEventSource eventSource;
-	 * private final List<String> sourceIds = new ArrayList<>(); private final
-	 * List<Integer> pollingIntervals = new ArrayList<>();
-	 * 
-	 * private FileServerSource(FileEventSource eventSource) { this.eventSource =
-	 * eventSource; }
-	 * 
-	 * private FileEventSource getEventSource() { return eventSource; }
-	 * 
-	 * private List<String> getSourceIds() { return sourceIds; }
-	 * 
-	 * private List<Integer> getPollingIntervals() { return pollingIntervals; } }
-	 */
-
 	// polled event source
 	private class PolledSource {
 		private final CollectorDataSource eventSource;
@@ -1448,6 +1498,13 @@ public class CollectorService
 
 		// event
 		OeeEvent resolvedEvent = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue, timestamp);
+
+		if (resolvedEvent == null) {
+			if (logger.isTraceEnabled()) {
+				logger.trace("Resolver script returned a null result.");
+			}
+			return;
+		}
 
 		// reason
 		String reasonName = reason;
@@ -1767,6 +1824,30 @@ public class CollectorService
 						onException("Unable to move file.", ex);
 					}
 				}
+			}
+		}
+	}
+
+	// handle the Modbus event callback
+	private class ModbusTask implements Runnable {
+		private final ModbusEvent event;
+
+		ModbusTask(ModbusEvent event) {
+			this.event = event;
+		}
+
+		@Override
+		public void run() {
+			try {
+				if (logger.isInfoEnabled()) {
+					logger.info("Modbus event, source: " + event.getSource());
+				}
+
+				// resolve event
+				resolveEvent(event.getSourceId(), event.getValues(), event.getEventTime(), event.getReason());
+
+			} catch (Exception e) {
+				onException("Unable to invoke script resolver.", e);
 			}
 		}
 	}

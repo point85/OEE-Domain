@@ -21,9 +21,6 @@ public class OpcUaSource extends CollectorDataSource {
 
 	private transient MessageSecurityMode messageSecurityMode = MessageSecurityMode.None;
 
-	@Column(name = "END_PATH")
-	private String endpointPath;
-
 	@Column(name = "SEC_POLICY")
 	private String securityPolicy;
 
@@ -58,14 +55,6 @@ public class OpcUaSource extends CollectorDataSource {
 			setHost(tokens[0]);
 			setPort(Integer.valueOf(tokens[1]));
 		}
-	}
-
-	public String getEndpointPath() {
-		return endpointPath;
-	}
-
-	public void setPath(String path) {
-		this.endpointPath = path;
 	}
 
 	public String getEndpointUrl() {
