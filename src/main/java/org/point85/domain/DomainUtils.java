@@ -33,8 +33,8 @@ public final class DomainUtils {
 	public static final String OFFSET_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS ZZZZZ";
 
 	public static String getVersionInfo() {
-		return DomainLocalizer.instance().getLangString("version") + " 2.4.0, "
-				+ LocalDate.of(2019, 6, 10).format(DateTimeFormatter.ISO_DATE);
+		return DomainLocalizer.instance().getLangString("version") + " 2.4.1, "
+				+ LocalDate.of(2019, 7, 4).format(DateTimeFormatter.ISO_DATE);
 	}
 
 	// format a Duration

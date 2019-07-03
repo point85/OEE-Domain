@@ -36,6 +36,11 @@ public class FileEventClient extends PollingClient {
 
 	// files being worked on
 	private List<String> inProcessFiles = new ArrayList<>();
+	
+	public FileEventClient() {
+		super();
+		this.fileService = new FileService();
+	}
 
 	public FileEventClient(FileEventListener eventListener, FileEventSource eventSource, List<String> sourceIds,
 			List<Integer> pollingPeriods) {

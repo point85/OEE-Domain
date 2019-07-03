@@ -1514,7 +1514,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			reasonName = eventResolver.getReason();
 		}
 
-		if (reasonName != null) {
+		if (reasonName != null && reasonName.trim().length() > 0) {
 			Reason eventReason = PersistenceService.instance().fetchReasonByName(reasonName);
 
 			if (eventReason == null) {

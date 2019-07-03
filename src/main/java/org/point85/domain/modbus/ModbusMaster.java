@@ -37,7 +37,8 @@ public class ModbusMaster extends PollingClient {
 	// connection flag
 	private boolean isConnected = false;
 
-	public ModbusMaster() {
+	public ModbusMaster(ModbusSource eventSource) {
+		setDataSource(eventSource);
 	}
 
 	/**

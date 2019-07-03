@@ -105,6 +105,10 @@ public class OeeContext {
 	 * @param job       Job
 	 */
 	public void setJob(Equipment equipment, String job) {
+		if (job == null) {
+			return;
+		}
+
 		@SuppressWarnings("unchecked")
 		ConcurrentMap<Equipment, String> jobMap = (ConcurrentMap<Equipment, String>) contextMap.get(JOB_KEY);
 		jobMap.put(equipment, job);

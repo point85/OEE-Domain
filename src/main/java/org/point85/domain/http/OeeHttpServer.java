@@ -42,6 +42,8 @@ public class OeeHttpServer extends NanoHTTPD {
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(OeeHttpServer.class);
 
+	private static final String APPLICATION_JSON = "application/json";
+
 	// flag for accepting event requests
 	private boolean acceptingEventRequests = false;
 
@@ -120,12 +122,13 @@ public class OeeHttpServer extends NanoHTTPD {
 			} else if (tokens[1].equalsIgnoreCase(EVENT_EP)) {
 				// equipment event
 				EquipmentEventResponseDto responseDto = serveEquipmentEvent(session);
-				String json = gson.toJson(responseDto);
-				response = newFixedLengthResponse(Response.Status.ACCEPTED, NanoHTTPD.MIME_PLAINTEXT, json);
+				String payload = gson.toJson(responseDto);
+				response = newFixedLengthResponse(Response.Status.ACCEPTED, APPLICATION_JSON, payload);
 
 			} else if (tokens[1].equalsIgnoreCase(SOURCE_ID_EP)) {
 				// source id request
 				response = serveSourceIdRequest(session);
+
 			} else if (tokens[1].equalsIgnoreCase(DATA_SOURCE_EP)) {
 				// data source request
 				response = serveDataSourceRequest(session);
@@ -143,8 +146,8 @@ public class OeeHttpServer extends NanoHTTPD {
 
 	private Response createErrorResponse(String message) {
 		EquipmentEventResponseDto responseDto = new EquipmentEventResponseDto(message);
-		String json = gson.toJson(responseDto);
-		return newFixedLengthResponse(Response.Status.BAD_REQUEST, NanoHTTPD.MIME_PLAINTEXT, json);
+		String payload = gson.toJson(responseDto);
+		return newFixedLengthResponse(Response.Status.BAD_REQUEST, APPLICATION_JSON, payload);
 	}
 
 	private EquipmentEventResponseDto serveEquipmentEvent(IHTTPSession session) throws Exception {
@@ -248,7 +251,7 @@ public class OeeHttpServer extends NanoHTTPD {
 
 			String payload = gson.toJson(new SourceIdResponseDto(sourceIds));
 
-			response = newFixedLengthResponse(Response.Status.OK, NanoHTTPD.MIME_PLAINTEXT, payload);
+			response = newFixedLengthResponse(Response.Status.OK, APPLICATION_JSON, payload);
 		} catch (Exception e) {
 			logger.error("Source Id request failed.", e);
 			response = newFixedLengthResponse(Response.Status.BAD_REQUEST, NanoHTTPD.MIME_PLAINTEXT, e.getMessage());
@@ -278,7 +281,7 @@ public class OeeHttpServer extends NanoHTTPD {
 
 			String payload = gson.toJson(new DataSourceResponseDto(dataSourceDtos));
 
-			response = newFixedLengthResponse(Response.Status.OK, NanoHTTPD.MIME_PLAINTEXT, payload);
+			response = newFixedLengthResponse(Response.Status.OK, APPLICATION_JSON, payload);
 		} catch (Exception e) {
 			logger.error("Data source request failed.", e);
 			response = newFixedLengthResponse(Response.Status.BAD_REQUEST, NanoHTTPD.MIME_PLAINTEXT, e.getMessage());
@@ -303,7 +306,7 @@ public class OeeHttpServer extends NanoHTTPD {
 			logger.info(payload);
 		}
 
-		return newFixedLengthResponse(Response.Status.OK, NanoHTTPD.MIME_PLAINTEXT, payload);
+		return newFixedLengthResponse(Response.Status.OK, APPLICATION_JSON, payload);
 	}
 
 	private Response serveReasonRequest() throws Exception {
@@ -351,7 +354,7 @@ public class OeeHttpServer extends NanoHTTPD {
 			logger.info(payload);
 		}
 
-		return newFixedLengthResponse(Response.Status.OK, NanoHTTPD.MIME_PLAINTEXT, payload);
+		return newFixedLengthResponse(Response.Status.OK, APPLICATION_JSON, payload);
 	}
 
 	private Response servePlantEntityRequest() throws Exception {
@@ -394,7 +397,7 @@ public class OeeHttpServer extends NanoHTTPD {
 			logger.info(payload);
 		}
 
-		return newFixedLengthResponse(Response.Status.OK, NanoHTTPD.MIME_PLAINTEXT, payload);
+		return newFixedLengthResponse(Response.Status.OK, APPLICATION_JSON, payload);
 	}
 
 	public HttpEventListener getDataChangeListener() {

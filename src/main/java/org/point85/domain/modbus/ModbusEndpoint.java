@@ -99,4 +99,11 @@ public class ModbusEndpoint {
 	public void setReverseEndianess(Boolean value) {
 		this.reverseEndianess = value;
 	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Address: ").append(registerAddress).append(", Type: ").append(dataType.toString());
+		return sb.toString();
+	}
 }

@@ -29,10 +29,11 @@ import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.ServerNode;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.variables.ServerStatusNode;
-import org.eclipse.milo.opcua.stack.client.UaTcpStackClient;
+import org.eclipse.milo.opcua.stack.client.DiscoveryClient;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
+import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.Stack;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -65,6 +66,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.MonitoredItemCreateReq
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoringParameters;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
+import org.eclipse.milo.opcua.stack.core.util.EndpointUtil;
 import org.point85.domain.i18n.DomainLocalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -173,10 +175,10 @@ public class UaOpcClient implements SessionActivityListener {
 		}
 
 		// get the server's endpoints
-		EndpointDescription[] endpointDescriptions = UaTcpStackClient.getEndpoints(endpointUrl).get();
+		List<EndpointDescription> endpointDescriptions = DiscoveryClient.getEndpoints(endpointUrl).get();
 
 		// security settings
-		String policyUri = source.getSecurityPolicy().getSecurityPolicyUri();
+		String policyUri = source.getSecurityPolicy().getUri();
 		MessageSecurityMode messageSecurityMode = source.getMessageSecurityMode();
 
 		if (logger.isInfoEnabled()) {
@@ -206,7 +208,7 @@ public class UaOpcClient implements SessionActivityListener {
 		}
 
 		// make sure the URL has the requested host name
-		EndpointDescription updatedEndpoint = EndpointUtilExt.updateUrl(endpointDescription, source.getHost());
+		EndpointDescription updatedEndpoint = EndpointUtil.updateUrl(endpointDescription, source.getHost());
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Using endpoint: {} [{}, {}]", updatedEndpoint.getEndpointUrl(),
@@ -237,7 +239,7 @@ public class UaOpcClient implements SessionActivityListener {
 		configBuilder.setSessionTimeout(uint(SESSION_TIMEOUT));
 
 		// create the client
-		opcUaClient = new OpcUaClient(configBuilder.build());
+		opcUaClient = OpcUaClient.create(configBuilder.build());
 
 		// synchronous connect
 		opcUaClient.connect().get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
@@ -252,6 +254,10 @@ public class UaOpcClient implements SessionActivityListener {
 		if (opcUaClient != null) {
 			opcUaClient.disconnect().get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
 			opcUaClient = null;
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Disconnected from server.");
+			}
 		}
 		Stack.releaseSharedResources();
 		connectedSource = null;
@@ -634,13 +640,6 @@ public class UaOpcClient implements SessionActivityListener {
 	public OpcUaServerStatus getServerStatus() throws Exception {
 		OpcUaServerStatus serverStatus = new OpcUaServerStatus();
 
-		// get build info separately
-		VariableNode buildInfoNode = opcUaClient.getAddressSpace()
-				.createVariableNode(Identifiers.Server_ServerStatus_BuildInfo);
-
-		BuildInfo buildInfo = buildInfoNode.getValue().thenApply(ExtensionObject.class::cast)
-				.thenApply(ExtensionObject::<BuildInfo>decode).get();
-
 		// Get a typed reference to the Server object: ServerNode
 		ServerNode serverNode = opcUaClient.getAddressSpace().getObjectNode(Identifiers.Server, ServerNode.class).get();
 
@@ -651,10 +650,14 @@ public class UaOpcClient implements SessionActivityListener {
 		DateTime startTime = serverStatusNode.getStartTime().get();
 		ServerState state = serverStatusNode.getState().get();
 
-		serverStatus.setState(state);
-		serverStatus.setBuildInfo(buildInfo);
-		serverStatus.setStartTime(startTime);
+		try {
+			BuildInfo buildInfo = serverStatusNode.getBuildInfo().get();
+			serverStatus.setBuildInfo(buildInfo);
+		} catch (Exception e) {
+		}
 
+		serverStatus.setState(state);
+		serverStatus.setStartTime(startTime);
 		return serverStatus;
 	}
 
@@ -678,6 +681,10 @@ public class UaOpcClient implements SessionActivityListener {
 		if (consumer != null) {
 			consumer.accept(Boolean.FALSE, null);
 		}
+	}
+
+	public NamespaceTable getNamespaceTable() {
+		return opcUaClient != null ? opcUaClient.getNamespaceTable() : null;
 	}
 
 	@Override

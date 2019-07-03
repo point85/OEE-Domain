@@ -4,7 +4,6 @@ import java.time.OffsetDateTime;
 import java.util.Objects;
 
 import javax.persistence.AttributeOverride;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
@@ -35,7 +34,7 @@ public class EventResolver extends KeyedObject {
 	@JoinColumn(name = "ENT_KEY")
 	private Equipment equipment;
 
-	@OneToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH })
+	@OneToOne
 	@JoinColumn(name = "SOURCE_KEY")
 	private CollectorDataSource dataSource;
 
@@ -55,7 +54,7 @@ public class EventResolver extends KeyedObject {
 	@Column(name = "DATA_TYPE")
 	private String dataType;
 
-	@OneToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH })
+	@OneToOne
 	@JoinColumn(name = "COLLECT_KEY")
 	private DataCollector collector;
 

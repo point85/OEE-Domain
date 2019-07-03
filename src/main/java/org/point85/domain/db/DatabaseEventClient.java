@@ -25,6 +25,10 @@ public class DatabaseEventClient extends PollingClient {
 
 	// JDBC connection URL
 	private String jdbcUrl;
+	
+	public DatabaseEventClient() {
+		super();
+	}
 
 	public DatabaseEventClient(DatabaseEventListener eventListener, DatabaseEventSource eventSource,
 			List<String> sourceIds, List<Integer> pollingPeriods) {

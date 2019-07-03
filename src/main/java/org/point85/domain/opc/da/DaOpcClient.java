@@ -283,7 +283,6 @@ public class DaOpcClient {
 		KeyedResultSet<Integer, JIVariant> values = itemManager.getItemProperties(itemId, propIds);
 
 		for (KeyedResult<Integer, JIVariant> entry : values) {
-			// int errorCode = entry.getErrorCode();
 			OpcDaVariant variant = new OpcDaVariant(entry.getValue());
 			properties.get(entry.getKey()).setValue(variant);
 		}
@@ -359,9 +358,11 @@ public class DaOpcClient {
 		// create a group only for the read
 		String groupName = Long.toHexString(System.currentTimeMillis());
 		Group group = server.addGroup(groupName);
+		group.setActive(true);
 
 		// Add a new item to the group
 		Item item = group.addItem(itemId);
+		item.setActive(true);
 
 		// read it
 		ItemState itemState = item.read(false);
