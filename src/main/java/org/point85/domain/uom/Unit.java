@@ -23,6 +23,8 @@ SOFTWARE.
 */
 package org.point85.domain.uom;
 
+import org.point85.domain.i18n.DomainLocalizer;
+
 /**
  * Unit is an enumeration of common units of measure in the International
  * Customary, SI, US and British Imperial systems.
@@ -128,6 +130,52 @@ public enum Unit {
 	// mass
 	BR_TON,
 	// currency
-	US_DOLLAR, EURO, YUAN
+	US_DOLLAR, EURO, YUAN;
 
+	@Override
+	public String toString() {
+		String key = null;
+
+		switch (this) {
+		case SECOND:
+			key = "sec.name";
+			break;
+		case MINUTE:
+			key = "min.name";
+			break;
+		case HOUR:
+			key = "hr.name";
+			break;
+		case DAY:
+			key = "day.name";
+			break;
+		case WEEK:
+			key = "week.name";
+			break;
+		case JULIAN_YEAR:
+			key = "jyear.name";
+			break;
+		case KILOGRAM:
+			key = "kg.name";
+			break;
+		case POUND_MASS:
+			key = "lbm.name";
+			break;
+		case METRE:
+			key = "m.name";
+			break;
+		case FOOT:
+			key = "foot.name";
+			break;
+		case CELSIUS:
+			key = "celsius.name";
+			break;
+		case FAHRENHEIT:
+			key = "fahrenheit.name";
+			break;
+		default:
+			break;
+		}
+		return key != null ? DomainLocalizer.instance().getUnitString(key) : name();
+	}
 }

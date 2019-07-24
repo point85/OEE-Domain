@@ -24,7 +24,7 @@ public class Equipment extends PlantEntity {
 	public static final String EQUIP_VALUE = "EQ";
 
 	// default and minimum periods for retaining OEE records in the database
-	public static final Duration DEFAULT_RETENTION_PERIOD = Duration.ofDays(30);
+	public static final Duration DEFAULT_RETENTION_PERIOD = Duration.ofDays(360);
 
 	// map by Material
 	transient private final Map<Material, EquipmentMaterial> equipmentMaterialsMap = new HashMap<>();
