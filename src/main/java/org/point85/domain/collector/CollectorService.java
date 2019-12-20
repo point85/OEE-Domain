@@ -123,7 +123,7 @@ public class CollectorService
 	private boolean isManual = false;
 
 	// name of a specific collector on this host
-	private String collectorName = "Default";
+	private String collectorName;
 
 	// data source information
 	private final Map<String, OpcDaInfo> opcDaSubscriptionMap = new HashMap<>();
