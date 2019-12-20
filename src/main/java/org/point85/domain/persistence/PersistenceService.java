@@ -34,14 +34,14 @@ import org.point85.domain.db.DatabaseEventStatus;
 import org.point85.domain.file.FileEventSource;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.i18n.DomainLocalizer;
-import org.point85.domain.jms.JMSSource;
-import org.point85.domain.messaging.MessagingSource;
+import org.point85.domain.jms.JmsSource;
 import org.point85.domain.modbus.ModbusSource;
-import org.point85.domain.mqtt.MQTTSource;
+import org.point85.domain.mqtt.MqttSource;
 import org.point85.domain.opc.da.OpcDaSource;
 import org.point85.domain.opc.ua.OpcUaSource;
 import org.point85.domain.plant.Area;
 import org.point85.domain.plant.Enterprise;
+import org.point85.domain.plant.EntitySchedule;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentMaterial;
 import org.point85.domain.plant.KeyedObject;
@@ -51,7 +51,8 @@ import org.point85.domain.plant.ProductionLine;
 import org.point85.domain.plant.Reason;
 import org.point85.domain.plant.Site;
 import org.point85.domain.plant.WorkCell;
-import org.point85.domain.schedule.NonWorkingPeriod;
+import org.point85.domain.rmq.RmqSource;
+import org.point85.domain.schedule.ExceptionPeriod;
 import org.point85.domain.schedule.Rotation;
 import org.point85.domain.schedule.RotationSegment;
 import org.point85.domain.schedule.Shift;
@@ -737,6 +738,10 @@ public final class PersistenceService {
 		return getEntityManager().find(Material.class, key);
 	}
 
+	public OeeEvent fetchEventByKey(Long key) throws Exception {
+		return getEntityManager().find(OeeEvent.class, key);
+	}
+
 	public Reason fetchReasonByName(String name) {
 		final String REASON_BY_NAME = "REASON.ByName";
 
@@ -1357,12 +1362,12 @@ public final class PersistenceService {
 
 	private Class<?>[] getEntityClasses() {
 		return new Class<?>[] { DataCollector.class, CollectorDataSource.class, OeeEvent.class, HttpSource.class,
-				MessagingSource.class, JMSSource.class, MQTTSource.class, DatabaseEventSource.class,
-				FileEventSource.class, OpcDaSource.class, OpcUaSource.class, Area.class, Enterprise.class,
-				Equipment.class, EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class,
-				Reason.class, Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class,
-				NonWorkingPeriod.class, Rotation.class, RotationSegment.class, Shift.class, Team.class,
-				WorkSchedule.class, ModbusSource.class };
+				RmqSource.class, JmsSource.class, MqttSource.class, DatabaseEventSource.class, FileEventSource.class,
+				OpcDaSource.class, OpcUaSource.class, Area.class, Enterprise.class, Equipment.class,
+				EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class, Reason.class,
+				Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class, ExceptionPeriod.class,
+				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class, ModbusSource.class,
+				EntitySchedule.class };
 	}
 
 	private Class<?>[] getDatabaseEventEntityClasses() {

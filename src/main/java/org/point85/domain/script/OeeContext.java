@@ -9,14 +9,14 @@ import java.util.concurrent.ConcurrentMap;
 import org.point85.domain.db.DatabaseEventClient;
 import org.point85.domain.file.FileEventClient;
 import org.point85.domain.http.OeeHttpServer;
-import org.point85.domain.jms.JMSClient;
-import org.point85.domain.messaging.MessagingClient;
+import org.point85.domain.jms.JmsClient;
 import org.point85.domain.modbus.ModbusMaster;
-import org.point85.domain.mqtt.MQTTClient;
+import org.point85.domain.mqtt.MqttOeeClient;
 import org.point85.domain.opc.da.DaOpcClient;
 import org.point85.domain.opc.ua.UaOpcClient;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Material;
+import org.point85.domain.rmq.RmqClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,9 +76,9 @@ public class OeeContext {
 
 		setOpcDaClients(new HashSet<DaOpcClient>());
 		setOpcUaClients(new HashSet<UaOpcClient>());
-		setMessagingClients(new HashSet<MessagingClient>());
-		setJMSClients(new HashSet<JMSClient>());
-		setMQTTClients(new HashSet<MQTTClient>());
+		setMessagingClients(new HashSet<RmqClient>());
+		setJMSClients(new HashSet<JmsClient>());
+		setMQTTClients(new HashSet<MqttOeeClient>());
 		setHttpServers(new HashSet<OeeHttpServer>());
 		setDatabaseEventClients(new HashSet<DatabaseEventClient>());
 		setFileEventClients(new HashSet<FileEventClient>());
@@ -271,31 +271,31 @@ public class OeeContext {
 	/**
 	 * Get a list of the messaging clients defined for the collector
 	 * 
-	 * @return Collection of {@link MessagingClient}
+	 * @return Collection of {@link RmqClient}
 	 */
 	@SuppressWarnings("unchecked")
-	public Collection<MessagingClient> getMessagingClients() {
-		return (Collection<MessagingClient>) contextMap.get(MSG_KEY);
+	public Collection<RmqClient> getRmqClients() {
+		return (Collection<RmqClient>) contextMap.get(MSG_KEY);
 	}
 
 	/**
 	 * Get a list of the JMS clients defined for the collector
 	 * 
-	 * @return Collection of {@link JMSClient}
+	 * @return Collection of {@link JmsClient}
 	 */
 	@SuppressWarnings("unchecked")
-	public Collection<JMSClient> getJMSClients() {
-		return (Collection<JMSClient>) contextMap.get(JMS_KEY);
+	public Collection<JmsClient> getJmsClients() {
+		return (Collection<JmsClient>) contextMap.get(JMS_KEY);
 	}
 
 	/**
 	 * Get a list of the MQTT clients defined for the collector
 	 * 
-	 * @return Collection of {@link MQTTClient}
+	 * @return Collection of {@link MqttOeeClient}
 	 */
 	@SuppressWarnings("unchecked")
-	public Collection<MQTTClient> getMQTTClients() {
-		return (Collection<MQTTClient>) contextMap.get(MQTT_KEY);
+	public Collection<MqttOeeClient> getMqttClients() {
+		return (Collection<MqttOeeClient>) contextMap.get(MQTT_KEY);
 	}
 
 	/**
@@ -331,14 +331,14 @@ public class OeeContext {
 	/**
 	 * Get the first (only) messaging client
 	 * 
-	 * @return {@link MessagingClient}
+	 * @return {@link RmqClient}
 	 */
-	public MessagingClient getMessagingClient() {
+	public RmqClient getMessagingClient() {
 		// get the first one
-		MessagingClient client = null;
+		RmqClient client = null;
 
-		if (!getMessagingClients().isEmpty()) {
-			client = getMessagingClients().iterator().next();
+		if (!getRmqClients().isEmpty()) {
+			client = getRmqClients().iterator().next();
 		}
 		return client;
 	}
@@ -346,14 +346,14 @@ public class OeeContext {
 	/**
 	 * Get the first (only) JMS client
 	 * 
-	 * @return {@link JMSClient}
+	 * @return {@link JmsClient}
 	 */
-	public JMSClient getJMSClient() {
+	public JmsClient getJMSClient() {
 		// get the first one
-		JMSClient client = null;
+		JmsClient client = null;
 
-		if (!getJMSClients().isEmpty()) {
-			client = getJMSClients().iterator().next();
+		if (!getJmsClients().isEmpty()) {
+			client = getJmsClients().iterator().next();
 		}
 		return client;
 	}
@@ -361,14 +361,14 @@ public class OeeContext {
 	/**
 	 * Get the first (only) MQTT client
 	 * 
-	 * @return {@link MQTTClient}
+	 * @return {@link MqttOeeClient}
 	 */
-	public MQTTClient getMQTTClient() {
+	public MqttOeeClient getMQTTClient() {
 		// get the first one
-		MQTTClient client = null;
+		MqttOeeClient client = null;
 
-		if (!getMQTTClients().isEmpty()) {
-			client = getMQTTClients().iterator().next();
+		if (!getMqttClients().isEmpty()) {
+			client = getMqttClients().iterator().next();
 		}
 		return client;
 	}
@@ -421,27 +421,27 @@ public class OeeContext {
 	/**
 	 * Set the list of the messaging clients defined for the collector
 	 * 
-	 * @param clients Set of {@link MessagingClient}
+	 * @param clients Set of {@link RmqClient}
 	 */
-	public void setMessagingClients(Collection<MessagingClient> clients) {
+	public void setMessagingClients(Collection<RmqClient> clients) {
 		contextMap.put(MSG_KEY, clients);
 	}
 
 	/**
 	 * Set the list of the JMS clients defined for the collector
 	 * 
-	 * @param clients Set of {@link JMSClient}
+	 * @param clients Set of {@link JmsClient}
 	 */
-	public void setJMSClients(Collection<JMSClient> clients) {
+	public void setJMSClients(Collection<JmsClient> clients) {
 		contextMap.put(JMS_KEY, clients);
 	}
 
 	/**
 	 * Set the list of the MQTT clients defined for the collector
 	 * 
-	 * @param clients Set of {@link MQTTClient}
+	 * @param clients Set of {@link MqttOeeClient}
 	 */
-	public void setMQTTClients(Collection<MQTTClient> clients) {
+	public void setMQTTClients(Collection<MqttOeeClient> clients) {
 		contextMap.put(MQTT_KEY, clients);
 	}
 
@@ -475,33 +475,33 @@ public class OeeContext {
 	/**
 	 * Add a messaging client to the list
 	 * 
-	 * @param client {@link MessagingClient}
+	 * @param client {@link RmqClient}
 	 */
-	public void addMessagingClient(MessagingClient client) {
-		if (!getMessagingClients().contains(client)) {
-			getMessagingClients().add(client);
+	public void addMessagingClient(RmqClient client) {
+		if (!getRmqClients().contains(client)) {
+			getRmqClients().add(client);
 		}
 	}
 
 	/**
 	 * Add a JMS client to the list
 	 * 
-	 * @param client {@link JMSClient}
+	 * @param client {@link JmsClient}
 	 */
-	public void addJMSClient(JMSClient client) {
-		if (!getJMSClients().contains(client)) {
-			getJMSClients().add(client);
+	public void addJMSClient(JmsClient client) {
+		if (!getJmsClients().contains(client)) {
+			getJmsClients().add(client);
 		}
 	}
 
 	/**
 	 * Add an MQTT client to the list
 	 * 
-	 * @param client {@link MQTTClient}
+	 * @param client {@link MqttOeeClient}
 	 */
-	public void addMQTTClient(MQTTClient client) {
-		if (!getMQTTClients().contains(client)) {
-			getMQTTClients().add(client);
+	public void addMQTTClient(MqttOeeClient client) {
+		if (!getMqttClients().contains(client)) {
+			getMqttClients().add(client);
 		}
 	}
 
@@ -541,33 +541,33 @@ public class OeeContext {
 	/**
 	 * Remove a messaging client from the list
 	 * 
-	 * @param client {@link MessagingClient}
+	 * @param client {@link RmqClient}
 	 */
-	public void removeMessagingClient(MessagingClient client) {
-		if (getMessagingClients().contains(client)) {
-			getMessagingClients().remove(client);
+	public void removeMessagingClient(RmqClient client) {
+		if (getRmqClients().contains(client)) {
+			getRmqClients().remove(client);
 		}
 	}
 
 	/**
 	 * Remove a JMS client from the list
 	 * 
-	 * @param client {@link JMSClient}
+	 * @param client {@link JmsClient}
 	 */
-	public void removeJMSClient(JMSClient client) {
-		if (getJMSClients().contains(client)) {
-			getJMSClients().remove(client);
+	public void removeJMSClient(JmsClient client) {
+		if (getJmsClients().contains(client)) {
+			getJmsClients().remove(client);
 		}
 	}
 
 	/**
 	 * Remove an MQTT client from the list
 	 * 
-	 * @param client {@link MQTTClient}
+	 * @param client {@link MqttOeeClient}
 	 */
-	public void removeMQTTClient(MQTTClient client) {
-		if (getMQTTClients().contains(client)) {
-			getMQTTClients().remove(client);
+	public void removeMQTTClient(MqttOeeClient client) {
+		if (getMqttClients().contains(client)) {
+			getMqttClients().remove(client);
 		}
 	}
 
@@ -675,17 +675,17 @@ public class OeeContext {
 		}
 
 		sb.append("\n Messaging clients ...");
-		for (MessagingClient client : getMessagingClients()) {
+		for (RmqClient client : getRmqClients()) {
 			sb.append('\t').append(client.toString());
 		}
 
 		sb.append("\n JMS clients ...");
-		for (JMSClient client : getJMSClients()) {
+		for (JmsClient client : getJmsClients()) {
 			sb.append('\t').append(client.toString());
 		}
 
 		sb.append("\n MQTT clients ...");
-		for (MQTTClient client : getMQTTClients()) {
+		for (MqttOeeClient client : getMqttClients()) {
 			sb.append('\t').append(client.toString());
 		}
 

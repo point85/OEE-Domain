@@ -1,4 +1,4 @@
-package org.point85.domain.jms;
+package org.point85.domain.rmq;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -7,16 +7,17 @@ import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 
 @Entity
-@DiscriminatorValue(DataSourceType.JMS_VALUE)
-public class JMSSource extends CollectorDataSource {
-	public JMSSource() {
+@DiscriminatorValue(DataSourceType.RMQ_VALUE)
+public class RmqSource extends CollectorDataSource {
+
+	public RmqSource() {
 		super();
-		setDataSourceType(DataSourceType.JMS);
+		setDataSourceType(DataSourceType.RMQ);
 	}
 
-	public JMSSource(String name, String description) {
+	public RmqSource(String name, String description) {
 		super(name, description);
-		setDataSourceType(DataSourceType.JMS);
+		setDataSourceType(DataSourceType.RMQ);
 	}
 
 	@Override

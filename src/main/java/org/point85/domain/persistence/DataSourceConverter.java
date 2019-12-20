@@ -29,8 +29,8 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 			value = DataSourceType.HTTP_VALUE;
 			break;
 
-		case MESSAGING:
-			value = DataSourceType.MESSAGING_VALUE;
+		case RMQ:
+			value = DataSourceType.RMQ_VALUE;
 			break;
 
 		case JMS:
@@ -81,8 +81,8 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 			state = DataSourceType.HTTP;
 			break;
 
-		case DataSourceType.MESSAGING_VALUE:
-			state = DataSourceType.MESSAGING;
+		case DataSourceType.RMQ_VALUE:
+			state = DataSourceType.RMQ;
 			break;
 
 		case DataSourceType.JMS_VALUE:

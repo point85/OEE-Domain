@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentMap;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.point85.domain.collector.DataCollector;
 import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.persistence.PersistenceService;
@@ -116,6 +117,7 @@ public class EquipmentEventResolver {
 		Equipment equipment = eventResolver.getEquipment();
 		OeeEventType resolverType = eventResolver.getType();
 		String script = eventResolver.getScript();
+		DataCollector collector = eventResolver.getCollector();
 
 		if (sourceValue == null) {
 			throw new Exception(
@@ -233,6 +235,7 @@ public class EquipmentEventResolver {
 
 		// fill in resolution
 		OeeEvent event = new OeeEvent(equipment, sourceValue, result);
+		event.setCollector(collector.getName());
 
 		// specific processing
 		if (result != null) {

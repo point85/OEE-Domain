@@ -51,7 +51,7 @@ import org.point85.domain.persistence.TimeLossConverter;
 @Entity
 @Table(name = "NON_WORKING_PERIOD")
 @AttributeOverride(name = "primaryKey", column = @Column(name = "PERIOD_KEY"))
-public class NonWorkingPeriod extends Named implements Comparable<NonWorkingPeriod> {
+public class ExceptionPeriod extends Named implements Comparable<ExceptionPeriod> {
 	// owning work schedule
 	@ManyToOne
 	@JoinColumn(name = "WS_KEY")
@@ -65,7 +65,7 @@ public class NonWorkingPeriod extends Named implements Comparable<NonWorkingPeri
 	@Column(name = "DURATION")
 	private Duration duration;
 
-	// loss category
+	// loss category (can be value adding)
 	@Column(name = "LOSS")
 	@Convert(converter = TimeLossConverter.class)
 	private TimeLoss timeLoss;
@@ -73,14 +73,16 @@ public class NonWorkingPeriod extends Named implements Comparable<NonWorkingPeri
 	/**
 	 * Default constructor
 	 */
-	public NonWorkingPeriod() {
+	public ExceptionPeriod() {
 		super();
 	}
 
-	NonWorkingPeriod(String name, String description, LocalDateTime startDateTime, Duration duration) throws Exception {
+	ExceptionPeriod(String name, String description, LocalDateTime startDateTime, Duration duration, TimeLoss loss)
+			throws Exception {
 		super(name, description);
 		this.startDateTime = startDateTime;
 		this.duration = duration;
+		this.timeLoss = loss;
 	}
 
 	/**
@@ -143,11 +145,11 @@ public class NonWorkingPeriod extends Named implements Comparable<NonWorkingPeri
 	 * Compare this non-working period to another such period by start date and time
 	 * of day
 	 * 
-	 * @param other {@link NonWorkingPeriod}
+	 * @param other {@link ExceptionPeriod}
 	 * @return negative if less than, 0 if equal and positive if greater than
 	 */
 	@Override
-	public int compareTo(NonWorkingPeriod other) {
+	public int compareTo(ExceptionPeriod other) {
 		return getStartDateTime().compareTo(other.getStartDateTime());
 	}
 

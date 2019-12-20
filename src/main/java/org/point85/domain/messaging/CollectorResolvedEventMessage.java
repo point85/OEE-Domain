@@ -20,6 +20,7 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 	private String materialDescription;
 	private Double amount;
 	private String uomSymbol;
+	private Long oeeEventKey;
 
 	public CollectorResolvedEventMessage(String senderHostName, String senderHostAddress) {
 		super(senderHostName, senderHostAddress, MessageType.RESOLVED_EVENT);
@@ -28,8 +29,9 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 	public void fromResolvedEvent(OeeEvent event) {
 		OffsetDateTime odt = event.getStartTime();
 		String timestamp = DomainUtils.offsetDateTimeToString(odt, DomainUtils.OFFSET_DATE_TIME_8601);
-		this.setTimestamp(timestamp);
-		this.setResolverType(event.getEventType());
+		setTimestamp(timestamp);
+		setResolverType(event.getEventType());
+		setOeeEventKey(event.getKey());
 
 		// equipment
 		this.setEquipmentName(event.getEquipment().getName());
@@ -157,5 +159,13 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 
 	public void setUomSymbol(String symbol) {
 		this.uomSymbol = symbol;
+	}
+
+	public Long getOeeEventKey() {
+		return oeeEventKey;
+	}
+
+	public void setOeeEventKey(Long oeeEventKey) {
+		this.oeeEventKey = oeeEventKey;
 	}
 }

@@ -34,28 +34,26 @@ import org.point85.domain.http.HttpEventListener;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.http.OeeHttpServer;
 import org.point85.domain.i18n.DomainLocalizer;
-import org.point85.domain.jms.JMSClient;
-import org.point85.domain.jms.JMSEquipmentEventListener;
-import org.point85.domain.jms.JMSSource;
+import org.point85.domain.jms.JmsClient;
+import org.point85.domain.jms.JmsMessageListener;
+import org.point85.domain.jms.JmsSource;
 import org.point85.domain.messaging.ApplicationMessage;
+import org.point85.domain.messaging.BaseMessagingClient;
 import org.point85.domain.messaging.CollectorCommandMessage;
 import org.point85.domain.messaging.CollectorNotificationMessage;
 import org.point85.domain.messaging.CollectorResolvedEventMessage;
 import org.point85.domain.messaging.CollectorServerStatusMessage;
 import org.point85.domain.messaging.EquipmentEventMessage;
-import org.point85.domain.messaging.MessageListener;
 import org.point85.domain.messaging.MessageType;
-import org.point85.domain.messaging.MessagingClient;
-import org.point85.domain.messaging.MessagingSource;
 import org.point85.domain.messaging.NotificationSeverity;
-import org.point85.domain.messaging.RoutingKey;
 import org.point85.domain.modbus.ModbusEvent;
 import org.point85.domain.modbus.ModbusEventListener;
 import org.point85.domain.modbus.ModbusMaster;
 import org.point85.domain.modbus.ModbusSource;
-import org.point85.domain.mqtt.MQTTClient;
-import org.point85.domain.mqtt.MQTTEquipmentEventListener;
-import org.point85.domain.mqtt.MQTTSource;
+import org.point85.domain.mqtt.MqttMessageListener;
+import org.point85.domain.mqtt.MqttOeeClient;
+import org.point85.domain.mqtt.MqttSource;
+import org.point85.domain.mqtt.QualityOfService;
 import org.point85.domain.opc.da.DaOpcClient;
 import org.point85.domain.opc.da.OpcDaDataChangeListener;
 import org.point85.domain.opc.da.OpcDaMonitoredGroup;
@@ -72,6 +70,10 @@ import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentEventResolver;
 import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.plant.Reason;
+import org.point85.domain.rmq.RmqClient;
+import org.point85.domain.rmq.RmqMessageListener;
+import org.point85.domain.rmq.RmqSource;
+import org.point85.domain.rmq.RoutingKey;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.OeeContext;
 import org.point85.domain.script.OeeEventType;
@@ -79,27 +81,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Envelope;
 
-public class CollectorService implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener,
-		MessageListener, JMSEquipmentEventListener, DatabaseEventListener, FileEventListener,
-		MQTTEquipmentEventListener, ModbusEventListener {
+public class CollectorService
+		implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener, RmqMessageListener,
+		JmsMessageListener, DatabaseEventListener, FileEventListener, MqttMessageListener, ModbusEventListener {
 
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
 
 	// sec between status checks
 	private static final long HEARTBEAT_SEC = 60;
-
-	// sec for heartbeat message to live in the queue
-	private static final int HEARTBEAT_TTL_SEC = 3600;
-
-	// sec for a status message to live in the queue
-	private static final int STATUS_TTL_SEC = 3600;
-
-	// sec for a event resolution message to live in the queue
-	private static final int RESOLUTION_TTL_SEC = 3600;
 
 	// thread pool service
 	private final ExecutorService executorService = Executors.newCachedThreadPool();
@@ -132,18 +123,18 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	private boolean isManual = false;
 
 	// name of a specific collector on this host
-	private String collectorName;
+	private String collectorName = "Default";
 
 	// data source information
 	private final Map<String, OpcDaInfo> opcDaSubscriptionMap = new HashMap<>();
 	private final Map<String, OpcUaInfo> opcUaSubscriptionMap = new HashMap<>();
 	private final Map<String, HttpServerSource> httpServerMap = new HashMap<>();
-	private final Map<String, MessageBrokerSource> messageBrokerMap = new HashMap<>();
-	private final Map<String, JMSBrokerSource> jmsBrokerMap = new HashMap<>();
+	private final Map<String, RmqBrokerSource> rmqBrokerMap = new HashMap<>();
+	private final Map<String, JmsBrokerSource> jmsBrokerMap = new HashMap<>();
 	private final Map<String, PolledSource> databaseServerMap = new HashMap<>();
 	private final Map<String, PolledSource> fileServerMap = new HashMap<>();
 	private final Map<String, PolledSource> modbusSlaveMap = new HashMap<>();
-	private final Map<String, MQTTBrokerSource> mqttBrokerMap = new HashMap<>();
+	private final Map<String, MqttBrokerSource> mqttBrokerMap = new HashMap<>();
 
 	public CollectorService() {
 		initialize();
@@ -163,7 +154,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		opcDaSubscriptionMap.clear();
 		opcUaSubscriptionMap.clear();
 		httpServerMap.clear();
-		messageBrokerMap.clear();
+		rmqBrokerMap.clear();
 		jmsBrokerMap.clear();
 		databaseServerMap.clear();
 		fileServerMap.clear();
@@ -202,49 +193,49 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 	// collect all RMQ broker info
 	private void buildMessagingBrokers(EventResolver resolver) throws Exception {
-		MessagingSource source = (MessagingSource) resolver.getDataSource();
+		RmqSource source = (RmqSource) resolver.getDataSource();
 		String id = source.getId();
 
-		MessageBrokerSource brokerSource = messageBrokerMap.get(id);
+		RmqBrokerSource brokerSource = rmqBrokerMap.get(id);
 
 		if (brokerSource == null) {
 			if (logger.isInfoEnabled()) {
 				logger.info("Found RMQ broker specified for host " + source.getHost() + " on port " + source.getPort());
 			}
-			brokerSource = new MessageBrokerSource(source);
-			messageBrokerMap.put(id, brokerSource);
+			brokerSource = new RmqBrokerSource(source);
+			rmqBrokerMap.put(id, brokerSource);
 		}
 	}
 
 	// collect all JMS broker info
 	private void buildJMSBrokers(EventResolver resolver) throws Exception {
-		JMSSource source = (JMSSource) resolver.getDataSource();
+		JmsSource source = (JmsSource) resolver.getDataSource();
 		String id = source.getId();
 
-		JMSBrokerSource brokerSource = jmsBrokerMap.get(id);
+		JmsBrokerSource brokerSource = jmsBrokerMap.get(id);
 
 		if (brokerSource == null) {
 			if (logger.isInfoEnabled()) {
 				logger.info("Found JMS broker specified for host " + source.getHost() + " on port " + source.getPort());
 			}
-			brokerSource = new JMSBrokerSource(source);
+			brokerSource = new JmsBrokerSource(source);
 			jmsBrokerMap.put(id, brokerSource);
 		}
 	}
 
 	// collect all MQTT broker info
 	private void buildMQTTBrokers(EventResolver resolver) throws Exception {
-		MQTTSource source = (MQTTSource) resolver.getDataSource();
+		MqttSource source = (MqttSource) resolver.getDataSource();
 		String id = source.getId();
 
-		MQTTBrokerSource brokerSource = mqttBrokerMap.get(id);
+		MqttBrokerSource brokerSource = mqttBrokerMap.get(id);
 
 		if (brokerSource == null) {
 			if (logger.isInfoEnabled()) {
 				logger.info(
 						"Found MQTT broker specified for host " + source.getHost() + " on port " + source.getPort());
 			}
-			brokerSource = new MQTTBrokerSource(source);
+			brokerSource = new MqttBrokerSource(source);
 			mqttBrokerMap.put(id, brokerSource);
 		}
 	}
@@ -312,11 +303,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		serverSource.getPollingIntervals().add(pollingMillis);
 	}
 
-	private void connectToEventBrokers(Map<String, MessageBrokerSource> brokerSources) throws Exception {
-		for (Entry<String, MessageBrokerSource> entry : brokerSources.entrySet()) {
-			MessagingSource source = entry.getValue().getSource();
+	private void connectToRmqBrokers(Map<String, RmqBrokerSource> brokerSources) throws Exception {
+		for (Entry<String, RmqBrokerSource> entry : brokerSources.entrySet()) {
+			RmqSource source = entry.getValue().getSource();
 
-			MessagingClient pubsub = new MessagingClient();
+			RmqClient pubsub = new RmqClient();
 
 			String brokerHostName = source.getHost();
 			Integer brokerPort = source.getPort();
@@ -332,7 +323,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			pubsub.startUp(brokerHostName, brokerPort, brokerUser, brokerPassword, queueName, routingKeys, this);
 
 			// add to context
-			appContext.getMessagingClients().add(pubsub);
+			appContext.getRmqClients().add(pubsub);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Started RMQ event pubsub: " + source.getId());
@@ -340,11 +331,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 	}
 
-	private void connectToJMSBrokers(Map<String, JMSBrokerSource> brokerSources) throws Exception {
-		for (Entry<String, JMSBrokerSource> entry : brokerSources.entrySet()) {
-			JMSSource source = entry.getValue().getSource();
+	private void connectToJmsBrokers(Map<String, JmsBrokerSource> brokerSources) throws Exception {
+		for (Entry<String, JmsBrokerSource> entry : brokerSources.entrySet()) {
+			JmsSource source = entry.getValue().getSource();
 
-			JMSClient jmsClient = new JMSClient();
+			JmsClient jmsClient = new JmsClient();
 
 			String brokerHostName = source.getHost();
 			Integer brokerPort = source.getPort();
@@ -353,8 +344,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 			jmsClient.startUp(brokerHostName, brokerPort, brokerUser, brokerPassword, this);
 
+			// subscribe to event messages
+			jmsClient.consumeEvents(true);
+
 			// add to context
-			appContext.getJMSClients().add(jmsClient);
+			appContext.getJmsClients().add(jmsClient);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Started JMS client: " + source.getId());
@@ -362,11 +356,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 	}
 
-	private void connectToMQTTBrokers(Map<String, MQTTBrokerSource> brokerSources) throws Exception {
-		for (Entry<String, MQTTBrokerSource> entry : brokerSources.entrySet()) {
-			MQTTSource source = entry.getValue().getSource();
+	private void connectToMqttBrokers(Map<String, MqttBrokerSource> brokerSources) throws Exception {
+		for (Entry<String, MqttBrokerSource> entry : brokerSources.entrySet()) {
+			MqttSource source = entry.getValue().getSource();
 
-			MQTTClient mqttClient = new MQTTClient();
+			MqttOeeClient mqttClient = new MqttOeeClient();
 
 			String brokerHostName = source.getHost();
 			Integer brokerPort = source.getPort();
@@ -374,9 +368,10 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			String brokerPassword = source.getUserPassword();
 
 			mqttClient.startUp(brokerHostName, brokerPort, brokerUser, brokerPassword, this);
+			mqttClient.subscribeToEvents(QualityOfService.EXACTLY_ONCE);
 
 			// add to context
-			appContext.getMQTTClients().add(mqttClient);
+			appContext.getMqttClients().add(mqttClient);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Started MQTT client: " + source.getId());
@@ -658,7 +653,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					break;
 				}
 
-				case MESSAGING: {
+				case RMQ: {
 					buildMessagingBrokers(resolver);
 					break;
 				}
@@ -707,16 +702,16 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		startHttpServers(httpServerMap);
 
 		// collect data for RMQ and receive commands
-		connectToEventBrokers(messageBrokerMap);
+		connectToRmqBrokers(rmqBrokerMap);
 
 		// collect equipment events for JMS
-		connectToJMSBrokers(jmsBrokerMap);
+		connectToJmsBrokers(jmsBrokerMap);
 
 		// poll database servers for events in the interface table
 		connectToDatabaseServers(databaseServerMap);
 
 		// collect equipment events for MQTT
-		connectToMQTTBrokers(mqttBrokerMap);
+		connectToMqttBrokers(mqttBrokerMap);
 
 		// poll file servers
 		startFilePolling(fileServerMap);
@@ -738,19 +733,19 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 	public void startup() throws Exception {
 		if (logger.isInfoEnabled()) {
-			logger.info("Beginning startup for " + DomainUtils.getVersionInfo());
+			logger.info("Beginning startup for " + collectorName + ", " + DomainUtils.getVersionInfo());
+		}
+
+		InetAddress address = InetAddress.getLocalHost();
+		hostname = address.getHostName();
+		ip = address.getHostAddress();
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Configuring server for host " + getId());
 		}
 
 		// our host
 		if (!isManual) {
-			InetAddress address = InetAddress.getLocalHost();
-			hostname = address.getHostName();
-			ip = address.getHostAddress();
-
-			if (logger.isInfoEnabled()) {
-				logger.info("Configuring server for host " + getId());
-			}
-
 			// configure all of the data sources
 			buildDataSources();
 		} else {
@@ -768,33 +763,50 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 
 		// connect to broker for notifications and commands
-		startNotifications();
+		startPublishingNotifications();
 
 		// start collecting data
 		startDataCollection();
 
 		// notify monitors
-		onInformation("Collector server started on host " + getId());
+		onInformation("Collector " + collectorName + " started on host " + getId());
 	}
 
-	private synchronized void startNotifications() throws Exception {
+	private synchronized void startPublishingNotifications() throws Exception {
 		// connect to notification brokers for commands
-		Map<String, MessagingClient> pubSubs = new HashMap<>();
+		Map<String, BaseMessagingClient> pubSubs = new HashMap<>();
 
 		for (DataCollector collector : collectors) {
+			DataSourceType brokerType = collector.getBrokerType();
+
 			String brokerHostName = collector.getBrokerHost();
 
-			if (brokerHostName == null || brokerHostName.length() == 0) {
+			if (brokerType == null || brokerHostName == null || brokerHostName.length() == 0) {
 				continue;
 			}
-			Integer brokerPort = collector.getBrokerPort();
 
+			Integer brokerPort = collector.getBrokerPort();
 			String key = brokerHostName + ":" + brokerPort;
 
-			if (pubSubs.get(key) == null) {
-				// new publisher
-				MessagingClient pubsub = new MessagingClient();
-				pubSubs.put(key, pubsub);
+			// new publisher
+			if (brokerType.equals(DataSourceType.RMQ)) {
+				// first look in RMQ data brokers
+				boolean exists = false;
+				for (Entry<String, RmqBrokerSource> entry : rmqBrokerMap.entrySet()) {
+					RmqSource source = entry.getValue().getSource();
+					if (source.getHost().equals(brokerHostName) && source.getPort().equals(brokerPort)) {
+						exists = true;
+						break;
+					}
+				}
+
+				if (exists) {
+					continue;
+				}
+
+				// new broker
+				RmqClient rmqClient = new RmqClient();
+				pubSubs.put(key, rmqClient);
 
 				// queue
 				String queueName = "CMD_" + getClass().getSimpleName() + "_" + System.currentTimeMillis();
@@ -803,20 +815,70 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 				List<RoutingKey> routingKeys = new ArrayList<>();
 				routingKeys.add(RoutingKey.COMMAND_MESSAGE);
 
-				pubsub.startUp(brokerHostName, brokerPort, collector.getBrokerUserName(),
+				rmqClient.startUp(brokerHostName, brokerPort, collector.getBrokerUserName(),
 						collector.getBrokerUserPassword(), queueName, routingKeys, this);
 
 				// add to context
-				appContext.getMessagingClients().add(pubsub);
-
-				if (logger.isInfoEnabled()) {
-					logger.info("Connected to RMQ broker " + key + " for collector " + collector.getName());
+				appContext.getRmqClients().add(rmqClient);
+			} else if (brokerType.equals(DataSourceType.JMS)) {
+				// first look in JMS data brokers
+				boolean exists = false;
+				for (Entry<String, JmsBrokerSource> entry : jmsBrokerMap.entrySet()) {
+					JmsSource source = entry.getValue().getSource();
+					if (source.getHost().equals(brokerHostName) && source.getPort().equals(brokerPort)) {
+						exists = true;
+						break;
+					}
 				}
+
+				if (exists) {
+					continue;
+				}
+
+				// new broker
+				JmsClient jmsClient = new JmsClient();
+				pubSubs.put(key, jmsClient);
+
+				jmsClient.startUp(brokerHostName, brokerPort, collector.getBrokerUserName(),
+						collector.getBrokerUserPassword(), this);
+
+				// add to context
+				appContext.getJmsClients().add(jmsClient);
+
+			} else if (brokerType.equals(DataSourceType.MQTT)) {
+				// first look in MQTT data brokers
+				boolean exists = false;
+				for (Entry<String, MqttBrokerSource> entry : mqttBrokerMap.entrySet()) {
+					MqttSource source = entry.getValue().getSource();
+					if (source.getHost().equals(brokerHostName) && source.getPort().equals(brokerPort)) {
+						exists = true;
+						break;
+					}
+				}
+
+				if (exists) {
+					continue;
+				}
+
+				// new broker
+				MqttOeeClient mqttClient = new MqttOeeClient();
+				pubSubs.put(key, mqttClient);
+
+				mqttClient.startUp(brokerHostName, brokerPort, collector.getBrokerUserName(),
+						collector.getBrokerUserPassword(), this);
+
+				// add to context
+				appContext.getMqttClients().add(mqttClient);
+			}
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Connected to broker " + key + " of type " + brokerType + " for collector "
+						+ collector.getName());
 			}
 		}
 
 		// maybe start status publishing
-		if (!appContext.getMessagingClients().isEmpty() && heartbeatTimer == null) {
+		if (heartbeatTimer == null) {
 			// create timer and task
 			heartbeatTimer = new Timer();
 			heartbeatTask = new HeartbeatTask();
@@ -828,23 +890,30 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 	}
 
-	private synchronized void sendNotification(String text, NotificationSeverity severity) {
-		if (appContext.getMessagingClients().isEmpty()) {
-			return;
-		}
-
+	private synchronized void sendNotification(String text, NotificationSeverity severity) throws Exception {
 		CollectorNotificationMessage message = new CollectorNotificationMessage(hostname, ip);
 		message.setText(text);
 		message.setSeverity(severity);
+		message.setSenderId(collectorName);
+		String timeStamp = DomainUtils.offsetDateTimeToString(OffsetDateTime.now(), DomainUtils.OFFSET_DATE_TIME_8601);
+		message.setTimestamp(timeStamp);
 
-		for (MessagingClient pubSub : appContext.getMessagingClients()) {
-			try {
-				pubSub.publish(message, RoutingKey.NOTIFICATION_MESSAGE, STATUS_TTL_SEC);
-			} catch (Exception e) {
-				// do not attempt to send a notification
-				logger.error("Unable to publish notification.", e);
-			}
+		for (RmqClient pubsub : appContext.getRmqClients()) {
+			pubsub.sendNotificationMessage(message);
 		}
+
+		for (JmsClient pubsub : appContext.getJmsClients()) {
+			pubsub.sendNotificationMessage(message);
+		}
+
+		for (MqttOeeClient pubsub : appContext.getMqttClients()) {
+			pubsub.sendNotificationMessage(message);
+		}
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Sent message for host " + getId() + " of type " + message.getMessageType());
+		}
+
 	}
 
 	private void saveCollectorState(CollectorState state) throws Exception {
@@ -870,10 +939,10 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	public synchronized void stopNotifications() throws Exception {
-		for (MessagingClient pubsub : appContext.getMessagingClients()) {
+		for (RmqClient pubsub : appContext.getRmqClients()) {
 			pubsub.disconnect();
 		}
-		appContext.getMessagingClients().clear();
+		appContext.getRmqClients().clear();
 	}
 
 	public synchronized void stopDataCollection() throws Exception {
@@ -916,11 +985,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		appContext.getOpcUaClients().clear();
 
 		// disconnect from RMQ brokers
-		for (MessagingClient pubsub : appContext.getMessagingClients()) {
+		for (RmqClient pubsub : appContext.getRmqClients()) {
 			onInformation("Disconnecting from pubsub with binding key " + pubsub.getBindingKey());
 			pubsub.disconnect();
 		}
-		appContext.getMessagingClients().clear();
+		appContext.getRmqClients().clear();
 
 		// stop polling Modbus slaves
 		for (ModbusMaster master : appContext.getModbusMasters()) {
@@ -934,10 +1003,10 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	public void shutdown() {
-		// notify monitors
-		onInformation("Collector server shutting down on host " + getId());
-
 		try {
+			// notify monitors
+			onInformation("Collector " + collectorName + " shutting down on host " + getId());
+
 			// stop data collection
 			stopDataCollection();
 
@@ -986,7 +1055,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		startDataCollection();
 
 		stopNotifications();
-		startNotifications();
+		startPublishingNotifications();
 
 		// notify monitors
 		onInformation("Restarted data collection on host " + getId());
@@ -1113,7 +1182,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		PersistenceService.instance().purge(equipment, cutoff);
 	}
 
-	public void saveOeeEvent(OeeEvent event) throws Exception {
+	public OeeEvent saveOeeEvent(OeeEvent event) throws Exception {
 		Equipment equipment = event.getEquipment();
 		Duration days = equipment.findRetentionPeriod();
 
@@ -1122,7 +1191,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			if (logger.isInfoEnabled()) {
 				logger.info("Retention period is zero.  No record will be saved.");
 			}
-			return;
+			return null;
 		}
 
 		if (logger.isInfoEnabled()) {
@@ -1149,12 +1218,14 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 
 		// save records
-		PersistenceService.instance().save(records);
+		List<KeyedObject> savedRecords = PersistenceService.instance().save(records);
 
 		// purge old data
 		if (!type.isProduction()) {
 			purgeRecords(event);
 		}
+
+		return (OeeEvent) savedRecords.get(0);
 	}
 
 	@Override
@@ -1187,10 +1258,14 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		logger.error(text);
 
 		// send to monitors
-		sendNotification(text, NotificationSeverity.ERROR);
+		try {
+			sendNotification(text, NotificationSeverity.ERROR);
+		} catch (Exception e) {
+			// ignore
+		}
 	}
 
-	public void onInformation(String text) {
+	public void onInformation(String text) throws Exception {
 		// log it
 		logger.info(text);
 
@@ -1198,7 +1273,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		sendNotification(text, NotificationSeverity.INFO);
 	}
 
-	public void onWarning(String text) {
+	public void onWarning(String text) throws Exception {
 		// log it
 		logger.warn(text);
 
@@ -1207,33 +1282,22 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	@Override
-	public void onMessage(Channel channel, Envelope envelope, ApplicationMessage message) {
-		if (channel == null || message == null) {
-			return;
-		}
-
-		// ack it now
-		try {
-			channel.basicAck(envelope.getDeliveryTag(), MessagingClient.ACK_MULTIPLE);
-		} catch (Exception e) {
-			onException("Failed to ack message.", e);
-			return;
-		}
+	public void onRmqMessage(ApplicationMessage message) {
 		// execute on worker thread
-		MessageTask task = new MessageTask(channel, envelope, message);
+		RmqTask task = new RmqTask(message);
 		executorService.execute(task);
 	}
 
 	@Override
-	public void onJMSEquipmentEvent(EquipmentEventMessage message) {
+	public void onJmsMessage(ApplicationMessage message) {
 		// execute on worker thread
-		executorService.execute(new JMSTask(message));
+		executorService.execute(new JmsTask(message));
 	}
 
 	@Override
-	public void onMQTTEquipmentEvent(EquipmentEventMessage message) {
+	public void onMqttMessage(ApplicationMessage message) {
 		// execute on worker thread
-		executorService.execute(new MQTTTask(message));
+		executorService.execute(new MqttTask(message));
 	}
 
 	@Override
@@ -1307,40 +1371,40 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	// RMQ brokers
-	private class MessageBrokerSource {
-		private final MessagingSource source;
+	private class RmqBrokerSource {
+		private final RmqSource source;
 
-		MessageBrokerSource(MessagingSource source) {
+		RmqBrokerSource(RmqSource source) {
 			this.source = source;
 		}
 
-		private MessagingSource getSource() {
+		private RmqSource getSource() {
 			return source;
 		}
 	}
 
 	// JMS brokers
-	private class JMSBrokerSource {
-		private final JMSSource source;
+	private class JmsBrokerSource {
+		private final JmsSource source;
 
-		JMSBrokerSource(JMSSource source) {
+		JmsBrokerSource(JmsSource source) {
 			this.source = source;
 		}
 
-		private JMSSource getSource() {
+		private JmsSource getSource() {
 			return source;
 		}
 	}
 
 	// MQTT brokers
-	private class MQTTBrokerSource {
-		private final MQTTSource source;
+	private class MqttBrokerSource {
+		private final MqttSource source;
 
-		MQTTBrokerSource(MQTTSource source) {
+		MqttBrokerSource(MqttSource source) {
 			this.source = source;
 		}
 
-		private MQTTSource getSource() {
+		private MqttSource getSource() {
 			return source;
 		}
 	}
@@ -1455,32 +1519,33 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 
 		// save in database
-		saveOeeEvent(resolvedEvent);
+		OeeEvent savedEvent = saveOeeEvent(resolvedEvent);
 
 		// send event message
-		sendResolutionMessage(resolvedEvent);
+		sendResolutionMessage(savedEvent);
 	}
 
-	private void sendResolutionMessage(OeeEvent resolvedEvent) {
-		try {
-			if (appContext.getMessagingClients().size() == 0) {
-				return;
-			}
+	private void sendResolutionMessage(OeeEvent resolvedEvent) throws Exception {
+		// send resolution message to each subscriber
+		CollectorResolvedEventMessage message = new CollectorResolvedEventMessage(hostname, ip);
+		message.fromResolvedEvent(resolvedEvent);
+		message.setSenderId(collectorName);
 
-			// send resolution message to each subscriber
-			CollectorResolvedEventMessage message = new CollectorResolvedEventMessage(hostname, ip);
-			message.fromResolvedEvent(resolvedEvent);
+		for (RmqClient pubsub : appContext.getRmqClients()) {
+			pubsub.sendResolvedEventMessage(message);
+		}
 
-			for (MessagingClient pubsub : appContext.getMessagingClients()) {
-				pubsub.publish(message, RoutingKey.RESOLVED_EVENT, RESOLUTION_TTL_SEC);
-			}
+		for (JmsClient pubsub : appContext.getJmsClients()) {
+			pubsub.sendNotificationMessage(message);
+		}
 
-			if (logger.isInfoEnabled()) {
-				logger.info("Sent message for host " + getId() + " of type " + message.getMessageType()
-						+ " for resolver type " + message.getResolverType());
-			}
-		} catch (Exception e) {
-			onException("Sending resolved event message failed.", e);
+		for (MqttOeeClient pubsub : appContext.getMqttClients()) {
+			pubsub.sendNotificationMessage(message);
+		}
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Sent message for host " + getId() + " of type " + message.getMessageType()
+					+ " for resolver type " + message.getResolverType());
 		}
 	}
 
@@ -1495,6 +1560,15 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	private void resolveEvent(String sourceId, Object dataValue, OffsetDateTime timestamp, String reason)
 			throws Exception {
 		EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
+
+		// check to see if we are collecting this data
+		String eventCollector = eventResolver.getCollector().getName();
+		if (collectorName != null && !eventCollector.equals(collectorName)) {
+			if (logger.isTraceEnabled()) {
+				logger.trace("Ignoring event.  It is assigned to collector " + eventCollector);
+			}
+			return;
+		}
 
 		// event
 		OeeEvent resolvedEvent = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue, timestamp);
@@ -1569,90 +1643,67 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 	}
 
-	/********************* MessageHandler ***********************************/
-	private class MessageTask implements Runnable {
+	private void handleMessage(ApplicationMessage message) throws Exception {
+		MessageType type = message.getMessageType();
 
-		private final Channel channel;
-		private final Envelope envelope;
+		if (type.equals(MessageType.EQUIPMENT_EVENT)) {
+			EquipmentEventMessage eventMessage = (EquipmentEventMessage) message;
+
+			String sourceId = eventMessage.getSourceId();
+			String dataValue = eventMessage.getValue();
+			String timestamp = eventMessage.getTimestamp();
+			String reason = eventMessage.getReason();
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Equipment event for collector " + collectorName + ", source: " + sourceId + ", value: "
+						+ dataValue + ", timestamp: " + timestamp);
+			}
+
+			// resolve event
+			resolveEvent(sourceId, dataValue, timestamp, reason);
+
+		} else if (type.equals(MessageType.COMMAND)) {
+			CollectorCommandMessage commandMessage = (CollectorCommandMessage) message;
+
+			if (commandMessage.getCommand().equals(CollectorCommandMessage.CMD_RESTART)) {
+				logger.info("Received restart command");
+				restart();
+			}
+		}
+	}
+
+	/********************* RMQ Handler ***********************************/
+	private class RmqTask implements Runnable {
 		private final ApplicationMessage message;
 
-		MessageTask(Channel channel, Envelope envelope, ApplicationMessage message) {
-			this.envelope = envelope;
+		RmqTask(ApplicationMessage message) {
 			this.message = message;
-			this.channel = channel;
 		}
 
 		@Override
 		public void run() {
-			MessageType type = message.getMessageType();
-
 			try {
-				if (type.equals(MessageType.EQUIPMENT_EVENT)) {
-					EquipmentEventMessage eventMessage = (EquipmentEventMessage) message;
-
-					String sourceId = eventMessage.getSourceId();
-					String dataValue = eventMessage.getValue();
-					String timestamp = eventMessage.getTimestamp();
-					String reason = eventMessage.getReason();
-
-					if (logger.isInfoEnabled()) {
-						logger.info("RMQ equipment event, source: " + sourceId + ", value: " + dataValue
-								+ ", timestamp: " + timestamp);
-					}
-
-					// resolve event
-					resolveEvent(sourceId, dataValue, timestamp, reason);
-
-				} else if (type.equals(MessageType.COMMAND)) {
-					CollectorCommandMessage commandMessage = (CollectorCommandMessage) message;
-
-					if (commandMessage.getCommand().equals(CollectorCommandMessage.CMD_RESTART)) {
-						logger.info("Received restart command");
-						restart();
-					}
-				}
+				handleMessage(message);
 			} catch (Exception e) {
 				// processing failed
-				onException("Unable to process event " + type, e);
-			} finally {
-				// ack message
-				try {
-					if (channel.isOpen()) {
-						channel.basicAck(envelope.getDeliveryTag(), MessagingClient.ACK_MULTIPLE);
-					}
-				} catch (Exception ex) {
-					// ack failed
-					onException("Unable to ack message.", ex);
-				}
+				onException("Unable to process event " + message.getMessageType(), e);
 			}
 		}
 	}
 
 	/********************* JMS Handler ***********************************/
-	private class JMSTask implements Runnable {
+	private class JmsTask implements Runnable {
 
-		private final EquipmentEventMessage eventMessage;
+		private final ApplicationMessage message;
 
-		JMSTask(EquipmentEventMessage message) {
-			this.eventMessage = message;
+		JmsTask(ApplicationMessage message) {
+			this.message = message;
 		}
 
 		@Override
 		public void run() {
 			try {
-				String sourceId = eventMessage.getSourceId();
-				String dataValue = eventMessage.getValue();
-				String timestamp = eventMessage.getTimestamp();
-				String reason = eventMessage.getReason();
-
-				if (logger.isInfoEnabled()) {
-					logger.info("JMS equipment event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "
-							+ timestamp);
-				}
-
-				// resolve event
-				resolveEvent(sourceId, dataValue, timestamp, reason);
-
+				handleMessage(message);
 			} catch (Exception e) {
 				// processing failed
 				onException("Unable to process JMS equipment event ", e);
@@ -1661,30 +1712,18 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	/********************* MQTT Handler ***********************************/
-	private class MQTTTask implements Runnable {
+	private class MqttTask implements Runnable {
 
-		private final EquipmentEventMessage eventMessage;
+		private final ApplicationMessage message;
 
-		MQTTTask(EquipmentEventMessage message) {
-			this.eventMessage = message;
+		MqttTask(ApplicationMessage message) {
+			this.message = message;
 		}
 
 		@Override
 		public void run() {
 			try {
-				String sourceId = eventMessage.getSourceId();
-				String dataValue = eventMessage.getValue();
-				String timestamp = eventMessage.getTimestamp();
-				String reason = eventMessage.getReason();
-
-				if (logger.isInfoEnabled()) {
-					logger.info("JMS equipment event, source: " + sourceId + ", value: " + dataValue + ", timestamp: "
-							+ timestamp);
-				}
-
-				// resolve event
-				resolveEvent(sourceId, dataValue, timestamp, reason);
-
+				handleMessage(message);
 			} catch (Exception e) {
 				// processing failed
 				onException("Unable to process MQTT equipment event ", e);
@@ -1697,10 +1736,6 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		@Override
 		public void run() {
 			try {
-				if (appContext.getMessagingClients().size() == 0) {
-					return;
-				}
-
 				if (hostname == null || ip == null) {
 					// unidentified sender
 					return;
@@ -1709,8 +1744,23 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 				// send status message to each PubSub
 				CollectorServerStatusMessage message = new CollectorServerStatusMessage(hostname, ip);
 
-				for (MessagingClient pubsub : appContext.getMessagingClients()) {
-					pubsub.publish(message, RoutingKey.NOTIFICATION_STATUS, HEARTBEAT_TTL_SEC);
+				String timeStamp = DomainUtils.offsetDateTimeToString(OffsetDateTime.now(),
+						DomainUtils.OFFSET_DATE_TIME_8601);
+				message.setTimestamp(timeStamp);
+
+				// publish to RMQ brokers
+				for (RmqClient pubsub : appContext.getRmqClients()) {
+					pubsub.sendNotificationMessage(message);
+				}
+
+				// publish to JMS brokers
+				for (JmsClient pubsub : appContext.getJmsClients()) {
+					pubsub.sendNotificationMessage(message);
+				}
+
+				// publish to MQTT brokers
+				for (MqttOeeClient pubsub : appContext.getMqttClients()) {
+					pubsub.sendNotificationMessage(message);
 				}
 
 				if (logger.isInfoEnabled()) {

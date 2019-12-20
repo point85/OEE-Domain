@@ -86,6 +86,10 @@ public class OeeEvent extends KeyedObject {
 	@Column(name = "SOURCE_ID")
 	private String sourceId;
 
+	// collector name
+	@Column(name = "COLLECTOR")
+	private String collector;
+
 	// computed lost time
 	private transient Duration lostTime;
 
@@ -299,5 +303,13 @@ public class OeeEvent extends KeyedObject {
 
 	public void setTeam(Team team) {
 		this.team = team;
+	}
+
+	public String getCollector() {
+		return collector;
+	}
+
+	public void setCollector(String collector) {
+		this.collector = collector;
 	}
 }

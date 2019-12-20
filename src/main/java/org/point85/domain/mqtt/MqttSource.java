@@ -8,13 +8,13 @@ import org.point85.domain.collector.DataSourceType;
 
 @Entity
 @DiscriminatorValue(DataSourceType.MQTT_VALUE)
-public class MQTTSource extends CollectorDataSource {
-	public MQTTSource() {
+public class MqttSource extends CollectorDataSource {
+	public MqttSource() {
 		super();
 		setDataSourceType(DataSourceType.MQTT);
 	}
 
-	public MQTTSource(String name, String description) {
+	public MqttSource(String name, String description) {
 		super(name, description);
 		setDataSourceType(DataSourceType.MQTT);
 	}

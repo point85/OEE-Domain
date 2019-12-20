@@ -8,6 +8,7 @@ import javax.persistence.Table;
 
 import org.point85.domain.DomainUtils;
 import org.point85.domain.persistence.CollectorStateConverter;
+import org.point85.domain.persistence.DataSourceConverter;
 import org.point85.domain.plant.NamedObject;
 
 @Entity
@@ -15,7 +16,6 @@ import org.point85.domain.plant.NamedObject;
 @AttributeOverride(name = "primaryKey", column = @Column(name = "COLLECT_KEY"))
 
 public class DataCollector extends NamedObject {
-
 	// machine running on
 	@Column(name = "HOST")
 	private String host;
@@ -24,15 +24,20 @@ public class DataCollector extends NamedObject {
 	@Column(name = "STATE")
 	@Convert(converter = CollectorStateConverter.class)
 	private CollectorState state = CollectorState.DEV;
+	
+	// notification server type
+	@Column(name = "BROKER_TYPE")
+	@Convert(converter = DataSourceConverter.class)
+	private DataSourceType brokerType;
 
-	// RMQ broker machine
+	// notification broker machine
 	@Column(name = "BROKER_HOST")
 	private String brokerHost;
 
 	@Column(name = "BROKER_PORT")
 	private Integer brokerPort;
 
-	// RMQ credentials
+	// broker credentials
 	@Column(name = "BROKER_USER")
 	private String brokerUserName;
 
@@ -98,5 +103,13 @@ public class DataCollector extends NamedObject {
 
 	public void setBrokerUserPassword(String password) throws Exception {
 		this.brokerUserPassword = DomainUtils.encode(password);
+	}
+
+	public DataSourceType getBrokerType() {
+		return brokerType;
+	}
+
+	public void setBrokerType(DataSourceType sourceType) {
+		this.brokerType = sourceType;
 	}
 }

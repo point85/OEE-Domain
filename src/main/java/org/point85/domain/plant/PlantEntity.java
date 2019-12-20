@@ -1,6 +1,7 @@
 package org.point85.domain.plant;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -17,7 +18,6 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.point85.domain.persistence.EntityLevelConverter;
@@ -55,10 +55,9 @@ public class PlantEntity extends NamedObject {
 	@Convert(converter = EntityLevelConverter.class)
 	private EntityLevel level;
 
-	// work schedule
-	@OneToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH })
-	@JoinColumn(name = "WS_KEY")
-	private WorkSchedule workSchedule;
+	// work schedules
+	@OneToMany(mappedBy = "plantEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+	private Set<EntitySchedule> entitySchedules = new HashSet<>();
 
 	// retention period for database records
 	@Column(name = "RETENTION")
@@ -107,16 +106,36 @@ public class PlantEntity extends NamedObject {
 		this.level = level;
 	}
 
-	public WorkSchedule getWorkSchedule() {
-		return this.workSchedule;
+	public Set<EntitySchedule> getSchedules() {
+		return this.entitySchedules;
 	}
 
-	public void setWorkSchedule(WorkSchedule schedule) {
-		this.workSchedule = schedule;
+	public void setSchedules(Set<EntitySchedule> schedules) {
+		this.entitySchedules = schedules;
+	}
+
+	public void addEntitySchedule(EntitySchedule entitySchedule) {
+		if (!entitySchedules.contains(entitySchedule)) {
+			this.entitySchedules.add(entitySchedule);
+		}
+	}
+
+	public void removeEntitySchedule(EntitySchedule entitySchedule) {
+		if (entitySchedules.contains(entitySchedule)) {
+			this.entitySchedules.remove(entitySchedule);
+		}
 	}
 
 	public WorkSchedule findWorkSchedule() {
-		WorkSchedule schedule = workSchedule;
+		WorkSchedule schedule = null;
+		LocalDateTime now = LocalDateTime.now();
+
+		for (EntitySchedule entitySchedule : entitySchedules) {
+			if (now.isAfter(entitySchedule.getStartDateTime()) && now.isBefore(entitySchedule.getEndDateTime())) {
+				schedule = entitySchedule.getWorkSchedule();
+				break;
+			}
+		}
 
 		if (schedule == null && parent != null) {
 			schedule = parent.findWorkSchedule();

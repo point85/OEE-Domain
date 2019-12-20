@@ -1,4 +1,4 @@
-package org.point85.domain.messaging;
+package org.point85.domain.rmq;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -10,6 +10,11 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import org.point85.domain.messaging.ApplicationMessage;
+import org.point85.domain.messaging.BaseMessagingClient;
+import org.point85.domain.messaging.CollectorNotificationMessage;
+import org.point85.domain.messaging.MessageType;
+import org.point85.domain.messaging.NotificationSeverity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,15 +31,12 @@ import com.rabbitmq.client.Envelope;
  * Class to connect to RMQ, publish and subscribe to message
  *
  */
-public class MessagingClient extends BaseMessagingClient {
+public class RmqClient extends BaseMessagingClient {
 	// logger
-	private static final Logger logger = LoggerFactory.getLogger(MessagingClient.class);
+	private static final Logger logger = LoggerFactory.getLogger(RmqClient.class);
 
 	// auto-ack on consume
-	private static final boolean AUTO_ACK = false;
-
-	// multiple acknowledgement of messages
-	public static final boolean ACK_MULTIPLE = false;
+	private static final boolean AUTO_ACK = true;
 
 	// use a topic exchange
 	private static final String EXCHANGE_TYPE = "topic";
@@ -43,6 +45,9 @@ public class MessagingClient extends BaseMessagingClient {
 
 	// durable exchange
 	private static final boolean DURABLE_EXCHANGE = true;
+
+	// message TTL
+	private static final int TTL_SEC = 3600;
 
 	private String bindingKey;
 
@@ -56,9 +61,9 @@ public class MessagingClient extends BaseMessagingClient {
 	private String replyQueueName;
 
 	// listener to call back when message received
-	private MessageListener listener;
+	private RmqMessageListener listener;
 
-	public MessagingClient() {
+	public RmqClient() {
 	}
 
 	public String getBindingKey() {
@@ -73,16 +78,16 @@ public class MessagingClient extends BaseMessagingClient {
 		return this.channel;
 	}
 
-	public void registerListener(MessageListener listener) {
+	public void registerListener(RmqMessageListener listener) {
 		this.listener = listener;
 	}
 
-	public void unregisterListener(MessageListener listener) {
+	public void unregisterListener(RmqMessageListener listener) {
 		this.listener = null;
 	}
 
 	public void startUp(String hostName, int port, String userName, String password, String queueName,
-			List<RoutingKey> routingKeys, MessageListener listener) throws Exception {
+			List<RoutingKey> routingKeys, RmqMessageListener listener) throws Exception {
 		// connect to broker
 		connect(hostName, port, userName, password);
 
@@ -305,6 +310,40 @@ public class MessagingClient extends BaseMessagingClient {
 		return replyMessage;
 	}
 
+	/**
+	 * Send the notification message
+	 * 
+	 * @param message {@link ApplicationMessage}
+	 * @throws Exception Exception
+	 */
+	public void sendNotificationMessage(ApplicationMessage message) throws Exception {
+		publish(message, RoutingKey.NOTIFICATION_MESSAGE, TTL_SEC);
+	}
+
+	/**
+	 * Send the command message
+	 * 
+	 * @param message {@link ApplicationMessage}
+	 * @throws Exception Exception
+	 */
+	public void sendCommandMessage(ApplicationMessage message) throws Exception {
+		publish(message, RoutingKey.COMMAND_MESSAGE, TTL_SEC);
+	}
+
+	/**
+	 * Send the event message
+	 * 
+	 * @param message {@link ApplicationMessage}
+	 * @throws Exception Exception
+	 */
+	public void sendEquipmentEventMessage(ApplicationMessage message) throws Exception {
+		publish(message, RoutingKey.EQUIPMENT_SOURCE_EVENT, TTL_SEC);
+	}
+
+	public void sendResolvedEventMessage(ApplicationMessage message) throws Exception {
+		publish(message, RoutingKey.RESOLVED_EVENT, TTL_SEC);
+	}
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(factory.getHost(), factory.getPort());
@@ -313,10 +352,10 @@ public class MessagingClient extends BaseMessagingClient {
 	@Override
 	public boolean equals(Object other) {
 
-		if (!(other instanceof MessagingClient)) {
+		if (!(other instanceof RmqClient)) {
 			return false;
 		}
-		MessagingClient otherPubSub = (MessagingClient) other;
+		RmqClient otherPubSub = (RmqClient) other;
 
 		return factory.getHost().equals(otherPubSub.factory.getHost())
 				&& factory.getPort() == otherPubSub.factory.getPort();
@@ -350,7 +389,7 @@ public class MessagingClient extends BaseMessagingClient {
 
 			if (listener != null) {
 				try {
-					listener.onMessage(channel, envelope, message);
+					listener.onRmqMessage(message);
 				} catch (Exception e) {
 					logger.error(e.getMessage());
 				}

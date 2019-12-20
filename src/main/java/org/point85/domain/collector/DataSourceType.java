@@ -3,12 +3,12 @@ package org.point85.domain.collector;
 import org.point85.domain.i18n.DomainLocalizer;
 
 public enum DataSourceType {
-	DATABASE, FILE, HTTP, JMS, MESSAGING, MODBUS, MQTT, OPC_DA, OPC_UA;
+	DATABASE, FILE, HTTP, JMS, RMQ, MODBUS, MQTT, OPC_DA, OPC_UA;
 
 	public static final String OPC_DA_VALUE = "OPC_DA";
 	public static final String OPC_UA_VALUE = "OPC_UA";
 	public static final String HTTP_VALUE = "HTTP";
-	public static final String MESSAGING_VALUE = "MESSAGING";
+	public static final String RMQ_VALUE = "MESSAGING";
 	public static final String JMS_VALUE = "JMS";
 	public static final String DATABASE_VALUE = "DB";
 	public static final String FILE_VALUE = "FILE";
@@ -32,7 +32,7 @@ public enum DataSourceType {
 		case JMS:
 			key = "jms.type";
 			break;
-		case MESSAGING:
+		case RMQ:
 			key = "rmq.type";
 			break;
 		case MQTT:

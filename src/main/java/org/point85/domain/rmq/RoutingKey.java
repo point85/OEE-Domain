@@ -1,4 +1,4 @@
-package org.point85.domain.messaging;
+package org.point85.domain.rmq;
 
 public enum RoutingKey {
 	ALL("#"), EQUIPMENT_SOURCE_EVENT("equipment.event"), NOTIFICATION_ALL("notification.#"), NOTIFICATION_MESSAGE(

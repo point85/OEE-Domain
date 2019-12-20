@@ -18,6 +18,9 @@ public abstract class ApplicationMessage {
 
 	// time message sent
 	private String timestamp;
+	
+	// id of sender
+	private String senderId;
 
 	protected ApplicationMessage(MessageType messageType) {
 		this.messageType = messageType;
@@ -73,5 +76,13 @@ public abstract class ApplicationMessage {
 
 	public void setTimestamp(String timestamp) {
 		this.timestamp = timestamp;
+	}
+
+	public String getSenderId() {
+		return senderId;
+	}
+
+	public void setSenderId(String senderId) {
+		this.senderId = senderId;
 	}
 }

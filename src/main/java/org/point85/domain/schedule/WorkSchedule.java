@@ -42,6 +42,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.point85.domain.i18n.DomainLocalizer;
+import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.plant.NamedObject;
 
 /**
@@ -68,9 +69,9 @@ public class WorkSchedule extends NamedObject {
 	@OneToMany(mappedBy = "workSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
 	private final List<Shift> shifts = new ArrayList<>();
 
-	// holidays and planned downtime
+	// holidays and planned downtime. Unscheduled overtime is also included.
 	@OneToMany(mappedBy = "workSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
-	private final List<NonWorkingPeriod> nonWorkingPeriods = new ArrayList<>();
+	private final List<ExceptionPeriod> exceptionPeriods = new ArrayList<>();
 
 	// list of rotations
 	@OneToMany(mappedBy = "workSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -112,23 +113,56 @@ public class WorkSchedule extends NamedObject {
 	}
 
 	/**
-	 * Remove a non-working period from the schedule
+	 * Remove a non-working or overtime period from the schedule
 	 * 
-	 * @param period {@link NonWorkingPeriod}
+	 * @param period {@link ExceptionPeriod}
 	 */
-	public void deleteNonWorkingPeriod(NonWorkingPeriod period) {
-		if (this.nonWorkingPeriods.contains(period)) {
-			this.nonWorkingPeriods.remove(period);
+	public void deleteExceptionPeriod(ExceptionPeriod period) {
+		if (this.exceptionPeriods.contains(period)) {
+			this.exceptionPeriods.remove(period);
 		}
 	}
 
 	/**
-	 * Get all non-working periods in the schedule
+	 * Get non-working periods in the schedule, i.e. where the loss category is not
+	 * NO LOSS
 	 * 
-	 * @return List of {@link NonWorkingPeriod}
+	 * @return List of {@link ExceptionPeriod}
 	 */
-	public List<NonWorkingPeriod> getNonWorkingPeriods() {
-		return this.nonWorkingPeriods;
+	public List<ExceptionPeriod> getNonWorkingPeriods() {
+		List<ExceptionPeriod> periods = new ArrayList<>();
+
+		for (ExceptionPeriod period : exceptionPeriods) {
+			if (!period.getLossCategory().equals(TimeLoss.NO_LOSS)) {
+				periods.add(period);
+			}
+		}
+		return periods;
+	}
+
+	/**
+	 * Get periods in the schedule where the loss category is NO LOSS
+	 * 
+	 * @return List of {@link ExceptionPeriod}
+	 */
+	public List<ExceptionPeriod> getOvertimePeriods() {
+		List<ExceptionPeriod> periods = new ArrayList<>();
+
+		for (ExceptionPeriod period : exceptionPeriods) {
+			if (period.getLossCategory().equals(TimeLoss.NO_LOSS)) {
+				periods.add(period);
+			}
+		}
+		return periods;
+	}
+
+	/**
+	 * Get all exception periods in the schedule
+	 * 
+	 * @return List of {@link ExceptionPeriod}
+	 */
+	public List<ExceptionPeriod> getExceptionPeriods() {
+		return this.exceptionPeriods;
 	}
 
 	/**
@@ -155,7 +189,7 @@ public class WorkSchedule extends NamedObject {
 
 			LocalDate startDate = instance.getStartTime().toLocalDate();
 
-			for (NonWorkingPeriod nonWorkingPeriod : nonWorkingPeriods) {
+			for (ExceptionPeriod nonWorkingPeriod : getNonWorkingPeriods()) {
 				if (nonWorkingPeriod.isInPeriod(startDate)) {
 					addShift = false;
 					break;
@@ -315,26 +349,27 @@ public class WorkSchedule extends NamedObject {
 	}
 
 	/**
-	 * Create a non-working period of time
+	 * Create a non-working or overtime period of time
 	 * 
 	 * @param name          Name of period
 	 * @param description   Description of period
 	 * @param startDateTime Starting date and time of day
 	 * @param duration      Duration of period
-	 * @return {@link NonWorkingPeriod}
+	 * @param loss          Time loss category
+	 * @return {@link ExceptionPeriod}
 	 * @throws Exception exception
 	 */
-	public NonWorkingPeriod createNonWorkingPeriod(String name, String description, LocalDateTime startDateTime,
-			Duration duration) throws Exception {
-		NonWorkingPeriod period = new NonWorkingPeriod(name, description, startDateTime, duration);
+	public ExceptionPeriod createExceptionPeriod(String name, String description, LocalDateTime startDateTime,
+			Duration duration, TimeLoss loss) throws Exception {
+		ExceptionPeriod period = new ExceptionPeriod(name, description, startDateTime, duration, loss);
 
-		if (nonWorkingPeriods.contains(period)) {
+		if (exceptionPeriods.contains(period)) {
 			throw new Exception(DomainLocalizer.instance().getErrorString("nonworking.period.already.exists", name));
 		}
 		period.setWorkSchedule(this);
-		nonWorkingPeriods.add(period);
+		exceptionPeriods.add(period);
 
-		Collections.sort(nonWorkingPeriods);
+		Collections.sort(exceptionPeriods);
 
 		return period;
 	}
@@ -389,11 +424,14 @@ public class WorkSchedule extends NamedObject {
 		Duration nonWorking = calculateNonWorkingTime(from, to);
 		sum = sum.minus(nonWorking);
 
+		// add overtime
+		Duration overTime = calculateOvertime(from, to);
+		sum = sum.plus(overTime);
+
 		// clip if negative
 		if (sum.isNegative()) {
 			sum = Duration.ZERO;
 		}
-
 		return sum;
 	}
 
@@ -406,12 +444,31 @@ public class WorkSchedule extends NamedObject {
 	 * @throws Exception exception
 	 */
 	public Duration calculateNonWorkingTime(LocalDateTime from, LocalDateTime to) throws Exception {
+		return calculateExceptionTime(from, to, true);
+	}
+
+	/**
+	 * Calculate the overtime between the specified dates and times of day.
+	 * 
+	 * @param from Starting date and time
+	 * @param to   Ending date and time
+	 * @return Overtime duration
+	 * @throws Exception exception
+	 */
+	public Duration calculateOvertime(LocalDateTime from, LocalDateTime to) throws Exception {
+		return calculateExceptionTime(from, to, false);
+	}
+
+	private Duration calculateExceptionTime(LocalDateTime from, LocalDateTime to, boolean isNonWorking)
+			throws Exception {
 		Duration sum = Duration.ZERO;
 
 		long fromSeconds = from.atZone(ZONE_ID).toEpochSecond();
 		long toSeconds = to.atZone(ZONE_ID).toEpochSecond();
 
-		for (NonWorkingPeriod period : getNonWorkingPeriods()) {
+		List<ExceptionPeriod> periods = isNonWorking ? getNonWorkingPeriods() : getOvertimePeriods();
+
+		for (ExceptionPeriod period : periods) {
 			LocalDateTime start = period.getStartDateTime();
 			long startSeconds = start.atZone(ZONE_ID).toEpochSecond();
 
@@ -538,7 +595,7 @@ public class WorkSchedule extends NamedObject {
 			text += "\nTotal team coverage: " + df.format(teamPercent) + "%";
 
 			// non-working periods
-			List<NonWorkingPeriod> periods = getNonWorkingPeriods();
+			List<ExceptionPeriod> periods = getNonWorkingPeriods();
 
 			if (!periods.isEmpty()) {
 				text += "\nNon-working periods:";
@@ -546,12 +603,29 @@ public class WorkSchedule extends NamedObject {
 				Duration totalMinutes = Duration.ZERO;
 
 				count = 1;
-				for (NonWorkingPeriod period : periods) {
+				for (ExceptionPeriod period : periods) {
 					totalMinutes = totalMinutes.plusMinutes(period.getDuration().toMinutes());
 					text += "\n   (" + count + ") " + period;
 					count++;
 				}
 				text += "\nTotal non-working time: " + totalMinutes;
+			}
+
+			// overtime periods
+			periods = getOvertimePeriods();
+
+			if (!periods.isEmpty()) {
+				text += "\nOvertime periods:";
+
+				Duration totalMinutes = Duration.ZERO;
+
+				count = 1;
+				for (ExceptionPeriod period : periods) {
+					totalMinutes = totalMinutes.plusMinutes(period.getDuration().toMinutes());
+					text += "\n   (" + count + ") " + period;
+					count++;
+				}
+				text += "\nTotal overtime: " + totalMinutes;
 			}
 		} catch (Exception e) {
 		}
