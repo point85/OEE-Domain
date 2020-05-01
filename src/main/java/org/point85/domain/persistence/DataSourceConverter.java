@@ -48,6 +48,10 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 		case FILE:
 			value = DataSourceType.FILE_VALUE;
 			break;
+			
+		case CRON:
+			value = DataSourceType.CRON_VALUE;
+			break;
 
 		case MODBUS:
 			value = DataSourceType.MODBUS_VALUE;
@@ -99,6 +103,10 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 
 		case DataSourceType.FILE_VALUE:
 			state = DataSourceType.FILE;
+			break;
+			
+		case DataSourceType.CRON_VALUE:
+			state = DataSourceType.CRON;
 			break;
 
 		case DataSourceType.MODBUS_VALUE:

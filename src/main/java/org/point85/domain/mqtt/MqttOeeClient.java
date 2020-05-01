@@ -237,4 +237,9 @@ public class MqttOeeClient extends BaseMessagingClient {
 	public void sendEventMessage(ApplicationMessage message) throws Exception {
 		publish(EVENT_TOPIC, message, QualityOfService.EXACTLY_ONCE);
 	}
+
+	@Override
+	public String toString() {
+		return mqttClient.getServerURI();
+	}
 }

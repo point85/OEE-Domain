@@ -26,15 +26,18 @@ public final class DomainUtils {
 	// folder with configuration files
 	public static final String CONFIG_DIR = "config_dir";
 
-	// ISO 8602 datetime format, yyyy-mm-ddThh:mm:ss.nnnnnn+|-hh:mm
+	// ISO 8601 datetime format, yyyy-mm-ddThh:mm:ss.nnnnnn+|-hh:mm
 	public static final String OFFSET_DATE_TIME_8601 = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ";
+	
+	// ISO 8601 datetime format, yyyy-mm-ddThh:mm:ss.nnn
+	public static final String LOCAL_DATE_TIME_8601 = "yyyy-MM-dd'T'HH:mm:ss.SSS";
 
 	// pattern for OffsetDateTime display
 	public static final String OFFSET_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS ZZZZZ";
 
 	public static String getVersionInfo() {
-		return DomainLocalizer.instance().getLangString("version") + " 2.5.1, "
-				+ LocalDate.of(2020, 1, 15).format(DateTimeFormatter.ISO_DATE);
+		return DomainLocalizer.instance().getLangString("version") + " 2.6.0, "
+				+ LocalDate.of(2020, 5, 1).format(DateTimeFormatter.ISO_DATE);
 	}
 
 	// format a Duration
@@ -81,6 +84,11 @@ public final class DomainUtils {
 	public static OffsetDateTime offsetDateTimeFromString(String iso8601, String pattern) {
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(pattern);
 		return (iso8601 != null) ? OffsetDateTime.parse(iso8601.trim(), dtf) : null;
+	}
+
+	public static LocalDateTime localDateTimeFromString(String iso8601, String pattern) {
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(pattern);
+		return (iso8601 != null) ? LocalDateTime.parse(iso8601.trim(), dtf) : null;
 	}
 
 	// create a UTC OffsetDateTime from the DateTime

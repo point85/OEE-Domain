@@ -103,10 +103,12 @@ public final class EquipmentLossManager {
 			OeeEvent record = records.get(i);
 
 			// skip no loss records
-			TimeLoss lossCategory = record.getReason().getLossCategory();
+			if (record.getReason() != null) {
+				TimeLoss lossCategory = record.getReason().getLossCategory();
 
-			if (lossCategory.equals(TimeLoss.NO_LOSS)) {
-				continue;
+				if (lossCategory.equals(TimeLoss.NO_LOSS)) {
+					continue;
+				}
 			}
 
 			Duration eventDuration = record.getDuration();

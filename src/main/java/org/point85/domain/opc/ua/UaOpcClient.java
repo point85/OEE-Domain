@@ -27,8 +27,8 @@ import org.eclipse.milo.opcua.sdk.client.api.identity.X509IdentityProvider;
 import org.eclipse.milo.opcua.sdk.client.api.nodes.VariableNode;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
-import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.ServerNode;
-import org.eclipse.milo.opcua.sdk.client.model.nodes.variables.ServerStatusNode;
+import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.ServerTypeNode;
+import org.eclipse.milo.opcua.sdk.client.model.nodes.variables.ServerStatusTypeNode;
 import org.eclipse.milo.opcua.stack.client.DiscoveryClient;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType;
@@ -368,7 +368,7 @@ public class UaOpcClient implements SessionActivityListener {
 	public static Object getJavaObject(Variant value) {
 		Object uaValue = value.getValue();
 		Object javaObject = null;
-		NodeId nodeId = value.getDataType().get();
+		ExpandedNodeId nodeId = value.getDataType().get();
 		Class<?> clazz = BuiltinDataType.getBackingClass(nodeId);
 
 		boolean isArray = uaValue.getClass().isArray();
@@ -631,9 +631,10 @@ public class UaOpcClient implements SessionActivityListener {
 	}
 
 	public DateTime getServerCurrentTime() throws Exception {
-		ServerNode serverNode = opcUaClient.getAddressSpace().getObjectNode(Identifiers.Server, ServerNode.class).get();
+		ServerTypeNode serverNode = opcUaClient.getAddressSpace()
+				.getObjectNode(Identifiers.Server, ServerTypeNode.class).get();
 
-		ServerStatusNode serverStatusNode = serverNode.getServerStatusNode().get();
+		ServerStatusTypeNode serverStatusNode = serverNode.getServerStatusNode().get();
 		return serverStatusNode.getCurrentTime().get();
 	}
 
@@ -641,11 +642,12 @@ public class UaOpcClient implements SessionActivityListener {
 		OpcUaServerStatus serverStatus = new OpcUaServerStatus();
 
 		// Get a typed reference to the Server object: ServerNode
-		ServerNode serverNode = opcUaClient.getAddressSpace().getObjectNode(Identifiers.Server, ServerNode.class).get();
+		ServerTypeNode serverNode = opcUaClient.getAddressSpace()
+				.getObjectNode(Identifiers.Server, ServerTypeNode.class).get();
 
 		// Get a typed reference to the ServerStatus variable
 		// component and read value attributes individually
-		ServerStatusNode serverStatusNode = serverNode.getServerStatusNode().get();
+		ServerStatusTypeNode serverStatusNode = serverNode.getServerStatusNode().get();
 
 		DateTime startTime = serverStatusNode.getStartTime().get();
 		ServerState state = serverStatusNode.getState().get();

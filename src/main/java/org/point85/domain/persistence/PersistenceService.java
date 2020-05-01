@@ -28,6 +28,7 @@ import org.point85.domain.collector.CollectorState;
 import org.point85.domain.collector.DataCollector;
 import org.point85.domain.collector.DataSourceType;
 import org.point85.domain.collector.OeeEvent;
+import org.point85.domain.cron.CronEventSource;
 import org.point85.domain.db.DatabaseEvent;
 import org.point85.domain.db.DatabaseEventSource;
 import org.point85.domain.db.DatabaseEventStatus;
@@ -733,6 +734,24 @@ public final class PersistenceService {
 		}
 		return material;
 	}
+	
+	public Equipment fetchEquipmentByName(String name) {
+		final String EQUIP_BY_NAME = "EQUIP.ByName";
+
+		if (namedQueryMap.get(EQUIP_BY_NAME) == null) {
+			createNamedQuery(EQUIP_BY_NAME, "SELECT equip FROM Equipment equip WHERE equip.name = :name");
+		}
+
+		Equipment equipment = null;
+		TypedQuery<Equipment> query = getEntityManager().createNamedQuery(EQUIP_BY_NAME, Equipment.class);
+		query.setParameter("name", name);
+		List<Equipment> equipments = query.getResultList();
+
+		if (equipments.size() == 1) {
+			equipment = equipments.get(0);
+		}
+		return equipment;
+	}
 
 	public Material fetchMaterialByKey(Long key) throws Exception {
 		return getEntityManager().find(Material.class, key);
@@ -1367,7 +1386,7 @@ public final class PersistenceService {
 				EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class, Reason.class,
 				Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class, ExceptionPeriod.class,
 				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class, ModbusSource.class,
-				EntitySchedule.class };
+				EntitySchedule.class, CronEventSource.class };
 	}
 
 	private Class<?>[] getDatabaseEventEntityClasses() {

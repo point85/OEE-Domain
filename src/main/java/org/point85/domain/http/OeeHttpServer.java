@@ -154,7 +154,7 @@ public class OeeHttpServer extends NanoHTTPD {
 		EquipmentEventResponseDto responseDto = new EquipmentEventResponseDto();
 		EquipmentEventRequestDto dto = null;
 
-		// data expected as HTTP body
+		// data expected as HTTP body, form encoded
 		Map<String, String> bodyMap = new HashMap<String, String>();
 
 		try {
@@ -184,9 +184,12 @@ public class OeeHttpServer extends NanoHTTPD {
 			return responseDto;
 		}
 
+		// need source id or equipment name
 		if (dto.getSourceId() == null || dto.getSourceId().length() == 0) {
-			responseDto.setErrorText("The source id must be specified.");
-			return responseDto;
+			if (dto.getEquipmentName() == null || dto.getEquipmentName().length() == 0) {
+				responseDto.setErrorText("The source id or equipment name must be specified.");
+				return responseDto;
+			}
 		}
 
 		if (!acceptingEventRequests) {
@@ -200,12 +203,11 @@ public class OeeHttpServer extends NanoHTTPD {
 		}
 
 		if (logger.isInfoEnabled()) {
-			logger.info("Data change for source id: " + dto.getSourceId() + ", Value: " + dto.getValue()
-					+ ", Timestamp: " + dto.getTimestamp() + ", Reason: " + dto.getReason());
+			logger.info("Request received: " + dto);
 		}
 
 		// call listener on same thread
-		eventListener.onHttpEquipmentEvent(dto.getSourceId(), dto.getValue(), dto.getTimestamp(), dto.getReason());
+		eventListener.onHttpEquipmentEvent(dto);
 
 		return responseDto;
 	}

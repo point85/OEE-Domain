@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,6 +13,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +25,10 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.point85.domain.DomainUtils;
+import org.point85.domain.OeeEquipmentEvent;
+import org.point85.domain.cron.CronEventClient;
+import org.point85.domain.cron.CronEventListener;
+import org.point85.domain.cron.CronEventSource;
 import org.point85.domain.db.DatabaseEvent;
 import org.point85.domain.db.DatabaseEventClient;
 import org.point85.domain.db.DatabaseEventListener;
@@ -30,6 +37,7 @@ import org.point85.domain.db.DatabaseEventStatus;
 import org.point85.domain.file.FileEventClient;
 import org.point85.domain.file.FileEventListener;
 import org.point85.domain.file.FileEventSource;
+import org.point85.domain.http.EquipmentEventRequestDto;
 import org.point85.domain.http.HttpEventListener;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.http.OeeHttpServer;
@@ -74,17 +82,26 @@ import org.point85.domain.rmq.RmqClient;
 import org.point85.domain.rmq.RmqMessageListener;
 import org.point85.domain.rmq.RmqSource;
 import org.point85.domain.rmq.RoutingKey;
+import org.point85.domain.schedule.ShiftInstance;
+import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.OeeContext;
 import org.point85.domain.script.OeeEventType;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
-public class CollectorService
-		implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener, RmqMessageListener,
-		JmsMessageListener, DatabaseEventListener, FileEventListener, MqttMessageListener, ModbusEventListener {
+/**
+ * CollectorService listens for events from various sources and resolves them
+ * into OEE performance, availability and quality records.
+ *
+ */
+public class CollectorService implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener,
+		RmqMessageListener, JmsMessageListener, DatabaseEventListener, FileEventListener, MqttMessageListener,
+		ModbusEventListener, CronEventListener {
 
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
@@ -135,6 +152,10 @@ public class CollectorService
 	private final Map<String, PolledSource> fileServerMap = new HashMap<>();
 	private final Map<String, PolledSource> modbusSlaveMap = new HashMap<>();
 	private final Map<String, MqttBrokerSource> mqttBrokerMap = new HashMap<>();
+	private final Map<String, CronSource> cronSchedulerMap = new HashMap<>();
+
+	// equipment by name cache
+	private final ConcurrentMap<String, Equipment> equipmentCache = new ConcurrentHashMap<>();
 
 	public CollectorService() {
 		initialize();
@@ -158,12 +179,52 @@ public class CollectorService
 		jmsBrokerMap.clear();
 		databaseServerMap.clear();
 		fileServerMap.clear();
+		cronSchedulerMap.clear();
 		mqttBrokerMap.clear();
 
 		gson = new Gson();
 		appContext = new OeeContext();
 		equipmentResolver = new EquipmentEventResolver();
 		collectors = new ArrayList<>();
+	}
+
+	public OeeEvent createEvent(String sourceId, OeeEventType type, Equipment equipment, OffsetDateTime startTime,
+			OffsetDateTime endTime) throws Exception {
+		if (type == null) {
+			// throw new
+			// Exception(WebOperatorLocalizer.instance().getErrorString("no.event.type"));
+		}
+
+		OeeEvent event = new OeeEvent(equipment);
+		event.setEventType(type);
+		// event.setStartTime(DomainUtils.fromLocalDateTime(startTime));
+		// event.setEndTime(DomainUtils.fromLocalDateTime(endTime));
+		event.setStartTime(startTime);
+		event.setEndTime(endTime);
+		event.setSourceId(sourceId);
+
+		// get the shift from the work schedule
+		WorkSchedule schedule = equipment.findWorkSchedule();
+
+		if (schedule != null) {
+			List<ShiftInstance> shifts = schedule.getShiftInstancesForTime(startTime.toLocalDateTime());
+
+			if (!shifts.isEmpty()) {
+				event.setShift(shifts.get(0).getShift());
+				event.setTeam(shifts.get(0).getTeam());
+			}
+		}
+
+		// material being produced
+		if (!type.equals(OeeEventType.MATL_CHANGE)) {
+			OeeEvent setup = PersistenceService.instance().fetchLastEvent(equipment, OeeEventType.MATL_CHANGE);
+
+			if (setup != null) {
+				event.setMaterial(setup.getMaterial());
+			}
+		}
+
+		return event;
 	}
 
 	public boolean isManual() {
@@ -280,6 +341,27 @@ public class CollectorService
 		}
 		serverSource.getSourceIds().add(sourceId);
 		serverSource.getPollingIntervals().add(pollingMillis);
+	}
+
+	// collect all cron scheduler info
+	private void buildCronSchedulers(EventResolver resolver) throws Exception {
+		CronEventSource eventSource = (CronEventSource) resolver.getDataSource();
+		String sourceId = resolver.getSourceId();
+		String cronExpression = eventSource.getCronExpression();
+		String id = eventSource.getId();
+
+		CronSource serverSource = cronSchedulerMap.get(id);
+
+		if (serverSource == null) {
+			if (logger.isInfoEnabled()) {
+				logger.info("Found cron source specified for job " + eventSource.getHost());
+			}
+
+			serverSource = new CronSource(eventSource);
+			cronSchedulerMap.put(id, serverSource);
+		}
+		serverSource.getSourceIds().add(sourceId);
+		serverSource.getCronExpressions().add(cronExpression);
 	}
 
 	// collect all Modbus slave info
@@ -443,6 +525,28 @@ public class CollectorService
 				logger.info("Polling files on server: " + fileEventSource.getId());
 			}
 			fileClient.startPolling();
+		}
+	}
+
+	private void startCronSchedulers(Map<String, CronSource> cronSources) throws Exception {
+		for (Entry<String, CronSource> entry : cronSources.entrySet()) {
+			// source of file events
+			CronSource cronSource = entry.getValue();
+			CronEventSource cronEventSource = cronSource.getEventSource();
+			List<String> sourceIds = cronSource.getSourceIds();
+			List<String> expressions = cronSource.getCronExpressions();
+
+			CronEventClient cronClient = new CronEventClient(this, cronEventSource, sourceIds, expressions);
+
+			// add to context
+			appContext.getCronEventClients().add(cronClient);
+
+			cronClient.scheduleJobs();
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Jobs scheduled on server: " + cronEventSource.getHost() + " for job "
+						+ cronEventSource.getName());
+			}
 		}
 	}
 
@@ -678,6 +782,11 @@ public class CollectorService
 					break;
 				}
 
+				case CRON: {
+					buildCronSchedulers(resolver);
+					break;
+				}
+
 				case MODBUS: {
 					buildModbusSlaves(resolver);
 					break;
@@ -715,6 +824,9 @@ public class CollectorService
 
 		// poll file servers
 		startFilePolling(fileServerMap);
+
+		// start cron schedulers
+		startCronSchedulers(cronSchedulerMap);
 
 		// connect to Modbus slaves
 		startModbusPolling(modbusSlaveMap);
@@ -900,20 +1012,30 @@ public class CollectorService
 
 		for (RmqClient pubsub : appContext.getRmqClients()) {
 			pubsub.sendNotificationMessage(message);
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Sent message for host " + getId() + " of type " + message.getMessageType() + " for RMQ "
+						+ pubsub);
+			}
 		}
 
 		for (JmsClient pubsub : appContext.getJmsClients()) {
 			pubsub.sendNotificationMessage(message);
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Sent message for host " + getId() + " of type " + message.getMessageType() + " for JMS "
+						+ pubsub);
+			}
 		}
 
 		for (MqttOeeClient pubsub : appContext.getMqttClients()) {
 			pubsub.sendNotificationMessage(message);
-		}
 
-		if (logger.isInfoEnabled()) {
-			logger.info("Sent message for host " + getId() + " of type " + message.getMessageType());
+			if (logger.isInfoEnabled()) {
+				logger.info("Sent message for host " + getId() + " of type " + message.getMessageType() + " for MQTT "
+						+ pubsub);
+			}
 		}
-
 	}
 
 	private void saveCollectorState(CollectorState state) throws Exception {
@@ -986,10 +1108,24 @@ public class CollectorService
 
 		// disconnect from RMQ brokers
 		for (RmqClient pubsub : appContext.getRmqClients()) {
-			onInformation("Disconnecting from pubsub with binding key " + pubsub.getBindingKey());
+			onInformation("Disconnecting from RMQ server " + pubsub);
 			pubsub.disconnect();
 		}
 		appContext.getRmqClients().clear();
+
+		// disconnect from JMS servers
+		for (JmsClient pubsub : appContext.getJmsClients()) {
+			onInformation("Disconnecting from JMS " + pubsub);
+			pubsub.disconnect();
+		}
+		appContext.getJmsClients().clear();
+
+		// disconnect from MQTT servers
+		for (MqttOeeClient pubsub : appContext.getMqttClients()) {
+			onInformation("Disconnecting from MQTT " + pubsub);
+			pubsub.disconnect();
+		}
+		appContext.getMqttClients().clear();
 
 		// stop polling Modbus slaves
 		for (ModbusMaster master : appContext.getModbusMasters()) {
@@ -997,6 +1133,13 @@ public class CollectorService
 			onInformation("Stopped polling for Modbus master " + master.getDataSource().getHost());
 		}
 		appContext.getModbusMasters().clear();
+
+		// stop cron jobs
+		for (CronEventClient client : appContext.getCronEventClients()) {
+			client.shutdownScheduler();
+			onInformation("Shutdown cron job scheduler for job " + client.getCronEventSource().getName());
+		}
+		appContext.getCronEventClients().clear();
 
 		// set back to ready
 		saveCollectorState(CollectorState.READY);
@@ -1089,6 +1232,11 @@ public class CollectorService
 			master.stopPolling();
 		}
 
+		// cron clients
+		for (CronEventClient client : appContext.getCronEventClients()) {
+			client.unscheduleJobs();
+		}
+
 		// HTTP servers
 		for (OeeHttpServer httpServer : appContext.getHttpServers()) {
 			httpServer.shutdown();
@@ -1132,6 +1280,11 @@ public class CollectorService
 			master.startPolling();
 		}
 
+		// cron clients
+		for (CronEventClient client : appContext.getCronEventClients()) {
+			client.scheduleJobs();
+		}
+
 		if (logger.isInfoEnabled()) {
 			logger.info("Subscribed to data sources.");
 		}
@@ -1143,8 +1296,8 @@ public class CollectorService
 
 	// HTTP request
 	@Override
-	public void onHttpEquipmentEvent(String sourceId, String dataValue, String timestamp, String reason) {
-		getExecutorService().execute(new HttpTask(sourceId, dataValue, timestamp, reason));
+	public void onHttpEquipmentEvent(EquipmentEventRequestDto dto) {
+		getExecutorService().execute(new HttpTask(dto));
 	}
 
 	// File request
@@ -1182,7 +1335,7 @@ public class CollectorService
 		PersistenceService.instance().purge(equipment, cutoff);
 	}
 
-	public OeeEvent saveOeeEvent(OeeEvent event) throws Exception {
+	private OeeEvent saveOeeEvent(OeeEvent event) throws Exception {
 		Equipment equipment = event.getEquipment();
 		Duration days = equipment.findRetentionPeriod();
 
@@ -1445,30 +1598,95 @@ public class CollectorService
 		}
 	}
 
+	// cron event source
+	private class CronSource {
+		private final CronEventSource eventSource;
+		private final List<String> sourceIds = new ArrayList<>();
+		private final List<String> cronExpressions = new ArrayList<>();
+
+		private CronSource(CronEventSource eventSource) {
+			this.eventSource = eventSource;
+		}
+
+		private CronEventSource getEventSource() {
+			return eventSource;
+		}
+
+		private List<String> getSourceIds() {
+			return sourceIds;
+		}
+
+		private List<String> getCronExpressions() {
+			return cronExpressions;
+		}
+	}
+
 	// handle the HTTP callback
 	private class HttpTask implements Runnable {
-		private final String sourceId;
-		private final String dataValue;
-		private final String timestamp;
-		private final String reason;
+		private final EquipmentEventRequestDto dto;
 
-		HttpTask(String sourceId, String dataValue, String timestamp, String reason) {
-			this.sourceId = sourceId;
-			this.dataValue = dataValue;
-			this.timestamp = timestamp;
-			this.reason = reason;
+		HttpTask(EquipmentEventRequestDto dto) {
+			this.dto = dto;
 		}
 
 		@Override
 		public void run() {
 			try {
 				if (logger.isInfoEnabled()) {
-					logger.info(
-							"HTTP event, source: " + sourceId + ", value: " + dataValue + ", timestamp: " + timestamp);
+					logger.info("HTTP event: " + dto);
 				}
 
+				// create event
+				OffsetDateTime start = null;
+
+				try {
+					// first try zone offset
+					start = DomainUtils.offsetDateTimeFromString(dto.getTimestamp(), DomainUtils.OFFSET_DATE_TIME_8601);
+				} catch (Exception e) {
+					// now try a local time
+					LocalDateTime ldt = DomainUtils.localDateTimeFromString(dto.getTimestamp(),
+							DomainUtils.LOCAL_DATE_TIME_8601);
+					start = DomainUtils.fromLocalDateTime(ldt);
+				}
+
+				OeeEquipmentEvent event = new OeeEquipmentEvent(dto.getSourceId(), dto.getValue(), start);
+
+				// end
+				OffsetDateTime end = null;
+
+				if (dto.getEndTimestamp() != null) {
+					try {
+						// first try zone offset
+						end = DomainUtils.offsetDateTimeFromString(dto.getEndTimestamp(),
+								DomainUtils.OFFSET_DATE_TIME_8601);
+					} catch (Exception e) {
+						// now try a local time
+						LocalDateTime ldt = DomainUtils.localDateTimeFromString(dto.getEndTimestamp(),
+								DomainUtils.LOCAL_DATE_TIME_8601);
+						end = DomainUtils.fromLocalDateTime(ldt);
+					}
+					event.setEndTimestamp(end);
+				}
+
+				// duration
+				Duration period = (dto.getDuration() != null) ? Duration.ofSeconds(Long.parseLong(dto.getDuration()))
+						: null;
+				event.setDuration(period);
+
+				// equipment
+				Equipment equipment = (dto.getEquipmentName() != null) ? fetchEquipment(dto.getEquipmentName()) : null;
+				event.setEquipment(equipment);
+
+				// production reason
+				Reason reason = (dto.getReason() != null) ? fetchReason(dto.getReason()) : null;
+				event.setReason(reason);
+
+				// event type
+				OeeEventType eventType = (dto.getEventType() != null) ? OeeEventType.valueOf(dto.getEventType()) : null;
+				event.setEventType(eventType);
+
 				// resolve event
-				resolveEvent(sourceId, dataValue, timestamp, reason);
+				resolveEvent(event);
 
 			} catch (Exception e) {
 				onException("Unable to invoke script resolver.", e);
@@ -1492,15 +1710,16 @@ public class CollectorService
 				Object dataValue = UaOpcClient.getJavaObject(uaValue.getValue());
 				String sourceId = item.getReadValueId().getNodeId().toParseableString();
 				DateTime dt = uaValue.getServerTime();
-				OffsetDateTime timestamp = DomainUtils.localTimeFromDateTime(dt);
+				OffsetDateTime startTimestamp = DomainUtils.localTimeFromDateTime(dt);
 
 				if (logger.isInfoEnabled()) {
 					logger.info("OPC UA subscription, node: " + sourceId + ", value: " + dataValue + ", timestamp: "
-							+ timestamp);
+							+ startTimestamp);
 				}
 
 				// resolve event
-				resolveEvent(sourceId, dataValue, timestamp, null);
+				OeeEquipmentEvent event = new OeeEquipmentEvent(sourceId, dataValue, startTimestamp);
+				resolveEvent(event);
 
 			} catch (Exception e) {
 				onException("Unable to invoke OPC UA script resolver.", e);
@@ -1549,57 +1768,104 @@ public class CollectorService
 		}
 	}
 
-	private void resolveEvent(String sourceId, Object dataValue, String timestamp, String reason) throws Exception {
-		OffsetDateTime odt = null;
-		if (timestamp != null) {
-			odt = DomainUtils.offsetDateTimeFromString(timestamp, DomainUtils.OFFSET_DATE_TIME_8601);
+	private Equipment fetchEquipment(String equipmentName) throws Exception {
+		Equipment equipment = null;
+
+		if (equipmentName == null) {
+			return equipment;
 		}
-		resolveEvent(sourceId, dataValue, odt, reason);
+
+		equipment = equipmentCache.get(equipmentName);
+
+		if (equipment == null) {
+			// fetch from database
+			equipment = PersistenceService.instance().fetchEquipmentByName(equipmentName);
+
+			// cache it
+			if (equipment != null) {
+				equipmentCache.put(equipmentName, equipment);
+			} else {
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.equipment", equipmentName));
+			}
+		}
+		return equipment;
 	}
 
-	private void resolveEvent(String sourceId, Object dataValue, OffsetDateTime timestamp, String reason)
-			throws Exception {
-		EventResolver eventResolver = equipmentResolver.getResolver(sourceId);
+	private void resolveEvent(OeeEquipmentEvent event) throws Exception {
 
-		// check to see if we are collecting this data
-		String eventCollector = eventResolver.getCollector().getName();
-		if (collectorName != null && !eventCollector.equals(collectorName)) {
-			if (logger.isTraceEnabled()) {
-				logger.trace("Ignoring event.  It is assigned to collector " + eventCollector);
+		OeeEvent resolvedEvent = null;
+		boolean isWatchMode = false;
+
+		if (event.getSourceId() != null) {
+			// pre-defined event
+			EventResolver eventResolver = equipmentResolver.getResolver(event.getSourceId());
+
+			if (eventResolver == null) {
+				logger.error("No event resolver found for source id: " + event.getSourceId());
+				return;
 			}
-			return;
-		}
+			isWatchMode = eventResolver.isWatchMode();
 
-		// event
-		OeeEvent resolvedEvent = equipmentResolver.invokeResolver(eventResolver, getAppContext(), dataValue, timestamp);
-
-		if (resolvedEvent == null) {
-			if (logger.isTraceEnabled()) {
-				logger.trace("Resolver script returned a null result.");
+			// check to see if we are collecting this data
+			String eventCollector = eventResolver.getCollector().getName();
+			if (collectorName != null && !eventCollector.equals(collectorName)) {
+				if (logger.isTraceEnabled()) {
+					logger.trace("Ignoring event.  It is assigned to collector " + eventCollector);
+				}
+				return;
 			}
-			return;
+
+			// event
+			resolvedEvent = equipmentResolver.invokeResolver(eventResolver, getAppContext(), event.getDataValue(),
+					event.getStartTimestamp());
+
+			if (resolvedEvent == null) {
+				if (logger.isTraceEnabled()) {
+					logger.trace("Resolver script returned a null result.");
+				}
+				return;
+			}
+
+			// reason could have been set in the resolver script code
+			Reason eventReason = event.getReason();
+			if (eventResolver.getReason() != null) {
+				eventReason = fetchReason(eventResolver.getReason());
+			}
+
+			// reason
+			resolvedEvent.setReason(eventReason);
+
+		} else {
+			// anonymous event
+			resolvedEvent = createEvent("MOBILE", event.getEventType(), event.getEquipment(), event.getStartTimestamp(),
+					event.getEndTimestamp());
+
+			if (event.getEventType().equals(OeeEventType.AVAILABILITY)) {
+				String reasonName = (String) event.getDataValue();
+				Reason availabilityReason = fetchReason(reasonName);
+
+				resolvedEvent.setInputValue(reasonName);
+				resolvedEvent.setReason(availabilityReason);
+				resolvedEvent.setDuration(event.getDuration());
+
+			}
 		}
 
-		// reason
-		String reasonName = reason;
-
-		if (reasonName == null) {
-			// could have been set in the resolver script code
-			reasonName = eventResolver.getReason();
+		if (!isWatchMode) {
+			recordResolution(resolvedEvent);
 		}
+	}
 
+	private Reason fetchReason(String reasonName) throws Exception {
+		Reason eventReason = null;
 		if (reasonName != null && reasonName.trim().length() > 0) {
-			Reason eventReason = PersistenceService.instance().fetchReasonByName(reasonName);
+			eventReason = PersistenceService.instance().fetchReasonByName(reasonName);
 
 			if (eventReason == null) {
 				throw new Exception(DomainLocalizer.instance().getErrorString("undefined.reason", reasonName));
 			}
-			resolvedEvent.setReason(eventReason);
 		}
-
-		if (!eventResolver.isWatchMode()) {
-			recordResolution(resolvedEvent);
-		}
+		return eventReason;
 	}
 
 	public String getCollectorName() {
@@ -1627,15 +1893,17 @@ public class CollectorService
 				Object dataValue = variantValue.getValueAsObject();
 
 				String sourceId = item.getPathName();
-				OffsetDateTime timestamp = item.getLocalTimestamp();
+				OffsetDateTime startTimestamp = item.getLocalTimestamp();
 
 				if (logger.isInfoEnabled()) {
 					logger.info("OPC DA data change, group: " + item.getGroup().getName() + ", item: " + sourceId
-							+ ", value: " + item.getValueString() + ", timestamp: " + timestamp);
+							+ ", value: " + item.getValueString() + ", timestamp: " + startTimestamp);
 				}
 
 				// resolve event
-				resolveEvent(sourceId, dataValue, timestamp, null);
+				OeeEquipmentEvent event = new OeeEquipmentEvent(sourceId, dataValue, startTimestamp);
+
+				resolveEvent(event);
 
 			} catch (Exception e) {
 				onException("Unable to invoke OPC DA script resolver.", e);
@@ -1651,16 +1919,22 @@ public class CollectorService
 
 			String sourceId = eventMessage.getSourceId();
 			String dataValue = eventMessage.getValue();
-			String timestamp = eventMessage.getTimestamp();
+			String startTimestamp = eventMessage.getTimestamp();
 			String reason = eventMessage.getReason();
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Equipment event for collector " + collectorName + ", source: " + sourceId + ", value: "
-						+ dataValue + ", timestamp: " + timestamp);
+						+ dataValue + ", timestamp: " + startTimestamp);
 			}
 
 			// resolve event
-			resolveEvent(sourceId, dataValue, timestamp, reason);
+			OffsetDateTime start = DomainUtils.offsetDateTimeFromString(startTimestamp,
+					DomainUtils.OFFSET_DATE_TIME_8601);
+
+			OeeEquipmentEvent event = new OeeEquipmentEvent(sourceId, dataValue, start);
+			event.setReason(fetchReason(reason));
+
+			resolveEvent(event);
 
 		} else if (type.equals(MessageType.COMMAND)) {
 			CollectorCommandMessage commandMessage = (CollectorCommandMessage) message;
@@ -1806,7 +2080,10 @@ public class CollectorService
 				}
 
 				// resolve event
-				resolveEvent(sourceId, dataValue, timestamp, reason);
+				OeeEquipmentEvent event = new OeeEquipmentEvent(sourceId, dataValue, timestamp);
+				event.setReason(fetchReason(reason));
+
+				resolveEvent(event);
 
 				// pass
 				databaseEvent.setStatus(DatabaseEventStatus.PASS);
@@ -1824,6 +2101,35 @@ public class CollectorService
 				} catch (Exception ex) {
 					onException("Unable to save database event.", ex);
 				}
+			}
+		}
+	}
+
+	// handle the cron event callback
+	private class CronTask implements Runnable {
+		private final JobExecutionContext context;
+
+		CronTask(JobExecutionContext context) {
+			this.context = context;
+		}
+
+		@Override
+		public void run() {
+			try {
+				OffsetDateTime timestamp = OffsetDateTime.now();
+				JobDataMap jobData = context.getJobDetail().getJobDataMap();
+				String sourceId = (String) jobData.get(CronEventClient.SOURCE_ID_KEY);
+
+				if (logger.isInfoEnabled()) {
+					logger.info("Cron event, job: " + context.getJobDetail().getKey().getName() + ", source: "
+							+ sourceId + ", timestamp: " + timestamp);
+				}
+
+				// resolve event
+				OeeEquipmentEvent event = new OeeEquipmentEvent(sourceId, timestamp, timestamp);
+				resolveEvent(event);
+			} catch (Exception e) {
+				onException("Unable to invoke script resolver.", e);
 			}
 		}
 	}
@@ -1859,7 +2165,8 @@ public class CollectorService
 					fileClient.moveFile(file, FileEventClient.READY_FOLDER, FileEventClient.PROCESSING_FOLDER);
 
 					// resolve event
-					resolveEvent(sourceId, fileContent, timestamp, null);
+					OeeEquipmentEvent event = new OeeEquipmentEvent(sourceId, fileContent, timestamp);
+					resolveEvent(event);
 
 					// move to pass folder
 					fileClient.moveFile(file, FileEventClient.PROCESSING_FOLDER, FileEventClient.PASS_FOLDER);
@@ -1880,25 +2187,33 @@ public class CollectorService
 
 	// handle the Modbus event callback
 	private class ModbusTask implements Runnable {
-		private final ModbusEvent event;
+		private final ModbusEvent modbusEvent;
 
 		ModbusTask(ModbusEvent event) {
-			this.event = event;
+			this.modbusEvent = event;
 		}
 
 		@Override
 		public void run() {
 			try {
 				if (logger.isInfoEnabled()) {
-					logger.info("Modbus event, source: " + event.getSource());
+					logger.info("Modbus event, source: " + modbusEvent.getSource());
 				}
 
 				// resolve event
-				resolveEvent(event.getSourceId(), event.getValues(), event.getEventTime(), event.getReason());
+				OeeEquipmentEvent event = new OeeEquipmentEvent(modbusEvent.getSourceId(), modbusEvent.getValues(),
+						modbusEvent.getEventTime());
+				event.setReason(fetchReason(modbusEvent.getReason()));
+				resolveEvent(event);
 
 			} catch (Exception e) {
 				onException("Unable to invoke script resolver.", e);
 			}
 		}
+	}
+
+	@Override
+	public void resolveCronEvent(JobExecutionContext context) {
+		getExecutorService().execute(new CronTask(context));
 	}
 }

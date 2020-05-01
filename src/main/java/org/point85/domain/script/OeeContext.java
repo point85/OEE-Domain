@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.point85.domain.cron.CronEventClient;
 import org.point85.domain.db.DatabaseEventClient;
 import org.point85.domain.file.FileEventClient;
 import org.point85.domain.http.OeeHttpServer;
@@ -59,6 +60,9 @@ public class OeeContext {
 	// file server key
 	private static final String FILE_KEY = "FILE";
 
+	// cron scheduler key
+	private static final String CRON_KEY = "CRON";
+
 	// HTTP server key
 	private static final String HTTP_KEY = "HTTP";
 
@@ -82,6 +86,7 @@ public class OeeContext {
 		setHttpServers(new HashSet<OeeHttpServer>());
 		setDatabaseEventClients(new HashSet<DatabaseEventClient>());
 		setFileEventClients(new HashSet<FileEventClient>());
+		setCronEventClients(new HashSet<CronEventClient>());
 		setModbusMasters(new HashSet<ModbusMaster>());
 	}
 
@@ -319,6 +324,16 @@ public class OeeContext {
 	}
 
 	/**
+	 * Get a list of the cron event clients defined for the collector
+	 * 
+	 * @return Collection of {@link CronEventClient}
+	 */
+	@SuppressWarnings("unchecked")
+	public Collection<CronEventClient> getCronEventClients() {
+		return (Collection<CronEventClient>) contextMap.get(CRON_KEY);
+	}
+
+	/**
 	 * Get a list of Modbus masters defined for the collector
 	 * 
 	 * @return Collection of {@link ModbusMaster}
@@ -391,7 +406,7 @@ public class OeeContext {
 	/**
 	 * Get the first (only) file event client
 	 * 
-	 * @return {@link DatabaseEventClient}
+	 * @return {@link FileEventClient}
 	 */
 	public FileEventClient getFileEventClient() {
 		// get the first one
@@ -399,6 +414,21 @@ public class OeeContext {
 
 		if (!getFileEventClients().isEmpty()) {
 			client = getFileEventClients().iterator().next();
+		}
+		return client;
+	}
+
+	/**
+	 * Get the first (only) cron event client
+	 * 
+	 * @return {@link CronEventClient}
+	 */
+	public CronEventClient getCronEventClient() {
+		// get the first one
+		CronEventClient client = null;
+
+		if (!getCronEventClients().isEmpty()) {
+			client = getCronEventClients().iterator().next();
 		}
 		return client;
 	}
@@ -461,6 +491,15 @@ public class OeeContext {
 	 */
 	public void setFileEventClients(Collection<FileEventClient> clients) {
 		contextMap.put(FILE_KEY, clients);
+	}
+
+	/**
+	 * Set the list of the cron event clients defined for the collector
+	 * 
+	 * @param clients Set of {@link CronEventClient}
+	 */
+	public void setCronEventClients(Collection<CronEventClient> clients) {
+		contextMap.put(CRON_KEY, clients);
 	}
 
 	/**
@@ -528,6 +567,17 @@ public class OeeContext {
 	}
 
 	/**
+	 * Add a cron event client to the list
+	 * 
+	 * @param client {@link CronEventClient}
+	 */
+	public void addCronEventClient(CronEventClient client) {
+		if (!getCronEventClients().contains(client)) {
+			getCronEventClients().add(client);
+		}
+	}
+
+	/**
 	 * Add a Modbus master to the list
 	 * 
 	 * @param master {@link ModbusMaster}
@@ -590,6 +640,17 @@ public class OeeContext {
 	public void removeFileEventClient(FileEventClient client) {
 		if (getFileEventClients().contains(client)) {
 			getFileEventClients().remove(client);
+		}
+	}
+
+	/**
+	 * Remove a cron event client from the list
+	 * 
+	 * @param client {@link CronEventClient}
+	 */
+	public void removeCronEventClient(CronEventClient client) {
+		if (getCronEventClients().contains(client)) {
+			getCronEventClients().remove(client);
 		}
 	}
 
@@ -701,6 +762,11 @@ public class OeeContext {
 
 		sb.append("\n File clients ...");
 		for (FileEventClient client : getFileEventClients()) {
+			sb.append('\t').append(client.toString());
+		}
+
+		sb.append("\n Cron clients ...");
+		for (CronEventClient client : getCronEventClients()) {
 			sb.append('\t').append(client.toString());
 		}
 

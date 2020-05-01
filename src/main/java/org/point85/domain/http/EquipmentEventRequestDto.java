@@ -7,10 +7,14 @@ package org.point85.domain.http;
  *
  */
 public class EquipmentEventRequestDto {
+	private String eventType;
+	private String equipmentName;
 	private String sourceId;
 	private String value;
-	private String timestamp;
 	private String reason;
+	private String timestamp;
+	private String endTimestamp;
+	private String duration;
 
 	/**
 	 * Construct the event
@@ -47,11 +51,59 @@ public class EquipmentEventRequestDto {
 		this.timestamp = timestamp;
 	}
 
+	public String getDuration() {
+		return duration;
+	}
+
+	public void setDuration(String duration) {
+		this.duration = duration;
+	}
+
+	public String getEndTimestamp() {
+		return endTimestamp;
+	}
+
+	public void setEndTimestamp(String endTimestamp) {
+		this.endTimestamp = endTimestamp;
+	}
+
+	public String getEquipmentName() {
+		return equipmentName;
+	}
+
+	public void setEquipmentName(String equipmentName) {
+		this.equipmentName = equipmentName;
+	}
+
 	public String getReason() {
 		return reason;
 	}
 
 	public void setReason(String reason) {
 		this.reason = reason;
+	}
+
+	public String getEventType() {
+		return eventType;
+	}
+
+	public void setEventType(String eventType) {
+		this.eventType = eventType;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("source id: " + sourceId);
+		sb.append(", equipment: " + equipmentName);
+		sb.append(", event: " + eventType);
+		sb.append(", value: " + value);
+		sb.append(", start timestamp: " + timestamp);
+		sb.append(", end timestamp: " + endTimestamp);
+		sb.append(", duration: " + duration);
+		sb.append(", reason: " + reason);
+
+		return sb.toString();
 	}
 }
