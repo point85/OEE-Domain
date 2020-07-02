@@ -138,7 +138,7 @@ public class ModbusVariant {
 
 	@Override
 	public String toString() {
-		String value = null;
+		String value = "";
 
 		if (numberValue != null) {
 			value = numberValue.toString();

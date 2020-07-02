@@ -82,7 +82,7 @@ public enum TimeLoss {
 			color = Color.YELLOW;
 			break;
 		case REJECT_REWORK:
-			color = Color.LAVENDER;
+			color = Color.PURPLE;
 			break;
 		case STARTUP_YIELD:
 			color = Color.IVORY;

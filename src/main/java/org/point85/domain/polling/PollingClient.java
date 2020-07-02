@@ -132,7 +132,7 @@ public abstract class PollingClient {
 		this.dataSource = source;
 	}
 
-	protected abstract void onPoll(String sourceId);
+	protected abstract void onPoll(String sourceId) throws Exception;
 
 	public boolean isPolling() {
 		return isPolling;
@@ -147,7 +147,11 @@ public abstract class PollingClient {
 
 		@Override
 		public void run() {
-			onPoll(sourceId);
+			try {
+				onPoll(sourceId);
+			} catch (Exception e) {
+				logger.error(e.getMessage());
+			}
 		}
 	}
 }

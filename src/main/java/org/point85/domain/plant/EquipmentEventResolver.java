@@ -59,7 +59,7 @@ public class EquipmentEventResolver {
 		return scriptEngine;
 	}
 
-	private void cacheResolvers() {
+	private void cacheResolvers() throws Exception {
 		if (resolverCache.size() == 0) {
 			// query db
 			List<EventResolver> resolvers = PersistenceService.instance().fetchEventResolvers();
@@ -210,10 +210,11 @@ public class EquipmentEventResolver {
 
 			if (material == null && equipment.getDefaultEquipmentMaterial() != null) {
 				// use the default material if defined
-				material = equipment.getDefaultEquipmentMaterial().getMaterial();
-				context.setMaterial(equipment, material);
+				Material defaultMaterial = equipment.getDefaultEquipmentMaterial().getMaterial();
 
-				if (material == null) {
+				if (defaultMaterial != null) {
+					context.setMaterial(equipment, defaultMaterial);
+				} else {
 					logger.warn("The produced material for this event is not defined.");
 				}
 			}

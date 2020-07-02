@@ -15,6 +15,8 @@ public class EquipmentEventRequestDto {
 	private String timestamp;
 	private String endTimestamp;
 	private String duration;
+	private String job;
+	private Boolean immediate = false;
 
 	/**
 	 * Construct the event
@@ -25,6 +27,10 @@ public class EquipmentEventRequestDto {
 	public EquipmentEventRequestDto(String sourceId, String value) {
 		this.sourceId = sourceId;
 		this.value = value;
+	}
+	
+	public EquipmentEventRequestDto() {
+		
 	}
 
 	public String getSourceId() {
@@ -105,5 +111,21 @@ public class EquipmentEventRequestDto {
 		sb.append(", reason: " + reason);
 
 		return sb.toString();
+	}
+
+	public String getJob() {
+		return job;
+	}
+
+	public void setJob(String job) {
+		this.job = job;
+	}
+
+	public Boolean getImmediate() {
+		return immediate;
+	}
+
+	public void setImmediate(Boolean immediate) {
+		this.immediate = immediate;
 	}
 }

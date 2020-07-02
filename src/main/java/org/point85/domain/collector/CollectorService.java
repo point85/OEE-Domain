@@ -77,6 +77,7 @@ import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentEventResolver;
 import org.point85.domain.plant.KeyedObject;
+import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
 import org.point85.domain.rmq.RmqClient;
 import org.point85.domain.rmq.RmqMessageListener;
@@ -87,6 +88,7 @@ import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.OeeContext;
 import org.point85.domain.script.OeeEventType;
+import org.point85.domain.uom.UnitOfMeasure;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
@@ -190,15 +192,8 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 	public OeeEvent createEvent(String sourceId, OeeEventType type, Equipment equipment, OffsetDateTime startTime,
 			OffsetDateTime endTime) throws Exception {
-		if (type == null) {
-			// throw new
-			// Exception(WebOperatorLocalizer.instance().getErrorString("no.event.type"));
-		}
-
 		OeeEvent event = new OeeEvent(equipment);
 		event.setEventType(type);
-		// event.setStartTime(DomainUtils.fromLocalDateTime(startTime));
-		// event.setEndTime(DomainUtils.fromLocalDateTime(endTime));
 		event.setStartTime(startTime);
 		event.setEndTime(endTime);
 		event.setSourceId(sourceId);
@@ -845,7 +840,8 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 	public void startup() throws Exception {
 		if (logger.isInfoEnabled()) {
-			logger.info("Beginning startup for " + collectorName + ", " + DomainUtils.getVersionInfo());
+			String name = collectorName != null ? collectorName : "";
+			logger.info("Beginning startup for collector " + name + ", " + DomainUtils.getVersionInfo());
 		}
 
 		InetAddress address = InetAddress.getLocalHost();
@@ -1088,7 +1084,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		// shutdown HTTP servers
 		for (OeeHttpServer httpServer : appContext.getHttpServers()) {
 			httpServer.shutdown();
-			onInformation("Shutdown HTTP server on host " + httpServer.getHostname());
+			onInformation("Shutdown HTTP server on host " + httpServer.getHost());
 		}
 		appContext.getHttpServers().clear();
 
@@ -1296,8 +1292,12 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 	// HTTP request
 	@Override
-	public void onHttpEquipmentEvent(EquipmentEventRequestDto dto) {
-		getExecutorService().execute(new HttpTask(dto));
+	public void onHttpEquipmentEvent(EquipmentEventRequestDto dto) throws Exception {
+		if (!dto.getImmediate()) {
+			getExecutorService().execute(new HttpTask(dto));
+		} else {
+			processHttpEquipmentEvent(dto);
+		}
 	}
 
 	// File request
@@ -1621,6 +1621,65 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 	}
 
+	public void processHttpEquipmentEvent(EquipmentEventRequestDto dto) throws Exception {
+		if (logger.isInfoEnabled()) {
+			logger.info("HTTP event: " + dto);
+		}
+
+		// create event
+		OffsetDateTime start = null;
+
+		try {
+			// first try zone offset
+			start = DomainUtils.offsetDateTimeFromString(dto.getTimestamp(), DomainUtils.OFFSET_DATE_TIME_8601);
+		} catch (Exception e) {
+			// now try a local time
+			LocalDateTime ldt = DomainUtils.localDateTimeFromString(dto.getTimestamp(),
+					DomainUtils.LOCAL_DATE_TIME_8601);
+			start = DomainUtils.fromLocalDateTime(ldt);
+		}
+
+		OeeEquipmentEvent event = new OeeEquipmentEvent(dto.getSourceId(), dto.getValue(), start);
+
+		// end
+		OffsetDateTime end = null;
+
+		if (dto.getEndTimestamp() != null) {
+			try {
+				// first try zone offset
+				end = DomainUtils.offsetDateTimeFromString(dto.getEndTimestamp(), DomainUtils.OFFSET_DATE_TIME_8601);
+			} catch (Exception e) {
+				// now try a local time
+				LocalDateTime ldt = DomainUtils.localDateTimeFromString(dto.getEndTimestamp(),
+						DomainUtils.LOCAL_DATE_TIME_8601);
+				end = DomainUtils.fromLocalDateTime(ldt);
+			}
+			event.setEndTimestamp(end);
+		}
+
+		// duration
+		Duration period = (dto.getDuration() != null) ? Duration.ofSeconds(Long.parseLong(dto.getDuration())) : null;
+		event.setDuration(period);
+
+		// equipment
+		Equipment equipment = (dto.getEquipmentName() != null) ? fetchEquipment(dto.getEquipmentName()) : null;
+		event.setEquipment(equipment);
+
+		// production reason
+		Reason reason = (dto.getReason() != null) ? fetchReason(dto.getReason()) : null;
+		event.setReason(reason);
+
+		// event type
+		OeeEventType eventType = (dto.getEventType() != null) ? OeeEventType.valueOf(dto.getEventType()) : null;
+		event.setEventType(eventType);
+
+		// job
+		event.setJob(dto.getJob());
+
+		// resolve event
+		resolveEvent(event);
+	}
+
 	// handle the HTTP callback
 	private class HttpTask implements Runnable {
 		private final EquipmentEventRequestDto dto;
@@ -1632,64 +1691,9 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		@Override
 		public void run() {
 			try {
-				if (logger.isInfoEnabled()) {
-					logger.info("HTTP event: " + dto);
-				}
-
-				// create event
-				OffsetDateTime start = null;
-
-				try {
-					// first try zone offset
-					start = DomainUtils.offsetDateTimeFromString(dto.getTimestamp(), DomainUtils.OFFSET_DATE_TIME_8601);
-				} catch (Exception e) {
-					// now try a local time
-					LocalDateTime ldt = DomainUtils.localDateTimeFromString(dto.getTimestamp(),
-							DomainUtils.LOCAL_DATE_TIME_8601);
-					start = DomainUtils.fromLocalDateTime(ldt);
-				}
-
-				OeeEquipmentEvent event = new OeeEquipmentEvent(dto.getSourceId(), dto.getValue(), start);
-
-				// end
-				OffsetDateTime end = null;
-
-				if (dto.getEndTimestamp() != null) {
-					try {
-						// first try zone offset
-						end = DomainUtils.offsetDateTimeFromString(dto.getEndTimestamp(),
-								DomainUtils.OFFSET_DATE_TIME_8601);
-					} catch (Exception e) {
-						// now try a local time
-						LocalDateTime ldt = DomainUtils.localDateTimeFromString(dto.getEndTimestamp(),
-								DomainUtils.LOCAL_DATE_TIME_8601);
-						end = DomainUtils.fromLocalDateTime(ldt);
-					}
-					event.setEndTimestamp(end);
-				}
-
-				// duration
-				Duration period = (dto.getDuration() != null) ? Duration.ofSeconds(Long.parseLong(dto.getDuration()))
-						: null;
-				event.setDuration(period);
-
-				// equipment
-				Equipment equipment = (dto.getEquipmentName() != null) ? fetchEquipment(dto.getEquipmentName()) : null;
-				event.setEquipment(equipment);
-
-				// production reason
-				Reason reason = (dto.getReason() != null) ? fetchReason(dto.getReason()) : null;
-				event.setReason(reason);
-
-				// event type
-				OeeEventType eventType = (dto.getEventType() != null) ? OeeEventType.valueOf(dto.getEventType()) : null;
-				event.setEventType(eventType);
-
-				// resolve event
-				resolveEvent(event);
-
+				processHttpEquipmentEvent(dto);
 			} catch (Exception e) {
-				onException("Unable to invoke script resolver.", e);
+				onException("Unable to resolve equipment event.", e);
 			}
 		}
 	}
@@ -1791,8 +1795,21 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		return equipment;
 	}
 
-	private void resolveEvent(OeeEquipmentEvent event) throws Exception {
+	private void checkDuration(OeeEquipmentEvent event) throws Exception {
+		if (event.getEndTimestamp() != null) {
+			if (event.getDuration() == null || event.getDuration().isZero()) {
+				throw new Exception(DomainLocalizer.instance().getErrorString("zero.duration"));
+			}
 
+			Duration delta = Duration.between(event.getStartTimestamp(), event.getEndTimestamp());
+			if (event.getDuration().compareTo(delta) == 1) {
+				throw new Exception(DomainLocalizer.instance().getErrorString("duration.too.long",
+						DomainUtils.formatDuration(event.getDuration())));
+			}
+		}
+	}
+
+	private void resolveEvent(OeeEquipmentEvent event) throws Exception {
 		OeeEvent resolvedEvent = null;
 		boolean isWatchMode = false;
 
@@ -1836,18 +1853,56 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			resolvedEvent.setReason(eventReason);
 
 		} else {
-			// anonymous event
-			resolvedEvent = createEvent("MOBILE", event.getEventType(), event.getEquipment(), event.getStartTimestamp(),
+			// anonymous event via HTTP API
+			resolvedEvent = createEvent("API", event.getEventType(), event.getEquipment(), event.getStartTimestamp(),
 					event.getEndTimestamp());
 
-			if (event.getEventType().equals(OeeEventType.AVAILABILITY)) {
-				String reasonName = (String) event.getDataValue();
-				Reason availabilityReason = fetchReason(reasonName);
+			OeeEventType eventType = event.getEventType();
 
-				resolvedEvent.setInputValue(reasonName);
+			if (eventType.equals(OeeEventType.AVAILABILITY)) {
+				// reason
+				Reason availabilityReason = fetchReason((String) event.getDataValue());
+
 				resolvedEvent.setReason(availabilityReason);
+
+				// availability duration
+				checkDuration(event);
 				resolvedEvent.setDuration(event.getDuration());
 
+			} else if (eventType.equals(OeeEventType.PROD_GOOD) || eventType.equals(OeeEventType.PROD_REJECT)
+					|| eventType.equals(OeeEventType.PROD_STARTUP)) {
+				// produced amount
+				if (event.getDataValue() == null) {
+					throw new Exception(DomainLocalizer.instance().getErrorString("missing.amount"));
+				}
+				Double amount = Double.valueOf((String) event.getDataValue());
+
+				if (amount.equals(0.0)) {
+					throw new Exception(DomainLocalizer.instance().getErrorString("missing.amount"));
+				}
+
+				// production unit of measure
+				Material producedMaterial = resolvedEvent.getMaterial();
+				UnitOfMeasure uom = resolvedEvent.getEquipment().getUOM(producedMaterial, eventType);
+
+				resolvedEvent.setAmount(amount);
+				resolvedEvent.setUOM(uom);
+
+				// reason
+				Reason productionReason = event.getReason();
+				resolvedEvent.setReason(productionReason);
+
+			} else if (eventType.equals(OeeEventType.MATL_CHANGE) || eventType.equals(OeeEventType.JOB_CHANGE)) {
+				// material
+				String materialId = (String) event.getDataValue();
+
+				if (materialId != null) {
+					Material material = fetchMaterial(materialId);
+					resolvedEvent.setMaterial(material);
+				}
+
+				// job
+				resolvedEvent.setJob(event.getJob());
 			}
 		}
 
@@ -1866,6 +1921,18 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			}
 		}
 		return eventReason;
+	}
+
+	private Material fetchMaterial(String materialName) throws Exception {
+		Material material = null;
+		if (materialName != null && materialName.trim().length() > 0) {
+			material = PersistenceService.instance().fetchMaterialByName(materialName);
+
+			if (material == null) {
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.material", materialName));
+			}
+		}
+		return material;
 	}
 
 	public String getCollectorName() {

@@ -12,7 +12,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
@@ -101,9 +100,6 @@ public class UaOpcClient implements SessionActivityListener {
 
 	// asynch callback listeners
 	private final List<OpcUaAsynchListener> asynchListeners = new ArrayList<>();
-
-	// client handle counter for subscriptions
-	private final AtomicLong clientHandles = new AtomicLong(1L);
 
 	// registry of subscriptions
 	private final ConcurrentMap<NodeId, UaSubscription> subscriptionMap = new ConcurrentHashMap<>();
@@ -512,11 +508,14 @@ public class UaOpcClient implements SessionActivityListener {
 
 	private UaSubscription establishSubscription(NodeId nodeId, double publishingInterval, ExtensionObject filter)
 			throws Exception {
+		// create a subscription
+		UaSubscription subscription = opcUaClient.getSubscriptionManager().createSubscription(publishingInterval)
+				.get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
+
+		UInteger clientHandle = subscription.nextClientHandle();
+
 		// node to read
 		ReadValueId readValueId = new ReadValueId(nodeId, AttributeId.Value.uid(), null, QualifiedName.NULL_VALUE);
-
-		// client handle must be unique per item
-		UInteger clientHandle = uint(clientHandles.getAndIncrement());
 
 		// discard oldest value
 		MonitoringParameters parameters = new MonitoringParameters(clientHandle, SAMPLING_INTERVAL, filter,
@@ -528,10 +527,6 @@ public class UaOpcClient implements SessionActivityListener {
 		// consumer
 		BiConsumer<UaMonitoredItem, Integer> onItemCreated = (item, id) -> item
 				.setValueConsumer(this::onSubscriptionValue);
-
-		// create a subscription
-		UaSubscription subscription = opcUaClient.getSubscriptionManager().createSubscription(publishingInterval)
-				.get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
 
 		List<UaMonitoredItem> items = subscription
 				.createMonitoredItems(TimestampsToReturn.Both, newArrayList(request), onItemCreated)

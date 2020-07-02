@@ -16,6 +16,7 @@ public class OeeEquipmentEvent {
 	private Equipment equipment;
 	private Duration duration; 
 	private OeeEventType eventType;
+	private String job;
 	
 	public OeeEquipmentEvent (String sourceId, Object dataValue, OffsetDateTime startTimestamp) {
 		this.sourceId = sourceId;
@@ -70,6 +71,14 @@ public class OeeEquipmentEvent {
 	}
 	public void setEventType(OeeEventType eventType) {
 		this.eventType = eventType;
+	}
+
+	public String getJob() {
+		return job;
+	}
+
+	public void setJob(String job) {
+		this.job = job;
 	}
 
 }

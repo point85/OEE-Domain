@@ -101,9 +101,9 @@ public final class PersistenceService {
 	private final Map<String, Boolean> namedQueryMap;
 
 	// cached JDBC connection info
-	private static String jdbcConnection;
-	private static String jdbcUserName;
-	private static String jdbcPassword;
+	private String jdbcConnection;
+	private String jdbcUserName;
+	private String jdbcPassword;
 
 	private PersistenceService() {
 		namedQueryMap = new ConcurrentHashMap<>();
@@ -182,11 +182,18 @@ public final class PersistenceService {
 	}
 
 	// get the EntityManager
-	public EntityManager getEntityManager() {
-		return getEntityManagerFactory().createEntityManager();
+	public EntityManager getEntityManager() throws Exception {
+		EntityManager em = null;
+
+		if (getEntityManagerFactory() != null) {
+			em = getEntityManagerFactory().createEntityManager();
+		} else {
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.database.connection"));
+		}
+		return em;
 	}
 
-	public List<String> fetchPlantEntityNames() {
+	public List<String> fetchPlantEntityNames() throws Exception {
 		final String ENTITY_NAMES = "ENTITY.Names";
 
 		if (namedQueryMap.get(ENTITY_NAMES) == null) {
@@ -197,7 +204,7 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public PlantEntity fetchPlantEntityByName(String name) {
+	public PlantEntity fetchPlantEntityByName(String name) throws Exception {
 		final String ENTITY_BY_NAME = "ENTITY.Names";
 
 		if (namedQueryMap.get(ENTITY_BY_NAME) == null) {
@@ -216,7 +223,7 @@ public final class PersistenceService {
 		return entity;
 	}
 
-	public List<EventResolver> fetchEventResolvers() {
+	public List<EventResolver> fetchEventResolvers() throws Exception {
 		final String RESOLVER_ALL = "RESOLVER.All";
 
 		if (namedQueryMap.get(RESOLVER_ALL) == null) {
@@ -227,7 +234,7 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<String> fetchResolverSourceIds(String equipmentName, DataSourceType sourceType) {
+	public List<String> fetchResolverSourceIds(String equipmentName, DataSourceType sourceType) throws Exception {
 		final String EQUIPMENT_SOURCE_IDS = "EQUIP.SourceIds";
 
 		if (namedQueryMap.get(EQUIPMENT_SOURCE_IDS) == null) {
@@ -241,7 +248,7 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<CollectorDataSource> fetchDataSources(DataSourceType sourceType) {
+	public List<CollectorDataSource> fetchDataSources(DataSourceType sourceType) throws Exception {
 		final String SRC_BY_TYPE = "DS.ByType";
 
 		if (namedQueryMap.get(SRC_BY_TYPE) == null) {
@@ -255,7 +262,7 @@ public final class PersistenceService {
 	}
 
 	// remove the PersistentObject from the persistence context
-	public void evict(KeyedObject object) {
+	public void evict(KeyedObject object) throws Exception {
 		if (object == null) {
 			return;
 		}
@@ -397,28 +404,18 @@ public final class PersistenceService {
 
 	private void checkWorkScheduleReferences(WorkSchedule schedule) throws Exception {
 		// check for plant entity references
-		List<PlantEntity> entities = fetchEntityCrossReferences(schedule);
+		List<EntitySchedule> entitySchedules = fetchEntityCrossReferences(schedule);
 
-		if (!entities.isEmpty()) {
+		if (!entitySchedules.isEmpty()) {
 			String refs = "";
-			for (PlantEntity entity : entities) {
+			for (EntitySchedule entitySchedule : entitySchedules) {
 				if (refs.length() > 0) {
 					refs += ", ";
 				}
-				refs += entity.getName();
+				refs += entitySchedule.getPlantEntity().getName();
 			}
 			throw new Exception(
 					DomainLocalizer.instance().getErrorString("can.not.delete.schedule", schedule.getName(), refs));
-		}
-
-		// check for shift references
-		for (Shift shift : schedule.getShifts()) {
-			checkShiftReferences(shift);
-		}
-
-		// check for team references
-		for (Team team : schedule.getTeams()) {
-			checkTeamReferences(team);
 		}
 	}
 
@@ -585,7 +582,7 @@ public final class PersistenceService {
 	}
 
 	// all entities
-	public List<PlantEntity> fetchAllPlantEntities() {
+	public List<PlantEntity> fetchAllPlantEntities() throws Exception {
 		final String ENTITY_ALL = "ENTITY.All";
 
 		if (namedQueryMap.get(ENTITY_ALL) == null) {
@@ -596,14 +593,14 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	private void createNamedQuery(String name, String jsql) {
+	private void createNamedQuery(String name, String jsql) throws Exception {
 		Query query = getEntityManager().createQuery(jsql);
 		getEntityManagerFactory().addNamedQuery(name, query);
 		namedQueryMap.put(name, true);
 	}
 
 	// top-level plant entities
-	public List<PlantEntity> fetchTopPlantEntities() {
+	public List<PlantEntity> fetchTopPlantEntities() throws Exception {
 		final String ENTITY_ROOTS = "ENTITY.Roots";
 
 		if (namedQueryMap.get(ENTITY_ROOTS) == null) {
@@ -614,7 +611,8 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<DataCollector> fetchCollectorsByHostAndState(List<String> hostNames, List<CollectorState> states) {
+	public List<DataCollector> fetchCollectorsByHostAndState(List<String> hostNames, List<CollectorState> states)
+			throws Exception {
 		final String COLLECTOR_BY_HOST_BY_STATE = "COLLECT.ByStateByHost";
 
 		if (namedQueryMap.get(COLLECTOR_BY_HOST_BY_STATE) == null) {
@@ -629,7 +627,7 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<DataCollector> fetchCollectorsByState(List<CollectorState> states) {
+	public List<DataCollector> fetchCollectorsByState(List<CollectorState> states) throws Exception {
 		final String COLLECTOR_BY_STATE = "COLLECT.ByState";
 
 		if (namedQueryMap.get(COLLECTOR_BY_STATE) == null) {
@@ -683,7 +681,7 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<DataCollector> fetchAllDataCollectors() {
+	public List<DataCollector> fetchAllDataCollectors() throws Exception {
 		final String COLLECT_ALL = "COLLECT.All";
 
 		if (namedQueryMap.get(COLLECT_ALL) == null) {
@@ -694,7 +692,7 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<Material> fetchAllMaterials() {
+	public List<Material> fetchAllMaterials() throws Exception {
 		final String MATL_ALL = "MATL.All";
 
 		if (namedQueryMap.get(MATL_ALL) == null) {
@@ -705,7 +703,7 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<String> fetchMaterialCategories() {
+	public List<String> fetchMaterialCategories() throws Exception {
 		final String MATL_CATEGORIES = "MATL.Categories";
 
 		if (namedQueryMap.get(MATL_CATEGORIES) == null) {
@@ -717,7 +715,7 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public Material fetchMaterialByName(String name) {
+	public Material fetchMaterialByName(String name) throws Exception {
 		final String MATL_BY_NAME = "MATL.ByName";
 
 		if (namedQueryMap.get(MATL_BY_NAME) == null) {
@@ -734,8 +732,8 @@ public final class PersistenceService {
 		}
 		return material;
 	}
-	
-	public Equipment fetchEquipmentByName(String name) {
+
+	public Equipment fetchEquipmentByName(String name) throws Exception {
 		final String EQUIP_BY_NAME = "EQUIP.ByName";
 
 		if (namedQueryMap.get(EQUIP_BY_NAME) == null) {
@@ -761,7 +759,7 @@ public final class PersistenceService {
 		return getEntityManager().find(OeeEvent.class, key);
 	}
 
-	public Reason fetchReasonByName(String name) {
+	public Reason fetchReasonByName(String name) throws Exception {
 		final String REASON_BY_NAME = "REASON.ByName";
 
 		if (namedQueryMap.get(REASON_BY_NAME) == null) {
@@ -784,7 +782,7 @@ public final class PersistenceService {
 		return getEntityManager().find(Reason.class, key);
 	}
 
-	public List<Reason> fetchAllReasons() {
+	public List<Reason> fetchAllReasons() throws Exception {
 		final String REASON_ALL = "REASON.All";
 
 		if (namedQueryMap.get(REASON_ALL) == null) {
@@ -796,7 +794,7 @@ public final class PersistenceService {
 	}
 
 	// top-level reasons
-	public List<Reason> fetchTopReasons() {
+	public List<Reason> fetchTopReasons() throws Exception {
 		final String REASON_ROOTS = "REASON.Roots";
 
 		if (namedQueryMap.get(REASON_ROOTS) == null) {
@@ -807,7 +805,7 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<String> fetchProgIds() {
+	public List<String> fetchProgIds() throws Exception {
 		final String DA_PROG_IDS = "OPCDA.ProgIds";
 
 		if (namedQueryMap.get(DA_PROG_IDS) == null) {
@@ -818,7 +816,7 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public OpcDaSource fetchOpcDaSourceByName(String name) {
+	public OpcDaSource fetchOpcDaSourceByName(String name) throws Exception {
 		final String DA_SRC_BY_NAME = "OPCDA.ByName";
 
 		if (namedQueryMap.get(DA_SRC_BY_NAME) == null) {
@@ -837,7 +835,7 @@ public final class PersistenceService {
 		return source;
 	}
 
-	public OpcUaSource fetchOpcUaSourceByName(String name) {
+	public OpcUaSource fetchOpcUaSourceByName(String name) throws Exception {
 		final String UA_SRC_BY_NAME = "OPCUA.ByName";
 
 		if (namedQueryMap.get(UA_SRC_BY_NAME) == null) {
@@ -860,7 +858,7 @@ public final class PersistenceService {
 		return getEntityManager().find(WorkSchedule.class, key);
 	}
 
-	public List<WorkSchedule> fetchWorkSchedules() {
+	public List<WorkSchedule> fetchWorkSchedules() throws Exception {
 		final String WS_SCHEDULES = "WS.Schedules";
 
 		if (namedQueryMap.get(WS_SCHEDULES) == null) {
@@ -871,7 +869,7 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<String> fetchWorkScheduleNames() {
+	public List<String> fetchWorkScheduleNames() throws Exception {
 		final String WS_NAMES = "WS.Names";
 
 		if (namedQueryMap.get(WS_NAMES) == null) {
@@ -882,7 +880,7 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public WorkSchedule fetchWorkScheduleByName(String name) {
+	public WorkSchedule fetchWorkScheduleByName(String name) throws Exception {
 		final String WS_BY_NAME = "WS.ByName";
 
 		if (namedQueryMap.get(WS_BY_NAME) == null) {
@@ -918,14 +916,14 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<PlantEntity> fetchEntityCrossReferences(WorkSchedule schedule) {
+	public List<EntitySchedule> fetchEntityCrossReferences(WorkSchedule schedule) throws Exception {
 		final String WS_ENT_XREF = "WS.ENT.CrossRef";
 
 		if (namedQueryMap.get(WS_ENT_XREF) == null) {
-			createNamedQuery(WS_ENT_XREF, "SELECT ent FROM PlantEntity ent WHERE ent.workSchedule = :schedule");
+			createNamedQuery(WS_ENT_XREF, "SELECT es FROM EntitySchedule es WHERE es.workSchedule = :schedule");
 		}
 
-		TypedQuery<PlantEntity> query = getEntityManager().createNamedQuery(WS_ENT_XREF, PlantEntity.class);
+		TypedQuery<EntitySchedule> query = getEntityManager().createNamedQuery(WS_ENT_XREF, EntitySchedule.class);
 		query.setParameter("schedule", schedule);
 		return query.getResultList();
 	}
@@ -943,7 +941,7 @@ public final class PersistenceService {
 
 	// get symbols and names in this category
 	@SuppressWarnings("unchecked")
-	public List<String[]> fetchUomSymbolsAndNamesByCategory(String category) {
+	public List<String[]> fetchUomSymbolsAndNamesByCategory(String category) throws Exception {
 		final String UOM_CAT_SYMBOLS = "UOM.SymbolsInCategory";
 
 		if (namedQueryMap.get(UOM_CAT_SYMBOLS) == null) {
@@ -958,7 +956,7 @@ public final class PersistenceService {
 
 	// fetch symbols and their names for this UOM type
 	@SuppressWarnings("unchecked")
-	public List<String[]> fetchUomSymbolsAndNamesByType(UnitType unitType) {
+	public List<String[]> fetchUomSymbolsAndNamesByType(UnitType unitType) throws Exception {
 		final String UOM_SYMBOLS = "UOM.Symbols";
 
 		if (namedQueryMap.get(UOM_SYMBOLS) == null) {
@@ -973,7 +971,7 @@ public final class PersistenceService {
 	}
 
 	// fetch all defined categories
-	public List<String> fetchUomCategories() {
+	public List<String> fetchUomCategories() throws Exception {
 		final String UOM_CATEGORIES = "UOM.Categories";
 
 		if (namedQueryMap.get(UOM_CATEGORIES) == null) {
@@ -1272,7 +1270,7 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public DataCollector fetchCollectorByName(String name) {
+	public DataCollector fetchCollectorByName(String name) throws Exception {
 		final String COLLECT_BY_NAME = "COLLECT.ByName";
 
 		if (namedQueryMap.get(COLLECT_BY_NAME) == null) {
@@ -1292,7 +1290,7 @@ public final class PersistenceService {
 		return collector;
 	}
 
-	public List<EventResolver> fetchResolverCrossReferences(CollectorDataSource source) {
+	public List<EventResolver> fetchResolverCrossReferences(CollectorDataSource source) throws Exception {
 		final String COLLECT_RES_XREF = "COLLECT.Resolver.CrossRef";
 
 		if (namedQueryMap.get(COLLECT_RES_XREF) == null) {
@@ -1305,7 +1303,7 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<EventResolver> fetchResolverCrossReferences(DataCollector collector) {
+	public List<EventResolver> fetchResolverCrossReferences(DataCollector collector) throws Exception {
 		final String COLLECT_RES_XREF = "Collector.Resolver.CrossRef";
 
 		if (namedQueryMap.get(COLLECT_RES_XREF) == null) {
@@ -1465,7 +1463,8 @@ public final class PersistenceService {
 		return null;
 	}
 
-	public List<OeeEvent> fetchAvailability(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
+	public List<OeeEvent> fetchAvailability(Equipment equipment, OffsetDateTime from, OffsetDateTime to)
+			throws Exception {
 		final String AVAIL_RECORDS = "Availability.FromTo";
 
 		if (namedQueryMap.get(AVAIL_RECORDS) == null) {
@@ -1484,7 +1483,7 @@ public final class PersistenceService {
 	}
 
 	public List<OeeEvent> fetchProduction(Equipment equipment, Material material, OffsetDateTime from,
-			OffsetDateTime to) {
+			OffsetDateTime to) throws Exception {
 		final String PROD_RECORDS = "Production.FromTo";
 
 		if (namedQueryMap.get(PROD_RECORDS) == null) {
@@ -1503,7 +1502,8 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public List<OeeEvent> fetchSetupsForPeriod(Equipment equipment, OffsetDateTime from, OffsetDateTime to) {
+	public List<OeeEvent> fetchSetupsForPeriod(Equipment equipment, OffsetDateTime from, OffsetDateTime to)
+			throws Exception {
 		final String SETUP_PERIOD = "Setup.Period";
 
 		if (namedQueryMap.get(SETUP_PERIOD) == null) {
@@ -1522,7 +1522,7 @@ public final class PersistenceService {
 	}
 
 	public List<OeeEvent> fetchSetupsForPeriodAndMaterial(Equipment equipment, OffsetDateTime from, OffsetDateTime to,
-			Material material) {
+			Material material) throws Exception {
 		final String SETUP_PERIOD_MATL = "Setup.Period.Material";
 
 		if (namedQueryMap.get(SETUP_PERIOD_MATL) == null) {
@@ -1541,7 +1541,8 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public OeeEvent fetchLastBoundEvent(Equipment equipment, OeeEventType type, OffsetDateTime dateTime) {
+	public OeeEvent fetchLastBoundEvent(Equipment equipment, OeeEventType type, OffsetDateTime dateTime)
+			throws Exception {
 		final String LAST_EVENT = "Event.Last.Bound";
 
 		if (namedQueryMap.get(LAST_EVENT) == null) {
@@ -1565,7 +1566,7 @@ public final class PersistenceService {
 		return record;
 	}
 
-	public OeeEvent fetchLastEvent(Equipment equipment, OeeEventType type) {
+	public OeeEvent fetchLastEvent(Equipment equipment, OeeEventType type) throws Exception {
 		final String LAST_EVENT = "Event.Last";
 
 		if (namedQueryMap.get(LAST_EVENT) == null) {
@@ -1647,8 +1648,9 @@ public final class PersistenceService {
 	 * 
 	 * @param sql SQL insert, update or delete statement
 	 * @return Number of rows inserted
+	 * @throws Exception Exception
 	 */
-	public int executeUpdate(String sql) {
+	public int executeUpdate(String sql) throws Exception {
 		EntityManager em = getEntityManager();
 
 		EntityTransaction txn = null;
@@ -1681,9 +1683,10 @@ public final class PersistenceService {
 	 * 
 	 * @param sql SQL select statement
 	 * @return JSON string of result list
+	 * @throws Exception Exception
 	 */
 	@SuppressWarnings("unchecked")
-	public String executeQuery(String sql) {
+	public String executeQuery(String sql) throws Exception {
 		List<Object[]> rowList = getEntityManager().createNativeQuery(sql).getResultList();
 		Gson gson = new Gson();
 		return gson.toJson(rowList);
@@ -1694,8 +1697,9 @@ public final class PersistenceService {
 	 * 
 	 * @param status {@link DatabaseEventStatus}
 	 * @return List of {@link DatabaseEvent}
+	 * @throws Exception Exception
 	 */
-	public List<DatabaseEvent> fetchDatabaseEvents(DatabaseEventStatus status) {
+	public List<DatabaseEvent> fetchDatabaseEvents(DatabaseEventStatus status) throws Exception {
 		final String NEW_EVENTS = "DATABASE_EVENT.NEW";
 
 		if (namedQueryMap.get(NEW_EVENTS) == null) {
@@ -1715,8 +1719,9 @@ public final class PersistenceService {
 	 * @param status   {@link DatabaseEventStatus}
 	 * @param sourceId event source identifier
 	 * @return List of {@link DatabaseEvent}
+	 * @throws Exception Exception
 	 */
-	public List<DatabaseEvent> fetchDatabaseEvents(DatabaseEventStatus status, String sourceId) {
+	public List<DatabaseEvent> fetchDatabaseEvents(DatabaseEventStatus status, String sourceId) throws Exception {
 		final String NEW_EVENTS_SOURCE = "DATABASE_EVENT.NEW.SOURCE";
 
 		if (namedQueryMap.get(NEW_EVENTS_SOURCE) == null) {
@@ -1739,8 +1744,10 @@ public final class PersistenceService {
 	 * @param from      starting date and time
 	 * @param to        ending date and time
 	 * @return List of {@link OeeEvent}
+	 * @throws Exception Exception
 	 */
-	public List<OeeEvent> fetchEvents(Equipment equipment, OeeEventType type, OffsetDateTime from, OffsetDateTime to) {
+	public List<OeeEvent> fetchEvents(Equipment equipment, OeeEventType type, OffsetDateTime from, OffsetDateTime to)
+			throws Exception {
 		String qry = "SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type ";
 
 		if (from != null) {
@@ -1767,15 +1774,15 @@ public final class PersistenceService {
 		return query.getResultList();
 	}
 
-	public static String getJdbcConnection() {
+	public String getJdbcConnection() {
 		return jdbcConnection;
 	}
 
-	public static String getUserName() {
+	public String getUserName() {
 		return jdbcUserName;
 	}
 
-	public static String getUserPassword() {
+	public String getUserPassword() {
 		return jdbcPassword;
 	}
 }

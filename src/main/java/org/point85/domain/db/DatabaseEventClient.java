@@ -25,7 +25,7 @@ public class DatabaseEventClient extends PollingClient {
 
 	// JDBC connection URL
 	private String jdbcUrl;
-	
+
 	public DatabaseEventClient() {
 		super();
 	}
@@ -63,7 +63,7 @@ public class DatabaseEventClient extends PollingClient {
 	}
 
 	@Override
-	protected void onPoll(String sourceId) {
+	protected void onPoll(String sourceId) throws Exception {
 		if (logger.isInfoEnabled()) {
 			logger.info("Querying for READY events for source " + sourceId);
 		}

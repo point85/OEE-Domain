@@ -70,21 +70,21 @@ public class ModbusMaster extends PollingClient {
 		switch (transport) {
 		case SERIAL:
 			nativeModbusMaster = new ModbusSerialMaster(new SerialParameters());
-			
+
 			if (logger.isInfoEnabled()) {
 				logger.info("Created ModbusSerialMaster");
 			}
 			break;
 		case TCP:
 			nativeModbusMaster = new ModbusTCPMaster(address, port);
-			
+
 			if (logger.isInfoEnabled()) {
 				logger.info("Created ModbusTCPMaster");
 			}
 			break;
 		case UDP:
 			nativeModbusMaster = new ModbusUDPMaster(address, port);
-			
+
 			if (logger.isInfoEnabled()) {
 				logger.info("Created ModbusUDPMaster");
 			}
@@ -270,8 +270,10 @@ public class ModbusMaster extends PollingClient {
 			data = readDiscretes(unitId, address, valueCount);
 		}
 
-		for (boolean bool : data) {
-			values.add(new ModbusVariant(bool));
+		if (data != null) {
+			for (boolean bool : data) {
+				values.add(new ModbusVariant(bool));
+			}
 		}
 		return values;
 	}

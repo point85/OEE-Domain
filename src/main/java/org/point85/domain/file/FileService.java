@@ -41,9 +41,10 @@ public class FileService {
 			File[] files = dir.listFiles();
 
 			// sort by last modified time (oldest first)
-			Arrays.sort(files, Comparator.comparingLong(File::lastModified));
-
-			fileList = Arrays.asList(files);
+			if (files != null) {
+				Arrays.sort(files, Comparator.comparingLong(File::lastModified));
+				fileList = Arrays.asList(files);
+			}
 		}
 
 		return fileList;
