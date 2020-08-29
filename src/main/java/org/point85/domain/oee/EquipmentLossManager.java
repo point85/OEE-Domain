@@ -132,10 +132,8 @@ public final class EquipmentLossManager {
 					Duration edge = Duration.between(start, to);
 
 					// clip to event duration
-					if (eventDuration != null) {
-						if (edge.compareTo(eventDuration) < 0) {
-							duration = edge;
-						}
+					if (eventDuration != null && edge.compareTo(eventDuration) < 0) {
+						duration = edge;
 					}
 				}
 			}
@@ -174,7 +172,7 @@ public final class EquipmentLossManager {
 		}
 	}
 
-	public static List<ParetoItem> getParetoData(EquipmentLoss equipmentLoss, TimeLoss loss) throws Exception {
+	public static List<ParetoItem> getParetoData(EquipmentLoss equipmentLoss, TimeLoss loss) {
 		// create the items to chart
 		Map<Reason, Duration> reasonMap = equipmentLoss.getLossReasonsByCategory(loss);
 

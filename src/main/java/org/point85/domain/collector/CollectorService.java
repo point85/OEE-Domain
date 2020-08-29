@@ -46,7 +46,6 @@ import org.point85.domain.jms.JmsClient;
 import org.point85.domain.jms.JmsMessageListener;
 import org.point85.domain.jms.JmsSource;
 import org.point85.domain.messaging.ApplicationMessage;
-import org.point85.domain.messaging.BaseMessagingClient;
 import org.point85.domain.messaging.CollectorCommandMessage;
 import org.point85.domain.messaging.CollectorNotificationMessage;
 import org.point85.domain.messaging.CollectorResolvedEventMessage;
@@ -116,9 +115,6 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 	// timer to broadcast status
 	private Timer heartbeatTimer;
-
-	// status task
-	private HeartbeatTask heartbeatTask;
 
 	// serializer
 	protected Gson gson;
@@ -231,7 +227,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	// collect all HTTP server info
-	private void buildHttpServers(EventResolver resolver) throws Exception {
+	private void buildHttpServers(EventResolver resolver) {
 		HttpSource source = (HttpSource) resolver.getDataSource();
 		String id = source.getId();
 
@@ -248,7 +244,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	// collect all RMQ broker info
-	private void buildMessagingBrokers(EventResolver resolver) throws Exception {
+	private void buildRMQBrokers(EventResolver resolver) {
 		RmqSource source = (RmqSource) resolver.getDataSource();
 		String id = source.getId();
 
@@ -264,7 +260,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	// collect all JMS broker info
-	private void buildJMSBrokers(EventResolver resolver) throws Exception {
+	private void buildJMSBrokers(EventResolver resolver) {
 		JmsSource source = (JmsSource) resolver.getDataSource();
 		String id = source.getId();
 
@@ -280,7 +276,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	// collect all MQTT broker info
-	private void buildMQTTBrokers(EventResolver resolver) throws Exception {
+	private void buildMQTTBrokers(EventResolver resolver) {
 		MqttSource source = (MqttSource) resolver.getDataSource();
 		String id = source.getId();
 
@@ -318,7 +314,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	// collect all file server info
-	private void buildFileServers(EventResolver resolver) throws Exception {
+	private void buildFileServers(EventResolver resolver) {
 		FileEventSource eventSource = (FileEventSource) resolver.getDataSource();
 		String sourceId = resolver.getSourceId();
 		Integer pollingMillis = resolver.getUpdatePeriod();
@@ -339,7 +335,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	// collect all cron scheduler info
-	private void buildCronSchedulers(EventResolver resolver) throws Exception {
+	private void buildCronSchedulers(EventResolver resolver) {
 		CronEventSource eventSource = (CronEventSource) resolver.getDataSource();
 		String sourceId = resolver.getSourceId();
 		String cronExpression = eventSource.getCronExpression();
@@ -360,7 +356,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	// collect all Modbus slave info
-	private void buildModbusSlaves(EventResolver resolver) throws Exception {
+	private void buildModbusSlaves(EventResolver resolver) {
 		ModbusSource eventSource = (ModbusSource) resolver.getDataSource();
 		String sourceId = resolver.getSourceId();
 		Integer pollingMillis = resolver.getUpdatePeriod();
@@ -384,7 +380,8 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		for (Entry<String, RmqBrokerSource> entry : brokerSources.entrySet()) {
 			RmqSource source = entry.getValue().getSource();
 
-			RmqClient pubsub = new RmqClient();
+			RmqClient rmqClient = new RmqClient();
+			rmqClient.setShouldNotify(false);
 
 			String brokerHostName = source.getHost();
 			Integer brokerPort = source.getPort();
@@ -396,11 +393,14 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 			List<RoutingKey> routingKeys = new ArrayList<>();
 			routingKeys.add(RoutingKey.EQUIPMENT_SOURCE_EVENT);
+			
+			// also can accept commands
+			routingKeys.add(RoutingKey.COMMAND_MESSAGE);
 
-			pubsub.startUp(brokerHostName, brokerPort, brokerUser, brokerPassword, queueName, routingKeys, this);
+			rmqClient.startUp(brokerHostName, brokerPort, brokerUser, brokerPassword, queueName, routingKeys, this);
 
 			// add to context
-			appContext.getRmqClients().add(pubsub);
+			appContext.getRmqClients().add(rmqClient);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Started RMQ event pubsub: " + source.getId());
@@ -413,6 +413,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			JmsSource source = entry.getValue().getSource();
 
 			JmsClient jmsClient = new JmsClient();
+			jmsClient.setShouldNotify(false);
 
 			String brokerHostName = source.getHost();
 			Integer brokerPort = source.getPort();
@@ -438,6 +439,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			MqttSource source = entry.getValue().getSource();
 
 			MqttOeeClient mqttClient = new MqttOeeClient();
+			mqttClient.setShouldNotify(false);
 
 			String brokerHostName = source.getHost();
 			Integer brokerPort = source.getPort();
@@ -503,7 +505,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 	}
 
-	private void startFilePolling(Map<String, PolledSource> fileSources) throws Exception {
+	private void startFilePolling(Map<String, PolledSource> fileSources) {
 		for (Entry<String, PolledSource> entry : fileSources.entrySet()) {
 			// source of file events
 			PolledSource fileSource = entry.getValue();
@@ -556,7 +558,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			}
 
 			OeeHttpServer httpServer = new OeeHttpServer(port);
-			httpServer.setDataChangeListener(this);
+			OeeHttpServer.setDataChangeListener(this);
 			httpServer.setAcceptingEventRequests(true);
 			httpServer.startup();
 
@@ -612,7 +614,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 	}
 
-	private void buildOpcDaSubscriptions(EventResolver resolver) throws Exception {
+	private void buildOpcDaSubscriptions(EventResolver resolver) {
 		// equipment (group name)
 		String equipmentName = resolver.getEquipment().getName();
 
@@ -707,7 +709,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		states.add(CollectorState.RUNNING);
 		List<EventResolver> resolvers = PersistenceService.instance().fetchEventResolversByHost(hostNames, states);
 
-		if (resolvers.isEmpty()) {
+		if (resolvers.isEmpty() && logger.isWarnEnabled()) {
 			logger.warn("No resolvers found for hosts " + hostNames);
 		}
 
@@ -716,12 +718,12 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			DataCollector collector = resolver.getCollector();
 
 			// check if a specific collector is named
-			if (collectorName != null) {
-				if (!collector.getName().equals(collectorName)) {
+			if (collectorName != null && !collector.getName().equals(collectorName)) {
+				if (logger.isInfoEnabled()) {
 					logger.info("Collector named " + collectorName + " is specified.  Skipping collector "
 							+ collector.getName());
-					continue;
 				}
+				continue;
 			}
 
 			// add to our collectors
@@ -753,7 +755,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 				}
 
 				case RMQ: {
-					buildMessagingBrokers(resolver);
+					buildRMQBrokers(resolver);
 					break;
 				}
 
@@ -870,20 +872,20 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			}
 		}
 
-		// connect to broker for notifications and commands
-		startPublishingNotifications();
-
 		// start collecting data
 		startDataCollection();
+
+		// connect to broker for notifications and commands
+		startPublishingNotifications();
 
 		// notify monitors
 		onInformation("Collector " + collectorName + " started on host " + getId());
 	}
 
 	private synchronized void startPublishingNotifications() throws Exception {
-		// connect to notification brokers for commands
-		Map<String, BaseMessagingClient> pubSubs = new HashMap<>();
+		boolean startHeartbeat = false;
 
+		// connect to notification brokers for commands
 		for (DataCollector collector : collectors) {
 			DataSourceType brokerType = collector.getBrokerType();
 
@@ -899,84 +901,88 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			// new publisher
 			if (brokerType.equals(DataSourceType.RMQ)) {
 				// first look in RMQ data brokers
-				boolean exists = false;
-				for (Entry<String, RmqBrokerSource> entry : rmqBrokerMap.entrySet()) {
-					RmqSource source = entry.getValue().getSource();
-					if (source.getHost().equals(brokerHostName) && source.getPort().equals(brokerPort)) {
-						exists = true;
+				boolean rmqClientExists = false;
+
+				for (RmqClient anRmqClient : appContext.getRmqClients()) {
+					if (anRmqClient.getHostName().equals(brokerHostName) && anRmqClient.getHostPort() == brokerPort) {
+						anRmqClient.setShouldNotify(true);
+						rmqClientExists = true;
 						break;
 					}
 				}
 
-				if (exists) {
-					continue;
+				if (!rmqClientExists) {
+					// not in the app context already as a data source too
+					RmqClient rmqClient = new RmqClient();
+					rmqClient.setShouldNotify(true);
+
+					// queue
+					String queueName = "CMD_" + getClass().getSimpleName() + "_" + System.currentTimeMillis();
+
+					// connect to broker and subscribe for commands
+					List<RoutingKey> routingKeys = new ArrayList<>();
+					routingKeys.add(RoutingKey.COMMAND_MESSAGE);
+
+					rmqClient.startUp(brokerHostName, brokerPort, collector.getBrokerUserName(),
+							collector.getBrokerUserPassword(), queueName, routingKeys, this);
+
+					// add to context
+					appContext.getRmqClients().add(rmqClient);
 				}
 
-				// new broker
-				RmqClient rmqClient = new RmqClient();
-				pubSubs.put(key, rmqClient);
+				startHeartbeat = true;
 
-				// queue
-				String queueName = "CMD_" + getClass().getSimpleName() + "_" + System.currentTimeMillis();
-
-				// connect to broker and subscribe for commands
-				List<RoutingKey> routingKeys = new ArrayList<>();
-				routingKeys.add(RoutingKey.COMMAND_MESSAGE);
-
-				rmqClient.startUp(brokerHostName, brokerPort, collector.getBrokerUserName(),
-						collector.getBrokerUserPassword(), queueName, routingKeys, this);
-
-				// add to context
-				appContext.getRmqClients().add(rmqClient);
 			} else if (brokerType.equals(DataSourceType.JMS)) {
 				// first look in JMS data brokers
-				boolean exists = false;
-				for (Entry<String, JmsBrokerSource> entry : jmsBrokerMap.entrySet()) {
-					JmsSource source = entry.getValue().getSource();
-					if (source.getHost().equals(brokerHostName) && source.getPort().equals(brokerPort)) {
-						exists = true;
+				boolean jmsClientExists = false;
+
+				for (JmsClient aJmsClient : appContext.getJmsClients()) {
+					if (aJmsClient.getHostName().equals(brokerHostName) && aJmsClient.getHostPort() == brokerPort) {
+						aJmsClient.setShouldNotify(true);
+						jmsClientExists = true;
 						break;
 					}
 				}
 
-				if (exists) {
-					continue;
+				if (!jmsClientExists) {
+					// not in the app context already as a data source
+					JmsClient jmsClient = new JmsClient();
+					jmsClient.setShouldNotify(true);
+
+					jmsClient.startUp(brokerHostName, brokerPort, collector.getBrokerUserName(),
+							collector.getBrokerUserPassword(), this);
+
+					// add to context
+					appContext.getJmsClients().add(jmsClient);
 				}
 
-				// new broker
-				JmsClient jmsClient = new JmsClient();
-				pubSubs.put(key, jmsClient);
-
-				jmsClient.startUp(brokerHostName, brokerPort, collector.getBrokerUserName(),
-						collector.getBrokerUserPassword(), this);
-
-				// add to context
-				appContext.getJmsClients().add(jmsClient);
+				startHeartbeat = true;
 
 			} else if (brokerType.equals(DataSourceType.MQTT)) {
 				// first look in MQTT data brokers
-				boolean exists = false;
-				for (Entry<String, MqttBrokerSource> entry : mqttBrokerMap.entrySet()) {
-					MqttSource source = entry.getValue().getSource();
-					if (source.getHost().equals(brokerHostName) && source.getPort().equals(brokerPort)) {
-						exists = true;
+				boolean mqttClientExists = false;
+
+				for (MqttOeeClient anMqttClient : appContext.getMqttClients()) {
+					if (anMqttClient.getHostName().equals(brokerHostName) && anMqttClient.getHostPort() == brokerPort) {
+						anMqttClient.setShouldNotify(true);
+						mqttClientExists = true;
 						break;
 					}
 				}
 
-				if (exists) {
-					continue;
+				if (!mqttClientExists) {
+					// not in the app context already as a data source
+					MqttOeeClient mqttClient = new MqttOeeClient();
+					mqttClient.setShouldNotify(true);
+
+					mqttClient.startUp(brokerHostName, brokerPort, collector.getBrokerUserName(),
+							collector.getBrokerUserPassword(), this);
+
+					// add to context
+					appContext.getMqttClients().add(mqttClient);
 				}
 
-				// new broker
-				MqttOeeClient mqttClient = new MqttOeeClient();
-				pubSubs.put(key, mqttClient);
-
-				mqttClient.startUp(brokerHostName, brokerPort, collector.getBrokerUserName(),
-						collector.getBrokerUserPassword(), this);
-
-				// add to context
-				appContext.getMqttClients().add(mqttClient);
+				startHeartbeat = true;
 			}
 
 			if (logger.isInfoEnabled()) {
@@ -986,10 +992,10 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 
 		// maybe start status publishing
-		if (heartbeatTimer == null) {
+		if (startHeartbeat && heartbeatTimer == null) {
 			// create timer and task
 			heartbeatTimer = new Timer();
-			heartbeatTask = new HeartbeatTask();
+			HeartbeatTask heartbeatTask = new HeartbeatTask();
 			heartbeatTimer.schedule(heartbeatTask, HEARTBEAT_SEC * 1000, HEARTBEAT_SEC * 1000);
 
 			if (logger.isInfoEnabled()) {
@@ -1050,7 +1056,9 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 				}
 				savedCollectors.add(saved);
 			} else {
-				logger.warn("Invalid state " + state + " from state " + currentState);
+				if (logger.isWarnEnabled()) {
+					logger.warn("Invalid state " + state + " from state " + currentState);
+				}
 			}
 		}
 		collectors = savedCollectors;
@@ -1151,6 +1159,12 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 			// stop RMQ notifications
 			stopNotifications();
+			
+			// stop heartbeat
+			if (heartbeatTimer != null) {
+				heartbeatTimer.cancel();
+				heartbeatTimer = null;
+			}
 		} catch (Exception e) {
 			onException("Unable to stop data collection.", e);
 		}
@@ -1164,6 +1178,9 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			}
 		} catch (InterruptedException e) {
 			executorService.shutdownNow();
+
+			// Restore interrupted state...
+			Thread.currentThread().interrupt();
 		}
 
 		if (logger.isInfoEnabled()) {
@@ -1294,8 +1311,10 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	@Override
 	public void onHttpEquipmentEvent(EquipmentEventRequestDto dto) throws Exception {
 		if (!dto.getImmediate()) {
+			// execute in task pool
 			getExecutorService().execute(new HttpTask(dto));
 		} else {
+			// execute it now
 			processHttpEquipmentEvent(dto);
 		}
 	}
@@ -1329,7 +1348,9 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 		OffsetDateTime cutoff = OffsetDateTime.now().minusDays(days.toDays());
 
-		logger.info("Purging records for equipment " + equipment.getName() + " older than " + cutoff);
+		if (logger.isInfoEnabled()) {
+			logger.info("Purging records for equipment " + equipment.getName() + " older than " + cutoff);
+		}
 
 		// purge database tables
 		PersistenceService.instance().purge(equipment, cutoff);
@@ -1657,6 +1678,10 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			event.setEndTimestamp(end);
 		}
 
+		if (end != null && start.isAfter(end)) {
+			throw new Exception(DomainLocalizer.instance().getErrorString("print.end.earlier.than.start", start, end));
+		}
+
 		// duration
 		Duration period = (dto.getDuration() != null) ? Duration.ofSeconds(Long.parseLong(dto.getDuration())) : null;
 		event.setDuration(period);
@@ -1802,7 +1827,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			}
 
 			Duration delta = Duration.between(event.getStartTimestamp(), event.getEndTimestamp());
-			if (event.getDuration().compareTo(delta) == 1) {
+			if (event.getDuration().compareTo(delta) > 0) {
 				throw new Exception(DomainLocalizer.instance().getErrorString("duration.too.long",
 						DomainUtils.formatDuration(event.getDuration())));
 			}
@@ -2091,21 +2116,35 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 				// publish to RMQ brokers
 				for (RmqClient pubsub : appContext.getRmqClients()) {
-					pubsub.sendNotificationMessage(message);
+					if (pubsub.shouldNotify()) {
+						pubsub.sendNotificationMessage(message);
+
+						if (logger.isInfoEnabled()) {
+							logger.info("Sent RMQ " + pubsub.toString() + " status message for host " + getId());
+						}
+					}
 				}
 
 				// publish to JMS brokers
 				for (JmsClient pubsub : appContext.getJmsClients()) {
-					pubsub.sendNotificationMessage(message);
+					if (pubsub.shouldNotify()) {
+						pubsub.sendNotificationMessage(message);
+
+						if (logger.isInfoEnabled()) {
+							logger.info("Sent JMS " + pubsub.toString() + " status message for host " + getId());
+						}
+					}
 				}
 
 				// publish to MQTT brokers
 				for (MqttOeeClient pubsub : appContext.getMqttClients()) {
-					pubsub.sendNotificationMessage(message);
-				}
+					if (pubsub.shouldNotify()) {
+						pubsub.sendNotificationMessage(message);
 
-				if (logger.isInfoEnabled()) {
-					logger.info("Sent status message for host " + getId());
+						if (logger.isInfoEnabled()) {
+							logger.info("Sent MQTT " + pubsub.toString() + " status message for host " + getId());
+						}
+					}
 				}
 			} catch (Exception e) {
 				onException("Sending server status message failed.", e);
@@ -2140,11 +2179,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 				databaseEvent.setStatus(DatabaseEventStatus.PROCESSING);
 				databaseEvent.setError(null);
 
-				try {
-					databaseClient.save(databaseEvent);
-				} catch (Exception ex) {
-					onException("Unable to save database event.", ex);
-				}
+				databaseClient.save(databaseEvent);
 
 				// resolve event
 				OeeEquipmentEvent event = new OeeEquipmentEvent(sourceId, dataValue, timestamp);

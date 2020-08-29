@@ -4,12 +4,14 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
+import javax.persistence.Transient;
 
 import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.script.EventResolver;
@@ -27,7 +29,8 @@ public class Equipment extends PlantEntity {
 	public static final Duration DEFAULT_RETENTION_PERIOD = Duration.ofDays(360);
 
 	// map by Material
-	transient private final Map<Material, EquipmentMaterial> equipmentMaterialsMap = new HashMap<>();
+	@Transient
+	private final Map<Material, EquipmentMaterial> equipmentMaterialsMap = new HashMap<>();
 
 	@OneToMany(mappedBy = "equipment", cascade = CascadeType.ALL, orphanRemoval = true)
 	private Set<EquipmentMaterial> equipmentMaterials = new HashSet<>();
@@ -168,5 +171,18 @@ public class Equipment extends PlantEntity {
 			}
 		}
 		return uom;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof Equipment) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getParent());
 	}
 }

@@ -28,16 +28,20 @@ public final class DomainUtils {
 
 	// ISO 8601 datetime format, yyyy-mm-ddThh:mm:ss.nnnnnn+|-hh:mm
 	public static final String OFFSET_DATE_TIME_8601 = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ";
-	
+
 	// ISO 8601 datetime format, yyyy-mm-ddThh:mm:ss.nnn
 	public static final String LOCAL_DATE_TIME_8601 = "yyyy-MM-dd'T'HH:mm:ss.SSS";
 
 	// pattern for OffsetDateTime display
 	public static final String OFFSET_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS ZZZZZ";
 
+	private DomainUtils() {
+		throw new IllegalStateException("Utility class");
+	}
+
 	public static String getVersionInfo() {
-		return DomainLocalizer.instance().getLangString("version") + " 3.0.0, "
-				+ LocalDate.of(2020, 7, 1).format(DateTimeFormatter.ISO_DATE);
+		return DomainLocalizer.instance().getLangString("version") + " 3.1.0, "
+				+ LocalDate.of(2020, 8, 28).format(DateTimeFormatter.ISO_DATE);
 	}
 
 	// format a Duration

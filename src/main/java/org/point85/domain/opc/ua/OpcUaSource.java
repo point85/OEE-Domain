@@ -1,8 +1,11 @@
 package org.point85.domain.opc.ua;
 
+import java.util.Objects;
+
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.Transient;
 
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
@@ -15,11 +18,14 @@ import org.point85.domain.collector.DataSourceType;
 
 public class OpcUaSource extends CollectorDataSource {
 
-	private transient SecurityPolicy policy = SecurityPolicy.None;
+	@Transient
+	private SecurityPolicy policy = SecurityPolicy.None;
 
-	private transient String endpointUrl;
+	@Transient
+	private String endpointUrl;
 
-	private transient MessageSecurityMode messageSecurityMode = MessageSecurityMode.None;
+	@Transient
+	private MessageSecurityMode messageSecurityMode = MessageSecurityMode.None;
 
 	@Column(name = "SEC_POLICY")
 	private String securityPolicy;
@@ -105,12 +111,25 @@ public class OpcUaSource extends CollectorDataSource {
 		this.keystore = fileName;
 	}
 
-	public String getKeystorePassword() throws Exception {
+	public String getKeystorePassword() {
 		return DomainUtils.decode(keystorePassword);
 	}
 
-	public void setKeystorePassword(String keystorePassword) throws Exception {
+	public void setKeystorePassword(String keystorePassword) {
 		this.keystorePassword = DomainUtils.encode(keystorePassword);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof OpcUaSource) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getEndpointUrl());
 	}
 
 }

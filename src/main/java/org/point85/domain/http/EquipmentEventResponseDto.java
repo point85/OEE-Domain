@@ -33,7 +33,7 @@ public class EquipmentEventResponseDto {
 	}
 
 	public boolean isOK() {
-		return status.equals(OK_STATUS) ? true : false;
+		return status.equals(OK_STATUS);
 	}
 
 	public boolean isError() {

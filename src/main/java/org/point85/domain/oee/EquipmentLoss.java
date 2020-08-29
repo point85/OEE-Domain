@@ -3,6 +3,7 @@ package org.point85.domain.oee;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,10 +33,10 @@ public class EquipmentLoss {
 	private OffsetDateTime endDateTime;
 
 	// map of losses
-	private final Map<TimeLoss, Duration> lossMap = new HashMap<>();
+	private final EnumMap<TimeLoss, Duration> lossMap = new EnumMap<>(TimeLoss.class);
 
 	// map of reasons
-	private final Map<TimeLoss, Map<Reason, Duration>> reasonMap = new HashMap<>();
+	private final EnumMap<TimeLoss, Map<Reason, Duration>> reasonMap = new EnumMap<>(TimeLoss.class);
 
 	// quantities produced
 	private Quantity goodQuantity;
@@ -220,11 +221,10 @@ public class EquipmentLoss {
 		Quantity availableQty = new Quantity(getAvailableTime().getSeconds(), Unit.SECOND);
 		Quantity denominator = availableQty.multiply(designSpeed);
 		double hloee = goodQuantity.divide(denominator).getAmount();
-
-		return Double.valueOf(hloee).floatValue();
+		return (float) hloee;
 	}
 
-	public float calculateOeePercentage() throws Exception {
+	public float calculateOeePercentage() {
 		float vat = this.getValueAddingTime().getSeconds();
 		float available = this.getAvailableTime().getSeconds();
 		float oee = 0.0f;
@@ -235,7 +235,7 @@ public class EquipmentLoss {
 		return oee;
 	}
 
-	public float calculatePerformancePercentage() throws Exception {
+	public float calculatePerformancePercentage() {
 		float eff = this.getEfficientNetProductionTime().getSeconds();
 		float rpt = this.getReportedProductionTime().getSeconds();
 
@@ -247,7 +247,7 @@ public class EquipmentLoss {
 		return pp;
 	}
 
-	public float calculateAvailabilityPercentage() throws Exception {
+	public float calculateAvailabilityPercentage() {
 		float rpt = this.getReportedProductionTime().getSeconds();
 		float available = this.getAvailableTime().getSeconds();
 
@@ -259,7 +259,7 @@ public class EquipmentLoss {
 		return ap;
 	}
 
-	public float calculateQualityPercentage() throws Exception {
+	public float calculateQualityPercentage() {
 		float vat = this.getValueAddingTime().getSeconds();
 		float eff = this.getEfficientNetProductionTime().getSeconds();
 
@@ -399,7 +399,7 @@ public class EquipmentLoss {
 		Quantity irr = getDesignSpeedQuantity();
 
 		Quantity timeQty = quantity.divide(irr).convert(Unit.SECOND);
-		long seconds = Double.valueOf(timeQty.getAmount()).longValue();
+		long seconds = (long) timeQty.getAmount();
 
 		return Duration.ofSeconds(seconds);
 	}

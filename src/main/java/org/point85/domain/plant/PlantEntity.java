@@ -3,6 +3,7 @@ package org.point85.domain.plant;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.AttributeOverride;
@@ -158,6 +159,19 @@ public class PlantEntity extends NamedObject {
 			duration = parent.findRetentionPeriod();
 		}
 		return duration;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof PlantEntity) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getDescription());
 	}
 
 	@Override

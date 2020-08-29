@@ -133,7 +133,7 @@ public class OpcDaMonitoredGroup {
 				OpcDaMonitoredItem opcDaItem = new OpcDaMonitoredItem(itemDef, itemResult);
 				opcDaItem.setPathName(pathName);
 				opcDaItem.setGroup(this);
-				Integer serverHandle = new Integer(itemResult.getServerHandle());
+				Integer serverHandle = Integer.valueOf(itemResult.getServerHandle());
 				serverHandles[i] = serverHandle;
 				itemMap.put(clientHandles[i], opcDaItem);
 				i++;
@@ -164,16 +164,16 @@ public class OpcDaMonitoredGroup {
 	}
 
 	public void removeItems(OpcDaMonitoredItem[] items) throws Exception {
-		Integer[] serverHandles = new Integer[items.length];
+		Integer[] removeServerHandles = new Integer[items.length];
 
 		for (int i = 0; i < items.length; i++) {
-			serverHandles[i] = items[i].getItemResult().getServerHandle();
+			removeServerHandles[i] = items[i].getItemResult().getServerHandle();
 		}
 
-		groupManager.getItemManagement().remove(serverHandles);
+		groupManager.getItemManagement().remove(removeServerHandles);
 
 		for (OpcDaMonitoredItem item : items) {
-			Integer key = new Integer(item.getItemDef().getClientHandle());
+			Integer key = Integer.valueOf(item.getItemDef().getClientHandle());
 			itemMap.remove(key);
 		}
 	}
@@ -193,7 +193,7 @@ public class OpcDaMonitoredGroup {
 		KeyedResultSet<OPCITEMDEF, OPCITEMRESULT> result = itemManagement.add(defs);
 
 		WriteRequest[] writeRequests = new WriteRequest[daItems.length];
-		Integer[] serverHandles = new Integer[daItems.length];
+		Integer[] writeServerHandles = new Integer[daItems.length];
 
 		for (int i = 0; i < daItems.length; i++) {
 			if (result.get(i).getErrorCode() != 0) {
@@ -202,7 +202,7 @@ public class OpcDaMonitoredGroup {
 
 			JIVariant variant = variants[i].getJIVariant();
 			writeRequests[i] = new WriteRequest(result.get(i).getValue().getServerHandle(), variant);
-			serverHandles[i] = writeRequests[i].getServerHandle();
+			writeServerHandles[i] = writeRequests[i].getServerHandle();
 		}
 
 		// Perform write
@@ -258,6 +258,7 @@ public class OpcDaMonitoredGroup {
 		try {
 			value = groupManager.getState().getName();
 		} catch (Exception e) {
+			// ignore
 		}
 		return value;
 	}
@@ -295,7 +296,9 @@ public class OpcDaMonitoredGroup {
 
 		@Override
 		public void cancelComplete(int transactionId, int serverGroupHandle) {
-			logger.info(String.format("cancelComplete: %08X, Group: %08X", transactionId, serverGroupHandle));
+			if (logger.isInfoEnabled()) {
+				logger.info(String.format("cancelComplete: %08X, Group: %08X", transactionId, serverGroupHandle));
+			}
 		}
 
 		@Override
@@ -303,15 +306,17 @@ public class OpcDaMonitoredGroup {
 				KeyedResultSet<Integer, ValueData> result) {
 
 			if (masterErrorCode != 0) {
-				logger.error(String.format(
-						"Transaction Id: %d, Server Group Handle: %08X, Master Quality: %d, Error Code: %d",
-						transactionId, serverGroupHandle, masterQuality, masterErrorCode));
+				if (logger.isErrorEnabled()) {
+					logger.error(String.format(
+							"Transaction Id: %d, Server Group Handle: %08X, Master Quality: %d, Error Code: %d",
+							transactionId, serverGroupHandle, masterQuality, masterErrorCode));
+				}
 				return;
 			}
 
 			for (final KeyedResult<Integer, ValueData> entry : result) {
-				Integer clientHandle = entry.getKey();
-				OpcDaMonitoredItem opcDaItem = itemMap.get(clientHandle);
+				Integer aClientHandle = entry.getKey();
+				OpcDaMonitoredItem opcDaItem = itemMap.get(aClientHandle);
 
 				if (opcDaItem != null) {
 					try {
@@ -337,16 +342,20 @@ public class OpcDaMonitoredGroup {
 				final KeyedResultSet<Integer, ValueData> result) {
 
 			if (masterErrorCode != 0) {
-				logger.error(String.format("readComplete: %d, Group: %08X, MasterQ: %d, Error: %d", transactionId,
-						serverGroupHandle, masterQuality, masterErrorCode));
+				if (logger.isErrorEnabled()) {
+					logger.error(String.format("readComplete: %d, Group: %08X, MasterQ: %d, Error: %d", transactionId,
+							serverGroupHandle, masterQuality, masterErrorCode));
+				}
 			}
 
 			for (final KeyedResult<Integer, ValueData> entry : result) {
 
 				if (entry.getErrorCode() != 0) {
-					logger.error(String.format("%08X - Error: %08X, Quality: %d, %Tc - %s", entry.getKey(),
-							entry.getErrorCode(), entry.getValue().getQuality(), entry.getValue().getTimestamp(),
-							entry.getValue().getValue().toString()));
+					if (logger.isErrorEnabled()) {
+						logger.error(String.format("%08X - Error: %08X, Quality: %d, %Tc - %s", entry.getKey(),
+								entry.getErrorCode(), entry.getValue().getQuality(), entry.getValue().getTimestamp(),
+								entry.getValue().getValue().toString()));
+					}
 				}
 			}
 		}
@@ -354,7 +363,9 @@ public class OpcDaMonitoredGroup {
 		@Override
 		public void writeComplete(int transactionId, int serverGroupHandle, int masterErrorCode,
 				ResultSet<Integer> result) {
-			logger.info(String.format("writeComplete: %08X, Group: %08X", transactionId, serverGroupHandle));
+			if (logger.isInfoEnabled()) {
+				logger.info(String.format("writeComplete: %08X, Group: %08X", transactionId, serverGroupHandle));
+			}
 		}
 	}
 }

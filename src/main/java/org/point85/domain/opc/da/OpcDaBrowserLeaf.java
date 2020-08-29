@@ -2,6 +2,7 @@ package org.point85.domain.opc.da;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 
 import org.openscada.opc.dcom.da.PropertyDescription;
@@ -61,7 +62,7 @@ public class OpcDaBrowserLeaf {
 		return 41 + Objects.hashCode(leaf);
 	}
 
-	public LinkedList<String> getAccesspath() {
+	public List<String> getAccesspath() {
 		return (LinkedList<String>) getLeaf().getParent().getBranchStack();
 	}
 
@@ -72,7 +73,7 @@ public class OpcDaBrowserLeaf {
 	public String getPathName() {
 		StringBuilder sb = new StringBuilder();
 
-		LinkedList<String> path = getAccesspath();
+		List<String> path = getAccesspath();
 
 		for (int i = 0; i < path.size(); i++) {
 			sb.append(path.get(i)).append(PATH_DELIMITER);

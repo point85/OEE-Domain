@@ -513,6 +513,14 @@ public class MeasurementSystem {
 					DomainLocalizer.instance().getUnitString("cd.desc"));
 			break;
 
+		case MOLARITY:
+			// molar concentration
+			uom = createQuotientUOM(UnitType.MOLAR_CONCENTRATION, Unit.MOLARITY,
+					DomainLocalizer.instance().getUnitString("molarity.name"),
+					DomainLocalizer.instance().getUnitString("molarity.symbol"),
+					DomainLocalizer.instance().getUnitString("molarity.desc"), getUOM(Unit.MOLE), getUOM(Unit.LITRE));
+			break;
+
 		case PH:
 			// molar concentration
 			uom = createScalarUOM(UnitType.MOLAR_CONCENTRATION, Unit.PH,
@@ -658,7 +666,7 @@ public class MeasurementSystem {
 
 		case ELECTRON_VOLT:
 			// ev
-			Quantity e = this.getQuantity(Constant.ELEMENTARY_CHARGE);
+			Quantity e = getQuantity(Constant.ELEMENTARY_CHARGE);
 			uom = createProductUOM(UnitType.ENERGY, Unit.ELECTRON_VOLT,
 					DomainLocalizer.instance().getUnitString("ev.name"),
 					DomainLocalizer.instance().getUnitString("ev.symbol"),
@@ -1581,7 +1589,7 @@ public class MeasurementSystem {
 	 */
 	public List<UnitOfMeasure> getRegisteredUnits() {
 		Collection<UnitOfMeasure> units = cacheManager.getCachedUnits();
-		List<UnitOfMeasure> list = new ArrayList<UnitOfMeasure>(units);
+		List<UnitOfMeasure> list = new ArrayList<>(units);
 
 		Collections.sort(list, new Comparator<UnitOfMeasure>() {
 			public int compare(UnitOfMeasure unit1, UnitOfMeasure unit2) {
@@ -1642,8 +1650,7 @@ public class MeasurementSystem {
 		cacheManager.registerUnit(uom);
 	}
 
-	private UnitOfMeasure createUOM(UnitType type, Unit id, String name, String symbol, String description)
-			throws Exception {
+	private UnitOfMeasure createUOM(UnitType type, String name, String symbol, String description) throws Exception {
 
 		if (symbol == null || symbol.length() == 0) {
 			throw new Exception(DomainLocalizer.instance().getErrorString("symbol.cannot.be.null"));
@@ -1666,7 +1673,7 @@ public class MeasurementSystem {
 	private UnitOfMeasure createScalarUOM(UnitType type, Unit id, String name, String symbol, String description)
 			throws Exception {
 
-		UnitOfMeasure uom = createUOM(type, id, name, symbol, description);
+		UnitOfMeasure uom = createUOM(type, name, symbol, description);
 		uom.setEnumeration(id);
 		registerUnit(uom);
 
@@ -1704,7 +1711,7 @@ public class MeasurementSystem {
 	public UnitOfMeasure createQuotientUOM(UnitType type, Unit id, String name, String symbol, String description,
 			UnitOfMeasure dividend, UnitOfMeasure divisor) throws Exception {
 
-		UnitOfMeasure uom = createUOM(type, id, name, symbol, description);
+		UnitOfMeasure uom = createUOM(type, name, symbol, description);
 		uom.setQuotientUnits(dividend, divisor);
 		uom.setEnumeration(id);
 		registerUnit(uom);
@@ -1765,7 +1772,7 @@ public class MeasurementSystem {
 	public UnitOfMeasure createProductUOM(UnitType type, Unit id, String name, String symbol, String description,
 			UnitOfMeasure multiplier, UnitOfMeasure multiplicand) throws Exception {
 
-		UnitOfMeasure uom = createUOM(type, id, name, symbol, description);
+		UnitOfMeasure uom = createUOM(type, name, symbol, description);
 		uom.setProductUnits(multiplier, multiplicand);
 		uom.setEnumeration(id);
 		registerUnit(uom);
@@ -1826,7 +1833,7 @@ public class MeasurementSystem {
 	public UnitOfMeasure createPowerUOM(UnitType type, Unit id, String name, String symbol, String description,
 			UnitOfMeasure base, int exponent) throws Exception {
 
-		UnitOfMeasure uom = createUOM(type, id, name, symbol, description);
+		UnitOfMeasure uom = createUOM(type, name, symbol, description);
 		uom.setPowerUnit(base, exponent);
 		uom.setEnumeration(id);
 		registerUnit(uom);
@@ -1920,7 +1927,7 @@ public class MeasurementSystem {
 	 * @throws Exception Exception
 	 */
 	public List<UnitOfMeasure> getUnitsOfMeasure(UnitType type) throws Exception {
-		List<UnitOfMeasure> units = new ArrayList<UnitOfMeasure>();
+		List<UnitOfMeasure> units = new ArrayList<>();
 
 		switch (type) {
 		case LENGTH:
@@ -2113,7 +2120,7 @@ public class MeasurementSystem {
 			break;
 
 		case MOLAR_CONCENTRATION:
-			units.add(getUOM(Unit.PH));
+			units.add(getUOM(Unit.MOLARITY));
 			break;
 
 		case PLANE_ANGLE:
@@ -2245,15 +2252,219 @@ public class MeasurementSystem {
 		return units;
 	}
 
+	public Map<UnitType, Integer> getTypeMap(UnitType unitType) {
+		// check cache
+		Map<UnitType, Integer> cachedMap = cacheManager.getUnitTypeCache().get(unitType);
+
+		if (cachedMap != null) {
+			return cachedMap;
+		}
+
+		// create map
+		cachedMap = new ConcurrentHashMap<>();
+		cacheManager.getUnitTypeCache().put(unitType, cachedMap);
+
+		// base types have empty maps
+		switch (unitType) {
+		case UNITY:
+			break;
+		case LENGTH:
+			break;
+		case MASS:
+			break;
+		case TIME:
+			break;
+		case ELECTRIC_CURRENT:
+			break;
+		case TEMPERATURE:
+			break;
+		case SUBSTANCE_AMOUNT:
+			break;
+		case LUMINOSITY:
+			break;
+		case AREA:
+			cachedMap.put(UnitType.LENGTH, 2);
+			break;
+		case VOLUME:
+			cachedMap.put(UnitType.LENGTH, 3);
+			break;
+		case DENSITY:
+			cachedMap.put(UnitType.MASS, 1);
+			cachedMap.put(UnitType.LENGTH, -3);
+			break;
+		case VELOCITY:
+			cachedMap.put(UnitType.LENGTH, 1);
+			cachedMap.put(UnitType.TIME, -1);
+			break;
+		case VOLUMETRIC_FLOW:
+			cachedMap.put(UnitType.LENGTH, 3);
+			cachedMap.put(UnitType.TIME, -1);
+			break;
+		case MASS_FLOW:
+			cachedMap.put(UnitType.MASS, 1);
+			cachedMap.put(UnitType.TIME, -1);
+			break;
+		case FREQUENCY:
+			cachedMap.put(UnitType.TIME, -1);
+			break;
+		case ACCELERATION:
+			cachedMap.put(UnitType.LENGTH, 1);
+			cachedMap.put(UnitType.TIME, -2);
+			break;
+		case FORCE:
+			cachedMap.put(UnitType.MASS, 1);
+			cachedMap.put(UnitType.LENGTH, 1);
+			cachedMap.put(UnitType.TIME, -2);
+			break;
+		case PRESSURE:
+			cachedMap.put(UnitType.MASS, 1);
+			cachedMap.put(UnitType.LENGTH, -1);
+			cachedMap.put(UnitType.TIME, -2);
+			break;
+		case ENERGY:
+			cachedMap.put(UnitType.MASS, 1);
+			cachedMap.put(UnitType.LENGTH, 2);
+			cachedMap.put(UnitType.TIME, -2);
+			break;
+		case POWER:
+			cachedMap.put(UnitType.MASS, 1);
+			cachedMap.put(UnitType.LENGTH, 2);
+			cachedMap.put(UnitType.TIME, -3);
+			break;
+		case ELECTRIC_CHARGE:
+			cachedMap.put(UnitType.ELECTRIC_CURRENT, 1);
+			cachedMap.put(UnitType.TIME, 1);
+			break;
+		case ELECTROMOTIVE_FORCE:
+			cachedMap.put(UnitType.LENGTH, 2);
+			cachedMap.put(UnitType.MASS, 1);
+			cachedMap.put(UnitType.ELECTRIC_CURRENT, -1);
+			cachedMap.put(UnitType.TIME, -3);
+			break;
+		case ELECTRIC_RESISTANCE:
+			cachedMap.put(UnitType.MASS, 1);
+			cachedMap.put(UnitType.LENGTH, -3);
+			cachedMap.put(UnitType.ELECTRIC_CURRENT, 2);
+			cachedMap.put(UnitType.TIME, 4);
+			break;
+		case ELECTRIC_CAPACITANCE:
+			cachedMap.put(UnitType.MASS, -1);
+			cachedMap.put(UnitType.LENGTH, 2);
+			cachedMap.put(UnitType.ELECTRIC_CURRENT, -2);
+			cachedMap.put(UnitType.TIME, -3);
+			break;
+		case ELECTRIC_PERMITTIVITY:
+			cachedMap.put(UnitType.MASS, -1);
+			cachedMap.put(UnitType.LENGTH, -3);
+			cachedMap.put(UnitType.ELECTRIC_CURRENT, 2);
+			cachedMap.put(UnitType.TIME, 4);
+			break;
+		case ELECTRIC_FIELD_STRENGTH:
+			cachedMap.put(UnitType.ELECTRIC_CURRENT, 1);
+			cachedMap.put(UnitType.LENGTH, -1);
+			break;
+		case MAGNETIC_FLUX:
+			cachedMap.put(UnitType.MASS, 1);
+			cachedMap.put(UnitType.LENGTH, 2);
+			cachedMap.put(UnitType.ELECTRIC_CURRENT, -1);
+			cachedMap.put(UnitType.TIME, -2);
+			break;
+		case MAGNETIC_FLUX_DENSITY:
+			cachedMap.put(UnitType.MASS, 1);
+			cachedMap.put(UnitType.ELECTRIC_CURRENT, -1);
+			cachedMap.put(UnitType.TIME, -2);
+			break;
+		case ELECTRIC_INDUCTANCE:
+			cachedMap.put(UnitType.MASS, 1);
+			cachedMap.put(UnitType.LENGTH, 2);
+			cachedMap.put(UnitType.ELECTRIC_CURRENT, -2);
+			cachedMap.put(UnitType.TIME, -2);
+			break;
+		case ELECTRIC_CONDUCTANCE:
+			cachedMap.put(UnitType.MASS, -1);
+			cachedMap.put(UnitType.LENGTH, -2);
+			cachedMap.put(UnitType.ELECTRIC_CURRENT, 2);
+			cachedMap.put(UnitType.TIME, 3);
+			break;
+		case LUMINOUS_FLUX:
+			cachedMap.put(UnitType.LUMINOSITY, 1);
+			break;
+		case ILLUMINANCE:
+			cachedMap.put(UnitType.LUMINOSITY, 1);
+			cachedMap.put(UnitType.LENGTH, -2);
+			break;
+		case RADIATION_DOSE_ABSORBED:
+			cachedMap.put(UnitType.LENGTH, 2);
+			cachedMap.put(UnitType.TIME, -2);
+			break;
+		case RADIATION_DOSE_EFFECTIVE:
+			cachedMap.put(UnitType.LENGTH, 2);
+			cachedMap.put(UnitType.TIME, -2);
+			break;
+		case RADIATION_DOSE_RATE:
+			cachedMap.put(UnitType.LENGTH, 2);
+			cachedMap.put(UnitType.TIME, -3);
+			break;
+		case RADIOACTIVITY:
+			cachedMap.put(UnitType.TIME, -1);
+			break;
+		case CATALYTIC_ACTIVITY:
+			cachedMap.put(UnitType.SUBSTANCE_AMOUNT, 1);
+			cachedMap.put(UnitType.TIME, -1);
+			break;
+		case DYNAMIC_VISCOSITY:
+			cachedMap.put(UnitType.MASS, 1);
+			cachedMap.put(UnitType.LENGTH, 1);
+			cachedMap.put(UnitType.TIME, -1);
+			break;
+		case KINEMATIC_VISCOSITY:
+			cachedMap.put(UnitType.LENGTH, 2);
+			cachedMap.put(UnitType.TIME, -1);
+			break;
+		case RECIPROCAL_LENGTH:
+			cachedMap.put(UnitType.LENGTH, -1);
+			break;
+		case PLANE_ANGLE:
+			break;
+		case SOLID_ANGLE:
+			break;
+		case INTENSITY:
+			break;
+		case COMPUTER_SCIENCE:
+			break;
+		case TIME_SQUARED:
+			cachedMap.put(UnitType.TIME, 2);
+			break;
+		case MOLAR_CONCENTRATION:
+			cachedMap.put(UnitType.SUBSTANCE_AMOUNT, 1);
+			cachedMap.put(UnitType.LENGTH, -3);
+			break;
+		case IRRADIANCE:
+			cachedMap.put(UnitType.MASS, 1);
+			cachedMap.put(UnitType.TIME, -3);
+			break;
+		case CURRENCY:
+			break;
+		case UNCLASSIFIED:
+			break;
+		default:
+			break;
+		}
+		return cachedMap;
+	}
+
 	private class CacheManager {
 		// registry by unit symbol
-		private final Map<String, UnitOfMeasure> symbolRegistry = new ConcurrentHashMap<String, UnitOfMeasure>();
+		private final Map<String, UnitOfMeasure> symbolRegistry = new ConcurrentHashMap<>();
 
 		// registry by base symbol
-		private final Map<String, UnitOfMeasure> baseRegistry = new ConcurrentHashMap<String, UnitOfMeasure>();
+		private final Map<String, UnitOfMeasure> baseRegistry = new ConcurrentHashMap<>();
 
 		// registry for units by enumeration
-		private final Map<Unit, UnitOfMeasure> unitRegistry = new ConcurrentHashMap<Unit, UnitOfMeasure>();
+		private final Map<Unit, UnitOfMeasure> unitRegistry = new ConcurrentHashMap<>();
+
+		// registry for base UOM map by unit type
+		private final Map<UnitType, Map<UnitType, Integer>> unitTypeRegistry = new ConcurrentHashMap<>();
 
 		private UnitOfMeasure getUOM(Unit unit) {
 			return unitRegistry.get(unit);
@@ -2287,6 +2498,10 @@ public class MeasurementSystem {
 
 		private Map<Unit, UnitOfMeasure> getEnumerationCache() {
 			return unitRegistry;
+		}
+
+		private Map<UnitType, Map<UnitType, Integer>> getUnitTypeCache() {
+			return unitTypeRegistry;
 		}
 
 		private void unregisterUnit(UnitOfMeasure uom) throws Exception {

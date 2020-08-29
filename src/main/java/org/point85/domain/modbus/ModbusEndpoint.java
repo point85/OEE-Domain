@@ -6,26 +6,26 @@ package org.point85.domain.modbus;
  */
 public class ModbusEndpoint {
 	private static final String DELIMITER = ",";
-	private transient Integer unitId;
+	private Integer unitId;
 
-	private transient ModbusRegisterType registerType;
+	private ModbusRegisterType registerType;
 
-	private transient ModbusDataType dataType;
+	private ModbusDataType dataType;
 
-	private transient Integer registerAddress;
+	private Integer registerAddress;
 
-	private transient Integer valueCount;
+	private Integer valueCount;
 
-	private transient Boolean reverseEndianess;
+	private Boolean reverseEndianess;
 
 	public ModbusEndpoint() {
-
+		// for overloading
 	}
 
 	/**
 	 * Constructor with the source information
 	 * 
-	 * @param sourceId Resolver souce id
+	 * @param sourceId Resolver source id
 	 */
 	public ModbusEndpoint(String sourceId) {
 		String[] tokens = sourceId.split(DELIMITER);

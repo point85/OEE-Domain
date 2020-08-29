@@ -49,8 +49,8 @@ public class CollectorResolvedEventMessage extends ApplicationMessage {
 		}
 		case JOB_CHANGE: {
 			// job
-			String job = event.getJob();
-			this.setJob(job);
+			String eventJob = event.getJob();
+			this.setJob(eventJob);
 			break;
 		}
 		case MATL_CHANGE: {

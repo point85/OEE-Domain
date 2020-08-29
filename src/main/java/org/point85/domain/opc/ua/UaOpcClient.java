@@ -7,6 +7,7 @@ import static org.eclipse.milo.opcua.stack.core.util.ConversionUtil.toList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -104,12 +105,9 @@ public class UaOpcClient implements SessionActivityListener {
 	// registry of subscriptions
 	private final ConcurrentMap<NodeId, UaSubscription> subscriptionMap = new ConcurrentHashMap<>();
 
-	private final AtomicReference<BiConsumer<Boolean, Throwable>> listener = new AtomicReference<>();
+	private final AtomicReference<BiConsumer<Boolean, Throwable>> atomicListener = new AtomicReference<>();
 
 	private OpcUaSource connectedSource;
-
-	public UaOpcClient() {
-	}
 
 	public OpcUaClient getNativeClient() {
 		return this.opcUaClient;
@@ -364,7 +362,15 @@ public class UaOpcClient implements SessionActivityListener {
 	public static Object getJavaObject(Variant value) {
 		Object uaValue = value.getValue();
 		Object javaObject = null;
-		ExpandedNodeId nodeId = value.getDataType().get();
+		ExpandedNodeId nodeId = null;
+		Optional<ExpandedNodeId> nodeIdOptional = value.getDataType();
+
+		if (nodeIdOptional.isPresent()) {
+			nodeId = nodeIdOptional.get();
+		} else {
+			return javaObject;
+		}
+
 		Class<?> clazz = BuiltinDataType.getBackingClass(nodeId);
 
 		boolean isArray = uaValue.getClass().isArray();
@@ -651,6 +657,7 @@ public class UaOpcClient implements SessionActivityListener {
 			BuildInfo buildInfo = serverStatusNode.getBuildInfo().get();
 			serverStatus.setBuildInfo(buildInfo);
 		} catch (Exception e) {
+			// ignore
 		}
 
 		serverStatus.setState(state);
@@ -659,13 +666,13 @@ public class UaOpcClient implements SessionActivityListener {
 	}
 
 	public boolean isConnected() {
-		return opcUaClient != null ? true : false;
+		return opcUaClient != null;
 	}
 
 	@Override
 	public void onSessionActive(UaSession session) {
 		logger.info("active session id: {}", session.getSessionId());
-		BiConsumer<Boolean, Throwable> consumer = listener.get();
+		BiConsumer<Boolean, Throwable> consumer = atomicListener.get();
 		if (consumer != null) {
 			consumer.accept(Boolean.TRUE, null);
 		}
@@ -674,7 +681,7 @@ public class UaOpcClient implements SessionActivityListener {
 	@Override
 	public void onSessionInactive(UaSession session) {
 		logger.info("inactive session id: {}", session.getSessionId());
-		BiConsumer<Boolean, Throwable> consumer = listener.get();
+		BiConsumer<Boolean, Throwable> consumer = atomicListener.get();
 		if (consumer != null) {
 			consumer.accept(Boolean.FALSE, null);
 		}

@@ -17,7 +17,7 @@ public class ResolverFunction {
 		this.scriptFunction = script;
 	}
 
-	private void parseFunction() throws Exception {
+	private void parseFunction() {
 		if (scriptFunction == null) {
 			return;
 		}
@@ -30,7 +30,7 @@ public class ResolverFunction {
 		int idx2 = scriptFunction.indexOf(')');
 		String argList = scriptFunction.substring(idx1 + 1, idx2);
 		String[] args = argList.split(",");
-		arguments = new ArrayList<String>(args.length);
+		arguments = new ArrayList<>(args.length);
 
 		for (String arg : args) {
 			arguments.add(arg.trim());
@@ -46,7 +46,7 @@ public class ResolverFunction {
 		return "f" + Long.toHexString(now);
 	}
 
-	public String getName() throws Exception {
+	public String getName() {
 		if (name == null) {
 			parseFunction();
 		}
@@ -57,7 +57,7 @@ public class ResolverFunction {
 		this.name = name;
 	}
 
-	public List<String> getArguments() throws Exception {
+	public List<String> getArguments() {
 		if (arguments == null) {
 			parseFunction();
 		}
@@ -68,7 +68,7 @@ public class ResolverFunction {
 		this.arguments = arguments;
 	}
 
-	public String getBody() throws Exception {
+	public String getBody() {
 		if (body == null) {
 			parseFunction();
 		}
@@ -83,7 +83,7 @@ public class ResolverFunction {
 		return scriptFunction;
 	}
 
-	public void setScriptFunction(String scriptFunction) throws Exception {
+	public void setScriptFunction(String scriptFunction) {
 		this.scriptFunction = scriptFunction;
 		parseFunction();
 	}
@@ -92,7 +92,7 @@ public class ResolverFunction {
 		if (scriptFunction == null || scriptFunction.length() == 0) {
 			return null;
 		}
-		
+
 		// invoke the function
 		engine.eval(scriptFunction);
 		return ((Invocable) engine).invokeFunction(getName(), args);
@@ -102,7 +102,7 @@ public class ResolverFunction {
 		return "function " + ResolverFunction.generateFunctionName() + "(context, value, resolver) {" + script + "}";
 	}
 
-	public String getDisplayString() throws Exception {
+	public String getDisplayString() {
 		String displayString = "";
 
 		if (getBody() != null) {

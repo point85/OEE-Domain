@@ -24,6 +24,8 @@ SOFTWARE.
 
 package org.point85.domain.schedule;
 
+import java.util.Objects;
+
 import javax.persistence.AttributeOverride;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -96,8 +98,7 @@ public class RotationSegment extends KeyedObject implements Comparable<RotationS
 	/**
 	 * Set the starting shift
 	 * 
-	 * @param startingShift
-	 *            {@link Shift}
+	 * @param startingShift {@link Shift}
 	 */
 	public void setStartingShift(Shift startingShift) {
 		this.startingShift = startingShift;
@@ -115,8 +116,7 @@ public class RotationSegment extends KeyedObject implements Comparable<RotationS
 	/**
 	 * Set the number of days on shift
 	 * 
-	 * @param daysOn
-	 *            Day count
+	 * @param daysOn Day count
 	 */
 	public void setDaysOn(int daysOn) {
 		this.daysOn = daysOn;
@@ -134,8 +134,7 @@ public class RotationSegment extends KeyedObject implements Comparable<RotationS
 	/**
 	 * Set the number of days off shift
 	 * 
-	 * @param daysOff
-	 *            Day count
+	 * @param daysOff Day count
 	 */
 	public void setDaysOff(int daysOff) {
 		this.daysOff = daysOff;
@@ -162,8 +161,7 @@ public class RotationSegment extends KeyedObject implements Comparable<RotationS
 	/**
 	 * Get the sequence in the rotation
 	 * 
-	 * @param sequence
-	 *            Sequence
+	 * @param sequence Sequence
 	 */
 	public void setSequence(int sequence) {
 		this.sequence = sequence;
@@ -172,8 +170,7 @@ public class RotationSegment extends KeyedObject implements Comparable<RotationS
 	/**
 	 * Compare this rotation segment to another one.
 	 * 
-	 * @param other
-	 *            rotation segment
+	 * @param other rotation segment
 	 * @return -1 if less than, 0 if equal and 1 if greater than
 	 */
 	@Override
@@ -185,5 +182,35 @@ public class RotationSegment extends KeyedObject implements Comparable<RotationS
 			value = 1;
 		}
 		return value;
+	}
+
+	/**
+	 * Compare this rotation segment to another rotation segment
+	 * 
+	 * @return true if equal
+	 */
+	@Override
+	public boolean equals(Object other) {
+
+		if (!(other instanceof RotationSegment)) {
+			return false;
+		}
+
+		boolean rotationMatch = getRotation().getName().equals(((RotationSegment) other).getRotation().getName());
+		boolean shiftMatch = getStartingShift().getName()
+				.equals(((RotationSegment) other).getStartingShift().getName());
+		boolean sequenceMatch = (getSequence() == ((RotationSegment) other).getSequence());
+
+		return rotationMatch && shiftMatch && sequenceMatch;
+	}
+
+	/**
+	 * Get the hash code
+	 * 
+	 * @return hash code
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(getRotation(), getStartingShift(), getSequence());
 	}
 }

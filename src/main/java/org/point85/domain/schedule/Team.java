@@ -29,6 +29,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Objects;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.CascadeType;
@@ -73,7 +74,7 @@ public class Team extends Named implements Comparable<Team> {
 		super();
 	}
 
-	Team(String name, String description, Rotation rotation, LocalDate rotationStart) throws Exception {
+	Team(String name, String description, Rotation rotation, LocalDate rotationStart) {
 		super(name, description);
 		this.rotation = rotation;
 		this.rotationStart = rotationStart;
@@ -147,6 +148,10 @@ public class Team extends Named implements Comparable<Team> {
 	 * @return Duration of hours worked per week
 	 */
 	public Duration getHoursWorkedPerWeek() {
+		if (getRotation() == null) {
+			return Duration.ZERO;
+		}
+
 		float days = (float) getRotation().getDuration().toDays();
 		float secPerWeek = (float) getRotation().getWorkingTime().getSeconds() * (7.0f / days);
 		return Duration.ofSeconds((long) secPerWeek);
@@ -263,7 +268,7 @@ public class Team extends Named implements Comparable<Team> {
 		while (thisDate.compareTo(toDate) < 1) {
 			if (lastShift != null && lastShift.spansMidnight()) {
 				// check for days in the middle of the time period
-				boolean lastDay = thisDate.compareTo(toDate) == 0 ? true : false;
+				boolean lastDay = thisDate.compareTo(toDate) == 0;
 
 				if (!lastDay || (lastDay && !toTime.equals(LocalTime.MIDNIGHT))) {
 					// add time after midnight in this day
@@ -271,7 +276,7 @@ public class Team extends Named implements Comparable<Team> {
 					int fromSecond = thisTime.toSecondOfDay();
 
 					if (afterMidnightSecond > fromSecond) {
-						sum = sum.plusSeconds(afterMidnightSecond - fromSecond);
+						sum = sum.plusSeconds((long) afterMidnightSecond - (long) fromSecond);
 					}
 				}
 			}
@@ -334,6 +339,19 @@ public class Team extends Named implements Comparable<Team> {
 		return this.getName().compareTo(other.getName());
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof Team) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getWorkSchedule());
+	}
+
 	/**
 	 * Build a string value for this team
 	 */
@@ -349,6 +367,7 @@ public class Team extends Named implements Comparable<Team> {
 					+ ", Average hours worked per week: " + getHoursWorkedPerWeek();
 
 		} catch (Exception e) {
+			// ignore
 		}
 
 		return text;

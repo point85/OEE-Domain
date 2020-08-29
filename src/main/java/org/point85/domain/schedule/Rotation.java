@@ -29,6 +29,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.CascadeType;
@@ -38,6 +39,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.point85.domain.i18n.DomainLocalizer;
 
@@ -68,7 +70,8 @@ public class Rotation extends Named implements Comparable<Rotation> {
 	private final List<RotationSegment> rotationSegments = new ArrayList<>();
 
 	// list of working and non-working days
-	private transient List<TimePeriod> periods;
+	@Transient
+	private List<TimePeriod> periods;
 
 	public Rotation() {
 		super();
@@ -206,6 +209,19 @@ public class Rotation extends Named implements Comparable<Rotation> {
 	@Override
 	public int compareTo(Rotation other) {
 		return getName().compareTo(other.getName());
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof Rotation) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getWorkSchedule());
 	}
 
 	/**

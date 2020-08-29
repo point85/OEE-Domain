@@ -7,12 +7,11 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.Version;
 
 /**
- * PersistentObject is the base class for all objects saved to the database
+ * NamedObject is the base class for all named objects
  * 
  * @author Kent Randall
  *
  */
-
 @MappedSuperclass
 public abstract class NamedObject extends KeyedObject implements Comparable<NamedObject> {
 	// optimistic locking version

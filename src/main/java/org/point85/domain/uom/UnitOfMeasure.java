@@ -42,6 +42,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.plant.NamedObject;
@@ -116,10 +117,12 @@ public class UnitOfMeasure extends NamedObject {
 	private static final char ONE_CHAR = '1';
 
 	// registry of unit conversion factor
-	private transient final Map<UnitOfMeasure, Double> conversionRegistry = new ConcurrentHashMap<UnitOfMeasure, Double>();
+	@Transient
+	private final Map<UnitOfMeasure, Double> conversionRegistry = new ConcurrentHashMap<>();
 
 	// cached base symbol
-	private transient String baseSymbol;
+	@Transient
+	private String baseSymbol;
 
 	// symbol or abbreviation, e.g. "Vc"
 	@Column(name = "SYMBOL")
@@ -225,7 +228,7 @@ public class UnitOfMeasure extends NamedObject {
 	 * @return True if it is a valid exponent
 	 */
 	public static boolean isValidExponent(Integer exponent) {
-		return (exponent == null) ? false : true;
+		return (exponent != null);
 	}
 
 	private void setPowerProduct(UnitOfMeasure uom1, Integer exponent1) {
@@ -295,9 +298,9 @@ public class UnitOfMeasure extends NamedObject {
 			}
 		}
 		newUOM.setPowerUnit(uom, exponent);
-		String symbol = UnitOfMeasure.generatePowerSymbol(uom, exponent);
-		newUOM.setSymbol(symbol);
-		newUOM.setName(symbol);
+		String powerSymbol = UnitOfMeasure.generatePowerSymbol(uom, exponent);
+		newUOM.setSymbol(powerSymbol);
+		newUOM.setName(powerSymbol);
 
 		return newUOM;
 	}
@@ -340,8 +343,8 @@ public class UnitOfMeasure extends NamedObject {
 	 * @throws Exception Exception
 	 */
 	public UnitOfMeasure getBaseUOM() throws Exception {
-		String baseSymbol = getBaseSymbol();
-		return MeasurementSystem.instance().getBaseUOM(baseSymbol);
+		String symbolBase = getBaseSymbol();
+		return MeasurementSystem.instance().getBaseUOM(symbolBase);
 	}
 
 	/**
@@ -479,6 +482,7 @@ public class UnitOfMeasure extends NamedObject {
 	 * 
 	 * @return hash code
 	 */
+	@Override
 	public int hashCode() {
 		return Objects.hash(MeasurementSystem.instance(), getEnumeration(), getSymbol());
 	}
@@ -521,7 +525,6 @@ public class UnitOfMeasure extends NamedObject {
 		if (Double.valueOf(getOffset()).compareTo(Double.valueOf(otherUnit.getOffset())) != 0) {
 			return false;
 		}
-
 		return true;
 	}
 
@@ -548,7 +551,7 @@ public class UnitOfMeasure extends NamedObject {
 		Map<UnitOfMeasure, Integer> otherMap = otherReducer.getTerms();
 
 		// create a map of the unit of measure powers
-		Map<UnitOfMeasure, Integer> resultMap = new HashMap<UnitOfMeasure, Integer>();
+		Map<UnitOfMeasure, Integer> resultMap = new HashMap<>();
 
 		// iterate over the multiplier's unit map
 		for (Entry<UnitOfMeasure, Integer> thisEntry : thisMap.entrySet()) {
@@ -612,8 +615,8 @@ public class UnitOfMeasure extends NamedObject {
 			result.setSymbol(generateIntermediateSymbol());
 		}
 
-		String baseSymbol = resultReducer.buildBaseString();
-		UnitOfMeasure baseUOM = MeasurementSystem.instance().getBaseUOM(baseSymbol);
+		String symbolBase = resultReducer.buildBaseString();
+		UnitOfMeasure baseUOM = MeasurementSystem.instance().getBaseUOM(symbolBase);
 
 		if (baseUOM != null) {
 			// there is a conversion to the base UOM
@@ -805,23 +808,23 @@ public class UnitOfMeasure extends NamedObject {
 		this.abscissaUnit = abscissaUnit;
 	}
 
-	private double convertScalarToScalar(UnitOfMeasure targetUOM) throws Exception {
+	private double convertScalarToScalar(UnitOfMeasure targetUOM) {
 		UnitOfMeasure thisAbscissa = getAbscissaUnit();
 		double thisFactor = getScalingFactor();
 
-		double scalingFactor = 0.0d;
+		double uomScalingFactor;
 
 		if (thisAbscissa.equals(targetUOM)) {
 			// direct conversion
-			scalingFactor = thisFactor;
+			uomScalingFactor = thisFactor;
 		} else {
 			// indirect conversion
-			scalingFactor = convertUnit(targetUOM);
+			uomScalingFactor = convertUnit(targetUOM);
 		}
-		return scalingFactor;
+		return uomScalingFactor;
 	}
 
-	private double convertUnit(UnitOfMeasure targetUOM) throws Exception {
+	private double convertUnit(UnitOfMeasure targetUOM) {
 
 		// get path factors in each system
 		PathParameters thisParameters = traversePath();
@@ -929,15 +932,15 @@ public class UnitOfMeasure extends NamedObject {
 
 	}
 
-	private final PathParameters traversePath() throws Exception {
+	private final PathParameters traversePath() {
 		UnitOfMeasure pathUOM = this;
 		double pathFactor = 1.0d;
 
 		while (true) {
-			double scalingFactor = pathUOM.getScalingFactor();
+			double uomScalingFactor = pathUOM.getScalingFactor();
 			UnitOfMeasure abscissa = pathUOM.getAbscissaUnit();
 
-			pathFactor = pathFactor * scalingFactor;
+			pathFactor = pathFactor * uomScalingFactor;
 
 			if (pathUOM.equals(abscissa)) {
 				break;
@@ -957,7 +960,7 @@ public class UnitOfMeasure extends NamedObject {
 	 * @return True if it does not
 	 */
 	public boolean isTerminal() {
-		return this.equals(getAbscissaUnit()) ? true : false;
+		return this.equals(getAbscissaUnit());
 	}
 
 	/**
@@ -965,6 +968,7 @@ public class UnitOfMeasure extends NamedObject {
 	 * 
 	 * @return String representation
 	 */
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 
@@ -981,14 +985,14 @@ public class UnitOfMeasure extends NamedObject {
 		}
 
 		// symbol
-		String symbol = getSymbol();
-		sb.append(DomainLocalizer.instance().getUnitString("symbol")).append(' ').append(symbol);
+		String uomSymbol = getSymbol();
+		sb.append(DomainLocalizer.instance().getUnitString("symbol")).append(' ').append(uomSymbol);
 		sb.append(", ").append(DomainLocalizer.instance().getUnitString("conversion")).append(' ');
 
 		// scaling factor
 		double factor = getScalingFactor();
 		if (Double.valueOf(factor).compareTo(1.0d) != 0) {
-			sb.append(Double.valueOf(factor).toString()).append(MULT);
+			sb.append(Double.toString(factor)).append(MULT);
 		}
 
 		// abscissa unit
@@ -998,9 +1002,9 @@ public class UnitOfMeasure extends NamedObject {
 		}
 
 		// offset
-		double offset = getOffset();
-		if (Double.valueOf(offset).compareTo(0.0d) != 0) {
-			sb.append(" + ").append(Double.valueOf(getOffset()).toString());
+		double uomOffset = getOffset();
+		if (Double.valueOf(uomOffset).compareTo(0.0d) != 0) {
+			sb.append(" + ").append(Double.toString(getOffset()));
 		}
 
 		sb.append(", ").append(DomainLocalizer.instance().getUnitString("base")).append(' ');
@@ -1168,6 +1172,82 @@ public class UnitOfMeasure extends NamedObject {
 		return sb.toString();
 	}
 
+	/**
+	 * Create a power unit of measure from this unit of measure
+	 * 
+	 * @param exponent Power
+	 * @return {@link UnitOfMeasure}
+	 * @throws Exception Exception
+	 */
+	public UnitOfMeasure power(int exponent) throws Exception {
+		return MeasurementSystem.instance().createPowerUOM(this, exponent);
+	}
+
+	public UnitOfMeasure classify() throws Exception {
+		if (!getUnitType().equals(UnitType.UNCLASSIFIED)) {
+			// already classified
+			return this;
+		}
+
+		// base unit map
+		Map<UnitOfMeasure, Integer> uomBaseMap = getReducer().getTerms();
+
+		// try to find this map in the unit types
+		UnitType matchedType = UnitType.UNCLASSIFIED;
+
+		for (UnitType theType : UnitType.values()) {
+			Map<UnitType, Integer> unitTypeMap = MeasurementSystem.instance().getTypeMap(theType);
+
+			if (unitTypeMap.size() != uomBaseMap.size()) {
+				// not a match, keep looking
+				continue;
+			}
+
+			Boolean match = true;
+
+			// same size, now check base unit types and exponents
+			for (Entry<UnitOfMeasure, Integer> kvp : uomBaseMap.entrySet()) {
+				UnitType uomBaseType = kvp.getKey().getUnitType();
+				Integer uomBaseExponent = kvp.getValue();
+
+				Integer unitExponent = unitTypeMap.get(uomBaseType);
+				if (unitExponent != null) {
+					// value is in map, check exponents
+					if (!unitExponent.equals(uomBaseExponent)) {
+						// not a match
+						match = false;
+						break;
+					}
+				} else {
+					// value not in map
+					match = false;
+					break;
+				}
+			}
+
+			if (match) {
+				matchedType = theType;
+				break;
+			}
+		}
+
+		if (!matchedType.equals(UnitType.UNCLASSIFIED)) {
+			setUnitType(matchedType);
+		}
+
+		return this;
+	}
+
+	/**
+	 * Get the most reduced units of measure
+	 * 
+	 * @return Map of {@link UnitOfMeasure} and exponent
+	 * @throws Exception Exception
+	 */
+	public Map<UnitOfMeasure, Integer> getBaseUnitsOfMeasure() throws Exception {
+		return getReducer().getTerms();
+	}
+
 	// UOM, scaling factor and power cumulative along a conversion path
 	private class PathParameters {
 		private final UnitOfMeasure pathUOM;
@@ -1189,13 +1269,14 @@ public class UnitOfMeasure extends NamedObject {
 
 	// reduce a unit of measure to its most basic scalar units of measure.
 	private class Reducer {
+		// maximum number of explosions
 		private static final int MAX_RECURSIONS = 100;
 
 		// starting level
 		private static final int STARTING_LEVEL = -1;
 
 		// UOMs and their exponents
-		private Map<UnitOfMeasure, Integer> terms = new HashMap<UnitOfMeasure, Integer>();
+		private Map<UnitOfMeasure, Integer> terms = new HashMap<>();
 
 		// the overall scaling factor
 		private double mapScalingFactor = 1.0d;
@@ -1231,7 +1312,7 @@ public class UnitOfMeasure extends NamedObject {
 			explodeRecursively(unit, STARTING_LEVEL);
 		}
 
-		private void explodeRecursively(UnitOfMeasure unit, int level) throws Exception {
+		private void explodeRecursively(final UnitOfMeasure unit, int level) throws Exception {
 			if (++counter > MAX_RECURSIONS) {
 				throw new Exception(DomainLocalizer.instance().getErrorString("circular.references", unit.getSymbol()));
 			}
@@ -1240,16 +1321,16 @@ public class UnitOfMeasure extends NamedObject {
 			level++;
 
 			// scaling factor to abscissa unit
-			double scalingFactor = unit.getScalingFactor();
+			double uomScalingFactor = unit.getScalingFactor();
 
 			// explode the abscissa unit
-			UnitOfMeasure abscissaUnit = unit.getAbscissaUnit();
+			UnitOfMeasure xUnit = unit.getAbscissaUnit();
 
-			UnitOfMeasure uom1 = abscissaUnit.getUOM1();
-			UnitOfMeasure uom2 = abscissaUnit.getUOM2();
+			UnitOfMeasure xUOM1 = xUnit.getUOM1();
+			UnitOfMeasure xUOM2 = xUnit.getUOM2();
 
-			Integer exp1 = abscissaUnit.getExponent1();
-			Integer exp2 = abscissaUnit.getExponent2();
+			Integer exp1 = xUnit.getExponent1();
+			Integer exp2 = xUnit.getExponent2();
 
 			// scaling
 			if (!pathExponents.isEmpty()) {
@@ -1258,7 +1339,7 @@ public class UnitOfMeasure extends NamedObject {
 				// compute the overall scaling factor
 				double factor = 1.0d;
 				for (int i = 0; i < Math.abs(lastExponent); i++) {
-					factor = factor * scalingFactor;
+					factor = factor * uomScalingFactor;
 				}
 
 				if (lastExponent < 0) {
@@ -1267,15 +1348,15 @@ public class UnitOfMeasure extends NamedObject {
 					mapScalingFactor = mapScalingFactor * factor;
 				}
 			} else {
-				mapScalingFactor = scalingFactor;
+				mapScalingFactor = uomScalingFactor;
 			}
 
-			if (uom1 == null) {
-				if (!abscissaUnit.isTerminal()) {
+			if (xUOM1 == null) {
+				if (!xUnit.isTerminal()) {
 					// keep exploding down the conversion path
 					double currentMapFactor = mapScalingFactor;
 					mapScalingFactor = 1.0d;
-					explodeRecursively(abscissaUnit, STARTING_LEVEL);
+					explodeRecursively(xUnit, STARTING_LEVEL);
 					mapScalingFactor = mapScalingFactor * currentMapFactor;
 				} else {
 
@@ -1286,28 +1367,25 @@ public class UnitOfMeasure extends NamedObject {
 						pathExponent = pathExponent * exp;
 					}
 
-					boolean invert = pathExponent < 0 ? true : false;
+					boolean invert = pathExponent < 0;
 
 					for (int i = 0; i < Math.abs(pathExponent); i++) {
-						addTerm(abscissaUnit, invert);
+						addTerm(xUnit, invert);
 					}
 				}
 			} else {
 				// explode UOM #1
 				pathExponents.add(exp1);
-				explodeRecursively(uom1, level);
+				explodeRecursively(xUOM1, level);
 				pathExponents.remove(level);
 			}
 
-			if (uom2 != null) {
+			if (xUOM2 != null) {
 				// explode UOM #2
 				pathExponents.add(exp2);
-				explodeRecursively(uom2, level);
+				explodeRecursively(xUOM2, level);
 				pathExponents.remove(level);
 			}
-
-			// up a level
-			level--;
 		}
 
 		// add a UOM and exponent pair to the map of reduced terms
@@ -1357,10 +1435,10 @@ public class UnitOfMeasure extends NamedObject {
 			int denominatorCount = 0;
 
 			// sort units by symbol (ascending)
-			SortedSet<UnitOfMeasure> keys = new TreeSet<UnitOfMeasure>(terms.keySet());
+			SortedSet<UnitOfMeasure> keys = new TreeSet<>(terms.keySet());
 
-			for (UnitOfMeasure unit : keys) {
-				int power = terms.get(unit);
+			for (UnitOfMeasure keyUnit : keys) {
+				int power = terms.get(keyUnit);
 
 				if (power < 0) {
 					// negative, put in denominator
@@ -1368,8 +1446,8 @@ public class UnitOfMeasure extends NamedObject {
 						denominator.append(MULT);
 					}
 
-					if (!unit.equals(MeasurementSystem.instance().getOne())) {
-						denominator.append(unit.getSymbol());
+					if (!keyUnit.equals(MeasurementSystem.instance().getOne())) {
+						denominator.append(keyUnit.getSymbol());
 						denominatorCount++;
 					}
 
@@ -1382,13 +1460,13 @@ public class UnitOfMeasure extends NamedObject {
 							denominator.append(POW).append(Math.abs(power));
 						}
 					}
-				} else if (power >= 1 && !unit.equals(MeasurementSystem.instance().getOne())) {
+				} else if (power >= 1 && !keyUnit.equals(MeasurementSystem.instance().getOne())) {
 					// positive, put in numerator
 					if (numerator.length() > 0) {
 						numerator.append(MULT);
 					}
 
-					numerator.append(unit.getSymbol());
+					numerator.append(keyUnit.getSymbol());
 					numeratorCount++;
 
 					if (power > 1) {

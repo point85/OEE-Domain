@@ -2,6 +2,7 @@ package org.point85.domain.opc.da;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.openscada.opc.dcom.da.impl.OPCItemProperties;
@@ -104,10 +105,9 @@ public class OpcDaTreeBrowser {
 		String[] tokens = OpcDaBrowserLeaf.getPath(pathName);
 		int len = tokens.length - 1;
 		List<String> accessPath = new ArrayList<>(len);
+		
+		Collections.addAll(accessPath, tokens);
 
-		for (int i = 0; i < len; i++) {
-			accessPath.add(tokens[i]);
-		}
 		return findTag(accessPath, tokens[len]);
 	}
 

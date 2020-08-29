@@ -88,8 +88,8 @@ public class OeeHttpServer {
 		return servlet.getDataChangeListener();
 	}
 
-	public void setDataChangeListener(HttpEventListener dataChangeListener) {
-		servlet.setDataChangeListener(dataChangeListener);
+	public static void setDataChangeListener(HttpEventListener dataChangeListener) {
+		OeeHttpServlet.setDataChangeListener(dataChangeListener);
 	}
 
 	public boolean isAcceptingEventRequests() {
@@ -97,7 +97,7 @@ public class OeeHttpServer {
 	}
 
 	public void setAcceptingEventRequests(boolean acceptingEventRequests) {
-		servlet.setAcceptingEventRequests(acceptingEventRequests);
+		OeeHttpServlet.setAcceptingEventRequests(acceptingEventRequests);
 	}
 
 	/**
@@ -113,10 +113,14 @@ public class OeeHttpServer {
 		// create Jetty server
 		QueuedThreadPool threadPool = new QueuedThreadPool(MAX_THREADS, MIN_THREADS, IDLE_TIMEOUT);
 
+		// server
 		jettyServer = new Server(threadPool);
-		ServerConnector connector = new ServerConnector(jettyServer);
-		connector.setPort(listeningPort);
-		jettyServer.setConnectors(new Connector[] { connector });
+
+		// connector
+		try (ServerConnector connector = new ServerConnector(jettyServer)) {
+			connector.setPort(listeningPort);
+			jettyServer.setConnectors(new Connector[] { connector });
+		}
 
 		// create servlet
 		ServletHolder servletHolder = new ServletHolder(servlet);
@@ -130,7 +134,9 @@ public class OeeHttpServer {
 
 		String baseUrl = "http://" + InetAddress.getLocalHost().getHostName() + ":" + listeningPort + ROOT_MAPPING;
 
-		logger.info("OPC HTTP server started at URL " + baseUrl);
+		if (logger.isInfoEnabled()) {
+			logger.info("OPC HTTP server started at URL " + baseUrl);
+		}
 	}
 
 	/**

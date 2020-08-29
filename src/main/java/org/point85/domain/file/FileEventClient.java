@@ -90,7 +90,7 @@ public class FileEventClient extends PollingClient {
 		return getFileEventSource().getId().equals(otherClient.getFileEventSource().getId());
 	}
 
-	public void moveFile(File file, FileEventSource source, String sourceId, String folder) throws IOException {
+	public void moveFileToReadyFolder(File file, FileEventSource source, String sourceId) throws IOException {
 		String toPath = source.getHost() + File.separator + sourceId + File.separator + FileEventClient.READY_FOLDER
 				+ File.separator + file.getName();
 

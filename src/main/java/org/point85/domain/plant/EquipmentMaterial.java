@@ -128,11 +128,8 @@ public class EquipmentMaterial extends KeyedObject {
 			return true;
 		}
 
-		if (getEquipment().equals(otherEquipmentMaterial.getEquipment())
-				&& getMaterial().equals(otherEquipmentMaterial.getMaterial())) {
-			return true;
-		}
-		return false;
+		return getEquipment().equals(otherEquipmentMaterial.getEquipment())
+				&& getMaterial().equals(otherEquipmentMaterial.getMaterial());
 	}
 
 	public Boolean isDefault() {

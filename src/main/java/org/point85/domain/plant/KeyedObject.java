@@ -5,6 +5,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 
+/**
+ * KeyedObject is the base class for all persistent objects
+ * 
+ * @author Kent Randall
+ *
+ */
 @MappedSuperclass
 public abstract class KeyedObject {
 	@Id
@@ -27,8 +33,7 @@ public abstract class KeyedObject {
 	/**
 	 * Set the database record's primary key
 	 * 
-	 * @param key
-	 *            Key
+	 * @param key Key
 	 */
 	public void setKey(Long key) {
 		this.primaryKey = key;

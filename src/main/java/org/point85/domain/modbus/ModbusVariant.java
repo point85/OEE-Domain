@@ -63,24 +63,24 @@ public class ModbusVariant {
 
 		switch (dataType) {
 		case DOUBLE:
-			value = numberValue.doubleValue() > 0.0d ? true : false;
+			value = numberValue.doubleValue() > 0.0d;
 			break;
 
 		case INT16:
-			value = numberValue.shortValue() > 0 ? true : false;
+			value = numberValue.shortValue() > 0;
 			break;
 
 		case UINT16:
 		case INT32:
-			value = numberValue.intValue() > 0 ? true : false;
+			value = numberValue.intValue() > 0;
 			break;
 
 		case UINT32:
 		case INT64:
-			value = numberValue.longValue() > 0 ? true : false;
+			value = numberValue.longValue() > 0;
 			break;
 		case SINGLE:
-			value = numberValue.floatValue() > 0.0f ? true : false;
+			value = numberValue.floatValue() > 0.0f;
 			break;
 
 		case BYTE_HIGH:
@@ -130,10 +130,7 @@ public class ModbusVariant {
 			return true;
 		}
 
-		if (stringValue != null && variant.stringValue != null && stringValue.equals(variant.stringValue)) {
-			return true;
-		}
-		return false;
+		return (stringValue != null && variant.stringValue != null && stringValue.equals(variant.stringValue));
 	}
 
 	@Override

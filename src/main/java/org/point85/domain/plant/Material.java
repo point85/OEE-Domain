@@ -1,5 +1,7 @@
 package org.point85.domain.plant;
 
+import java.util.Objects;
+
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -36,11 +38,23 @@ public class Material extends NamedObject {
 	/**
 	 * Set the category
 	 * 
-	 * @param category
-	 *            Category
+	 * @param category Category
 	 */
 	public void setCategory(String category) {
 		this.category = category;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof Material) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getCategory());
 	}
 
 	@Override
@@ -48,6 +62,7 @@ public class Material extends NamedObject {
 		return super.toString() + ", Category: " + getCategory();
 	}
 
+	@Override
 	public String getDisplayString() {
 		String text = getName();
 

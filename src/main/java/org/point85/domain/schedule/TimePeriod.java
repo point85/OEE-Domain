@@ -26,6 +26,7 @@ package org.point85.domain.schedule;
 
 import java.time.Duration;
 import java.time.LocalTime;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
@@ -55,7 +56,7 @@ abstract class TimePeriod extends Named {
 		super();
 	}
 
-	protected TimePeriod(String name, String description, LocalTime startTime, Duration duration) throws Exception {
+	protected TimePeriod(String name, String description, LocalTime startTime, Duration duration) {
 		super(name, description);
 		this.startTime = startTime;
 		this.duration = duration;
@@ -122,6 +123,19 @@ abstract class TimePeriod extends Named {
 	// breaks are considered to be in the shift's working period
 	abstract boolean isWorkingPeriod();
 
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof TimePeriod) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getStart(), getDuration());
+	}
+
 	/**
 	 * Build a string value for this period
 	 */
@@ -132,6 +146,7 @@ abstract class TimePeriod extends Named {
 		try {
 			text = super.toString() + ", Start: " + getStart() + " (" + getDuration() + ")" + ", End: " + getEnd();
 		} catch (Exception e) {
+			// ignore
 		}
 
 		return text;

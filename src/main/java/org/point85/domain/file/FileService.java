@@ -85,9 +85,7 @@ public class FileService {
 
 		if (existing.exists()) {
 			// delete it
-			if (!deleteFile(existing)) {
-				throw new IOException("Cannot delete file " + canonicalPath);
-			}
+			deleteFile(existing);
 		}
 
 		BufferedWriter writer = null;
@@ -95,8 +93,6 @@ public class FileService {
 		try {
 			writer = new BufferedWriter(new FileWriter(canonicalPath));
 			writer.write(content);
-		} catch (IOException e) {
-			throw e;
 		} finally {
 			if (writer != null) {
 				writer.close();
@@ -104,8 +100,8 @@ public class FileService {
 		}
 	}
 
-	public boolean deleteFile(File file) {
-		return file.delete();
+	public void deleteFile(File file) throws IOException {
+		Files.delete(file.toPath());
 	}
 
 	public boolean createDirectory(String directory) {

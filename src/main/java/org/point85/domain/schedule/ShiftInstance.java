@@ -25,6 +25,7 @@ SOFTWARE.
 package org.point85.domain.schedule;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Class ShiftInstance is an instance of a {@link Shift}. A shift instance is
@@ -102,11 +103,37 @@ public class ShiftInstance implements Comparable<ShiftInstance> {
 	 * @return True if the specified time is in this shift instance
 	 */
 	public boolean isInShiftInstance(LocalDateTime dateTime) {
-		if (dateTime.compareTo(startDateTime) >= 0 && dateTime.compareTo(getEndTime()) <= 0) {
-			return true;
-		} else {
+		return (dateTime.compareTo(startDateTime) >= 0 && dateTime.compareTo(getEndTime()) <= 0);
+	}
+
+	/**
+	 * Compare this shift instance to another shift instance
+	 * 
+	 * @return true if equal
+	 */
+	@Override
+	public boolean equals(Object other) {
+
+		if (!(other instanceof ShiftInstance)) {
 			return false;
 		}
+
+		boolean teamMatch = getTeam().getName().equals(((ShiftInstance) other).getTeam().getName());
+		boolean shiftMatch = getShift().getName().equals(((ShiftInstance) other).getShift().getName());
+		boolean startMatch = (getStartTime() == ((ShiftInstance) other).getStartTime());
+
+		return teamMatch && shiftMatch && startMatch;
+
+	}
+
+	/**
+	 * Get the hash code
+	 * 
+	 * @return hash code
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(getShift(), getTeam(), getStartTime());
 	}
 
 	/**

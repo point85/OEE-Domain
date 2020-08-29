@@ -56,10 +56,6 @@ public class JmsClient extends BaseMessagingClient {
 	// listener to call back when a message is received
 	private JmsMessageListener eventListener;
 
-	public JmsClient() {
-
-	}
-
 	public void registerListener(JmsMessageListener listener) {
 		this.eventListener = listener;
 	}
@@ -68,8 +64,8 @@ public class JmsClient extends BaseMessagingClient {
 		this.eventListener = null;
 	}
 
-	public void startUp(String brokerHostName, int port, String userName, String password,
-			JmsMessageListener listener) throws Exception {
+	public void startUp(String brokerHostName, int port, String userName, String password, JmsMessageListener listener)
+			throws Exception {
 		// connect to broker
 		connect(brokerHostName, port, userName, password);
 
@@ -97,6 +93,9 @@ public class JmsClient extends BaseMessagingClient {
 
 		// non-transacted, auto-ack session
 		session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+		
+		setHostName(brokerHostName);
+		setHostPort(port);
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Connected to broker " + connectionFactory.getBrokerURL());
@@ -183,7 +182,6 @@ public class JmsClient extends BaseMessagingClient {
 
 				} catch (JMSException e) {
 					logger.error(e.getMessage());
-					return;
 				}
 			}
 		};
@@ -253,7 +251,6 @@ public class JmsClient extends BaseMessagingClient {
 
 				} catch (JMSException e) {
 					logger.error(e.getMessage());
-					return;
 				}
 			}
 		};
@@ -352,6 +349,10 @@ public class JmsClient extends BaseMessagingClient {
 		JmsClient otherClient = (JmsClient) other;
 
 		return connectionFactory.getBrokerURL().equals(otherClient.connectionFactory.getBrokerURL());
+	}
+
+	public String getBrokerURL() {
+		return connectionFactory != null ? connectionFactory.getBrokerURL() : null;
 	}
 
 	@Override

@@ -42,10 +42,10 @@ class OeeHttpServlet extends HttpServlet {
 	private final Gson gson = new Gson();
 
 	// flag for accepting event requests
-	private boolean acceptingEventRequests = true;
+	private static boolean acceptingEventRequests = true;
 
 	// event listener
-	private HttpEventListener eventListener;
+	private static HttpEventListener eventListener;
 
 	OeeHttpServlet() {
 	}
@@ -54,16 +54,16 @@ class OeeHttpServlet extends HttpServlet {
 		return eventListener;
 	}
 
-	void setDataChangeListener(HttpEventListener dataChangeListener) {
-		this.eventListener = dataChangeListener;
+	static void setDataChangeListener(HttpEventListener dataChangeListener) {
+		eventListener = dataChangeListener;
 	}
 
 	boolean isAcceptingEventRequests() {
 		return acceptingEventRequests;
 	}
 
-	void setAcceptingEventRequests(boolean acceptingEventRequests) {
-		this.acceptingEventRequests = acceptingEventRequests;
+	static void setAcceptingEventRequests(boolean flag) {
+		acceptingEventRequests = flag;
 	}
 
 	@Override
@@ -383,7 +383,7 @@ class OeeHttpServlet extends HttpServlet {
 	}
 
 	// handle equipment event
-	private String serveEquipmentEvent(String body) throws Exception {
+	private synchronized String serveEquipmentEvent(String body) throws Exception {
 		EquipmentEventRequestDto requestDto = gson.fromJson(body, EquipmentEventRequestDto.class);
 		String errorText = null;
 

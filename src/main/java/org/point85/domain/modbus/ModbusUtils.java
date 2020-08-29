@@ -9,6 +9,10 @@ import com.ghgande.j2mod.modbus.util.BitVector;
  *
  */
 public class ModbusUtils {
+	private ModbusUtils() {
+		throw new IllegalStateException("Utility class");
+	}
+
 	/**
 	 * Convert the 4 two-byte words to a Long signed integer
 	 * 
@@ -42,7 +46,7 @@ public class ModbusUtils {
 			bytes[6] = word4[0];
 			bytes[7] = word4[1];
 		}
-		return new Long(ByteBuffer.wrap(bytes).getLong());
+		return Long.valueOf(ByteBuffer.wrap(bytes).getLong());
 	}
 
 	/**
@@ -68,7 +72,7 @@ public class ModbusUtils {
 			bytes[6] = word2[0];
 			bytes[7] = word2[1];
 		}
-		return new Long(ByteBuffer.wrap(bytes).getLong());
+		return Long.valueOf(ByteBuffer.wrap(bytes).getLong());
 	}
 
 	/**
@@ -94,7 +98,7 @@ public class ModbusUtils {
 			bytes[2] = word2[0];
 			bytes[3] = word2[1];
 		}
-		return new Integer(ByteBuffer.wrap(bytes).getInt());
+		return Integer.valueOf(ByteBuffer.wrap(bytes).getInt());
 	}
 
 	/**
@@ -115,7 +119,7 @@ public class ModbusUtils {
 			bytes[2] = word[0];
 			bytes[3] = word[1];
 		}
-		return new Integer(ByteBuffer.wrap(bytes).getInt());
+		return Integer.valueOf(ByteBuffer.wrap(bytes).getInt());
 	}
 
 	/**
@@ -137,7 +141,7 @@ public class ModbusUtils {
 		} else {
 			value = ByteBuffer.wrap(word).getShort();
 		}
-		return new Short(value);
+		return Short.valueOf(value);
 	}
 
 	/**
@@ -208,7 +212,7 @@ public class ModbusUtils {
 			bytes[2] = word2[0];
 			bytes[3] = word2[1];
 		}
-		return new Float(ByteBuffer.wrap(bytes).getFloat());
+		return Float.valueOf(ByteBuffer.wrap(bytes).getFloat());
 	}
 
 	/**
@@ -244,7 +248,7 @@ public class ModbusUtils {
 			bytes[6] = word4[0];
 			bytes[7] = word4[1];
 		}
-		return new Double(ByteBuffer.wrap(bytes).getDouble());
+		return Double.valueOf(ByteBuffer.wrap(bytes).getDouble());
 	}
 
 	/**

@@ -1,5 +1,7 @@
 package org.point85.domain.collector;
 
+import java.util.Objects;
+
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -71,11 +73,11 @@ public abstract class CollectorDataSource extends NamedObject {
 		this.userName = userName;
 	}
 
-	public String getUserPassword() throws Exception {
+	public String getUserPassword() {
 		return DomainUtils.decode(this.userPassword);
 	}
 
-	public void setPassword(String password) throws Exception {
+	public void setPassword(String password) {
 		this.userPassword = DomainUtils.encode(password);
 	}
 
@@ -101,6 +103,19 @@ public abstract class CollectorDataSource extends NamedObject {
 
 	public void setEndpointPath(String path) {
 		this.endpointPath = path;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof CollectorDataSource) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getHost());
 	}
 
 	@Override

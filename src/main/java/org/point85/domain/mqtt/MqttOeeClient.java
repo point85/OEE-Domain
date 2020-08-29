@@ -10,8 +10,6 @@ import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.messaging.ApplicationMessage;
 import org.point85.domain.messaging.BaseMessagingClient;
 import org.point85.domain.messaging.CollectorNotificationMessage;
-import org.point85.domain.messaging.CollectorResolvedEventMessage;
-import org.point85.domain.messaging.CollectorServerStatusMessage;
 import org.point85.domain.messaging.MessageType;
 import org.point85.domain.messaging.NotificationSeverity;
 import org.slf4j.Logger;
@@ -31,7 +29,7 @@ public class MqttOeeClient extends BaseMessagingClient {
 	private static final boolean CLEAN_SESSION = true;
 
 	// temporary directory for in flight messages
-	private static String TEMP_DIR = System.getProperty("java.io.tmpdir");
+	private static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
 
 	// protocol
 	private static final String TCP_PROTOCOL = "tcp://";
@@ -41,9 +39,6 @@ public class MqttOeeClient extends BaseMessagingClient {
 
 	// listener to call back when a message is received
 	private MqttMessageListener eventListener;
-
-	public MqttOeeClient() {
-	}
 
 	public void registerListener(MqttMessageListener listener) {
 		this.eventListener = listener;
@@ -101,6 +96,9 @@ public class MqttOeeClient extends BaseMessagingClient {
 
 		// connect to server
 		mqttClient.connect(options);
+		
+		setHostName(hostName);
+		setHostPort(port);
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Connected to MQTT server " + url + " with user " + userName);
@@ -149,13 +147,13 @@ public class MqttOeeClient extends BaseMessagingClient {
 
 			if (json.contains(MessageType.STATUS.name())) {
 				// status
-				appMessage = (CollectorServerStatusMessage) deserialize(MessageType.STATUS, json);
+				appMessage = deserialize(MessageType.STATUS, json);
 			} else if (json.contains(MessageType.NOTIFICATION.name())) {
 				// notification
-				appMessage = (CollectorNotificationMessage) deserialize(MessageType.NOTIFICATION, json);
+				appMessage = deserialize(MessageType.NOTIFICATION, json);
 			} else if (json.contains(MessageType.RESOLVED_EVENT.name())) {
 				// resolved event
-				appMessage = (CollectorResolvedEventMessage) deserialize(MessageType.RESOLVED_EVENT, json);
+				appMessage = deserialize(MessageType.RESOLVED_EVENT, json);
 			} else {
 				throw new Exception(DomainLocalizer.instance().getErrorString("bad.message") + "\n\t" + json);
 			}
@@ -238,8 +236,12 @@ public class MqttOeeClient extends BaseMessagingClient {
 		publish(EVENT_TOPIC, message, QualityOfService.EXACTLY_ONCE);
 	}
 
+	public String getServerURI() {
+		return mqttClient != null ? mqttClient.getServerURI() : "";
+	}
+
 	@Override
 	public String toString() {
-		return mqttClient.getServerURI();
+		return mqttClient != null ? mqttClient.getServerURI() : "";
 	}
 }

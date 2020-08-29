@@ -3,7 +3,6 @@ package org.point85.domain.persistence;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,9 +19,7 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.spi.PersistenceUnitInfo;
 
-import org.hibernate.integrator.spi.Integrator;
 import org.hibernate.jpa.HibernatePersistenceProvider;
-import org.hibernate.jpa.boot.spi.IntegratorProvider;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.CollectorState;
 import org.point85.domain.collector.DataCollector;
@@ -109,18 +106,18 @@ public final class PersistenceService {
 		namedQueryMap = new ConcurrentHashMap<>();
 	}
 
-	public synchronized static PersistenceService instance() {
+	public static synchronized PersistenceService instance() {
 		if (persistenceService == null) {
 			persistenceService = new PersistenceService();
 		}
 		return persistenceService;
 	}
 
-	public synchronized static PersistenceService create() {
+	public static synchronized PersistenceService create() {
 		return new PersistenceService();
 	}
 
-	private Logger getLogger() {
+	private static Logger getLogger() {
 		if (logger == null) {
 			logger = LoggerFactory.getLogger(PersistenceService.class);
 		}
@@ -951,7 +948,7 @@ public final class PersistenceService {
 
 		Query query = getEntityManager().createNamedQuery(UOM_CAT_SYMBOLS);
 		query.setParameter("category", category);
-		return (List<String[]>) query.getResultList();
+		return query.getResultList();
 	}
 
 	// fetch symbols and their names for this UOM type
@@ -967,7 +964,7 @@ public final class PersistenceService {
 		Query query = getEntityManager().createNamedQuery(UOM_SYMBOLS);
 		query.setParameter("type", unitType);
 
-		return (List<String[]>) query.getResultList();
+		return query.getResultList();
 	}
 
 	// fetch all defined categories
@@ -1325,18 +1322,12 @@ public final class PersistenceService {
 
 		// add any mapping files
 		String[] fileNames = getMappingFileNames();
-		if (fileNames != null) {
+		if (fileNames.length > 0) {
 			persistenceUnitInfo.getMappingFileNames().addAll(Arrays.asList(fileNames));
 		}
 
 		// PU configuration map
 		Map<String, Object> configuration = new HashMap<>();
-
-		Integrator integrator = getIntegrator();
-		if (integrator != null) {
-			configuration.put("hibernate.integrator_provider",
-					(IntegratorProvider) () -> Collections.singletonList(integrator));
-		}
 
 		// create the EntityManagerFactory
 		emf = new HibernatePersistenceProvider().createContainerEntityManagerFactory(persistenceUnitInfo,
@@ -1350,18 +1341,12 @@ public final class PersistenceService {
 
 		// add any mapping files
 		String[] fileNames = getMappingFileNames();
-		if (fileNames != null) {
+		if (fileNames.length > 0) {
 			persistenceUnitInfo.getMappingFileNames().addAll(Arrays.asList(fileNames));
 		}
 
 		// PU configuration map
 		Map<String, Object> configuration = new HashMap<>();
-
-		Integrator integrator = getIntegrator();
-		if (integrator != null) {
-			configuration.put("hibernate.integrator_provider",
-					(IntegratorProvider) () -> Collections.singletonList(integrator));
-		}
 
 		// create the EntityManagerFactory
 		emf = new HibernatePersistenceProvider().createContainerEntityManagerFactory(persistenceUnitInfo,
@@ -1369,12 +1354,12 @@ public final class PersistenceService {
 	}
 
 	public boolean isConnected() {
-		return emf != null ? true : false;
+		return emf != null;
 	}
 
 	private String[] getMappingFileNames() {
 		// placeholder for mapping files
-		return null;
+		return new String[0];
 	}
 
 	private Class<?>[] getEntityClasses() {
@@ -1457,10 +1442,6 @@ public final class PersistenceService {
 				"org.hibernate.hikaricp.internal.HikariCPConnectionProvider");
 
 		return properties;
-	}
-
-	private Integrator getIntegrator() {
-		return null;
 	}
 
 	public List<OeeEvent> fetchAvailability(Equipment equipment, OffsetDateTime from, OffsetDateTime to)

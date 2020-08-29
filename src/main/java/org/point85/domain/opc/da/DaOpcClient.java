@@ -68,9 +68,6 @@ public class DaOpcClient {
 
 	private final Map<String, OpcDaMonitoredGroup> monitoredGroups = new HashMap<>();
 
-	public DaOpcClient() {
-	}
-
 	public Collection<OpcDaMonitoredGroup> getMonitoredGroups() {
 		return this.monitoredGroups.values();
 	}
@@ -159,7 +156,6 @@ public class DaOpcClient {
 
 		if (jiSession != null) {
 			// should it be destroyed?
-			// JISession.destroySession(jiSession);
 		}
 		jiSession = null;
 		connectedSource = null;
@@ -240,7 +236,7 @@ public class DaOpcClient {
 		return errorString;
 	}
 
-	public static ArrayList<String> getServerProgIds(String hostName, String userName, String password)
+	public static List<String> getServerProgIds(String hostName, String userName, String password)
 			throws Exception {
 		String[] userInfo = DomainUtils.parseDomainAndUser(userName);
 
@@ -273,7 +269,7 @@ public class DaOpcClient {
 			propIds[i] = pd.getId();
 			OpcDaItemProperty itemProperty = new OpcDaItemProperty(pd.getId(), pd.getDescription().trim(),
 					pd.getVarType());
-			properties.put(new Integer(pd.getId()), itemProperty);
+			properties.put(pd.getId(), itemProperty);
 			i++;
 		}
 

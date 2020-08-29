@@ -67,7 +67,7 @@ public abstract class PollingClient {
 
 		for (int i = 0; i < sourceIds.size(); i++) {
 			if (pollingPeriods.get(i) == null) {
-				pollingPeriods.set(i, new Integer(CollectorDataSource.DEFAULT_UPDATE_PERIOD_MSEC));
+				pollingPeriods.set(i, Integer.valueOf(CollectorDataSource.DEFAULT_UPDATE_PERIOD_MSEC));
 			}
 
 			if (logger.isInfoEnabled()) {

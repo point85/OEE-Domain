@@ -51,7 +51,7 @@ public class OpcDaMonitoredItem {
 		return this.valueData;
 	}
 
-	public void setValueData(ValueData valueData) throws Exception {
+	public void setValueData(ValueData valueData) {
 		this.valueData = valueData;
 	}
 
@@ -60,6 +60,7 @@ public class OpcDaMonitoredItem {
 		try {
 			valueString = getValue().getValueAsString();
 		} catch (Exception e) {
+			// ignore
 		}
 		return valueString;
 	}
@@ -74,9 +75,9 @@ public class OpcDaMonitoredItem {
 
 	public Short getQuality() {
 		if (valueData != null) {
-			return new Short(this.valueData.getQuality());
+			return Short.valueOf(valueData.getQuality());
 		} else {
-			return new Short((short) 0);
+			return Short.valueOf((short) 0);
 		}
 	}
 
@@ -109,6 +110,7 @@ public class OpcDaMonitoredItem {
 		try {
 			text = opcItemDef.getItemID();
 		} catch (Exception e) {
+			// ignore
 		}
 		return text;
 	}

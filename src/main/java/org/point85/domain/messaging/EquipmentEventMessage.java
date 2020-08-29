@@ -60,7 +60,7 @@ public class EquipmentEventMessage extends ApplicationMessage {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString()).append('\n');
 		sb.append("Source: ").append(sourceId).append(", Value: ").append(value).append(", Timestamp: ")
-				.append(getTimestamp().toString());
+				.append(getTimestamp());
 
 		return sb.toString();
 	}

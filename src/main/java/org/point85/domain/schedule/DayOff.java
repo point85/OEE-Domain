@@ -35,7 +35,7 @@ import java.time.LocalTime;
 class DayOff extends TimePeriod {
 
 	// Construct a period of time when not working
-	DayOff(String name, String description, LocalTime start, Duration duration) throws Exception {
+	DayOff(String name, String description, LocalTime start, Duration duration) {
 		super(name, description, start, duration);
 	}
 

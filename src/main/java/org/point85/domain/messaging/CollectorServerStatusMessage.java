@@ -6,7 +6,7 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 public class CollectorServerStatusMessage extends ApplicationMessage {
-	private static final double MB = 1024 * 1024;
+	private static final double MB = 1024d * 1024d;
 
 	private double usedMemory = 0.0;
 	private double freeMemory = 0.0;

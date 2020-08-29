@@ -1,6 +1,7 @@
 package org.point85.domain.plant;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
@@ -112,5 +113,28 @@ public class EntitySchedule extends KeyedObject implements Comparable<EntitySche
 	@Override
 	public int compareTo(EntitySchedule other) {
 		return getStartDateTime().compareTo(other.getStartDateTime());
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getWorkSchedule(), getPlantEntity());
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof EntitySchedule) {
+			EntitySchedule other = (EntitySchedule) obj;
+
+			WorkSchedule thisSchedule = getWorkSchedule();
+			WorkSchedule otherSchedule = other.getWorkSchedule();
+
+			PlantEntity thisEntity = getPlantEntity();
+			PlantEntity otherEntity = other.getPlantEntity();
+
+			if (thisSchedule != null && otherSchedule != null && thisEntity != null && otherEntity != null) {
+				return thisSchedule.equals(otherSchedule) && thisEntity.equals(otherEntity);
+			}
+		}
+		return false;
 	}
 }

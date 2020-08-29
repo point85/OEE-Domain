@@ -28,12 +28,17 @@ public class X509KeyStoreLoader {
 	X509KeyStoreLoader load(String keystoreName, String password) throws Exception {
 		// get the keystore
 		KeyStore keyStore = KeyStore.getInstance(KEY_STORE_TYPE);
-		logger.info("Reading keystore " + keystoreName);
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Reading keystore " + keystoreName);
+		}
 
 		String configDir = System.getProperty(DomainUtils.CONFIG_DIR);
 		File serverKeyStore = new File(configDir + "/ssl/" + keystoreName);
 
-		logger.info("Loading KeyStore at {}", serverKeyStore);
+		if (logger.isInfoEnabled()) {
+			logger.info("Loading KeyStore at {}", serverKeyStore);
+		}
 
 		if (!serverKeyStore.exists()) {
 			throw new Exception(DomainLocalizer.instance().getErrorString("no.keystore", serverKeyStore));
@@ -54,7 +59,9 @@ public class X509KeyStoreLoader {
 			clientKeyPair = new KeyPair(serverPublicKey, (PrivateKey) serverPrivateKey);
 		}
 
-		logger.info("Loaded KeyStore at {}", serverKeyStore);
+		if (logger.isInfoEnabled()) {
+			logger.info("Loaded KeyStore at {}", serverKeyStore);
+		}
 		return this;
 	}
 

@@ -201,10 +201,12 @@ public class CronEventClient implements JobListener {
 
 	@Override
 	public void jobToBeExecuted(JobExecutionContext context) {
+		// not applicable
 	}
 
 	@Override
 	public void jobExecutionVetoed(JobExecutionContext context) {
+		// not applicable
 	}
 
 	/**

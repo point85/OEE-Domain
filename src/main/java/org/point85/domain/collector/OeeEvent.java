@@ -12,6 +12,7 @@ import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.point85.domain.persistence.EventTypeConverter;
 import org.point85.domain.persistence.OffsetTimestamp;
@@ -91,10 +92,12 @@ public class OeeEvent extends KeyedObject {
 	private String collector;
 
 	// computed lost time
-	private transient Duration lostTime;
+	@Transient
+	private Duration lostTime;
 
 	// output value
-	private transient Object outputValue;
+	@Transient
+	private Object outputValue;
 
 	public OeeEvent() {
 		super();

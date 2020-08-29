@@ -28,6 +28,7 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
@@ -35,6 +36,7 @@ import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.point85.domain.i18n.DomainLocalizer;
 
@@ -54,7 +56,8 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 	private WorkSchedule workSchedule;
 
 	// breaks
-	private final transient List<Break> breaks = new ArrayList<>();
+	@Transient
+	private final List<Break> breaks = new ArrayList<>();
 
 	/**
 	 * Default constructor
@@ -63,7 +66,7 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 		super();
 	}
 
-	Shift(String name, String description, LocalTime start, Duration duration) throws Exception {
+	Shift(String name, String description, LocalTime start, Duration duration) {
 		super(name, description, start, duration);
 	}
 
@@ -151,7 +154,7 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 	public boolean spansMidnight() throws Exception {
 		int startSecond = toRoundedSecond(getStart());
 		int endSecond = toRoundedSecond(getEnd());
-		return endSecond <= startSecond ? true : false;
+		return endSecond <= startSecond;
 	}
 
 	/**
@@ -166,8 +169,6 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 	 * @throws Exception exception
 	 */
 	public Duration calculateWorkingTime(LocalTime from, LocalTime to, boolean beforeMidnight) throws Exception {
-		Duration duration = Duration.ZERO;
-
 		int startSecond = toRoundedSecond(getStart());
 		int endSecond = toRoundedSecond(getEnd());
 		int fromSecond = toRoundedSecond(from);
@@ -210,9 +211,7 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 			toSecond = endSecond;
 		}
 
-		duration = Duration.ofSeconds(toSecond - fromSecond);
-
-		return duration;
+		return Duration.ofSeconds((long)toSecond - (long)fromSecond);
 	}
 
 	/**
@@ -261,9 +260,9 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 	public Duration calculateBreakTime() {
 		Duration sum = Duration.ZERO;
 
-		List<Break> breaks = this.getBreaks();
+		List<Break> breakList = this.getBreaks();
 
-		for (Break b : breaks) {
+		for (Break b : breakList) {
 			sum = sum.plus(b.getDuration());
 		}
 
@@ -313,5 +312,18 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 	@Override
 	public boolean isWorkingPeriod() {
 		return true;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof Shift) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getWorkSchedule());
 	}
 }

@@ -33,6 +33,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.CascadeType;
@@ -485,18 +486,16 @@ public class WorkSchedule extends NamedObject {
 				break;
 			}
 
-			if (fromSeconds <= endSeconds) {
-				// found a period, check edge conditions
-				if (fromSeconds > startSeconds) {
-					startSeconds = fromSeconds;
-				}
-
-				if (toSeconds < endSeconds) {
-					endSeconds = toSeconds;
-				}
-
-				sum = sum.plusSeconds(endSeconds - startSeconds);
+			// found a period, check edge conditions
+			if (fromSeconds > startSeconds) {
+				startSeconds = fromSeconds;
 			}
+
+			if (toSeconds < endSeconds) {
+				endSeconds = toSeconds;
+			}
+
+			sum = sum.plusSeconds(endSeconds - startSeconds);
 
 			if (toSeconds <= endSeconds) {
 				break;
@@ -558,6 +557,19 @@ public class WorkSchedule extends NamedObject {
 			}
 			day = day.plusDays(1);
 		}
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof WorkSchedule) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getDescription());
 	}
 
 	/**
@@ -628,6 +640,7 @@ public class WorkSchedule extends NamedObject {
 				text += "\nTotal overtime: " + totalMinutes;
 			}
 		} catch (Exception e) {
+			// ignore
 		}
 
 		return text;

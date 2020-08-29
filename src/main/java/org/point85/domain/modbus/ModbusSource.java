@@ -1,7 +1,10 @@
 package org.point85.domain.modbus;
 
+import java.util.Objects;
+
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.Transient;
 
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
@@ -18,8 +21,11 @@ public class ModbusSource extends CollectorDataSource {
 	public static final int DEFAULT_PORT = 502;
 	public static final int DEFAULT_UNIT_ID = 0;
 
-	private transient ModbusTransport transport;
-	private transient ModbusEndpoint endpoint;
+	@Transient
+	private ModbusTransport transport;
+
+	@Transient
+	private ModbusEndpoint endpoint;
 
 	/**
 	 * Constructor
@@ -73,5 +79,18 @@ public class ModbusSource extends CollectorDataSource {
 
 	public void setEndpoint(ModbusEndpoint endpoint) {
 		this.endpoint = endpoint;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof ModbusSource) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getTransport());
 	}
 }

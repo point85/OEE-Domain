@@ -51,7 +51,7 @@ abstract class Named extends KeyedObject {
 	protected Named() {
 	}
 
-	protected Named(String name, String description) throws Exception {
+	protected Named(String name, String description) {
 		this.name = name;
 		this.description = description;
 	}

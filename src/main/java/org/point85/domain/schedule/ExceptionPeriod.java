@@ -27,6 +27,7 @@ package org.point85.domain.schedule;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
@@ -77,8 +78,7 @@ public class ExceptionPeriod extends Named implements Comparable<ExceptionPeriod
 		super();
 	}
 
-	ExceptionPeriod(String name, String description, LocalDateTime startDateTime, Duration duration, TimeLoss loss)
-			throws Exception {
+	ExceptionPeriod(String name, String description, LocalDateTime startDateTime, Duration duration, TimeLoss loss) {
 		super(name, description);
 		this.startDateTime = startDateTime;
 		this.duration = duration;
@@ -194,6 +194,19 @@ public class ExceptionPeriod extends Named implements Comparable<ExceptionPeriod
 		this.timeLoss = loss;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof ExceptionPeriod) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getWorkSchedule());
+	}
+
 	/**
 	 * Build a string representation of this non-working period
 	 */
@@ -205,6 +218,7 @@ public class ExceptionPeriod extends Named implements Comparable<ExceptionPeriod
 			text = super.toString() + ", Start: " + getStartDateTime() + " (" + getDuration() + ")" + ", End: "
 					+ getEndDateTime();
 		} catch (Exception e) {
+			// ignore
 		}
 		return text;
 	}

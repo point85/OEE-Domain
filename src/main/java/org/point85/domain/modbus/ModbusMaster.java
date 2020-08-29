@@ -299,7 +299,7 @@ public class ModbusMaster extends PollingClient {
 	 * @throws Exception Exception
 	 */
 	public void writeHoldingRegisters(ModbusEndpoint endpoint, List<ModbusVariant> values) throws Exception {
-		if (values.size() == 0) {
+		if (values.isEmpty()) {
 			return;
 		}
 
@@ -661,7 +661,7 @@ public class ModbusMaster extends PollingClient {
 
 			int offset = 0;
 			for (int i = 0; i < valueCount; i++) {
-				Byte value = new Byte(data[offset][index]);
+				Byte value = Byte.valueOf(data[offset][index]);
 				offset++;
 
 				if (logger.isTraceEnabled()) {

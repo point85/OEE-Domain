@@ -1,7 +1,6 @@
 package org.point85.domain.messaging;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 
 public abstract class BaseMessagingClient {
 	// queue TTL (sec)
@@ -10,12 +9,20 @@ public abstract class BaseMessagingClient {
 	// json serializer
 	private final Gson gson = new Gson();
 
+	// flag for sending a notification message to the server
+	private boolean notify = false;
+
+	// host and port of broker
+	private String hostName;
+
+	private int hostPort = 0;
+
 	protected String serialize(ApplicationMessage message) {
 		// payload is JSON string
 		return gson.toJson(message);
 	}
 
-	protected ApplicationMessage deserialize(MessageType type, String payload) throws JsonSyntaxException {
+	protected ApplicationMessage deserialize(MessageType type, String payload) {
 		ApplicationMessage message = null;
 
 		switch (type) {
@@ -44,6 +51,30 @@ public abstract class BaseMessagingClient {
 		}
 
 		return message;
+	}
+
+	public boolean shouldNotify() {
+		return notify;
+	}
+
+	public void setShouldNotify(boolean flag) {
+		notify = flag;
+	}
+
+	public String getHostName() {
+		return hostName;
+	}
+
+	public void setHostName(String hostName) {
+		this.hostName = hostName;
+	}
+
+	public int getHostPort() {
+		return hostPort;
+	}
+
+	public void setHostPort(int hostPort) {
+		this.hostPort = hostPort;
 	}
 
 }

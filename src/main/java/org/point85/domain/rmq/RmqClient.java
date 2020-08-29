@@ -2,6 +2,7 @@ package org.point85.domain.rmq;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.messaging.ApplicationMessage;
 import org.point85.domain.messaging.BaseMessagingClient;
 import org.point85.domain.messaging.CollectorNotificationMessage;
@@ -63,9 +65,6 @@ public class RmqClient extends BaseMessagingClient {
 	// listener to call back when message received
 	private RmqMessageListener listener;
 
-	public RmqClient() {
-	}
-
 	public String getBindingKey() {
 		return bindingKey;
 	}
@@ -82,7 +81,7 @@ public class RmqClient extends BaseMessagingClient {
 		this.listener = listener;
 	}
 
-	public void unregisterListener(RmqMessageListener listener) {
+	public void unregisterListener() {
 		this.listener = null;
 	}
 
@@ -129,6 +128,9 @@ public class RmqClient extends BaseMessagingClient {
 		// durable exchange
 		channel.exchangeDeclare(EXCHANGE_NAME, EXCHANGE_TYPE, DURABLE_EXCHANGE);
 
+		setHostName(hostName);
+		setHostPort(port);
+
 		if (logger.isInfoEnabled()) {
 			logger.info("Connected to broker host " + hostName + " on port " + port + ", exchange " + EXCHANGE_NAME);
 		}
@@ -145,6 +147,7 @@ public class RmqClient extends BaseMessagingClient {
 				try {
 					channel.basicCancel(consumerTag);
 				} catch (Exception e) {
+					// ignore
 				}
 			}
 
@@ -152,6 +155,7 @@ public class RmqClient extends BaseMessagingClient {
 				try {
 					channel.close();
 				} catch (Exception e) {
+					// ignore
 				}
 			}
 			channel = null;
@@ -196,7 +200,9 @@ public class RmqClient extends BaseMessagingClient {
 	private void sendMessage(ApplicationMessage message, String routingKey, BasicProperties properties)
 			throws Exception {
 		if (channel == null) {
-			logger.error("Can't send message: " + message + ".  The channel is null.");
+			if (logger.isErrorEnabled()) {
+				logger.error("Can't send message: " + message + ".  The channel is null.");
+			}
 			return;
 		}
 
@@ -224,7 +230,7 @@ public class RmqClient extends BaseMessagingClient {
 
 	private void subscribe(String queueName, List<RoutingKey> routingKeys) throws Exception {
 		// TTL
-		Map<String, Object> args = new HashMap<String, Object>();
+		Map<String, Object> args = new HashMap<>();
 		args.put("x-message-ttl", QUEUE_TTL_SEC * 1000);
 
 		// not durable, non-exclusive queue, autodelete with TTL
@@ -263,9 +269,10 @@ public class RmqClient extends BaseMessagingClient {
 				AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder()
 						.correlationId(properties.getCorrelationId()).build();
 
-				String response = new String(body, "UTF-8");
+				String response = new String(body, StandardCharsets.UTF_8);
 
-				channel.basicPublish(EXCHANGE_NAME, properties.getReplyTo(), replyProps, response.getBytes("UTF-8"));
+				channel.basicPublish(EXCHANGE_NAME, properties.getReplyTo(), replyProps,
+						response.getBytes(StandardCharsets.UTF_8));
 
 				channel.basicAck(envelope.getDeliveryTag(), false);
 			}
@@ -287,7 +294,7 @@ public class RmqClient extends BaseMessagingClient {
 		sendMessage(message, routingKey, properties);
 
 		// wait for response
-		final BlockingQueue<String> response = new ArrayBlockingQueue<String>(1);
+		final BlockingQueue<String> response = new ArrayBlockingQueue<>(1);
 
 		channel.basicConsume(replyQueueName, true, new DefaultConsumer(channel) {
 			@Override
@@ -295,7 +302,9 @@ public class RmqClient extends BaseMessagingClient {
 					byte[] body) throws IOException {
 				if (properties.getCorrelationId().equals(correlationId)) {
 					// put body into the blocking queue
-					response.offer(new String(body, "UTF-8"));
+					if (!response.offer(new String(body, StandardCharsets.UTF_8))) {
+						throw new IOException(DomainLocalizer.instance().getErrorString("can.not.offer.message"));
+					}
 				}
 			}
 		});

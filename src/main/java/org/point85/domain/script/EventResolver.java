@@ -11,6 +11,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.CollectorDataSource;
@@ -59,16 +60,20 @@ public class EventResolver extends KeyedObject {
 	private DataCollector collector;
 
 	// last value received
-	private transient Object lastValue;
+	@Transient
+	private Object lastValue;
 
 	// time last received
-	private transient OffsetDateTime timestamp;
+	@Transient
+	private OffsetDateTime timestamp;
 
 	// Reason name can be set in script
-	private transient String reason;
+	@Transient
+	private String reason;
 
 	// mode
-	private transient boolean watchMode = false;
+	@Transient
+	private boolean watchMode = false;
 
 	public EventResolver() {
 		super();
@@ -206,11 +211,7 @@ public class EventResolver extends KeyedObject {
 			return true;
 		}
 
-		if (!getSourceId().equals(otherResolver.getSourceId())) {
-			return false;
-		}
-
-		return true;
+		return getSourceId().equals(otherResolver.getSourceId());
 	}
 
 	public DataCollector getCollector() {

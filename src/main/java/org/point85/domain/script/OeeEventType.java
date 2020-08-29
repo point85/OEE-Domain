@@ -18,19 +18,19 @@ public enum OeeEventType {
 	public static final String CUSTOM_VALUE = "CUSTOM";
 
 	public boolean isAvailability() {
-		return this.equals(AVAILABILITY) ? true : false;
+		return this.equals(AVAILABILITY);
 	}
 
 	public boolean isProduction() {
-		return (this.equals(PROD_GOOD) || this.equals(PROD_REJECT) || this.equals(PROD_STARTUP)) ? true : false;
+		return (this.equals(PROD_GOOD) || this.equals(PROD_REJECT) || this.equals(PROD_STARTUP));
 	}
 
 	public boolean isMaterial() {
-		return this.equals(MATL_CHANGE) ? true : false;
+		return this.equals(MATL_CHANGE);
 	}
 
 	public boolean isJob() {
-		return this.equals(JOB_CHANGE) ? true : false;
+		return this.equals(JOB_CHANGE);
 	}
 
 	public static List<OeeEventType> getProductionTypes() {

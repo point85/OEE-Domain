@@ -1,5 +1,7 @@
 package org.point85.domain.collector;
 
+import java.util.Objects;
+
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -24,7 +26,7 @@ public class DataCollector extends NamedObject {
 	@Column(name = "STATE")
 	@Convert(converter = CollectorStateConverter.class)
 	private CollectorState state = CollectorState.DEV;
-	
+
 	// notification server type
 	@Column(name = "BROKER_TYPE")
 	@Convert(converter = DataSourceConverter.class)
@@ -97,11 +99,11 @@ public class DataCollector extends NamedObject {
 		this.brokerUserName = userName;
 	}
 
-	public String getBrokerUserPassword() throws Exception {
+	public String getBrokerUserPassword() {
 		return DomainUtils.decode(brokerUserPassword);
 	}
 
-	public void setBrokerUserPassword(String password) throws Exception {
+	public void setBrokerUserPassword(String password) {
 		this.brokerUserPassword = DomainUtils.encode(password);
 	}
 
@@ -111,5 +113,18 @@ public class DataCollector extends NamedObject {
 
 	public void setBrokerType(DataSourceType sourceType) {
 		this.brokerType = sourceType;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof DataCollector) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getHost());
 	}
 }

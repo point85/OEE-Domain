@@ -1,6 +1,7 @@
 package org.point85.domain.plant;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.AttributeOverride;
@@ -86,6 +87,19 @@ public class Reason extends NamedObject {
 
 	public void setLossCategory(TimeLoss loss) {
 		this.timeLoss = loss;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof Reason) {
+			return super.equals(obj);
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getLossCategory());
 	}
 
 	@Override

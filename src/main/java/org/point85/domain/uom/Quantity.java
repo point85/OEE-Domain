@@ -23,7 +23,10 @@ SOFTWARE.
 */
 package org.point85.domain.uom;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import org.point85.domain.DomainUtils;
@@ -38,19 +41,19 @@ import org.point85.domain.i18n.DomainLocalizer;
  */
 public class Quantity {
 	// name, for example "speed of light"
-	private String name;
+	private String qtyName;
 
 	// symbol or abbreviation, e.g. "Vc"
-	private String symbol;
+	private String qtySymbol;
 
 	// description
-	private String description;
+	private String qtyDescription;
 
 	// the amount
-	private double amount;
+	private double qtyAmount;
 
 	// and its unit of measure
-	private UnitOfMeasure uom;
+	private UnitOfMeasure qtyUOM;
 
 	/**
 	 * Default constructor
@@ -66,8 +69,8 @@ public class Quantity {
 	 * @param uom    {@link UnitOfMeasure}
 	 */
 	public Quantity(double amount, UnitOfMeasure uom) {
-		this.amount = amount;
-		this.uom = uom;
+		this.qtyAmount = amount;
+		this.qtyUOM = uom;
 	}
 
 	/**
@@ -90,8 +93,8 @@ public class Quantity {
 	 * @throws Exception Exception
 	 */
 	public Quantity(String amount, UnitOfMeasure uom) throws Exception {
-		this.amount = createAmount(amount);
-		this.uom = uom;
+		this.qtyAmount = createAmount(amount);
+		this.qtyUOM = uom;
 	}
 
 	/**
@@ -114,6 +117,18 @@ public class Quantity {
 	 */
 	public Quantity(String amount, Unit unit) throws Exception {
 		this(createAmount(amount), MeasurementSystem.instance().getUOM(unit));
+	}
+
+	/**
+	 * Create a quantity with a prefixed amount and unit of measure
+	 * 
+	 * @param amount Amount
+	 * @param prefix {@link Prefix}
+	 * @param uom    {@link UnitOfMeasure}
+	 * @throws Exception Exception
+	 */
+	public Quantity(double amount, Prefix prefix, UnitOfMeasure uom) throws Exception {
+		this(amount * prefix.getFactor(), uom);
 	}
 
 	/**
@@ -153,7 +168,7 @@ public class Quantity {
 	 * @return Symbol
 	 */
 	public String getSymbol() {
-		return symbol;
+		return qtySymbol;
 	}
 
 	/**
@@ -162,7 +177,7 @@ public class Quantity {
 	 * @param symbol Symbol
 	 */
 	public void setSymbol(String symbol) {
-		this.symbol = symbol;
+		this.qtySymbol = symbol;
 	}
 
 	/**
@@ -171,7 +186,7 @@ public class Quantity {
 	 * @return Name
 	 */
 	public String getName() {
-		return name;
+		return qtyName;
 	}
 
 	/**
@@ -180,7 +195,7 @@ public class Quantity {
 	 * @param name Name
 	 */
 	public void setName(String name) {
-		this.name = name;
+		this.qtyName = name;
 	}
 
 	/**
@@ -189,7 +204,7 @@ public class Quantity {
 	 * @return Description
 	 */
 	public String getDescription() {
-		return description;
+		return qtyDescription;
 	}
 
 	/**
@@ -198,7 +213,7 @@ public class Quantity {
 	 * @param description Description
 	 */
 	public void setDescription(String description) {
-		this.description = description;
+		this.qtyDescription = description;
 	}
 
 	/**
@@ -228,15 +243,15 @@ public class Quantity {
 		if (number instanceof Double) {
 			result = (Double) number;
 		} else if (number instanceof BigInteger) {
-			result = new Double(((BigInteger) number).doubleValue());
+			result = ((BigInteger) number).doubleValue();
 		} else if (number instanceof Float) {
-			result = new Double((Float) number);
+			result = ((Float) number).doubleValue();
 		} else if (number instanceof Long) {
-			result = new Double((Long) number);
+			result = ((Long) number).doubleValue();
 		} else if (number instanceof Integer) {
-			result = new Double((Integer) number);
+			result = ((Integer) number).doubleValue();
 		} else if (number instanceof Short) {
-			result = new Double((Short) number);
+			result = ((Short) number).doubleValue();
 		}
 
 		return result;
@@ -248,7 +263,7 @@ public class Quantity {
 	 * @return amount
 	 */
 	public double getAmount() {
-		return amount;
+		return qtyAmount;
 	}
 
 	/**
@@ -257,7 +272,7 @@ public class Quantity {
 	 * @return {@link UnitOfMeasure}
 	 */
 	public UnitOfMeasure getUOM() {
-		return uom;
+		return qtyUOM;
 	}
 
 	/**
@@ -266,7 +281,7 @@ public class Quantity {
 	 * @param uom {@link UnitOfMeasure}
 	 */
 	public void setUOM(UnitOfMeasure uom) {
-		this.uom = uom;
+		this.qtyUOM = uom;
 	}
 
 	/**
@@ -509,5 +524,54 @@ public class Quantity {
 		}
 
 		return Double.valueOf(getAmount()).compareTo(Double.valueOf(toCompare.getAmount()));
+	}
+
+	/**
+	 * Convert this quantity to a list of quantities for each target UOM
+	 * 
+	 * @param toMeasures List to UOMs to convert to
+	 * @return List of converted quantities
+	 * @throws Exception Exception
+	 */
+	public List<Quantity> convert(List<UnitOfMeasure> toMeasures) throws Exception {
+		List<Quantity> quantities = new ArrayList<>();
+
+		Quantity quantityLeft = this;
+
+		for (int i = 0; i < toMeasures.size(); i++) {
+			UnitOfMeasure toUOM = toMeasures.get(i);
+			Quantity converted = quantityLeft.convert(toUOM);
+
+			if (i == toMeasures.size() - 1) {
+				// last conversion
+				quantities.add(converted);
+				break;
+			}
+
+			// perform arithmetic as BigDecimals
+			BigDecimal bigAmount = new BigDecimal(String.valueOf(converted.getAmount()));
+
+			// get integral amount
+			int intValue = bigAmount.intValue();
+			quantities.add(new Quantity(intValue, toUOM));
+
+			// get the fractional amount
+			BigDecimal intDouble = new BigDecimal(String.valueOf(intValue));
+			BigDecimal fractDouble = bigAmount.subtract(intDouble);
+			quantityLeft = new Quantity(fractDouble.doubleValue(), toUOM);
+		}
+
+		return quantities;
+	}
+
+	/**
+	 * Find a matching unit type for the quantity's unit of measure.
+	 * 
+	 * @return {@link Quantity}
+	 * @throws Exception Exception
+	 */
+	public Quantity classify() throws Exception {
+		getUOM().classify();
+		return this;
 	}
 }

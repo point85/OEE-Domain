@@ -70,6 +70,7 @@ public class OpcDaVariant {
 		try {
 			type = OpcDaVariant.getDisplayType(jiVariant.getType());
 		} catch (Exception e) {
+			// ignore
 		}
 		return type;
 	}
@@ -284,7 +285,7 @@ public class OpcDaVariant {
 		// 1 byte
 		case JIVariant.VT_I1:
 		case JIVariant.VT_UI1:
-			numberValue = new Byte((byte) getJIVariant().getObjectAsChar());
+			numberValue = Byte.valueOf((byte) getJIVariant().getObjectAsChar());
 			break;
 
 		// 2 bytes integer
@@ -294,7 +295,7 @@ public class OpcDaVariant {
 				// bug? avoid class cast exception
 				numberValue = ((JIUnsignedShort) getJIVariant().getObject()).getValue();
 			} else {
-				numberValue = new Short(getJIVariant().getObjectAsShort());
+				numberValue = Short.valueOf(getJIVariant().getObjectAsShort());
 			}
 			break;
 
@@ -307,24 +308,24 @@ public class OpcDaVariant {
 				// bug? avoid class cast exception
 				numberValue = ((JIUnsignedInteger) getJIVariant().getObject()).getValue();
 			} else {
-				numberValue = new Integer(getJIVariant().getObjectAsInt());
+				numberValue = Integer.valueOf(getJIVariant().getObjectAsInt());
 			}
 			break;
 
 		// 8 byte integer
 		case JIVariant.VT_I8:
-			numberValue = new Long(getJIVariant().getObjectAsLong());
+			numberValue = Long.valueOf(getJIVariant().getObjectAsLong());
 			break;
 
 		// 4 byte float
 		case JIVariant.VT_R4:
 		case JIVariant.VT_DECIMAL:
-			numberValue = new Float(getJIVariant().getObjectAsFloat());
+			numberValue = Float.valueOf(getJIVariant().getObjectAsFloat());
 			break;
 
 		// 8 byte double
 		case JIVariant.VT_R8:
-			numberValue = new Double(getJIVariant().getObjectAsDouble());
+			numberValue = Double.valueOf(getJIVariant().getObjectAsDouble());
 			break;
 
 		// boolean
@@ -333,7 +334,7 @@ public class OpcDaVariant {
 			if (getJIVariant().getObjectAsBoolean()) {
 				boolValue = 1;
 			}
-			numberValue = new Byte(boolValue);
+			numberValue = Byte.valueOf(boolValue);
 			break;
 
 		// not supported
@@ -399,7 +400,7 @@ public class OpcDaVariant {
 	}
 
 	public boolean isNumeric() throws JIException {
-		return getValueAsNumber() != null ? true : false;
+		return getValueAsNumber() != null;
 	}
 
 	public Object getValueAsObject() throws Exception {
@@ -445,6 +446,7 @@ public class OpcDaVariant {
 		try {
 			value = getValueAsString();
 		} catch (Exception e) {
+			// ignore
 		}
 		return value;
 	}

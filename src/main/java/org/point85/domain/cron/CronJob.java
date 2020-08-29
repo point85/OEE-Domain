@@ -13,5 +13,7 @@ import org.quartz.JobExecutionException;
 public class CronJob implements Job {
 	@Override
 	public void execute(JobExecutionContext context) throws JobExecutionException {
+		// The business logic is handled in the job listener by invoking the java script
+		// in associated the resolver.
 	}
 }

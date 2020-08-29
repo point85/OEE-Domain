@@ -78,16 +78,16 @@ public class OeeContext {
 		contextMap.put(MATL_KEY, new ConcurrentHashMap<Equipment, Material>());
 		contextMap.put(JOB_KEY, new ConcurrentHashMap<Equipment, String>());
 
-		setOpcDaClients(new HashSet<DaOpcClient>());
-		setOpcUaClients(new HashSet<UaOpcClient>());
-		setMessagingClients(new HashSet<RmqClient>());
-		setJMSClients(new HashSet<JmsClient>());
-		setMQTTClients(new HashSet<MqttOeeClient>());
-		setHttpServers(new HashSet<OeeHttpServer>());
-		setDatabaseEventClients(new HashSet<DatabaseEventClient>());
-		setFileEventClients(new HashSet<FileEventClient>());
-		setCronEventClients(new HashSet<CronEventClient>());
-		setModbusMasters(new HashSet<ModbusMaster>());
+		setOpcDaClients(new HashSet<>());
+		setOpcUaClients(new HashSet<>());
+		setMessagingClients(new HashSet<>());
+		setJMSClients(new HashSet<>());
+		setMQTTClients(new HashSet<>());
+		setHttpServers(new HashSet<>());
+		setDatabaseEventClients(new HashSet<>());
+		setFileEventClients(new HashSet<>());
+		setCronEventClients(new HashSet<>());
+		setModbusMasters(new HashSet<>());
 	}
 
 	/**
