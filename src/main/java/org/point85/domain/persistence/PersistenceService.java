@@ -197,8 +197,11 @@ public final class PersistenceService {
 			createNamedQuery(ENTITY_NAMES, "SELECT ent.name FROM PlantEntity ent");
 		}
 
-		TypedQuery<String> query = getEntityManager().createNamedQuery(ENTITY_NAMES, String.class);
-		return query.getResultList();
+		EntityManager em = getEntityManager();
+		TypedQuery<String> query = em.createNamedQuery(ENTITY_NAMES, String.class);
+		List<String> names = query.getResultList();
+		em.close();
+		return names;
 	}
 
 	public PlantEntity fetchPlantEntityByName(String name) throws Exception {
@@ -209,10 +212,12 @@ public final class PersistenceService {
 		}
 
 		PlantEntity entity = null;
-		TypedQuery<PlantEntity> query = getEntityManager().createNamedQuery(ENTITY_BY_NAME, PlantEntity.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<PlantEntity> query = em.createNamedQuery(ENTITY_BY_NAME, PlantEntity.class);
 		query.setParameter("name", name);
 
 		List<PlantEntity> entities = query.getResultList();
+		em.close();
 
 		if (entities.size() == 1) {
 			entity = entities.get(0);
@@ -227,8 +232,12 @@ public final class PersistenceService {
 			createNamedQuery(RESOLVER_ALL, "SELECT er FROM EventResolver er");
 		}
 
-		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(RESOLVER_ALL, EventResolver.class);
-		return query.getResultList();
+		EntityManager em = getEntityManager();
+		TypedQuery<EventResolver> query = em.createNamedQuery(RESOLVER_ALL, EventResolver.class);
+		List<EventResolver> resolvers = query.getResultList();
+		em.close();
+
+		return resolvers;
 	}
 
 	public List<String> fetchResolverSourceIds(String equipmentName, DataSourceType sourceType) throws Exception {
@@ -239,10 +248,14 @@ public final class PersistenceService {
 					"SELECT er.sourceId FROM EventResolver er JOIN er.equipment eq JOIN er.dataSource ds WHERE eq.name = :name AND ds.sourceType = :type");
 		}
 
-		TypedQuery<String> query = getEntityManager().createNamedQuery(EQUIPMENT_SOURCE_IDS, String.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<String> query = em.createNamedQuery(EQUIPMENT_SOURCE_IDS, String.class);
 		query.setParameter("name", equipmentName);
 		query.setParameter("type", sourceType);
-		return query.getResultList();
+		List<String> ids = query.getResultList();
+		em.close();
+
+		return ids;
 	}
 
 	public List<CollectorDataSource> fetchDataSources(DataSourceType sourceType) throws Exception {
@@ -252,10 +265,13 @@ public final class PersistenceService {
 			createNamedQuery(SRC_BY_TYPE, "SELECT source FROM CollectorDataSource source WHERE sourceType = :type");
 		}
 
-		TypedQuery<CollectorDataSource> query = getEntityManager().createNamedQuery(SRC_BY_TYPE,
-				CollectorDataSource.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<CollectorDataSource> query = em.createNamedQuery(SRC_BY_TYPE, CollectorDataSource.class);
 		query.setParameter("type", sourceType);
-		return query.getResultList();
+		List<CollectorDataSource> sources = query.getResultList();
+		em.close();
+
+		return sources;
 	}
 
 	// remove the PersistentObject from the persistence context
@@ -263,7 +279,10 @@ public final class PersistenceService {
 		if (object == null) {
 			return;
 		}
-		getEntityManager().detach(object);
+
+		EntityManager em = getEntityManager();
+		em.detach(object);
+		em.close();
 	}
 
 	// save the Persistent Object to the database
@@ -366,9 +385,13 @@ public final class PersistenceService {
 			createNamedQuery(SEG_SHIFT_XREF, "SELECT COUNT(rs) FROM RotationSegment rs WHERE startingShift = :shift");
 		}
 
-		Query query = getEntityManager().createNamedQuery(SEG_SHIFT_XREF);
+		EntityManager em = getEntityManager();
+		Query query = em.createNamedQuery(SEG_SHIFT_XREF);
 		query.setParameter("shift", shift);
-		return (long) query.getSingleResult();
+		long count = (long) query.getSingleResult();
+		em.close();
+
+		return count;
 	}
 
 	private void checkShiftReferences(Shift shift) throws Exception {
@@ -586,14 +609,20 @@ public final class PersistenceService {
 			createNamedQuery(ENTITY_ALL, "SELECT ent FROM PlantEntity ent");
 		}
 
-		TypedQuery<PlantEntity> query = getEntityManager().createNamedQuery(ENTITY_ALL, PlantEntity.class);
-		return query.getResultList();
+		EntityManager em = getEntityManager();
+		TypedQuery<PlantEntity> query = em.createNamedQuery(ENTITY_ALL, PlantEntity.class);
+		List<PlantEntity> entities = query.getResultList();
+		em.close();
+
+		return entities;
 	}
 
 	private void createNamedQuery(String name, String jsql) throws Exception {
-		Query query = getEntityManager().createQuery(jsql);
+		EntityManager em = getEntityManager();
+		Query query = em.createQuery(jsql);
 		getEntityManagerFactory().addNamedQuery(name, query);
 		namedQueryMap.put(name, true);
+		em.close();
 	}
 
 	// top-level plant entities
@@ -604,8 +633,12 @@ public final class PersistenceService {
 			createNamedQuery(ENTITY_ROOTS, "SELECT ent FROM PlantEntity ent WHERE ent.parent IS NULL");
 		}
 
-		TypedQuery<PlantEntity> query = getEntityManager().createNamedQuery(ENTITY_ROOTS, PlantEntity.class);
-		return query.getResultList();
+		EntityManager em = getEntityManager();
+		TypedQuery<PlantEntity> query = em.createNamedQuery(ENTITY_ROOTS, PlantEntity.class);
+		List<PlantEntity> entities = query.getResultList();
+		em.close();
+
+		return entities;
 	}
 
 	public List<DataCollector> fetchCollectorsByHostAndState(List<String> hostNames, List<CollectorState> states)
@@ -617,11 +650,14 @@ public final class PersistenceService {
 					"SELECT collector FROM DataCollector collector WHERE collector.host IN :names AND collector.state IN :states");
 		}
 
-		TypedQuery<DataCollector> query = getEntityManager().createNamedQuery(COLLECTOR_BY_HOST_BY_STATE,
-				DataCollector.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<DataCollector> query = em.createNamedQuery(COLLECTOR_BY_HOST_BY_STATE, DataCollector.class);
 		query.setParameter("names", hostNames);
 		query.setParameter("states", states);
-		return query.getResultList();
+		List<DataCollector> collectors = query.getResultList();
+		em.close();
+
+		return collectors;
 	}
 
 	public List<DataCollector> fetchCollectorsByState(List<CollectorState> states) throws Exception {
@@ -632,9 +668,13 @@ public final class PersistenceService {
 					"SELECT collector FROM DataCollector collector WHERE collector.state IN :states");
 		}
 
-		TypedQuery<DataCollector> query = getEntityManager().createNamedQuery(COLLECTOR_BY_STATE, DataCollector.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<DataCollector> query = em.createNamedQuery(COLLECTOR_BY_STATE, DataCollector.class);
 		query.setParameter("states", states);
-		return query.getResultList();
+		List<DataCollector> collectors = query.getResultList();
+		em.close();
+
+		return collectors;
 	}
 
 	public List<EventResolver> fetchEventResolversByHost(List<String> hostNames, List<CollectorState> states)
@@ -646,10 +686,14 @@ public final class PersistenceService {
 					"SELECT er FROM EventResolver er WHERE er.collector.host IN :names AND er.collector.state IN :states");
 		}
 
-		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(RESOLVER_BY_HOST, EventResolver.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<EventResolver> query = em.createNamedQuery(RESOLVER_BY_HOST, EventResolver.class);
 		query.setParameter("names", hostNames);
 		query.setParameter("states", states);
-		return query.getResultList();
+		List<EventResolver> resolvers = query.getResultList();
+		em.close();
+
+		return resolvers;
 	}
 
 	public List<EventResolver> fetchEventResolversByCollector(List<String> definitionNames) throws Exception {
@@ -660,10 +704,13 @@ public final class PersistenceService {
 					"SELECT er FROM EventResolver er WHERE er.collector.name IN :names");
 		}
 
-		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(RESOLVER_BY_COLLECTOR,
-				EventResolver.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<EventResolver> query = em.createNamedQuery(RESOLVER_BY_COLLECTOR, EventResolver.class);
 		query.setParameter("names", definitionNames);
-		return query.getResultList();
+		List<EventResolver> resolvers = query.getResultList();
+		em.close();
+
+		return resolvers;
 	}
 
 	public List<Material> fetchMaterialsByCategory(String category) throws Exception {
@@ -673,9 +720,13 @@ public final class PersistenceService {
 			createNamedQuery(MATLS_BY_CATEGORY, "SELECT matl FROM Material matl WHERE matl.category = :category");
 		}
 
-		TypedQuery<Material> query = getEntityManager().createNamedQuery(MATLS_BY_CATEGORY, Material.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<Material> query = em.createNamedQuery(MATLS_BY_CATEGORY, Material.class);
 		query.setParameter("category", category);
-		return query.getResultList();
+		List<Material> materials = query.getResultList();
+		em.close();
+
+		return materials;
 	}
 
 	public List<DataCollector> fetchAllDataCollectors() throws Exception {
@@ -685,8 +736,12 @@ public final class PersistenceService {
 			createNamedQuery(COLLECT_ALL, "SELECT collector FROM DataCollector collector");
 		}
 
-		TypedQuery<DataCollector> query = getEntityManager().createNamedQuery(COLLECT_ALL, DataCollector.class);
-		return query.getResultList();
+		EntityManager em = getEntityManager();
+		TypedQuery<DataCollector> query = em.createNamedQuery(COLLECT_ALL, DataCollector.class);
+		List<DataCollector> collectors = query.getResultList();
+		em.close();
+
+		return collectors;
 	}
 
 	public List<Material> fetchAllMaterials() throws Exception {
@@ -696,8 +751,12 @@ public final class PersistenceService {
 			createNamedQuery(MATL_ALL, "SELECT matl FROM Material matl");
 		}
 
-		TypedQuery<Material> query = getEntityManager().createNamedQuery(MATL_ALL, Material.class);
-		return query.getResultList();
+		EntityManager em = getEntityManager();
+		TypedQuery<Material> query = em.createNamedQuery(MATL_ALL, Material.class);
+		List<Material> materials = query.getResultList();
+		em.close();
+
+		return materials;
 	}
 
 	public List<String> fetchMaterialCategories() throws Exception {
@@ -708,8 +767,12 @@ public final class PersistenceService {
 					"SELECT DISTINCT matl.category FROM Material matl WHERE matl.category IS NOT NULL");
 		}
 
-		TypedQuery<String> query = getEntityManager().createNamedQuery(MATL_CATEGORIES, String.class);
-		return query.getResultList();
+		EntityManager em = getEntityManager();
+		TypedQuery<String> query = em.createNamedQuery(MATL_CATEGORIES, String.class);
+		List<String> categories = query.getResultList();
+		em.close();
+
+		return categories;
 	}
 
 	public Material fetchMaterialByName(String name) throws Exception {
@@ -720,9 +783,11 @@ public final class PersistenceService {
 		}
 
 		Material material = null;
-		TypedQuery<Material> query = getEntityManager().createNamedQuery(MATL_BY_NAME, Material.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<Material> query = em.createNamedQuery(MATL_BY_NAME, Material.class);
 		query.setParameter("name", name);
 		List<Material> materials = query.getResultList();
+		em.close();
 
 		if (materials.size() == 1) {
 			material = materials.get(0);
@@ -738,9 +803,11 @@ public final class PersistenceService {
 		}
 
 		Equipment equipment = null;
-		TypedQuery<Equipment> query = getEntityManager().createNamedQuery(EQUIP_BY_NAME, Equipment.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<Equipment> query = em.createNamedQuery(EQUIP_BY_NAME, Equipment.class);
 		query.setParameter("name", name);
 		List<Equipment> equipments = query.getResultList();
+		em.close();
 
 		if (equipments.size() == 1) {
 			equipment = equipments.get(0);
@@ -749,11 +816,19 @@ public final class PersistenceService {
 	}
 
 	public Material fetchMaterialByKey(Long key) throws Exception {
-		return getEntityManager().find(Material.class, key);
+		EntityManager em = getEntityManager();
+		Material material = em.find(Material.class, key);
+		em.close();
+
+		return material;
 	}
 
 	public OeeEvent fetchEventByKey(Long key) throws Exception {
-		return getEntityManager().find(OeeEvent.class, key);
+		EntityManager em = getEntityManager();
+		OeeEvent event = em.find(OeeEvent.class, key);
+		em.close();
+
+		return event;
 	}
 
 	public Reason fetchReasonByName(String name) throws Exception {
@@ -764,10 +839,12 @@ public final class PersistenceService {
 		}
 
 		Reason reason = null;
-		TypedQuery<Reason> query = getEntityManager().createNamedQuery(REASON_BY_NAME, Reason.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<Reason> query = em.createNamedQuery(REASON_BY_NAME, Reason.class);
 		query.setParameter("name", name);
 
 		List<Reason> reasons = query.getResultList();
+		em.close();
 
 		if (reasons.size() == 1) {
 			reason = reasons.get(0);
@@ -776,7 +853,11 @@ public final class PersistenceService {
 	}
 
 	public Reason fetchReasonByKey(Long key) throws Exception {
-		return getEntityManager().find(Reason.class, key);
+		EntityManager em = getEntityManager();
+		Reason reason = em.find(Reason.class, key);
+		em.close();
+
+		return reason;
 	}
 
 	public List<Reason> fetchAllReasons() throws Exception {
@@ -786,8 +867,12 @@ public final class PersistenceService {
 			createNamedQuery(REASON_ALL, "SELECT reason FROM Reason reason");
 		}
 
-		TypedQuery<Reason> query = getEntityManager().createNamedQuery(REASON_ALL, Reason.class);
-		return query.getResultList();
+		EntityManager em = getEntityManager();
+		TypedQuery<Reason> query = em.createNamedQuery(REASON_ALL, Reason.class);
+		List<Reason> reasons = query.getResultList();
+		em.close();
+
+		return reasons;
 	}
 
 	// top-level reasons
@@ -798,8 +883,12 @@ public final class PersistenceService {
 			createNamedQuery(REASON_ROOTS, "SELECT reason FROM Reason reason WHERE reason.parent IS NULL");
 		}
 
-		TypedQuery<Reason> query = getEntityManager().createNamedQuery(REASON_ROOTS, Reason.class);
-		return query.getResultList();
+		EntityManager em = getEntityManager();
+		TypedQuery<Reason> query = em.createNamedQuery(REASON_ROOTS, Reason.class);
+		List<Reason> reasons = query.getResultList();
+		em.close();
+
+		return reasons;
 	}
 
 	public List<String> fetchProgIds() throws Exception {
@@ -809,8 +898,12 @@ public final class PersistenceService {
 			createNamedQuery(DA_PROG_IDS, "SELECT source.name FROM OpcDaSource source");
 		}
 
-		TypedQuery<String> query = getEntityManager().createNamedQuery(DA_PROG_IDS, String.class);
-		return query.getResultList();
+		EntityManager em = getEntityManager();
+		TypedQuery<String> query = em.createNamedQuery(DA_PROG_IDS, String.class);
+		List<String> ids = query.getResultList();
+		em.close();
+
+		return ids;
 	}
 
 	public OpcDaSource fetchOpcDaSourceByName(String name) throws Exception {
@@ -821,10 +914,12 @@ public final class PersistenceService {
 		}
 
 		OpcDaSource source = null;
-		TypedQuery<OpcDaSource> query = getEntityManager().createNamedQuery(DA_SRC_BY_NAME, OpcDaSource.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<OpcDaSource> query = em.createNamedQuery(DA_SRC_BY_NAME, OpcDaSource.class);
 		query.setParameter("name", name);
 
 		List<OpcDaSource> sources = query.getResultList();
+		em.close();
 
 		if (sources.size() == 1) {
 			source = sources.get(0);
@@ -840,10 +935,12 @@ public final class PersistenceService {
 		}
 
 		OpcUaSource source = null;
-		TypedQuery<OpcUaSource> query = getEntityManager().createNamedQuery(UA_SRC_BY_NAME, OpcUaSource.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<OpcUaSource> query = em.createNamedQuery(UA_SRC_BY_NAME, OpcUaSource.class);
 		query.setParameter("name", name);
 
 		List<OpcUaSource> sources = query.getResultList();
+		em.close();
 
 		if (sources.size() == 1) {
 			source = sources.get(0);
@@ -852,7 +949,11 @@ public final class PersistenceService {
 	}
 
 	public WorkSchedule fetchScheduleByKey(Long key) throws Exception {
-		return getEntityManager().find(WorkSchedule.class, key);
+		EntityManager em = getEntityManager();
+		WorkSchedule schedule = em.find(WorkSchedule.class, key);
+		em.close();
+
+		return schedule;
 	}
 
 	public List<WorkSchedule> fetchWorkSchedules() throws Exception {
@@ -862,8 +963,12 @@ public final class PersistenceService {
 			createNamedQuery(WS_SCHEDULES, "SELECT ws FROM WorkSchedule ws");
 		}
 
-		TypedQuery<WorkSchedule> query = getEntityManager().createNamedQuery(WS_SCHEDULES, WorkSchedule.class);
-		return query.getResultList();
+		EntityManager em = getEntityManager();
+		TypedQuery<WorkSchedule> query = em.createNamedQuery(WS_SCHEDULES, WorkSchedule.class);
+		List<WorkSchedule> schedules = query.getResultList();
+		em.close();
+
+		return schedules;
 	}
 
 	public List<String> fetchWorkScheduleNames() throws Exception {
@@ -873,8 +978,12 @@ public final class PersistenceService {
 			createNamedQuery(WS_NAMES, "SELECT ws.name FROM WorkSchedule ws");
 		}
 
-		TypedQuery<String> query = getEntityManager().createNamedQuery(WS_NAMES, String.class);
-		return query.getResultList();
+		EntityManager em = getEntityManager();
+		TypedQuery<String> query = em.createNamedQuery(WS_NAMES, String.class);
+		List<String> names = query.getResultList();
+		em.close();
+
+		return names;
 	}
 
 	public WorkSchedule fetchWorkScheduleByName(String name) throws Exception {
@@ -885,9 +994,11 @@ public final class PersistenceService {
 		}
 
 		WorkSchedule schedule = null;
-		TypedQuery<WorkSchedule> query = getEntityManager().createNamedQuery(WS_BY_NAME, WorkSchedule.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<WorkSchedule> query = em.createNamedQuery(WS_BY_NAME, WorkSchedule.class);
 		query.setParameter("name", name);
 		List<WorkSchedule> schedules = query.getResultList();
+		em.close();
 
 		if (schedules.size() == 1) {
 			schedule = schedules.get(0);
@@ -897,7 +1008,11 @@ public final class PersistenceService {
 
 	// fetch Team by its primary key
 	public Team fetchTeamByKey(Long key) throws Exception {
-		return getEntityManager().find(Team.class, key);
+		EntityManager em = getEntityManager();
+		Team team = em.find(Team.class, key);
+		em.close();
+
+		return team;
 	}
 
 	// get any Team references to the Rotation
@@ -908,9 +1023,13 @@ public final class PersistenceService {
 			createNamedQuery(WS_ROT_XREF, "SELECT team FROM Team team WHERE rotation = :rotation");
 		}
 
-		TypedQuery<Team> query = getEntityManager().createNamedQuery(WS_ROT_XREF, Team.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<Team> query = em.createNamedQuery(WS_ROT_XREF, Team.class);
 		query.setParameter("rotation", rotation);
-		return query.getResultList();
+		List<Team> teams = query.getResultList();
+		em.close();
+
+		return teams;
 	}
 
 	public List<EntitySchedule> fetchEntityCrossReferences(WorkSchedule schedule) throws Exception {
@@ -920,13 +1039,19 @@ public final class PersistenceService {
 			createNamedQuery(WS_ENT_XREF, "SELECT es FROM EntitySchedule es WHERE es.workSchedule = :schedule");
 		}
 
-		TypedQuery<EntitySchedule> query = getEntityManager().createNamedQuery(WS_ENT_XREF, EntitySchedule.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<EntitySchedule> query = em.createNamedQuery(WS_ENT_XREF, EntitySchedule.class);
 		query.setParameter("schedule", schedule);
-		return query.getResultList();
+		List<EntitySchedule> schedules = query.getResultList();
+		em.close();
+
+		return schedules;
 	}
 
 	public UnitOfMeasure fetchUomByKey(Long key) throws Exception {
-		UnitOfMeasure uom = getEntityManager().find(UnitOfMeasure.class, key);
+		EntityManager em = getEntityManager();
+		UnitOfMeasure uom = em.find(UnitOfMeasure.class, key);
+		em.close();
 
 		// cache it
 		if (uom != null) {
@@ -946,9 +1071,13 @@ public final class PersistenceService {
 					"SELECT uom.symbol, uom.name FROM UnitOfMeasure uom WHERE uom.category = :category");
 		}
 
-		Query query = getEntityManager().createNamedQuery(UOM_CAT_SYMBOLS);
+		EntityManager em = getEntityManager();
+		Query query = em.createNamedQuery(UOM_CAT_SYMBOLS);
 		query.setParameter("category", category);
-		return query.getResultList();
+		List<String[]> data = query.getResultList();
+		em.close();
+
+		return data;
 	}
 
 	// fetch symbols and their names for this UOM type
@@ -961,10 +1090,14 @@ public final class PersistenceService {
 					"SELECT uom.symbol, uom.name FROM UnitOfMeasure uom WHERE uom.unit IS NULL AND uom.unitType = :type");
 		}
 
-		Query query = getEntityManager().createNamedQuery(UOM_SYMBOLS);
+		EntityManager em = getEntityManager();
+		Query query = em.createNamedQuery(UOM_SYMBOLS);
 		query.setParameter("type", unitType);
 
-		return query.getResultList();
+		List<String[]> data = query.getResultList();
+		em.close();
+
+		return data;
 	}
 
 	// fetch all defined categories
@@ -976,8 +1109,12 @@ public final class PersistenceService {
 					"SELECT DISTINCT uom.category FROM UnitOfMeasure uom WHERE uom.category IS NOT NULL");
 		}
 
-		TypedQuery<String> query = getEntityManager().createNamedQuery(UOM_CATEGORIES, String.class);
-		return query.getResultList();
+		EntityManager em = getEntityManager();
+		TypedQuery<String> query = em.createNamedQuery(UOM_CATEGORIES, String.class);
+		List<String> categories = query.getResultList();
+		em.close();
+
+		return categories;
 	}
 
 	// query for UOM based on its unique symbol
@@ -988,10 +1125,12 @@ public final class PersistenceService {
 			createNamedQuery(UOM_BY_SYMBOL, "SELECT uom FROM UnitOfMeasure uom WHERE uom.symbol = :symbol");
 		}
 
-		TypedQuery<UnitOfMeasure> query = getEntityManager().createNamedQuery(UOM_BY_SYMBOL, UnitOfMeasure.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<UnitOfMeasure> query = em.createNamedQuery(UOM_BY_SYMBOL, UnitOfMeasure.class);
 		query.setParameter("symbol", symbol);
 
 		List<UnitOfMeasure> uoms = query.getResultList();
+		em.close();
 
 		UnitOfMeasure uom = null;
 
@@ -1011,9 +1150,11 @@ public final class PersistenceService {
 			createNamedQuery(UOM_BY_CATEGORY, "SELECT uom FROM UnitOfMeasure uom WHERE uom.category = :category");
 		}
 
-		TypedQuery<UnitOfMeasure> query = getEntityManager().createNamedQuery(UOM_BY_CATEGORY, UnitOfMeasure.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<UnitOfMeasure> query = em.createNamedQuery(UOM_BY_CATEGORY, UnitOfMeasure.class);
 		query.setParameter("category", category);
 		List<UnitOfMeasure> uoms = query.getResultList();
+		em.close();
 
 		// cache them
 		for (UnitOfMeasure uom : uoms) {
@@ -1034,10 +1175,12 @@ public final class PersistenceService {
 		UnitOfMeasure uom = null;
 
 		// fetch by Unit enum
-		TypedQuery<UnitOfMeasure> query = getEntityManager().createNamedQuery(UOM_BY_UNIT, UnitOfMeasure.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<UnitOfMeasure> query = em.createNamedQuery(UOM_BY_UNIT, UnitOfMeasure.class);
 		query.setParameter("unit", unit);
 
 		List<UnitOfMeasure> uoms = query.getResultList();
+		em.close();
 
 		if (uoms.size() == 1) {
 			uom = uoms.get(0);
@@ -1163,10 +1306,13 @@ public final class PersistenceService {
 					"SELECT eqm FROM EquipmentMaterial eqm WHERE runRateUOM = :uom OR rejectUOM = :uom");
 		}
 
-		TypedQuery<EquipmentMaterial> query = getEntityManager().createNamedQuery(EQM_UOM_XREF,
-				EquipmentMaterial.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<EquipmentMaterial> query = em.createNamedQuery(EQM_UOM_XREF, EquipmentMaterial.class);
 		query.setParameter("uom", uom);
-		return query.getResultList();
+		List<EquipmentMaterial> materials = query.getResultList();
+		em.close();
+
+		return materials;
 	}
 
 	public List<EquipmentMaterial> fetchEquipmentMaterials(Material material) throws Exception {
@@ -1176,10 +1322,13 @@ public final class PersistenceService {
 			createNamedQuery(EQM_MAT_XREF, "SELECT eqm FROM EquipmentMaterial eqm WHERE material = :material");
 		}
 
-		TypedQuery<EquipmentMaterial> query = getEntityManager().createNamedQuery(EQM_MAT_XREF,
-				EquipmentMaterial.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<EquipmentMaterial> query = em.createNamedQuery(EQM_MAT_XREF, EquipmentMaterial.class);
 		query.setParameter("material", material);
-		return query.getResultList();
+		List<EquipmentMaterial> materials = query.getResultList();
+		em.close();
+
+		return materials;
 	}
 
 	public long fetchEventCount(Material material) throws Exception {
@@ -1189,9 +1338,13 @@ public final class PersistenceService {
 			createNamedQuery(EVENT_MAT_XREF, "SELECT COUNT(event) FROM OeeEvent event WHERE material = :material");
 		}
 
-		Query query = getEntityManager().createNamedQuery(EVENT_MAT_XREF);
+		EntityManager em = getEntityManager();
+		Query query = em.createNamedQuery(EVENT_MAT_XREF);
 		query.setParameter("material", material);
-		return (long) query.getSingleResult();
+		long count = (long) query.getSingleResult();
+		em.close();
+
+		return count;
 	}
 
 	public long fetchEventCount(Equipment equipment) throws Exception {
@@ -1201,9 +1354,13 @@ public final class PersistenceService {
 			createNamedQuery(EVENT_EQ_XREF, "SELECT COUNT(event) FROM OeeEvent event WHERE equipment = :equipment");
 		}
 
-		Query query = getEntityManager().createNamedQuery(EVENT_EQ_XREF);
+		EntityManager em = getEntityManager();
+		Query query = em.createNamedQuery(EVENT_EQ_XREF);
 		query.setParameter("equipment", equipment);
-		return (long) query.getSingleResult();
+		long count = (long) query.getSingleResult();
+		em.close();
+
+		return count;
 	}
 
 	public long fetchEventCount(UnitOfMeasure uom) throws Exception {
@@ -1213,9 +1370,13 @@ public final class PersistenceService {
 			createNamedQuery(EVENT_UOM_XREF, "SELECT COUNT(event) FROM OeeEvent event WHERE uom = :uom");
 		}
 
-		Query query = getEntityManager().createNamedQuery(EVENT_UOM_XREF);
+		EntityManager em = getEntityManager();
+		Query query = em.createNamedQuery(EVENT_UOM_XREF);
 		query.setParameter("uom", uom);
-		return (long) query.getSingleResult();
+		long count = (long) query.getSingleResult();
+		em.close();
+
+		return count;
 	}
 
 	public long fetchEventCount(Reason reason) throws Exception {
@@ -1225,9 +1386,13 @@ public final class PersistenceService {
 			createNamedQuery(EVENT_REASON_XREF, "SELECT COUNT(event) FROM OeeEvent event WHERE reason = :reason");
 		}
 
-		Query query = getEntityManager().createNamedQuery(EVENT_REASON_XREF);
+		EntityManager em = getEntityManager();
+		Query query = em.createNamedQuery(EVENT_REASON_XREF);
 		query.setParameter("reason", reason);
-		return (long) query.getSingleResult();
+		long count = (long) query.getSingleResult();
+		em.close();
+
+		return count;
 	}
 
 	public long fetchEventCount(Shift shift) throws Exception {
@@ -1237,9 +1402,13 @@ public final class PersistenceService {
 			createNamedQuery(EVENT_SHIFT_XREF, "SELECT COUNT(event) FROM OeeEvent event WHERE shift = :shift");
 		}
 
-		Query query = getEntityManager().createNamedQuery(EVENT_SHIFT_XREF);
+		EntityManager em = getEntityManager();
+		Query query = em.createNamedQuery(EVENT_SHIFT_XREF);
 		query.setParameter("shift", shift);
-		return (long) query.getSingleResult();
+		long count = (long) query.getSingleResult();
+		em.close();
+
+		return count;
 	}
 
 	public long fetchEventCount(Team team) throws Exception {
@@ -1249,9 +1418,13 @@ public final class PersistenceService {
 			createNamedQuery(EVENT_TEAM_XREF, "SELECT COUNT(event) FROM OeeEvent event WHERE team = :team");
 		}
 
-		Query query = getEntityManager().createNamedQuery(EVENT_TEAM_XREF);
+		EntityManager em = getEntityManager();
+		Query query = em.createNamedQuery(EVENT_TEAM_XREF);
 		query.setParameter("team", team);
-		return (long) query.getSingleResult();
+		long count = (long) query.getSingleResult();
+		em.close();
+
+		return count;
 	}
 
 	public List<UnitOfMeasure> fetchUomCrossReferences(UnitOfMeasure uom) throws Exception {
@@ -1262,9 +1435,13 @@ public final class PersistenceService {
 					"SELECT uom FROM UnitOfMeasure uom WHERE uom1 = :uom OR uom2 = :uom OR abscissaUnit = :uom OR bridgeAbscissaUnit = :uom");
 		}
 
-		TypedQuery<UnitOfMeasure> query = getEntityManager().createNamedQuery(UOM_XREF, UnitOfMeasure.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<UnitOfMeasure> query = em.createNamedQuery(UOM_XREF, UnitOfMeasure.class);
 		query.setParameter("uom", uom);
-		return query.getResultList();
+		List<UnitOfMeasure> uoms = query.getResultList();
+		em.close();
+
+		return uoms;
 	}
 
 	public DataCollector fetchCollectorByName(String name) throws Exception {
@@ -1276,10 +1453,12 @@ public final class PersistenceService {
 		}
 
 		DataCollector collector = null;
-		TypedQuery<DataCollector> query = getEntityManager().createNamedQuery(COLLECT_BY_NAME, DataCollector.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<DataCollector> query = em.createNamedQuery(COLLECT_BY_NAME, DataCollector.class);
 		query.setParameter("name", name);
 
 		List<DataCollector> collectors = query.getResultList();
+		em.close();
 
 		if (collectors.size() == 1) {
 			collector = collectors.get(0);
@@ -1295,9 +1474,13 @@ public final class PersistenceService {
 					"SELECT resolver FROM EventResolver resolver WHERE resolver.dataSource = :source");
 		}
 
-		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(COLLECT_RES_XREF, EventResolver.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<EventResolver> query = em.createNamedQuery(COLLECT_RES_XREF, EventResolver.class);
 		query.setParameter("source", source);
-		return query.getResultList();
+		List<EventResolver> resolvers = query.getResultList();
+		em.close();
+
+		return resolvers;
 	}
 
 	public List<EventResolver> fetchResolverCrossReferences(DataCollector collector) throws Exception {
@@ -1308,9 +1491,13 @@ public final class PersistenceService {
 					"SELECT resolver FROM EventResolver resolver WHERE resolver.collector = :collector");
 		}
 
-		TypedQuery<EventResolver> query = getEntityManager().createNamedQuery(COLLECT_RES_XREF, EventResolver.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<EventResolver> query = em.createNamedQuery(COLLECT_RES_XREF, EventResolver.class);
 		query.setParameter("collector", collector);
-		return query.getResultList();
+		List<EventResolver> resolvers = query.getResultList();
+		em.close();
+
+		return resolvers;
 	}
 
 	private void createContainerManagedEntityManagerFactory(String jdbcUrl, String userName, String password)
@@ -1435,9 +1622,6 @@ public final class PersistenceService {
 		properties.put("hibernate.event.merge.entity_copy_observer", "allow");
 
 		// Hikari connection pool
-		properties.put("hibernate.hikari.minimumIdle", "1");
-		properties.put("hibernate.hikari.maximumPoolSize", "20");
-		properties.put("hibernate.hikari.idleTimeout", "60000");
 		properties.put("hibernate.connection.provider_class",
 				"org.hibernate.hikaricp.internal.HikariCPConnectionProvider");
 
@@ -1454,13 +1638,17 @@ public final class PersistenceService {
 							+ "AND (e.startTime.localDateTime >= :from AND e.startTime.localDateTime < :to) ORDER BY e.startTime.localDateTime ASC");
 		}
 
-		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(AVAIL_RECORDS, OeeEvent.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<OeeEvent> query = em.createNamedQuery(AVAIL_RECORDS, OeeEvent.class);
 		query.setParameter("type", OeeEventType.AVAILABILITY);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from.toLocalDateTime());
 		query.setParameter("to", to.toLocalDateTime());
 
-		return query.getResultList();
+		List<OeeEvent> events = query.getResultList();
+		em.close();
+
+		return events;
 	}
 
 	public List<OeeEvent> fetchProduction(Equipment equipment, Material material, OffsetDateTime from,
@@ -1472,7 +1660,8 @@ public final class PersistenceService {
 					+ "AND e.eventType IN :types AND (e.startTime.localDateTime >= :from AND e.startTime.localDateTime < :to) AND e.material = :material ORDER BY e.startTime.localDateTime ASC");
 		}
 
-		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(PROD_RECORDS, OeeEvent.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<OeeEvent> query = em.createNamedQuery(PROD_RECORDS, OeeEvent.class);
 
 		query.setParameter("types", OeeEventType.getProductionTypes());
 		query.setParameter("equipment", equipment);
@@ -1480,7 +1669,10 @@ public final class PersistenceService {
 		query.setParameter("from", from.toLocalDateTime());
 		query.setParameter("to", to.toLocalDateTime());
 
-		return query.getResultList();
+		List<OeeEvent> events = query.getResultList();
+		em.close();
+
+		return events;
 	}
 
 	public List<OeeEvent> fetchSetupsForPeriod(Equipment equipment, OffsetDateTime from, OffsetDateTime to)
@@ -1493,13 +1685,17 @@ public final class PersistenceService {
 							+ "AND e.startTime.localDateTime  <= :to AND (e.endTime.localDateTime  >= :from OR e.endTime.localDateTime IS NULL)");
 		}
 
-		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(SETUP_PERIOD, OeeEvent.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<OeeEvent> query = em.createNamedQuery(SETUP_PERIOD, OeeEvent.class);
 		query.setParameter("type", OeeEventType.MATL_CHANGE);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from.toLocalDateTime());
 		query.setParameter("to", to.toLocalDateTime());
 
-		return query.getResultList();
+		List<OeeEvent> events = query.getResultList();
+		em.close();
+
+		return events;
 	}
 
 	public List<OeeEvent> fetchSetupsForPeriodAndMaterial(Equipment equipment, OffsetDateTime from, OffsetDateTime to,
@@ -1512,14 +1708,18 @@ public final class PersistenceService {
 							+ "AND e.startTime.localDateTime  <= :to AND (e.endTime.localDateTime  >= :from OR e.endTime.localDateTime IS NULL) AND e.material = :matl");
 		}
 
-		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(SETUP_PERIOD_MATL, OeeEvent.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<OeeEvent> query = em.createNamedQuery(SETUP_PERIOD_MATL, OeeEvent.class);
 		query.setParameter("type", OeeEventType.MATL_CHANGE);
 		query.setParameter("equipment", equipment);
 		query.setParameter("from", from.toLocalDateTime());
 		query.setParameter("to", to.toLocalDateTime());
 		query.setParameter("matl", material);
 
-		return query.getResultList();
+		List<OeeEvent> events = query.getResultList();
+		em.close();
+
+		return events;
 	}
 
 	public OeeEvent fetchLastBoundEvent(Equipment equipment, OeeEventType type, OffsetDateTime dateTime)
@@ -1532,12 +1732,14 @@ public final class PersistenceService {
 							+ "AND e.startTime.localDateTime <= :dateTime ORDER BY e.startTime.localDateTime DESC");
 		}
 
-		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(LAST_EVENT, OeeEvent.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<OeeEvent> query = em.createNamedQuery(LAST_EVENT, OeeEvent.class);
 		query.setParameter("equipment", equipment);
 		query.setParameter("type", type);
 		query.setParameter("dateTime", dateTime.toLocalDateTime());
 		query.setMaxResults(1);
 		List<OeeEvent> records = query.getResultList();
+		em.close();
 
 		OeeEvent record = null;
 		if (records.size() == 1) {
@@ -1555,11 +1757,13 @@ public final class PersistenceService {
 					"SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type ORDER BY e.startTime.localDateTime DESC");
 		}
 
-		TypedQuery<OeeEvent> query = getEntityManager().createNamedQuery(LAST_EVENT, OeeEvent.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<OeeEvent> query = em.createNamedQuery(LAST_EVENT, OeeEvent.class);
 		query.setParameter("equipment", equipment);
 		query.setParameter("type", type);
 		query.setMaxResults(1);
 		List<OeeEvent> records = query.getResultList();
+		em.close();
 
 		OeeEvent record = null;
 		if (records.size() == 1) {
@@ -1668,9 +1872,13 @@ public final class PersistenceService {
 	 */
 	@SuppressWarnings("unchecked")
 	public String executeQuery(String sql) throws Exception {
-		List<Object[]> rowList = getEntityManager().createNativeQuery(sql).getResultList();
+		EntityManager em = getEntityManager();
+		List<Object[]> rowList = em.createNativeQuery(sql).getResultList();
 		Gson gson = new Gson();
-		return gson.toJson(rowList);
+		String result = gson.toJson(rowList);
+		em.close();
+
+		return result;
 	}
 
 	/**
@@ -1688,10 +1896,14 @@ public final class PersistenceService {
 					"SELECT event FROM DatabaseEvent event WHERE status = :status ORDER BY event.eventTime.localDateTime ASC");
 		}
 
-		TypedQuery<DatabaseEvent> query = getEntityManager().createNamedQuery(NEW_EVENTS, DatabaseEvent.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<DatabaseEvent> query = em.createNamedQuery(NEW_EVENTS, DatabaseEvent.class);
 		query.setParameter("status", status);
 
-		return query.getResultList();
+		List<DatabaseEvent> events = query.getResultList();
+		em.close();
+
+		return events;
 	}
 
 	/**
@@ -1710,11 +1922,15 @@ public final class PersistenceService {
 					"SELECT event FROM DatabaseEvent event WHERE status = :status AND sourceId = :sourceId ORDER BY event.eventTime.localDateTime ASC");
 		}
 
-		TypedQuery<DatabaseEvent> query = getEntityManager().createNamedQuery(NEW_EVENTS_SOURCE, DatabaseEvent.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<DatabaseEvent> query = em.createNamedQuery(NEW_EVENTS_SOURCE, DatabaseEvent.class);
 		query.setParameter("status", status);
 		query.setParameter("sourceId", sourceId);
 
-		return query.getResultList();
+		List<DatabaseEvent> events = query.getResultList();
+		em.close();
+
+		return events;
 	}
 
 	/**
@@ -1740,7 +1956,8 @@ public final class PersistenceService {
 		}
 		qry += " ORDER BY e.startTime.localDateTime ASC";
 
-		TypedQuery<OeeEvent> query = getEntityManager().createQuery(qry, OeeEvent.class);
+		EntityManager em = getEntityManager();
+		TypedQuery<OeeEvent> query = em.createQuery(qry, OeeEvent.class);
 		query.setParameter("type", type);
 		query.setParameter("equipment", equipment);
 
@@ -1752,7 +1969,10 @@ public final class PersistenceService {
 			query.setParameter("to", to.toLocalDateTime());
 		}
 
-		return query.getResultList();
+		List<OeeEvent> events = query.getResultList();
+		em.close();
+
+		return events;
 	}
 
 	public String getJdbcConnection() {
