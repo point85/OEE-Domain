@@ -33,4 +33,18 @@ public class HttpSource extends CollectorDataSource {
 			setPort(Integer.valueOf(tokens[1]));
 		}
 	}
+
+	// use endpoint path column
+	public Integer getHttpsPort() {
+		return getEndpointPath() != null ? Integer.parseInt(getEndpointPath()) : null;
+	}
+
+	// use endpoint path column
+	public void setHttpsPort(Integer port) {
+		if (port != null) {
+			setEndpointPath(String.valueOf(port));
+		} else {
+			setEndpointPath(null);
+		}
+	}
 }

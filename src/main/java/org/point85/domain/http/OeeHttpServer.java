@@ -1,14 +1,20 @@
 package org.point85.domain.http;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Objects;
 
-import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.http.HttpVersion;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +25,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class OeeHttpServer {
-	// default port
+	// default HTTP port
 	public static final int DEFAULT_PORT = 8182;
 
 	// query string attributes
@@ -41,9 +47,13 @@ public class OeeHttpServer {
 	public static final String STATUS_EP = "status";
 
 	// thread pool
-	private static final int MAX_THREADS = 100;
+	private static final int MAX_THREADS = 200;
 	private static final int MIN_THREADS = 5;
 	private static final int IDLE_TIMEOUT = 120;
+
+	private static final String KEYSTORE_PASSWORD = "Point85";
+
+	private static final String POINT85_KEYSTORE = "config/security/point85-keystore.jks";
 
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(OeeHttpServer.class);
@@ -51,8 +61,11 @@ public class OeeHttpServer {
 	// wrapped Jetty server
 	private Server jettyServer;
 
-	// port
-	private int listeningPort;
+	// HTTP port
+	private Integer httpPort;
+
+	// HTTPS port
+	private Integer httpsPort;
 
 	// servlet
 	private OeeHttpServlet servlet = new OeeHttpServlet();
@@ -60,8 +73,16 @@ public class OeeHttpServer {
 	// state
 	private ServerState state = ServerState.STOPPED;
 
-	public OeeHttpServer(int port) {
-		listeningPort = port;
+	public OeeHttpServer(int httpPort) {
+		this.httpPort = httpPort;
+	}
+
+	public Integer getHttpsPort() {
+		return httpsPort;
+	}
+
+	public void setHttpsPort(Integer httpsPort) {
+		this.httpsPort = httpsPort;
 	}
 
 	public ServerState getState() {
@@ -100,6 +121,39 @@ public class OeeHttpServer {
 		OeeHttpServlet.setAcceptingEventRequests(acceptingEventRequests);
 	}
 
+	private void configureHTTPS(HttpConfiguration httpConfig) throws Exception {
+		// HTTPS configuration
+		final SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
+
+		// Point85 keystore
+		File keystore = new File(POINT85_KEYSTORE);
+		String keystorePath = keystore.getCanonicalPath();
+
+		sslContextFactory.setKeyStorePath(keystorePath);
+		sslContextFactory.setKeyStorePassword(KEYSTORE_PASSWORD);
+		sslContextFactory.setKeyManagerPassword(KEYSTORE_PASSWORD);
+
+		// SSL HTTP Configuration
+		HttpConfiguration httpsConfig = new HttpConfiguration(httpConfig);
+		SecureRequestCustomizer customizer = new SecureRequestCustomizer();
+		customizer.setStsMaxAge(2000);
+		customizer.setStsIncludeSubDomains(true);
+		httpsConfig.addCustomizer(customizer);
+
+		// SSL Connector
+		ServerConnector sslConnector = new ServerConnector(jettyServer,
+				new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
+				new HttpConnectionFactory(httpsConfig));
+		sslConnector.setPort(httpsPort);
+		sslConnector.setIdleTimeout(500000);
+
+		jettyServer.addConnector(sslConnector);
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Added HTTPS connector, HTTPS keystore: " + keystorePath);
+		}
+	}
+
 	/**
 	 * Start the Jetty server
 	 * 
@@ -110,16 +164,33 @@ public class OeeHttpServer {
 		ServletContextHandler context = new ServletContextHandler();
 		context.setContextPath("/");
 
-		// create Jetty server
+		// create Jetty server in a queued thread pool
 		QueuedThreadPool threadPool = new QueuedThreadPool(MAX_THREADS, MIN_THREADS, IDLE_TIMEOUT);
 
 		// server
 		jettyServer = new Server(threadPool);
 
-		// connector
-		try (ServerConnector connector = new ServerConnector(jettyServer)) {
-			connector.setPort(listeningPort);
-			jettyServer.setConnectors(new Connector[] { connector });
+		// Extra options
+		jettyServer.setDumpAfterStart(false);
+		jettyServer.setDumpBeforeStop(false);
+		jettyServer.setStopAtShutdown(true);
+
+		// HTTP configuration
+		HttpConfiguration httpConfig = new HttpConfiguration();
+		httpConfig.setSecureScheme("https");
+		httpConfig.setOutputBufferSize(32768);
+		httpConfig.setRequestHeaderSize(8192);
+		httpConfig.setResponseHeaderSize(8192);
+		httpConfig.setSendServerVersion(true);
+		httpConfig.setSendDateHeader(false);
+
+		ServerConnector httpConnection = new ServerConnector(jettyServer, new HttpConnectionFactory(httpConfig));
+		httpConnection.setPort(httpPort);
+		httpConnection.setIdleTimeout(30000);
+		jettyServer.addConnector(httpConnection);
+
+		if (httpsPort != null) {
+			configureHTTPS(httpConfig);
 		}
 
 		// create servlet
@@ -132,10 +203,10 @@ public class OeeHttpServer {
 
 		state = ServerState.STARTED;
 
-		String baseUrl = "http://" + InetAddress.getLocalHost().getHostName() + ":" + listeningPort + ROOT_MAPPING;
+		String baseUrl = "http://" + InetAddress.getLocalHost().getHostName() + ":" + httpPort + ROOT_MAPPING;
 
 		if (logger.isInfoEnabled()) {
-			logger.info("OPC HTTP server started at URL " + baseUrl);
+			logger.info("OPC HTTP server started at URL " + baseUrl + " and HTTPS port " + httpsPort);
 		}
 	}
 
@@ -149,7 +220,7 @@ public class OeeHttpServer {
 		state = ServerState.STOPPED;
 
 		if (logger.isInfoEnabled()) {
-			logger.info("OPC HTTP server stopped on port " + listeningPort);
+			logger.info("OPC HTTP server stopped on port " + httpPort);
 		}
 	}
 
@@ -165,7 +236,7 @@ public class OeeHttpServer {
 	}
 
 	public int getListeningPort() {
-		return this.listeningPort;
+		return this.httpPort;
 	}
 
 	@Override

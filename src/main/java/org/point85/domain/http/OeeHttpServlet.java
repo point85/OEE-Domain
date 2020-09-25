@@ -170,6 +170,11 @@ class OeeHttpServlet extends HttpServlet {
 
 				content = serveEquipmentStatusRequest(equipmentNames[0]);
 
+			} else if (tokens[1].equalsIgnoreCase("favicon.ico")) {
+				// ignore icon
+				response.setStatus(HttpServletResponse.SC_OK);
+				return;
+
 			} else {
 				throw new Exception(DomainLocalizer.instance().getErrorString("unrecognized.endpoint", path));
 			}

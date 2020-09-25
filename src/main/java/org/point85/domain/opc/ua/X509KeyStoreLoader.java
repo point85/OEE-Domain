@@ -9,12 +9,14 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
-import org.point85.domain.DomainUtils;
 import org.point85.domain.i18n.DomainLocalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class X509KeyStoreLoader {
+	// folder with keystore file
+	private static final String CONFIG_DIR = "config/security/";
+
 	// input to java keytool command
 	private static final String KEYSTORE_ALIAS = "opcua";
 
@@ -33,11 +35,10 @@ public class X509KeyStoreLoader {
 			logger.info("Reading keystore " + keystoreName);
 		}
 
-		String configDir = System.getProperty(DomainUtils.CONFIG_DIR);
-		File serverKeyStore = new File(configDir + "/ssl/" + keystoreName);
+		File serverKeyStore = new File(CONFIG_DIR + keystoreName);
 
 		if (logger.isInfoEnabled()) {
-			logger.info("Loading KeyStore at {}", serverKeyStore);
+			logger.info("Loading KeyStore at " + serverKeyStore.getCanonicalPath());
 		}
 
 		if (!serverKeyStore.exists()) {

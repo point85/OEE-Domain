@@ -23,9 +23,6 @@ import org.openscada.opc.dcom.common.FILETIME;
 import org.point85.domain.i18n.DomainLocalizer;
 
 public final class DomainUtils {
-	// folder with configuration files
-	public static final String CONFIG_DIR = "config_dir";
-
 	// ISO 8601 datetime format, yyyy-mm-ddThh:mm:ss.nnnnnn+|-hh:mm
 	public static final String OFFSET_DATE_TIME_8601 = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ";
 
@@ -40,8 +37,8 @@ public final class DomainUtils {
 	}
 
 	public static String getVersionInfo() {
-		return DomainLocalizer.instance().getLangString("version") + " 3.1.1, "
-				+ LocalDate.of(2020, 9, 14).format(DateTimeFormatter.ISO_DATE);
+		return DomainLocalizer.instance().getLangString("version") + " 3.1.2, "
+				+ LocalDate.of(2020, 9, 25).format(DateTimeFormatter.ISO_DATE);
 	}
 
 	// format a Duration

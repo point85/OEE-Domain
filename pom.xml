@@ -4,7 +4,7 @@
 
   <groupId>org.point85</groupId>
   <artifactId>oee-domain</artifactId>
-  <version>3.1.1</version>
+  <version>3.1.2</version>
   <packaging>jar</packaging>
   <url>http://maven.apache.org</url>
 
@@ -235,6 +235,7 @@
         <artifactId>jetty-servlet</artifactId>
         <version>${jetty.version}</version>
     </dependency>
+
 </dependencies>
   
   <!-- copy dependent jars -->

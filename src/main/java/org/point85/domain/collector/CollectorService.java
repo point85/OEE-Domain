@@ -235,8 +235,8 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 		if (serverSource == null) {
 			if (logger.isInfoEnabled()) {
-				logger.info(
-						"Found HTTP server specified for host " + source.getHost() + " on port " + source.getPort());
+				logger.info("Found HTTP server specified for host " + source.getHost() + " on HTTP port "
+						+ source.getPort() + " and HTTPS port " + source.getHttpsPort());
 			}
 			serverSource = new HttpServerSource(source);
 			httpServerMap.put(id, serverSource);
@@ -393,7 +393,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 			List<RoutingKey> routingKeys = new ArrayList<>();
 			routingKeys.add(RoutingKey.EQUIPMENT_SOURCE_EVENT);
-			
+
 			// also can accept commands
 			routingKeys.add(RoutingKey.COMMAND_MESSAGE);
 
@@ -552,12 +552,18 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			HttpSource source = entry.getValue().getSource();
 
 			Integer port = source.getPort();
+			Integer httpsPort = source.getHttpsPort();
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Starting embedded HTTP server on port " + port);
+				logger.info("Starting embedded HTTP server on HTTP port " + port + " and HTTPS port " + httpsPort);
 			}
 
 			OeeHttpServer httpServer = new OeeHttpServer(port);
+
+			if (httpsPort != null) {
+				httpServer.setHttpsPort(httpsPort);
+			}
+			
 			OeeHttpServer.setDataChangeListener(this);
 			httpServer.setAcceptingEventRequests(true);
 			httpServer.startup();
@@ -566,7 +572,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			appContext.getHttpServers().add(httpServer);
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Started HTTP server on port " + port);
+				logger.info("Started HTTP server on port " + " and HTTPS port " + httpsPort);
 			}
 		}
 	}
@@ -1159,7 +1165,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 			// stop RMQ notifications
 			stopNotifications();
-			
+
 			// stop heartbeat
 			if (heartbeatTimer != null) {
 				heartbeatTimer.cancel();
