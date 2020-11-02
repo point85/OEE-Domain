@@ -31,14 +31,17 @@ public final class DomainUtils {
 
 	// pattern for OffsetDateTime display
 	public static final String OFFSET_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS ZZZZZ";
+	
+	// SSL key and truststore folder
+	public static final String SECURITY_DIR = "config/security/";
 
 	private DomainUtils() {
 		throw new IllegalStateException("Utility class");
 	}
 
 	public static String getVersionInfo() {
-		return DomainLocalizer.instance().getLangString("version") + " 3.1.2, "
-				+ LocalDate.of(2020, 9, 25).format(DateTimeFormatter.ISO_DATE);
+		return DomainLocalizer.instance().getLangString("version") + " 3.2.0, "
+				+ LocalDate.of(2020, 11, 3).format(DateTimeFormatter.ISO_DATE);
 	}
 
 	// format a Duration

@@ -45,6 +45,9 @@ import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.jms.JmsClient;
 import org.point85.domain.jms.JmsMessageListener;
 import org.point85.domain.jms.JmsSource;
+import org.point85.domain.kafka.KafkaMessageListener;
+import org.point85.domain.kafka.KafkaOeeClient;
+import org.point85.domain.kafka.KafkaSource;
 import org.point85.domain.messaging.ApplicationMessage;
 import org.point85.domain.messaging.CollectorCommandMessage;
 import org.point85.domain.messaging.CollectorNotificationMessage;
@@ -102,7 +105,7 @@ import com.google.gson.Gson;
  */
 public class CollectorService implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener,
 		RmqMessageListener, JmsMessageListener, DatabaseEventListener, FileEventListener, MqttMessageListener,
-		ModbusEventListener, CronEventListener {
+		ModbusEventListener, CronEventListener, KafkaMessageListener {
 
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
@@ -146,6 +149,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	private final Map<String, HttpServerSource> httpServerMap = new HashMap<>();
 	private final Map<String, RmqBrokerSource> rmqBrokerMap = new HashMap<>();
 	private final Map<String, JmsBrokerSource> jmsBrokerMap = new HashMap<>();
+	private final Map<String, PolledSource> kafkaBrokerMap = new HashMap<>();
 	private final Map<String, PolledSource> databaseServerMap = new HashMap<>();
 	private final Map<String, PolledSource> fileServerMap = new HashMap<>();
 	private final Map<String, PolledSource> modbusSlaveMap = new HashMap<>();
@@ -175,6 +179,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		httpServerMap.clear();
 		rmqBrokerMap.clear();
 		jmsBrokerMap.clear();
+		kafkaBrokerMap.clear();
 		databaseServerMap.clear();
 		fileServerMap.clear();
 		cronSchedulerMap.clear();
@@ -334,6 +339,30 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		serverSource.getPollingIntervals().add(pollingMillis);
 	}
 
+	// collect Kafka server info
+	private void buildKafkaServers(EventResolver resolver) {
+		KafkaSource eventSource = (KafkaSource) resolver.getDataSource();
+		String sourceId = resolver.getSourceId();
+		Integer pollingMillis = resolver.getUpdatePeriod() != null ? resolver.getUpdatePeriod()
+				: KafkaOeeClient.DEFAULT_POLLING_INTERVAL;
+
+		String id = eventSource.getId();
+
+		PolledSource serverSource = kafkaBrokerMap.get(id);
+
+		if (serverSource == null) {
+			if (logger.isInfoEnabled()) {
+				logger.info("Found Kafka server specified for host " + eventSource.getHost() + " on port "
+						+ eventSource.getPort());
+			}
+
+			serverSource = new PolledSource(eventSource);
+			kafkaBrokerMap.put(id, serverSource);
+		}
+		serverSource.getSourceIds().add(sourceId);
+		serverSource.getPollingIntervals().add(pollingMillis);
+	}
+
 	// collect all cron scheduler info
 	private void buildCronSchedulers(EventResolver resolver) {
 		CronEventSource eventSource = (CronEventSource) resolver.getDataSource();
@@ -430,6 +459,44 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Started JMS client: " + source.getId());
+			}
+		}
+	}
+
+	private void connectToKafkaBrokers(Map<String, PolledSource> brokerSources) throws Exception {
+		for (Entry<String, PolledSource> entry : brokerSources.entrySet()) {
+			KafkaSource kafkaSource = (KafkaSource) entry.getValue().getEventSource();
+
+			// create the Kafka client
+			KafkaOeeClient kafkaClient = new KafkaOeeClient();
+			kafkaClient.setShouldNotify(false);
+
+			// connect to server
+			kafkaClient.createConsumer(kafkaSource, KafkaOeeClient.EVENT_TOPIC);
+
+			// add to context
+			appContext.getKafkaClients().add(kafkaClient);
+
+			// subscribe to event messages
+			kafkaClient.registerListener(this);
+
+			// find minimum polling interval
+			List<Integer> intervals = entry.getValue().getPollingIntervals();
+
+			int min = KafkaOeeClient.DEFAULT_POLLING_INTERVAL;
+
+			for (Integer interval : intervals) {
+				if (interval < min) {
+					min = interval;
+				}
+			}
+
+			kafkaClient.setPollingInterval(min);
+
+			kafkaClient.startPolling();
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Started Kafka client: " + kafkaSource.getId());
 			}
 		}
 	}
@@ -563,7 +630,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			if (httpsPort != null) {
 				httpServer.setHttpsPort(httpsPort);
 			}
-			
+
 			OeeHttpServer.setDataChangeListener(this);
 			httpServer.setAcceptingEventRequests(true);
 			httpServer.startup();
@@ -707,6 +774,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		List<String> hostNames = new ArrayList<>(2);
 		hostNames.add(hostname);
 		hostNames.add(ip);
+		hostNames.add("localhost");
 
 		// fetch script resolvers from database
 		List<CollectorState> states = new ArrayList<>();
@@ -795,6 +863,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					break;
 				}
 
+				case KAFKA: {
+					buildKafkaServers(resolver);
+					break;
+				}
+
 				default:
 					break;
 				}
@@ -818,6 +891,9 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 		// collect equipment events for JMS
 		connectToJmsBrokers(jmsBrokerMap);
+
+		// collect equipment events for Kafka
+		connectToKafkaBrokers(kafkaBrokerMap);
 
 		// poll database servers for events in the interface table
 		connectToDatabaseServers(databaseServerMap);
@@ -888,117 +964,151 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		onInformation("Collector " + collectorName + " started on host " + getId());
 	}
 
-	private synchronized void startPublishingNotifications() throws Exception {
-		boolean startHeartbeat = false;
+	private void connectToRMQ(RmqSource server) throws Exception {
+		// first look in RMQ data brokers
+		boolean rmqClientExists = false;
 
+		for (RmqClient anRmqClient : appContext.getRmqClients()) {
+			if (anRmqClient.getHostName().equals(server.getHost()) && anRmqClient.getHostPort() == server.getPort()) {
+				anRmqClient.setShouldNotify(true);
+				rmqClientExists = true;
+				break;
+			}
+		}
+
+		if (!rmqClientExists) {
+			// not in the app context already as a data source too
+			RmqClient rmqClient = new RmqClient();
+			rmqClient.setShouldNotify(true);
+
+			// queue
+			String queueName = "CMD_" + getClass().getSimpleName() + "_" + System.currentTimeMillis();
+
+			// connect to broker and subscribe for commands
+			List<RoutingKey> routingKeys = new ArrayList<>();
+			routingKeys.add(RoutingKey.COMMAND_MESSAGE);
+
+			rmqClient.startUp(server.getHost(), server.getPort(), server.getUserName(), server.getUserPassword(),
+					queueName, routingKeys, this);
+
+			// add to context
+			appContext.getRmqClients().add(rmqClient);
+		}
+	}
+
+	private void connectToJMS(JmsSource server) throws Exception {
+		// first look in JMS data brokers
+		boolean jmsClientExists = false;
+
+		for (JmsClient aJmsClient : appContext.getJmsClients()) {
+			if (aJmsClient.getHostName().equals(server.getHost()) && aJmsClient.getHostPort() == server.getPort()) {
+				aJmsClient.setShouldNotify(true);
+				jmsClientExists = true;
+				break;
+			}
+		}
+
+		if (!jmsClientExists) {
+			// not in the app context already as a data source
+			JmsClient jmsClient = new JmsClient();
+			jmsClient.setShouldNotify(true);
+
+			jmsClient.startUp(server.getHost(), server.getPort(), server.getUserName(), server.getUserPassword(), this);
+
+			// add to context
+			appContext.getJmsClients().add(jmsClient);
+		}
+	}
+
+	private void connectToMQTT(MqttSource server) throws Exception {
+		// first look in MQTT data brokers
+		boolean mqttClientExists = false;
+
+		for (MqttOeeClient anMqttClient : appContext.getMqttClients()) {
+			if (anMqttClient.getHostName().equals(server.getHost()) && anMqttClient.getHostPort() == server.getPort()) {
+				anMqttClient.setShouldNotify(true);
+				mqttClientExists = true;
+				break;
+			}
+		}
+
+		if (!mqttClientExists) {
+			// not in the app context already as a data source
+			MqttOeeClient mqttClient = new MqttOeeClient();
+			mqttClient.setShouldNotify(true);
+
+			mqttClient.startUp(server.getHost(), server.getPort(), server.getUserName(), server.getUserPassword(),
+					this);
+
+			// add to context
+			appContext.getMqttClients().add(mqttClient);
+		}
+	}
+
+	private void connectToKafka(KafkaSource server) throws Exception {
+		// first look in Kafka servers for a producer
+		boolean kafkaClientExists = false;
+
+		for (KafkaOeeClient aKafkaClient : appContext.getKafkaClients()) {
+			KafkaSource producerSource = aKafkaClient.getProducerServer();
+			if (producerSource != null && producerSource.getHost().equals(server.getHost())
+					&& producerSource.getPort().equals(server.getPort())) {
+				aKafkaClient.setShouldNotify(true);
+				kafkaClientExists = true;
+				break;
+			}
+		}
+
+		if (!kafkaClientExists) {
+			// not in the app context already as a data source
+			KafkaOeeClient producerClient = new KafkaOeeClient();
+			producerClient.setShouldNotify(true);
+
+			// connect as a producer
+			producerClient.createProducer(server, KafkaOeeClient.NOTIFICATION_TOPIC);
+
+			// add to context
+			appContext.getKafkaClients().add(producerClient);
+		}
+	}
+
+	private synchronized void startPublishingNotifications() throws Exception {
 		// connect to notification brokers for commands
 		for (DataCollector collector : collectors) {
-			DataSourceType brokerType = collector.getBrokerType();
+			CollectorDataSource server = collector.getNotificationServer();
 
-			String brokerHostName = collector.getBrokerHost();
-
-			if (brokerType == null || brokerHostName == null || brokerHostName.length() == 0) {
+			if (server == null) {
 				continue;
 			}
 
-			Integer brokerPort = collector.getBrokerPort();
-			String key = brokerHostName + ":" + brokerPort;
+			DataSourceType brokerType = server.getDataSourceType();
 
 			// new publisher
 			if (brokerType.equals(DataSourceType.RMQ)) {
-				// first look in RMQ data brokers
-				boolean rmqClientExists = false;
-
-				for (RmqClient anRmqClient : appContext.getRmqClients()) {
-					if (anRmqClient.getHostName().equals(brokerHostName) && anRmqClient.getHostPort() == brokerPort) {
-						anRmqClient.setShouldNotify(true);
-						rmqClientExists = true;
-						break;
-					}
-				}
-
-				if (!rmqClientExists) {
-					// not in the app context already as a data source too
-					RmqClient rmqClient = new RmqClient();
-					rmqClient.setShouldNotify(true);
-
-					// queue
-					String queueName = "CMD_" + getClass().getSimpleName() + "_" + System.currentTimeMillis();
-
-					// connect to broker and subscribe for commands
-					List<RoutingKey> routingKeys = new ArrayList<>();
-					routingKeys.add(RoutingKey.COMMAND_MESSAGE);
-
-					rmqClient.startUp(brokerHostName, brokerPort, collector.getBrokerUserName(),
-							collector.getBrokerUserPassword(), queueName, routingKeys, this);
-
-					// add to context
-					appContext.getRmqClients().add(rmqClient);
-				}
-
-				startHeartbeat = true;
+				connectToRMQ((RmqSource) server);
 
 			} else if (brokerType.equals(DataSourceType.JMS)) {
-				// first look in JMS data brokers
-				boolean jmsClientExists = false;
+				connectToJMS((JmsSource) server);
 
-				for (JmsClient aJmsClient : appContext.getJmsClients()) {
-					if (aJmsClient.getHostName().equals(brokerHostName) && aJmsClient.getHostPort() == brokerPort) {
-						aJmsClient.setShouldNotify(true);
-						jmsClientExists = true;
-						break;
-					}
-				}
-
-				if (!jmsClientExists) {
-					// not in the app context already as a data source
-					JmsClient jmsClient = new JmsClient();
-					jmsClient.setShouldNotify(true);
-
-					jmsClient.startUp(brokerHostName, brokerPort, collector.getBrokerUserName(),
-							collector.getBrokerUserPassword(), this);
-
-					// add to context
-					appContext.getJmsClients().add(jmsClient);
-				}
-
-				startHeartbeat = true;
+			} else if (brokerType.equals(DataSourceType.KAFKA)) {
+				connectToKafka((KafkaSource) server);
 
 			} else if (brokerType.equals(DataSourceType.MQTT)) {
-				// first look in MQTT data brokers
-				boolean mqttClientExists = false;
+				connectToMQTT((MqttSource) server);
 
-				for (MqttOeeClient anMqttClient : appContext.getMqttClients()) {
-					if (anMqttClient.getHostName().equals(brokerHostName) && anMqttClient.getHostPort() == brokerPort) {
-						anMqttClient.setShouldNotify(true);
-						mqttClientExists = true;
-						break;
-					}
-				}
-
-				if (!mqttClientExists) {
-					// not in the app context already as a data source
-					MqttOeeClient mqttClient = new MqttOeeClient();
-					mqttClient.setShouldNotify(true);
-
-					mqttClient.startUp(brokerHostName, brokerPort, collector.getBrokerUserName(),
-							collector.getBrokerUserPassword(), this);
-
-					// add to context
-					appContext.getMqttClients().add(mqttClient);
-				}
-
-				startHeartbeat = true;
+			} else {
+				throw new Exception(
+						DomainLocalizer.instance().getErrorString("notification.not.supported", collector.getName()));
 			}
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Connected to broker " + key + " of type " + brokerType + " for collector "
+				logger.info("Connected to server " + server + " of type " + brokerType + " for collector "
 						+ collector.getName());
 			}
 		}
 
-		// maybe start status publishing
-		if (startHeartbeat && heartbeatTimer == null) {
+		// start status publishing
+		if (heartbeatTimer == null) {
 			// create timer and task
 			heartbeatTimer = new Timer();
 			HeartbeatTask heartbeatTask = new HeartbeatTask();
@@ -1032,6 +1142,15 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Sent message for host " + getId() + " of type " + message.getMessageType() + " for JMS "
+						+ pubsub);
+			}
+		}
+
+		for (KafkaOeeClient pubsub : appContext.getKafkaClients()) {
+			pubsub.sendNotificationMessage(message);
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Sent message for host " + getId() + " of type " + message.getMessageType() + " for Kafka "
 						+ pubsub);
 			}
 		}
@@ -1075,6 +1194,21 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			pubsub.disconnect();
 		}
 		appContext.getRmqClients().clear();
+
+		for (JmsClient pubsub : appContext.getJmsClients()) {
+			pubsub.disconnect();
+		}
+		appContext.getJmsClients().clear();
+
+		for (MqttOeeClient pubsub : appContext.getMqttClients()) {
+			pubsub.disconnect();
+		}
+		appContext.getMqttClients().clear();
+
+		for (KafkaOeeClient pubsub : appContext.getKafkaClients()) {
+			pubsub.disconnect();
+		}
+		appContext.getKafkaClients().clear();
 	}
 
 	public synchronized void stopDataCollection() throws Exception {
@@ -1125,14 +1259,21 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 		// disconnect from JMS servers
 		for (JmsClient pubsub : appContext.getJmsClients()) {
-			onInformation("Disconnecting from JMS " + pubsub);
+			onInformation("Disconnecting from JMS broker " + pubsub);
 			pubsub.disconnect();
 		}
 		appContext.getJmsClients().clear();
 
+		// disconnect from Kafka servers
+		for (KafkaOeeClient pubsub : appContext.getKafkaClients()) {
+			onInformation("Disconnecting from Kafka server " + pubsub);
+			pubsub.disconnect();
+		}
+		appContext.getKafkaClients().clear();
+
 		// disconnect from MQTT servers
 		for (MqttOeeClient pubsub : appContext.getMqttClients()) {
-			onInformation("Disconnecting from MQTT " + pubsub);
+			onInformation("Disconnecting from MQTT server " + pubsub);
 			pubsub.disconnect();
 		}
 		appContext.getMqttClients().clear();
@@ -1163,7 +1304,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			// stop data collection
 			stopDataCollection();
 
-			// stop RMQ notifications
+			// stop messaging server notifications
 			stopNotifications();
 
 			// stop heartbeat
@@ -1267,6 +1408,10 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	public void subscribeToDataSource() throws Exception {
+		if (logger.isInfoEnabled()) {
+			logger.info("Subscribing to data sources");
+		}
+
 		// DA clients
 		for (DaOpcClient daClient : appContext.getOpcDaClients()) {
 			for (OpcDaMonitoredGroup group : daClient.getMonitoredGroups()) {
@@ -1304,8 +1449,9 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			client.scheduleJobs();
 		}
 
-		if (logger.isInfoEnabled()) {
-			logger.info("Subscribed to data sources.");
+		// Kafka consumer polling
+		for (KafkaOeeClient consumer : appContext.getKafkaClients()) {
+			consumer.startPolling();
 		}
 	}
 
@@ -1472,6 +1618,12 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	public void onJmsMessage(ApplicationMessage message) {
 		// execute on worker thread
 		executorService.execute(new JmsTask(message));
+	}
+
+	@Override
+	public void onKafkaMessage(ApplicationMessage message) {
+		// execute on worker thread
+		executorService.execute(new KafkaTask(message));
 	}
 
 	@Override
@@ -1793,6 +1945,10 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			pubsub.sendNotificationMessage(message);
 		}
 
+		for (KafkaOeeClient pubsub : appContext.getKafkaClients()) {
+			pubsub.sendNotificationMessage(message);
+		}
+
 		for (MqttOeeClient pubsub : appContext.getMqttClients()) {
 			pubsub.sendNotificationMessage(message);
 		}
@@ -2018,11 +2174,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			String sourceId = eventMessage.getSourceId();
 			String dataValue = eventMessage.getValue();
 			String startTimestamp = eventMessage.getTimestamp();
-			String reason = eventMessage.getReason();
+			String reason = eventMessage.getReason() != null ? eventMessage.getReason() : dataValue;
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Equipment event for collector " + collectorName + ", source: " + sourceId + ", value: "
-						+ dataValue + ", timestamp: " + startTimestamp);
+						+ dataValue + ", timestamp: " + startTimestamp + ", reason: " + reason);
 			}
 
 			// resolve event
@@ -2083,6 +2239,26 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 	}
 
+	/********************* Kafka Handler ***********************************/
+	private class KafkaTask implements Runnable {
+
+		private final ApplicationMessage message;
+
+		KafkaTask(ApplicationMessage message) {
+			this.message = message;
+		}
+
+		@Override
+		public void run() {
+			try {
+				handleMessage(message);
+			} catch (Exception e) {
+				// processing failed
+				onException("Unable to process Kafka equipment event ", e);
+			}
+		}
+	}
+
 	/********************* MQTT Handler ***********************************/
 	private class MqttTask implements Runnable {
 
@@ -2138,6 +2314,16 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 						if (logger.isInfoEnabled()) {
 							logger.info("Sent JMS " + pubsub.toString() + " status message for host " + getId());
+						}
+					}
+				}
+				// publish to Kafka brokers
+				for (KafkaOeeClient pubsub : appContext.getKafkaClients()) {
+					if (pubsub.shouldNotify()) {
+						pubsub.sendNotificationMessage(message);
+
+						if (logger.isInfoEnabled()) {
+							logger.info("Sent to Kafka " + pubsub.toString() + " status message for host " + getId());
 						}
 					}
 				}

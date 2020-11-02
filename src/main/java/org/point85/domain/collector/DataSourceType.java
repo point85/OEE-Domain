@@ -3,7 +3,7 @@ package org.point85.domain.collector;
 import org.point85.domain.i18n.DomainLocalizer;
 
 public enum DataSourceType {
-	DATABASE, FILE, HTTP, JMS, RMQ, MODBUS, MQTT, OPC_DA, OPC_UA, CRON;
+	DATABASE, FILE, HTTP, JMS, RMQ, MODBUS, MQTT, OPC_DA, OPC_UA, CRON, KAFKA;
 
 	public static final String OPC_DA_VALUE = "OPC_DA";
 	public static final String OPC_UA_VALUE = "OPC_UA";
@@ -15,6 +15,7 @@ public enum DataSourceType {
 	public static final String MQTT_VALUE = "MQTT";
 	public static final String MODBUS_VALUE = "MODBUS";
 	public static final String CRON_VALUE = "CRON";
+	public static final String KAFKA_VALUE = "KAFKA";
 
 	@Override
 	public String toString() {
@@ -50,6 +51,9 @@ public enum DataSourceType {
 			break;
 		case CRON:
 			key = "cron.type";
+			break;
+		case KAFKA:
+			key = "kafka.type";
 			break;
 		default:
 			break;

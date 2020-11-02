@@ -33,6 +33,7 @@ import org.point85.domain.file.FileEventSource;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.jms.JmsSource;
+import org.point85.domain.kafka.KafkaSource;
 import org.point85.domain.modbus.ModbusSource;
 import org.point85.domain.mqtt.MqttSource;
 import org.point85.domain.opc.da.OpcDaSource;
@@ -268,6 +269,22 @@ public final class PersistenceService {
 		EntityManager em = getEntityManager();
 		TypedQuery<CollectorDataSource> query = em.createNamedQuery(SRC_BY_TYPE, CollectorDataSource.class);
 		query.setParameter("type", sourceType);
+		List<CollectorDataSource> sources = query.getResultList();
+		em.close();
+
+		return sources;
+	}
+
+	public List<CollectorDataSource> fetchDataSources(List<DataSourceType> sourceTypes) throws Exception {
+		final String SRC_BY_TYPES = "DS.ByTypes";
+
+		if (namedQueryMap.get(SRC_BY_TYPES) == null) {
+			createNamedQuery(SRC_BY_TYPES, "SELECT source FROM CollectorDataSource source WHERE sourceType IN :types");
+		}
+
+		EntityManager em = getEntityManager();
+		TypedQuery<CollectorDataSource> query = em.createNamedQuery(SRC_BY_TYPES, CollectorDataSource.class);
+		query.setParameter("types", sourceTypes);
 		List<CollectorDataSource> sources = query.getResultList();
 		em.close();
 
@@ -1556,7 +1573,7 @@ public final class PersistenceService {
 				EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class, Reason.class,
 				Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class, ExceptionPeriod.class,
 				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class, ModbusSource.class,
-				EntitySchedule.class, CronEventSource.class };
+				EntitySchedule.class, CronEventSource.class, KafkaSource.class };
 	}
 
 	private Class<?>[] getDatabaseEventEntityClasses() {

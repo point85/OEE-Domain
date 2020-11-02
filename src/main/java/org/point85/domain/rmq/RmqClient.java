@@ -36,6 +36,9 @@ import com.rabbitmq.client.Envelope;
 public class RmqClient extends BaseMessagingClient {
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(RmqClient.class);
+	
+	// queue TTL (sec)
+	private static final int QUEUE_TTL_SEC = 3600;
 
 	// auto-ack on consume
 	private static final boolean AUTO_ACK = true;

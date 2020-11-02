@@ -3,9 +3,6 @@ package org.point85.domain.messaging;
 import com.google.gson.Gson;
 
 public abstract class BaseMessagingClient {
-	// queue TTL (sec)
-	protected static final int QUEUE_TTL_SEC = 3600;
-
 	// json serializer
 	private final Gson gson = new Gson();
 

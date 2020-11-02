@@ -18,7 +18,7 @@ public abstract class ApplicationMessage {
 
 	// time message sent
 	private String timestamp;
-	
+
 	// id of sender
 	private String senderId;
 

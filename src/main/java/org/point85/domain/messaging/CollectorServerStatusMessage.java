@@ -45,5 +45,4 @@ public class CollectorServerStatusMessage extends ApplicationMessage {
 	public double getSystemLoadAvg() {
 		return processCpuLoad;
 	}
-
 }

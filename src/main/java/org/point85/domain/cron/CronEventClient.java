@@ -151,6 +151,10 @@ public class CronEventClient implements JobListener {
 		trigger.setCronExpression(cronExpression);
 
 		// schedule it
+		JobKey jobKey = JobKey.jobKey(jobName, OEE_GROUP);
+		if (scheduler.checkExists(jobKey)) {
+			unscheduleJob(jobName);
+		}
 		scheduler.scheduleJob(jobDetail, trigger);
 	}
 

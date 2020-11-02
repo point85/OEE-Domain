@@ -11,6 +11,7 @@ import org.point85.domain.db.DatabaseEventClient;
 import org.point85.domain.file.FileEventClient;
 import org.point85.domain.http.OeeHttpServer;
 import org.point85.domain.jms.JmsClient;
+import org.point85.domain.kafka.KafkaOeeClient;
 import org.point85.domain.modbus.ModbusMaster;
 import org.point85.domain.mqtt.MqttOeeClient;
 import org.point85.domain.opc.da.DaOpcClient;
@@ -50,6 +51,9 @@ public class OeeContext {
 
 	// JMS client key
 	private static final String JMS_KEY = "JMS";
+	
+	// Kafka client key
+	private static final String KAFKA_KEY = "KAFKA";
 
 	// MQTT client key
 	private static final String MQTT_KEY = "MQTT";
@@ -82,6 +86,7 @@ public class OeeContext {
 		setOpcUaClients(new HashSet<>());
 		setMessagingClients(new HashSet<>());
 		setJMSClients(new HashSet<>());
+		setKafkaClients(new HashSet<>());
 		setMQTTClients(new HashSet<>());
 		setHttpServers(new HashSet<>());
 		setDatabaseEventClients(new HashSet<>());
@@ -294,6 +299,16 @@ public class OeeContext {
 	}
 
 	/**
+	 * Get a list of the Kafka clients defined for the collector
+	 * 
+	 * @return Collection of {@link KafkaOeeClient}
+	 */
+	@SuppressWarnings("unchecked")
+	public Collection<KafkaOeeClient> getKafkaClients() {
+		return (Collection<KafkaOeeClient>) contextMap.get(KAFKA_KEY);
+	}
+
+	/**
 	 * Get a list of the MQTT clients defined for the collector
 	 * 
 	 * @return Collection of {@link MqttOeeClient}
@@ -369,6 +384,21 @@ public class OeeContext {
 
 		if (!getJmsClients().isEmpty()) {
 			client = getJmsClients().iterator().next();
+		}
+		return client;
+	}
+
+	/**
+	 * Get the first (only) Kafka client
+	 * 
+	 * @return {@link KafkaOeeClient}
+	 */
+	public KafkaOeeClient getKafkaClient() {
+		// get the first one
+		KafkaOeeClient client = null;
+
+		if (!getKafkaClients().isEmpty()) {
+			client = getKafkaClients().iterator().next();
 		}
 		return client;
 	}
@@ -467,6 +497,15 @@ public class OeeContext {
 	}
 
 	/**
+	 * Set the list of the Kafka clients defined for the collector
+	 * 
+	 * @param clients Set of {@link KafkaOeeClient}
+	 */
+	public void setKafkaClients(Collection<KafkaOeeClient> clients) {
+		contextMap.put(KAFKA_KEY, clients);
+	}
+
+	/**
 	 * Set the list of the MQTT clients defined for the collector
 	 * 
 	 * @param clients Set of {@link MqttOeeClient}
@@ -530,6 +569,17 @@ public class OeeContext {
 	public void addJMSClient(JmsClient client) {
 		if (!getJmsClients().contains(client)) {
 			getJmsClients().add(client);
+		}
+	}
+
+	/**
+	 * Add a Kafka client to the list
+	 * 
+	 * @param client {@link KafkaOeeClient}
+	 */
+	public void addKafkaClient(KafkaOeeClient client) {
+		if (!getKafkaClients().contains(client)) {
+			getKafkaClients().add(client);
 		}
 	}
 
@@ -607,6 +657,17 @@ public class OeeContext {
 	public void removeJMSClient(JmsClient client) {
 		if (getJmsClients().contains(client)) {
 			getJmsClients().remove(client);
+		}
+	}
+
+	/**
+	 * Remove a Kafka client from the list
+	 * 
+	 * @param client {@link KafkaOeeClient}
+	 */
+	public void removeKafkaClient(KafkaOeeClient client) {
+		if (getKafkaClients().contains(client)) {
+			getKafkaClients().remove(client);
 		}
 	}
 
@@ -742,6 +803,11 @@ public class OeeContext {
 
 		sb.append("\n JMS clients ...");
 		for (JmsClient client : getJmsClients()) {
+			sb.append('\t').append(client.toString());
+		}
+
+		sb.append("\n Kafka clients ...");
+		for (KafkaOeeClient client : getKafkaClients()) {
 			sb.append('\t').append(client.toString());
 		}
 
