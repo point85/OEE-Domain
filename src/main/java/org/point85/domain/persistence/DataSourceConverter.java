@@ -36,7 +36,7 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 		case JMS:
 			value = DataSourceType.JMS_VALUE;
 			break;
-			
+
 		case KAFKA:
 			value = DataSourceType.KAFKA_VALUE;
 			break;
@@ -52,13 +52,17 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 		case FILE:
 			value = DataSourceType.FILE_VALUE;
 			break;
-			
+
 		case CRON:
 			value = DataSourceType.CRON_VALUE;
 			break;
 
 		case MODBUS:
 			value = DataSourceType.MODBUS_VALUE;
+			break;
+
+		case EMAIL:
+			value = DataSourceType.EMAIL_VALUE;
 			break;
 
 		default:
@@ -96,11 +100,10 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 		case DataSourceType.JMS_VALUE:
 			state = DataSourceType.JMS;
 			break;
-			
+
 		case DataSourceType.KAFKA_VALUE:
 			state = DataSourceType.KAFKA;
 			break;
-
 
 		case DataSourceType.MQTT_VALUE:
 			state = DataSourceType.MQTT;
@@ -113,13 +116,17 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 		case DataSourceType.FILE_VALUE:
 			state = DataSourceType.FILE;
 			break;
-			
+
 		case DataSourceType.CRON_VALUE:
 			state = DataSourceType.CRON;
 			break;
 
 		case DataSourceType.MODBUS_VALUE:
 			state = DataSourceType.MODBUS;
+			break;
+
+		case DataSourceType.EMAIL_VALUE:
+			state = DataSourceType.EMAIL;
 			break;
 
 		default:

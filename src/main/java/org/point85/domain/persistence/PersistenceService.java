@@ -29,6 +29,7 @@ import org.point85.domain.cron.CronEventSource;
 import org.point85.domain.db.DatabaseEvent;
 import org.point85.domain.db.DatabaseEventSource;
 import org.point85.domain.db.DatabaseEventStatus;
+import org.point85.domain.email.EmailSource;
 import org.point85.domain.file.FileEventSource;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.i18n.DomainLocalizer;
@@ -1573,7 +1574,7 @@ public final class PersistenceService {
 				EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class, Reason.class,
 				Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class, ExceptionPeriod.class,
 				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class, ModbusSource.class,
-				EntitySchedule.class, CronEventSource.class, KafkaSource.class };
+				EntitySchedule.class, CronEventSource.class, KafkaSource.class, EmailSource.class};
 	}
 
 	private Class<?>[] getDatabaseEventEntityClasses() {

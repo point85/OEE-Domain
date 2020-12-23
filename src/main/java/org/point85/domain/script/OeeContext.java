@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.point85.domain.cron.CronEventClient;
 import org.point85.domain.db.DatabaseEventClient;
+import org.point85.domain.email.EmailClient;
 import org.point85.domain.file.FileEventClient;
 import org.point85.domain.http.OeeHttpServer;
 import org.point85.domain.jms.JmsClient;
@@ -51,9 +52,12 @@ public class OeeContext {
 
 	// JMS client key
 	private static final String JMS_KEY = "JMS";
-	
+
 	// Kafka client key
 	private static final String KAFKA_KEY = "KAFKA";
+
+	// email client key
+	private static final String EMAIL_KEY = "EMAIL";
 
 	// MQTT client key
 	private static final String MQTT_KEY = "MQTT";
@@ -87,6 +91,7 @@ public class OeeContext {
 		setMessagingClients(new HashSet<>());
 		setJMSClients(new HashSet<>());
 		setKafkaClients(new HashSet<>());
+		setEmailClients(new HashSet<>());
 		setMQTTClients(new HashSet<>());
 		setHttpServers(new HashSet<>());
 		setDatabaseEventClients(new HashSet<>());
@@ -309,6 +314,16 @@ public class OeeContext {
 	}
 
 	/**
+	 * Get a list of the email clients defined for the collector
+	 * 
+	 * @return Collection of {@link EmailClient}
+	 */
+	@SuppressWarnings("unchecked")
+	public Collection<EmailClient> getEmailClients() {
+		return (Collection<EmailClient>) contextMap.get(EMAIL_KEY);
+	}
+
+	/**
 	 * Get a list of the MQTT clients defined for the collector
 	 * 
 	 * @return Collection of {@link MqttOeeClient}
@@ -399,6 +414,21 @@ public class OeeContext {
 
 		if (!getKafkaClients().isEmpty()) {
 			client = getKafkaClients().iterator().next();
+		}
+		return client;
+	}
+
+	/**
+	 * Get the first (only) email client
+	 * 
+	 * @return {@link EmailClient}
+	 */
+	public EmailClient getEmailClient() {
+		// get the first one
+		EmailClient client = null;
+
+		if (!getEmailClients().isEmpty()) {
+			client = getEmailClients().iterator().next();
 		}
 		return client;
 	}
@@ -506,6 +536,15 @@ public class OeeContext {
 	}
 
 	/**
+	 * Set the list of the email clients defined for the collector
+	 * 
+	 * @param clients Set of {@link EmailClient}
+	 */
+	public void setEmailClients(Collection<EmailClient> clients) {
+		contextMap.put(EMAIL_KEY, clients);
+	}
+
+	/**
 	 * Set the list of the MQTT clients defined for the collector
 	 * 
 	 * @param clients Set of {@link MqttOeeClient}
@@ -580,6 +619,17 @@ public class OeeContext {
 	public void addKafkaClient(KafkaOeeClient client) {
 		if (!getKafkaClients().contains(client)) {
 			getKafkaClients().add(client);
+		}
+	}
+
+	/**
+	 * Add a email client to the list
+	 * 
+	 * @param client {@link EmailClient}
+	 */
+	public void addEmailClient(EmailClient client) {
+		if (!getEmailClients().contains(client)) {
+			getEmailClients().add(client);
 		}
 	}
 
@@ -668,6 +718,17 @@ public class OeeContext {
 	public void removeKafkaClient(KafkaOeeClient client) {
 		if (getKafkaClients().contains(client)) {
 			getKafkaClients().remove(client);
+		}
+	}
+
+	/**
+	 * Remove a email client from the list
+	 * 
+	 * @param client {@link EmailClient}
+	 */
+	public void removeEmailClient(EmailClient client) {
+		if (getEmailClients().contains(client)) {
+			getEmailClients().remove(client);
 		}
 	}
 
@@ -808,6 +869,11 @@ public class OeeContext {
 
 		sb.append("\n Kafka clients ...");
 		for (KafkaOeeClient client : getKafkaClients()) {
+			sb.append('\t').append(client.toString());
+		}
+
+		sb.append("\n Email clients ...");
+		for (EmailClient client : getEmailClients()) {
 			sb.append('\t').append(client.toString());
 		}
 

@@ -34,6 +34,9 @@ import org.point85.domain.db.DatabaseEventClient;
 import org.point85.domain.db.DatabaseEventListener;
 import org.point85.domain.db.DatabaseEventSource;
 import org.point85.domain.db.DatabaseEventStatus;
+import org.point85.domain.email.EmailClient;
+import org.point85.domain.email.EmailMessageListener;
+import org.point85.domain.email.EmailSource;
 import org.point85.domain.file.FileEventClient;
 import org.point85.domain.file.FileEventListener;
 import org.point85.domain.file.FileEventSource;
@@ -105,7 +108,7 @@ import com.google.gson.Gson;
  */
 public class CollectorService implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener,
 		RmqMessageListener, JmsMessageListener, DatabaseEventListener, FileEventListener, MqttMessageListener,
-		ModbusEventListener, CronEventListener, KafkaMessageListener {
+		ModbusEventListener, CronEventListener, KafkaMessageListener, EmailMessageListener {
 
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
@@ -150,6 +153,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	private final Map<String, RmqBrokerSource> rmqBrokerMap = new HashMap<>();
 	private final Map<String, JmsBrokerSource> jmsBrokerMap = new HashMap<>();
 	private final Map<String, PolledSource> kafkaBrokerMap = new HashMap<>();
+	private final Map<String, PolledSource> emailBrokerMap = new HashMap<>();
 	private final Map<String, PolledSource> databaseServerMap = new HashMap<>();
 	private final Map<String, PolledSource> fileServerMap = new HashMap<>();
 	private final Map<String, PolledSource> modbusSlaveMap = new HashMap<>();
@@ -180,6 +184,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		rmqBrokerMap.clear();
 		jmsBrokerMap.clear();
 		kafkaBrokerMap.clear();
+		emailBrokerMap.clear();
 		databaseServerMap.clear();
 		fileServerMap.clear();
 		cronSchedulerMap.clear();
@@ -363,6 +368,30 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		serverSource.getPollingIntervals().add(pollingMillis);
 	}
 
+	// collect email events
+	private void buildEmailHosts(EventResolver resolver) {
+		EmailSource eventSource = (EmailSource) resolver.getDataSource();
+		String sourceId = resolver.getSourceId();
+		Integer pollingMillis = resolver.getUpdatePeriod() != null ? resolver.getUpdatePeriod()
+				: EmailClient.DEFAULT_POLLING_INTERVAL;
+
+		String id = eventSource.getId();
+
+		PolledSource serverSource = emailBrokerMap.get(id);
+
+		if (serverSource == null) {
+			if (logger.isInfoEnabled()) {
+				logger.info("Found Email server specified for host " + eventSource.getHost() + " on port "
+						+ eventSource.getPort());
+			}
+
+			serverSource = new PolledSource(eventSource);
+			emailBrokerMap.put(id, serverSource);
+		}
+		serverSource.getSourceIds().add(sourceId);
+		serverSource.getPollingIntervals().add(pollingMillis);
+	}
+
 	// collect all cron scheduler info
 	private void buildCronSchedulers(EventResolver resolver) {
 		CronEventSource eventSource = (CronEventSource) resolver.getDataSource();
@@ -497,6 +526,41 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Started Kafka client: " + kafkaSource.getId());
+			}
+		}
+	}
+
+	private void connectToEmailServers(Map<String, PolledSource> emailServers) {
+		for (Entry<String, PolledSource> entry : emailServers.entrySet()) {
+			EmailSource emailSource = (EmailSource) entry.getValue().getEventSource();
+
+			// create the Email client
+			EmailClient emailClient = new EmailClient(emailSource);
+			emailClient.setShouldNotify(false);
+
+			// add to context
+			appContext.getEmailClients().add(emailClient);
+
+			// receive event messages
+			emailClient.registerListener(this);
+
+			// find minimum polling interval
+			List<Integer> intervals = entry.getValue().getPollingIntervals();
+
+			int min = EmailClient.DEFAULT_POLLING_INTERVAL;
+
+			for (Integer interval : intervals) {
+				if (interval < min) {
+					min = interval;
+				}
+			}
+
+			emailClient.setPollingInterval(min);
+
+			emailClient.startPolling();
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Started Email client: " + emailSource.getId());
 			}
 		}
 	}
@@ -868,6 +932,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					break;
 				}
 
+				case EMAIL: {
+					buildEmailHosts(resolver);
+					break;
+				}
+
 				default:
 					break;
 				}
@@ -894,6 +963,9 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 		// collect equipment events for Kafka
 		connectToKafkaBrokers(kafkaBrokerMap);
+
+		// collect equipment events from email servers
+		connectToEmailServers(emailBrokerMap);
 
 		// poll database servers for events in the interface table
 		connectToDatabaseServers(databaseServerMap);
@@ -1073,7 +1145,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	private synchronized void startPublishingNotifications() throws Exception {
-		// connect to notification brokers for commands
+		// connect to notification brokers
 		for (DataCollector collector : collectors) {
 			CollectorDataSource server = collector.getNotificationServer();
 
@@ -1097,13 +1169,13 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 				connectToMQTT((MqttSource) server);
 
 			} else {
-				throw new Exception(
-						DomainLocalizer.instance().getErrorString("notification.not.supported", collector.getName()));
+				// ignore others
+				continue;
 			}
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Connected to server " + server + " of type " + brokerType + " for collector "
-						+ collector.getName());
+				logger.info("Publishing notifications to server " + server + " of type " + brokerType
+						+ " for collector " + collector.getName());
 			}
 		}
 
@@ -1161,6 +1233,16 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			if (logger.isInfoEnabled()) {
 				logger.info("Sent message for host " + getId() + " of type " + message.getMessageType() + " for MQTT "
 						+ pubsub);
+			}
+		}
+
+		for (EmailClient emailClient : appContext.getEmailClients()) {
+			emailClient.sendEvent(emailClient.getSource().getUserName(),
+					DomainLocalizer.instance().getLangString("email.notification.subject"), message);
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Sent message for host " + getId() + " of type " + message.getMessageType()
+						+ " for email server " + emailClient.getSource().getId());
 			}
 		}
 	}
@@ -1292,6 +1374,13 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 		appContext.getCronEventClients().clear();
 
+		// stop polling for email
+		for (EmailClient client : appContext.getEmailClients()) {
+			client.stopPolling();
+			onInformation("Shutdown email client for server " + client.getSource().getId());
+		}
+		appContext.getEmailClients().clear();
+
 		// set back to ready
 		saveCollectorState(CollectorState.READY);
 	}
@@ -1402,6 +1491,16 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			httpServer.shutdown();
 		}
 
+		// Kafka consumer polling
+		for (KafkaOeeClient consumer : appContext.getKafkaClients()) {
+			consumer.stopPolling();
+		}
+
+		// email polling
+		for (EmailClient emailClient : appContext.getEmailClients()) {
+			emailClient.stopPolling();
+		}
+
 		if (logger.isInfoEnabled()) {
 			logger.info("Unsubscribed from data sources.");
 		}
@@ -1452,6 +1551,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		// Kafka consumer polling
 		for (KafkaOeeClient consumer : appContext.getKafkaClients()) {
 			consumer.startPolling();
+		}
+
+		// email polling
+		for (EmailClient emailClient : appContext.getEmailClients()) {
+			emailClient.startPolling();
 		}
 	}
 
@@ -1639,6 +1743,17 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			DatabaseEventTask task = new DatabaseEventTask(databaseClient, event);
 			executorService.execute(task);
 		}
+	}
+
+	@Override
+	public void resolveCronEvent(JobExecutionContext context) {
+		getExecutorService().execute(new CronTask(context));
+	}
+
+	@Override
+	public void onEmailMessage(ApplicationMessage message) {
+		// execute on worker thread
+		executorService.execute(new EmailTask(message));
 	}
 
 	// subscribed OPC DA items by source
@@ -1953,6 +2068,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			pubsub.sendNotificationMessage(message);
 		}
 
+		for (EmailClient emailClient : appContext.getEmailClients()) {
+			emailClient.sendEvent(emailClient.getSource().getUserName(),
+					DomainLocalizer.instance().getLangString("email.notification.subject"), message);
+		}
+
 		if (logger.isInfoEnabled()) {
 			logger.info("Sent message for host " + getId() + " of type " + message.getMessageType()
 					+ " for resolver type " + message.getResolverType());
@@ -2259,6 +2379,26 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 	}
 
+	/********************* Email Handler ***********************************/
+	private class EmailTask implements Runnable {
+
+		private final ApplicationMessage message;
+
+		EmailTask(ApplicationMessage message) {
+			this.message = message;
+		}
+
+		@Override
+		public void run() {
+			try {
+				handleMessage(message);
+			} catch (Exception e) {
+				// processing failed
+				onException("Unable to process email equipment event ", e);
+			}
+		}
+	}
+
 	/********************* MQTT Handler ***********************************/
 	private class MqttTask implements Runnable {
 
@@ -2289,7 +2429,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					return;
 				}
 
-				// send status message to each PubSub
+				// send status message to each message server
 				CollectorServerStatusMessage message = new CollectorServerStatusMessage(hostname, ip);
 
 				String timeStamp = DomainUtils.offsetDateTimeToString(OffsetDateTime.now(),
@@ -2504,10 +2644,5 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 				onException("Unable to invoke script resolver.", e);
 			}
 		}
-	}
-
-	@Override
-	public void resolveCronEvent(JobExecutionContext context) {
-		getExecutorService().execute(new CronTask(context));
 	}
 }
