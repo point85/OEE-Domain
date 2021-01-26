@@ -4,7 +4,7 @@
 
   <groupId>org.point85</groupId>
   <artifactId>oee-domain</artifactId>
-  <version>3.3.0</version>
+  <version>3.3.1</version>
   <packaging>jar</packaging>
   <url>http://maven.apache.org</url>
 
@@ -85,7 +85,7 @@
 <dependency>
     <groupId>org.eclipse.milo</groupId>
     <artifactId>sdk-client</artifactId>
-    <version>0.4.2</version>
+    <version>0.5.3</version>
 </dependency>
 
 <!-- HIBERNATE JPA -->
@@ -131,7 +131,7 @@
 <dependency>
     <groupId>com.rabbitmq</groupId>
     <artifactId>amqp-client</artifactId>
-    <version>5.9.0</version>
+    <version>5.10.0</version>
 </dependency>
 
 <!-- ACTIVEMQ -->
@@ -139,7 +139,7 @@
 <dependency>
     <groupId>org.apache.activemq</groupId>
     <artifactId>activemq-client</artifactId>
-    <version>5.15.13</version>
+    <version>5.16.1</version>
 </dependency>
 
 <!-- MQTT -->

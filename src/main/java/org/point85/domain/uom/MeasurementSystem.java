@@ -1007,7 +1007,7 @@ public class MeasurementSystem {
 					DomainLocalizer.instance().getUnitString("troy_oz.name"),
 					DomainLocalizer.instance().getUnitString("troy_oz.symbol"),
 					DomainLocalizer.instance().getUnitString("troy_oz.desc"));
-			uom.setConversion(31.1034768, getUOM(Unit.GRAM));
+			uom.setConversion(0.06857142857, getUOM(Unit.POUND_MASS));
 			break;
 
 		case SLUG:

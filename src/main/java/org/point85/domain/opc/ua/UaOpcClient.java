@@ -24,11 +24,11 @@ import org.eclipse.milo.opcua.sdk.client.api.identity.AnonymousProvider;
 import org.eclipse.milo.opcua.sdk.client.api.identity.IdentityProvider;
 import org.eclipse.milo.opcua.sdk.client.api.identity.UsernameProvider;
 import org.eclipse.milo.opcua.sdk.client.api.identity.X509IdentityProvider;
-import org.eclipse.milo.opcua.sdk.client.api.nodes.VariableNode;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.ServerTypeNode;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.variables.ServerStatusTypeNode;
+import org.eclipse.milo.opcua.sdk.client.nodes.UaVariableNode;
 import org.eclipse.milo.opcua.stack.client.DiscoveryClient;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType;
@@ -325,15 +325,15 @@ public class UaOpcClient implements SessionActivityListener {
 	}
 
 	public UInteger[] getArrayDimensions(NodeId nodeId) throws Exception {
-		VariableNode node = opcUaClient.getAddressSpace().createVariableNode(nodeId);
-		return node.getArrayDimensions().get();
+		UaVariableNode node = opcUaClient.getAddressSpace().getVariableNode(nodeId);
+		return node.getArrayDimensions();
 	}
 
 	public synchronized DataValue readSynch(NodeId nodeId) throws Exception {
 		checkPreconditions();
 
-		VariableNode node = opcUaClient.getAddressSpace().createVariableNode(nodeId);
-		return node.readValue().get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
+		UaVariableNode node = opcUaClient.getAddressSpace().getVariableNode(nodeId);
+		return node.readValue();
 	}
 
 	public synchronized StatusCode writeSynch(NodeId nodeId, Variant newValue) throws Exception {
@@ -632,29 +632,29 @@ public class UaOpcClient implements SessionActivityListener {
 	}
 
 	public DateTime getServerCurrentTime() throws Exception {
-		ServerTypeNode serverNode = opcUaClient.getAddressSpace()
-				.getObjectNode(Identifiers.Server, ServerTypeNode.class).get();
+		ServerTypeNode serverNode = (ServerTypeNode) opcUaClient.getAddressSpace().getObjectNode(Identifiers.Server,
+				Identifiers.ServerType);
 
-		ServerStatusTypeNode serverStatusNode = serverNode.getServerStatusNode().get();
-		return serverStatusNode.getCurrentTime().get();
+		ServerStatusTypeNode serverStatusNode = serverNode.getServerStatusNode();
+		return serverStatusNode.getCurrentTime();
 	}
 
 	public OpcUaServerStatus getServerStatus() throws Exception {
 		OpcUaServerStatus serverStatus = new OpcUaServerStatus();
 
 		// Get a typed reference to the Server object: ServerNode
-		ServerTypeNode serverNode = opcUaClient.getAddressSpace()
-				.getObjectNode(Identifiers.Server, ServerTypeNode.class).get();
+		ServerTypeNode serverNode = (ServerTypeNode) opcUaClient.getAddressSpace().getObjectNode(Identifiers.Server,
+				Identifiers.ServerType);
 
 		// Get a typed reference to the ServerStatus variable
 		// component and read value attributes individually
-		ServerStatusTypeNode serverStatusNode = serverNode.getServerStatusNode().get();
+		ServerStatusTypeNode serverStatusNode = serverNode.getServerStatusNode();
 
-		DateTime startTime = serverStatusNode.getStartTime().get();
-		ServerState state = serverStatusNode.getState().get();
+		DateTime startTime = serverStatusNode.getStartTime();
+		ServerState state = serverStatusNode.getState();
 
 		try {
-			BuildInfo buildInfo = serverStatusNode.getBuildInfo().get();
+			BuildInfo buildInfo = serverStatusNode.getBuildInfo();
 			serverStatus.setBuildInfo(buildInfo);
 		} catch (Exception e) {
 			// ignore

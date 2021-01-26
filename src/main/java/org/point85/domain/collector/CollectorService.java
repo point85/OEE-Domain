@@ -572,12 +572,10 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			MqttOeeClient mqttClient = new MqttOeeClient();
 			mqttClient.setShouldNotify(false);
 
-			String brokerHostName = source.getHost();
-			Integer brokerPort = source.getPort();
-			String brokerUser = source.getUserName();
-			String brokerPassword = source.getUserPassword();
+			mqttClient.setAuthenticationConfiguration(source.getUserName(), source.getUserPassword());
+			mqttClient.setSSLConfiguration(source.getKeystore(), source.getKeystorePassword(), source.getKeyPassword());
 
-			mqttClient.startUp(brokerHostName, brokerPort, brokerUser, brokerPassword, this);
+			mqttClient.startUp(source.getHost(), source.getPort(), this);
 			mqttClient.subscribeToEvents(QualityOfService.EXACTLY_ONCE);
 
 			// add to context
@@ -1109,8 +1107,10 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			MqttOeeClient mqttClient = new MqttOeeClient();
 			mqttClient.setShouldNotify(true);
 
-			mqttClient.startUp(server.getHost(), server.getPort(), server.getUserName(), server.getUserPassword(),
-					this);
+			mqttClient.setAuthenticationConfiguration(server.getUserName(), server.getUserPassword());
+			mqttClient.setSSLConfiguration(server.getKeystore(), server.getKeystorePassword(), server.getKeyPassword());
+
+			mqttClient.startUp(server.getHost(), server.getPort(), this);
 
 			// add to context
 			appContext.getMqttClients().add(mqttClient);
@@ -2294,7 +2294,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			String sourceId = eventMessage.getSourceId();
 			String dataValue = eventMessage.getValue();
 			String startTimestamp = eventMessage.getTimestamp();
-			String reason = eventMessage.getReason() != null ? eventMessage.getReason() : dataValue;
+			String reason = eventMessage.getReason();
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Equipment event for collector " + collectorName + ", source: " + sourceId + ", value: "

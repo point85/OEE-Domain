@@ -216,4 +216,57 @@ public class TestBridges extends BaseTest {
 
 		}
 	}
+
+	@Test
+	public void testGrade() throws Exception {
+		UnitOfMeasure uomGrams = sys.getUOM(Unit.GRAM);
+
+		UnitOfMeasure troyOzSI = sys.createScalarUOM(UnitType.MASS, "troy ounce SI", "troy oz",
+				"Troy ounce SI conversion");
+		troyOzSI.setConversion(31.1034768, uomGrams);
+
+		UnitOfMeasure uomTonnes = sys.getUOM(Unit.TONNE);
+		UnitOfMeasure uomShortTons = sys.getUOM(Unit.US_TON);
+		UnitOfMeasure uomTroyOz = sys.getUOM(Unit.TROY_OUNCE);
+		UnitOfMeasure uomGramsPerTonne = sys.createQuotientUOM(uomGrams, uomTonnes);
+		UnitOfMeasure uomTonnePerGram = sys.createQuotientUOM(uomTonnes, uomGrams);
+		UnitOfMeasure uomTroyOzPerTonne = sys.createQuotientUOM(troyOzSI, uomTonnes);
+		UnitOfMeasure uomTonnePerTroyOz = sys.createQuotientUOM(uomTonnes, troyOzSI);
+
+		// grams per metric ton
+		UnitOfMeasure uomPennyweight = sys.createScalarUOM(UnitType.MASS, "pennyweight", "dwt", "Pennyweight");
+		uomPennyweight.setConversion(0.05, uomTroyOz);
+
+		assertTrue(isCloseTo(uomPennyweight.getConversionFactor(uomGrams), 1.5551738d, DELTA6));
+
+		UnitOfMeasure uomPennyweightPerShortTon = sys.createQuotientUOM(uomPennyweight, uomShortTons);
+
+		Quantity qGrade = null;
+		Quantity qConverted = null;
+		Quantity qBack = null;
+
+		// troy oz per metric ton
+		qGrade = new Quantity(0.95, uomGramsPerTonne);
+
+		qConverted = qGrade.convert(uomPennyweightPerShortTon);
+		assertTrue(isCloseTo(qConverted.getAmount(), 0.554167d, DELTA6));
+		qBack = qConverted.convert(uomGramsPerTonne);
+		assertTrue(isCloseTo(qBack.getAmount(), 0.95d, DELTA6));
+
+		qConverted = qGrade.convert(uomTroyOzPerTonne);
+		assertTrue(isCloseTo(qConverted.getAmount(), 0.0305432d, DELTA6));
+		qBack = qConverted.convert(uomGramsPerTonne);
+		assertTrue(qBack.equals(qGrade));
+
+		// metric ton per troy oz
+		qGrade = new Quantity(1.0526316d, uomTonnePerGram);
+		qConverted = qGrade.convert(uomTonnePerTroyOz);
+		assertTrue(isCloseTo(qConverted.getAmount(), 32.7405025d, DELTA6));
+		qBack = qConverted.convert(uomTonnePerGram);
+		assertTrue(qBack.equals(qGrade));
+
+		qGrade = new Quantity(1.0d, uomPennyweightPerShortTon);
+		qConverted = qGrade.convert(uomPennyweightPerShortTon);
+		assertTrue(isCloseTo(qBack.getAmount(), 1.0d, DELTA6));
+	}
 }
