@@ -529,23 +529,34 @@ public class KafkaOeeClient extends BaseMessagingClient {
 		private Future<Boolean> checkConnection(boolean asConsumer) {
 			return executor.submit(() -> {
 				boolean value = false;
-				if (asConsumer) {
-					if (consumerTopics.isEmpty()) {
-						logger.error("No consumer topics have been defined.");
-					}
-					Object[] topics = consumerTopics.toArray();
 
-					if (logger.isInfoEnabled()) {
-						logger.info("Checking consumer topic " + topics[0]);
+				try {
+					if (asConsumer) {
+						if (consumerTopics.isEmpty()) {
+							logger.error("No consumer topics have been defined.");
+						}
+						Object[] topics = consumerTopics.toArray();
+
+						if (logger.isInfoEnabled()) {
+							logger.info("Checking consumer topic " + topics[0]);
+						}
+
+						value = consumer.partitionsFor((String) topics[0]).isEmpty();
+					} else {
+						if (logger.isInfoEnabled()) {
+							logger.info("Checking producer topic " + producerTopic);
+						}
+
+						value = producer.partitionsFor(producerTopic).isEmpty();
+					}
+				} finally {
+					if (consumer != null) {
+						consumer.close();
 					}
 
-					value = consumer.partitionsFor((String) topics[0]).isEmpty();
-				} else {
-					if (logger.isInfoEnabled()) {
-						logger.info("Checking producer topic " + producerTopic);
+					if (producer != null) {
+						producer.close();
 					}
-
-					value = producer.partitionsFor(producerTopic).isEmpty();
 				}
 				return value;
 			});

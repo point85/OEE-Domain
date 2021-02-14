@@ -127,6 +127,7 @@ public class EmailClient extends BaseMessagingClient {
 		Properties properties = null;
 		String user = null;
 		String password = null;
+		List<ApplicationMessage> appMessages = new ArrayList<>();
 
 		if (storeType.equals(IMAP_STORE)) {
 			properties = imapProperties;
@@ -146,7 +147,13 @@ public class EmailClient extends BaseMessagingClient {
 		Session emailSession = Session.getInstance(properties);
 		Store emailStore = emailSession.getStore(storeType);
 
-		emailStore.connect(user, password);
+		try {
+			// connect to the server
+			emailStore.connect(user, password);
+		} catch (Exception e) {
+			emailStore.close();
+			throw e;
+		}
 
 		// create the inbox and open it
 		Folder emailFolder = emailStore.getFolder(MAIL_INBOX);
@@ -154,8 +161,6 @@ public class EmailClient extends BaseMessagingClient {
 
 		// retrieve the messages from the inbox
 		Message[] messages = emailFolder.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
-
-		List<ApplicationMessage> appMessages = new ArrayList<>();
 
 		for (int i = 0; i < messages.length; i++) {
 			Message message = messages[i];
@@ -340,7 +345,7 @@ public class EmailClient extends BaseMessagingClient {
 			logger.warn("SMTP properties are not defined.");
 			return;
 		}
-		
+
 		// create the session
 		Session session = Session.getInstance(smtpProperties, new javax.mail.Authenticator() {
 			@Override

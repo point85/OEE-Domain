@@ -31,7 +31,7 @@ public final class DomainUtils {
 
 	// pattern for OffsetDateTime display
 	public static final String OFFSET_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS ZZZZZ";
-	
+
 	// SSL key and truststore folder
 	public static final String SECURITY_DIR = "config/security/";
 
@@ -40,8 +40,8 @@ public final class DomainUtils {
 	}
 
 	public static String getVersionInfo() {
-		return DomainLocalizer.instance().getLangString("version") + " 3.3.1, "
-				+ LocalDate.of(2021, 1, 27).format(DateTimeFormatter.ISO_DATE);
+		return DomainLocalizer.instance().getLangString("version") + " 3.3.2, "
+				+ LocalDate.of(2021, 2, 14).format(DateTimeFormatter.ISO_DATE);
 	}
 
 	// format a Duration
@@ -171,7 +171,7 @@ public final class DomainUtils {
 	public static String formatException(Exception e) {
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+		sb.append(e.getClass().getSimpleName()).append(": ").append(e.getMessage() != null ? e.getMessage() : "");
 
 		if (e.getCause() != null) {
 			sb.append("\n\tCause: ").append(e.getCause());

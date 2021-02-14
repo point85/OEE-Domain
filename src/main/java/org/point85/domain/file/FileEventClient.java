@@ -36,7 +36,7 @@ public class FileEventClient extends PollingClient {
 
 	// files being worked on
 	private List<String> inProcessFiles = new ArrayList<>();
-	
+
 	public FileEventClient() {
 		super();
 		this.fileService = new FileService();
@@ -93,6 +93,11 @@ public class FileEventClient extends PollingClient {
 	public void moveFileToReadyFolder(File file, FileEventSource source, String sourceId) throws IOException {
 		String toPath = source.getHost() + File.separator + sourceId + File.separator + FileEventClient.READY_FOLDER
 				+ File.separator + file.getName();
+
+		// make sure that directory is there
+		if (!fileService.createDirectory(toPath)) {
+			throw new IOException("Cannot create directory " + toPath);
+		}
 
 		fileService.moveFile(file, toPath);
 	}

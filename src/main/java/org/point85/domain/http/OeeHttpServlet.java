@@ -1,5 +1,6 @@
 package org.point85.domain.http;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -119,7 +120,9 @@ class OeeHttpServlet extends HttpServlet {
 					body = request.getParameter(OeeHttpServer.EVENT_KEY);
 				} else {
 					// in the request body
-					body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+					try (BufferedReader br = request.getReader()) {
+						body = br.lines().collect(Collectors.joining(System.lineSeparator()));
+					}
 				}
 
 				if (body == null || body.length() == 0) {
