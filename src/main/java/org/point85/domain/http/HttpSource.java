@@ -1,5 +1,8 @@
 package org.point85.domain.http;
 
+import java.util.Objects;
+
+import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
@@ -10,6 +13,10 @@ import org.point85.domain.collector.DataSourceType;
 @DiscriminatorValue(DataSourceType.HTTP_VALUE)
 
 public class HttpSource extends CollectorDataSource {
+	// overloaded for HTTPS port
+	@Column(name = "END_PATH")
+	private String httpsPort;
+
 	public HttpSource() {
 		super();
 		setDataSourceType(DataSourceType.HTTP);
@@ -36,15 +43,24 @@ public class HttpSource extends CollectorDataSource {
 
 	// use endpoint path column
 	public Integer getHttpsPort() {
-		return getEndpointPath() != null ? Integer.parseInt(getEndpointPath()) : null;
+		return httpsPort != null ? Integer.parseInt(httpsPort) : null;
 	}
 
 	// use endpoint path column
 	public void setHttpsPort(Integer port) {
-		if (port != null) {
-			setEndpointPath(String.valueOf(port));
-		} else {
-			setEndpointPath(null);
+		httpsPort = (port != null) ? String.valueOf(port) : null;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof HttpSource) {
+			return super.equals(obj);
 		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getName(), getHost(), getHttpsPort());
 	}
 }

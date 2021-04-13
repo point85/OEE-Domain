@@ -61,13 +61,13 @@ public abstract class PollingClient {
 	}
 
 	public void startPolling() {
-		if (sourceIds == null) {
+		if (sourceIds == null || sourceIds.isEmpty()) {
 			return;
 		}
 
 		for (int i = 0; i < sourceIds.size(); i++) {
 			if (pollingPeriods.get(i) == null) {
-				pollingPeriods.set(i, Integer.valueOf(CollectorDataSource.DEFAULT_UPDATE_PERIOD_MSEC));
+				pollingPeriods.set(i, CollectorDataSource.DEFAULT_UPDATE_PERIOD_MSEC);
 			}
 
 			if (logger.isInfoEnabled()) {
@@ -123,7 +123,7 @@ public abstract class PollingClient {
 			pollingTimers.get(i).cancel();
 		}
 	}
-
+	
 	public CollectorDataSource getDataSource() {
 		return dataSource;
 	}

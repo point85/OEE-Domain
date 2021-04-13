@@ -38,6 +38,9 @@ public class OpcUaSource extends CollectorDataSource {
 
 	@Column(name = "KEYSTORE_PWD")
 	private String keystorePassword;
+	
+	@Column(name = "END_PATH")
+	private String endpointPath;
 
 	public OpcUaSource() {
 		super();
@@ -61,6 +64,14 @@ public class OpcUaSource extends CollectorDataSource {
 			setHost(tokens[0]);
 			setPort(Integer.valueOf(tokens[1]));
 		}
+	}
+	
+	public String getEndpointPath() {
+		return endpointPath;
+	}
+
+	public void setEndpointPath(String path) {
+		this.endpointPath = path;
 	}
 
 	public String getEndpointUrl() {

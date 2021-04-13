@@ -23,7 +23,7 @@ import org.point85.domain.plant.NamedObject;
 @AttributeOverride(name = "primaryKey", column = @Column(name = "SOURCE_KEY"))
 
 public abstract class CollectorDataSource extends NamedObject {
-	public static final int DEFAULT_UPDATE_PERIOD_MSEC = 5000;
+	public static final int DEFAULT_UPDATE_PERIOD_MSEC = 10000;
 
 	@Column(name = "HOST")
 	private String host;
@@ -42,10 +42,7 @@ public abstract class CollectorDataSource extends NamedObject {
 	@Column(name = "PORT")
 	private Integer port;
 
-	@Column(name = "END_PATH")
-	private String endpointPath;
-
-	public CollectorDataSource() {
+	protected CollectorDataSource() {
 		super();
 	}
 
@@ -95,14 +92,6 @@ public abstract class CollectorDataSource extends NamedObject {
 
 	public void setPort(Integer port) {
 		this.port = port;
-	}
-
-	public String getEndpointPath() {
-		return endpointPath;
-	}
-
-	public void setEndpointPath(String path) {
-		this.endpointPath = path;
 	}
 
 	@Override

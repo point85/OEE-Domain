@@ -84,6 +84,13 @@ import org.point85.domain.plant.EquipmentEventResolver;
 import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
+import org.point85.domain.proficy.ProficyClient;
+import org.point85.domain.proficy.ProficyEventListener;
+import org.point85.domain.proficy.ProficySource;
+import org.point85.domain.proficy.TagData;
+import org.point85.domain.proficy.TagDataType;
+import org.point85.domain.proficy.TagQuality;
+import org.point85.domain.proficy.TagSample;
 import org.point85.domain.rmq.RmqClient;
 import org.point85.domain.rmq.RmqMessageListener;
 import org.point85.domain.rmq.RmqSource;
@@ -108,7 +115,7 @@ import com.google.gson.Gson;
  */
 public class CollectorService implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener,
 		RmqMessageListener, JmsMessageListener, DatabaseEventListener, FileEventListener, MqttMessageListener,
-		ModbusEventListener, CronEventListener, KafkaMessageListener, EmailMessageListener {
+		ModbusEventListener, CronEventListener, KafkaMessageListener, EmailMessageListener, ProficyEventListener {
 
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
@@ -159,6 +166,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	private final Map<String, PolledSource> modbusSlaveMap = new HashMap<>();
 	private final Map<String, MqttBrokerSource> mqttBrokerMap = new HashMap<>();
 	private final Map<String, CronSource> cronSchedulerMap = new HashMap<>();
+	private final Map<String, PolledSource> proficyMap = new HashMap<>();
 
 	// equipment by name cache
 	private final ConcurrentMap<String, Equipment> equipmentCache = new ConcurrentHashMap<>();
@@ -434,6 +442,27 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		serverSource.getPollingIntervals().add(pollingMillis);
 	}
 
+	// collect all Proficy slave info
+	private void buildProficyHosts(EventResolver resolver) {
+		ProficySource eventSource = (ProficySource) resolver.getDataSource();
+		String tagName = resolver.getSourceId();
+		Integer pollingMillis = resolver.getUpdatePeriod();
+		String id = eventSource.getId();
+
+		PolledSource serverSource = proficyMap.get(id);
+
+		if (serverSource == null) {
+			if (logger.isInfoEnabled()) {
+				logger.info("Found Proficy historian specified for host " + eventSource.getHost());
+			}
+
+			serverSource = new PolledSource(eventSource);
+			proficyMap.put(id, serverSource);
+		}
+		serverSource.getSourceIds().add(tagName);
+		serverSource.getPollingIntervals().add(pollingMillis);
+	}
+
 	private void connectToRmqBrokers(Map<String, RmqBrokerSource> brokerSources) throws Exception {
 		for (Entry<String, RmqBrokerSource> entry : brokerSources.entrySet()) {
 			RmqSource source = entry.getValue().getSource();
@@ -630,6 +659,27 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Polling Modbus slave: " + modbusSource.getId());
+			}
+		}
+	}
+
+	private void startProficyPolling(Map<String, PolledSource> proficySources) {
+		for (Entry<String, PolledSource> entry : proficySources.entrySet()) {
+			// source of Proficy events
+			PolledSource polledSource = entry.getValue();
+			ProficySource proficySource = (ProficySource) polledSource.getEventSource();
+			List<String> sourceIds = polledSource.getSourceIds();
+			List<Integer> pollingIntervals = polledSource.getPollingIntervals();
+
+			ProficyClient proficyClient = new ProficyClient(this, proficySource, sourceIds, pollingIntervals);
+
+			// add to context
+			appContext.getProficyClients().add(proficyClient);
+
+			proficyClient.startPolling();
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Polling Proficy historian: " + proficySource.getId());
 			}
 		}
 	}
@@ -935,6 +985,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					break;
 				}
 
+				case PROFICY: {
+					buildProficyHosts(resolver);
+					break;
+				}
+
 				default:
 					break;
 				}
@@ -979,6 +1034,9 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 		// connect to Modbus slaves
 		startModbusPolling(modbusSlaveMap);
+
+		// connect to Proficy historians
+		startProficyPolling(proficyMap);
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Startup finished.");
@@ -1381,6 +1439,13 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 		appContext.getEmailClients().clear();
 
+		// stop polling Proficy historians
+		for (ProficyClient proficyClient : appContext.getProficyClients()) {
+			proficyClient.stopPolling();
+			onInformation("Stopped polling for Proficy historian " + proficyClient.getDataSource().getHost());
+		}
+		appContext.getProficyClients().clear();
+
 		// set back to ready
 		saveCollectorState(CollectorState.READY);
 	}
@@ -1501,6 +1566,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			emailClient.stopPolling();
 		}
 
+		// Proficy polling
+		for (ProficyClient proficyClient : appContext.getProficyClients()) {
+			proficyClient.stopPolling();
+		}
+
 		if (logger.isInfoEnabled()) {
 			logger.info("Unsubscribed from data sources.");
 		}
@@ -1556,6 +1626,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		// email polling
 		for (EmailClient emailClient : appContext.getEmailClients()) {
 			emailClient.startPolling();
+		}
+
+		// Proficy polling
+		for (ProficyClient proficyClient : appContext.getProficyClients()) {
+			proficyClient.startPolling();
 		}
 	}
 
@@ -1754,6 +1829,12 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	public void onEmailMessage(ApplicationMessage message) {
 		// execute on worker thread
 		executorService.execute(new EmailTask(message));
+	}
+
+	@Override
+	public void onProficyEvent(TagData tagData) {
+		// execute on worker thread
+		executorService.execute(new ProficyTask(tagData));
 	}
 
 	// subscribed OPC DA items by source
@@ -2640,6 +2721,40 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 				event.setReason(fetchReason(modbusEvent.getReason()));
 				resolveEvent(event);
 
+			} catch (Exception e) {
+				onException("Unable to invoke script resolver.", e);
+			}
+		}
+	}
+
+	// handle the Proficy event callback
+	private class ProficyTask implements Runnable {
+		private final TagData tagData;
+
+		ProficyTask(TagData tagData) {
+			this.tagData = tagData;
+		}
+
+		@Override
+		public void run() {
+			try {
+				if (logger.isInfoEnabled()) {
+					logger.info("Proficy event, tag: " + tagData.getTagName());
+				}
+
+				// resolve event, tag name is source id
+				// samples in chronological order
+				TagDataType dataType = tagData.getEnumeratedType();
+
+				for (TagSample sample : tagData.getSamples()) {
+					// skip bad data
+					if (sample.getEnumeratedQuality().equals(TagQuality.Good)) {
+						// resolve event
+						OeeEquipmentEvent event = new OeeEquipmentEvent(tagData.getTagName(),
+								sample.getTypedValue(dataType), sample.getTimeStampTime());
+						resolveEvent(event);
+					}
+				}
 			} catch (Exception e) {
 				onException("Unable to invoke script resolver.", e);
 			}

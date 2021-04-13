@@ -65,6 +65,10 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 			value = DataSourceType.EMAIL_VALUE;
 			break;
 
+		case PROFICY:
+			value = DataSourceType.PROFICY_VALUE;
+			break;
+
 		default:
 			break;
 		}
@@ -127,6 +131,10 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 
 		case DataSourceType.EMAIL_VALUE:
 			state = DataSourceType.EMAIL;
+			break;
+
+		case DataSourceType.PROFICY_VALUE:
+			state = DataSourceType.PROFICY;
 			break;
 
 		default:

@@ -4,6 +4,10 @@ import java.time.LocalDateTime;
 
 import com.google.gson.annotations.SerializedName;
 
+/**
+ * Serialized Oauth bearer token
+ *
+ */
 public class OauthBearerToken {
 	@SerializedName(value = "access_token")
 	private String accessToken;
@@ -14,10 +18,13 @@ public class OauthBearerToken {
 	@SerializedName(value = "expires_in")
 	private int expiresIn;
 
+	@SerializedName(value = "scope")
 	private String scope;
 
+	@SerializedName(value = "jti")
 	private String jti;
 
+	// exclude from serialization
 	private transient LocalDateTime expirationTime;
 
 	public String getAccessToken() {

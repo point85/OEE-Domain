@@ -46,6 +46,10 @@ public class EmailSource extends CollectorDataSource {
 	@Column(name = "KEYSTORE_PWD")
 	private String sendPort;
 
+	// overloaded for send security policy
+	@Column(name = "END_PATH")
+	private String sendSecurityPolicy;
+
 	public EmailSource() {
 		super();
 		setDataSourceType(DataSourceType.EMAIL);
@@ -129,15 +133,15 @@ public class EmailSource extends CollectorDataSource {
 	}
 
 	public EmailSecurityPolicy getSendSecurityPolicy() {
-		if (getEndpointPath() != null) {
-			sendPolicy = EmailSecurityPolicy.valueOf(getEndpointPath());
+		if (sendSecurityPolicy != null) {
+			sendPolicy = EmailSecurityPolicy.valueOf(sendSecurityPolicy);
 		}
 		return sendPolicy;
 	}
 
 	public void setSendSecurityPolicy(EmailSecurityPolicy policy) {
 		if (policy != null) {
-			setEndpointPath(policy.name());
+			this.sendSecurityPolicy = policy.name();
 			this.sendPolicy = policy;
 		}
 	}

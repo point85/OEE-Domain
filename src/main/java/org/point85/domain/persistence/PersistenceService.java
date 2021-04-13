@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
+import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.spi.PersistenceUnitInfo;
@@ -51,6 +52,7 @@ import org.point85.domain.plant.ProductionLine;
 import org.point85.domain.plant.Reason;
 import org.point85.domain.plant.Site;
 import org.point85.domain.plant.WorkCell;
+import org.point85.domain.proficy.ProficySource;
 import org.point85.domain.rmq.RmqSource;
 import org.point85.domain.schedule.ExceptionPeriod;
 import org.point85.domain.schedule.Rotation;
@@ -708,6 +710,25 @@ public final class PersistenceService {
 		TypedQuery<EventResolver> query = em.createNamedQuery(RESOLVER_BY_HOST, EventResolver.class);
 		query.setParameter("names", hostNames);
 		query.setParameter("states", states);
+		List<EventResolver> resolvers = query.getResultList();
+		em.close();
+
+		return resolvers;
+	}
+
+	public List<EventResolver> fetchEventResolversBySource(String hostName, DataSourceType sourceType)
+			throws Exception {
+		final String RESOLVER_BY_SOURCE = "RESOLVER.BySource";
+
+		if (namedQueryMap.get(RESOLVER_BY_SOURCE) == null) {
+			createNamedQuery(RESOLVER_BY_SOURCE,
+					"SELECT er FROM EventResolver er WHERE er.dataSource.host = :hostName AND er.dataSource.sourceType = :sourceType");
+		}
+
+		EntityManager em = getEntityManager();
+		TypedQuery<EventResolver> query = em.createNamedQuery(RESOLVER_BY_SOURCE, EventResolver.class);
+		query.setParameter("hostName", hostName);
+		query.setParameter("sourceType", sourceType);
 		List<EventResolver> resolvers = query.getResultList();
 		em.close();
 
@@ -1574,7 +1595,8 @@ public final class PersistenceService {
 				EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class, Reason.class,
 				Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class, ExceptionPeriod.class,
 				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class, ModbusSource.class,
-				EntitySchedule.class, CronEventSource.class, KafkaSource.class, EmailSource.class};
+				EntitySchedule.class, CronEventSource.class, KafkaSource.class, EmailSource.class,
+				ProficySource.class };
 	}
 
 	private Class<?>[] getDatabaseEventEntityClasses() {
@@ -1620,7 +1642,8 @@ public final class PersistenceService {
 		} else if (databaseType.equals(DatabaseType.MYSQL)) {
 			properties.put("hibernate.dialect", "org.hibernate.dialect.MySQL8Dialect");
 			properties.put("javax.persistence.jdbc.driver", "com.mysql.cj.jdbc.Driver");
-		} else if (databaseType.equals(DatabaseType.POSTGRES)) {
+		} else {
+			// PostgreSQL
 			properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQL95Dialect");
 			properties.put("javax.persistence.jdbc.driver", "org.postgresql.Driver");
 		}
@@ -1952,18 +1975,19 @@ public final class PersistenceService {
 	}
 
 	/**
-	 * Fetch OEE events for the equipment and event type over the specified period
+	 * Fetch OEE events for the equipment and source id over the specified period
 	 * 
-	 * @param equipment {@link Equipment}
-	 * @param type      {@link OeeEventType}
-	 * @param from      starting date and time
-	 * @param to        ending date and time
+	 * @param resolver {@link EventResolver} resolver
+	 * @param from     starting date and time
+	 * @param to       ending date and time
 	 * @return List of {@link OeeEvent}
 	 * @throws Exception Exception
 	 */
-	public List<OeeEvent> fetchEvents(Equipment equipment, OeeEventType type, OffsetDateTime from, OffsetDateTime to)
-			throws Exception {
-		String qry = "SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.eventType = :type ";
+	public List<OeeEvent> fetchEvents(EventResolver resolver, OffsetDateTime from, OffsetDateTime to) throws Exception {
+		Equipment equipment = resolver.getEquipment();
+		String sourceId = resolver.getSourceId();
+
+		String qry = "SELECT e FROM OeeEvent e WHERE e.equipment = :equipment AND e.sourceId = :sourceId ";
 
 		if (from != null) {
 			qry += "AND e.startTime.localDateTime >= :from ";
@@ -1976,8 +2000,8 @@ public final class PersistenceService {
 
 		EntityManager em = getEntityManager();
 		TypedQuery<OeeEvent> query = em.createQuery(qry, OeeEvent.class);
-		query.setParameter("type", type);
 		query.setParameter("equipment", equipment);
+		query.setParameter("sourceId", sourceId);
 
 		if (from != null) {
 			query.setParameter("from", from.toLocalDateTime());
@@ -1991,6 +2015,32 @@ public final class PersistenceService {
 		em.close();
 
 		return events;
+	}
+
+	public OeeEvent fetchLastEvent(List<String> sourceIds) throws Exception {
+		final String LAST_SOURCE_EVENT = "DATABASE_EVENT.LAST.SOURCE";
+
+		if (namedQueryMap.get(LAST_SOURCE_EVENT) == null) {
+			createNamedQuery(LAST_SOURCE_EVENT,
+					"SELECT e FROM OeeEvent e WHERE e.sourceId IN :sourceIds ORDER BY e.startTime.localDateTime DESC");
+		}
+
+		EntityManager em = getEntityManager();
+
+		TypedQuery<OeeEvent> query = em.createNamedQuery(LAST_SOURCE_EVENT, OeeEvent.class);
+		query.setParameter("sourceIds", sourceIds);
+		query.setMaxResults(1);
+
+		OeeEvent lastEvent = null;
+		try {
+			lastEvent = query.getSingleResult();
+		} catch (NoResultException nre) {
+			// we want a null event
+		} finally {
+			em.close();
+		}
+
+		return lastEvent;
 	}
 
 	public String getJdbcConnection() {

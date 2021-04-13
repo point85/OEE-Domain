@@ -29,6 +29,9 @@ public final class DomainUtils {
 	// ISO 8601 datetime format, yyyy-mm-ddThh:mm:ss.nnn
 	public static final String LOCAL_DATE_TIME_8601 = "yyyy-MM-dd'T'HH:mm:ss.SSS";
 
+	// ISO 8601 datetime UTC format, yyyy-mm-ddThh:mm:ss.nnnZ
+	public static final String UTC_DATE_TIME_8601 = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+
 	// pattern for OffsetDateTime display
 	public static final String OFFSET_DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss.SSS ZZZZZ";
 
@@ -40,8 +43,8 @@ public final class DomainUtils {
 	}
 
 	public static String getVersionInfo() {
-		return DomainLocalizer.instance().getLangString("version") + " 3.3.2, "
-				+ LocalDate.of(2021, 2, 14).format(DateTimeFormatter.ISO_DATE);
+		return DomainLocalizer.instance().getLangString("version") + " 3.4.0, "
+				+ LocalDate.of(2021, 4, 14).format(DateTimeFormatter.ISO_DATE);
 	}
 
 	// format a Duration

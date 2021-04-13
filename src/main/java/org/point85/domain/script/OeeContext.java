@@ -19,6 +19,7 @@ import org.point85.domain.opc.da.DaOpcClient;
 import org.point85.domain.opc.ua.UaOpcClient;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Material;
+import org.point85.domain.proficy.ProficyClient;
 import org.point85.domain.rmq.RmqClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,9 @@ public class OeeContext {
 	// email client key
 	private static final String EMAIL_KEY = "EMAIL";
 
+	// Proficy historian key
+	private static final String PROFICY_KEY = "PROFICY";
+
 	// MQTT client key
 	private static final String MQTT_KEY = "MQTT";
 
@@ -98,6 +102,7 @@ public class OeeContext {
 		setFileEventClients(new HashSet<>());
 		setCronEventClients(new HashSet<>());
 		setModbusMasters(new HashSet<>());
+		setProficyClients(new HashSet<>());
 	}
 
 	/**
@@ -364,6 +369,16 @@ public class OeeContext {
 	}
 
 	/**
+	 * Get a list of the Proficy event clients defined for the collector
+	 * 
+	 * @return Collection of {@link ProficyClient}
+	 */
+	@SuppressWarnings("unchecked")
+	public Collection<ProficyClient> getProficyClients() {
+		return (Collection<ProficyClient>) contextMap.get(PROFICY_KEY);
+	}
+
+	/**
 	 * Get a list of Modbus masters defined for the collector
 	 * 
 	 * @return Collection of {@link ModbusMaster}
@@ -494,6 +509,21 @@ public class OeeContext {
 	}
 
 	/**
+	 * Get the first (only) Proficy event client
+	 * 
+	 * @return {@link ProficyClient}
+	 */
+	public ProficyClient getProficyClient() {
+		// get the first one
+		ProficyClient client = null;
+
+		if (!getProficyClients().isEmpty()) {
+			client = getProficyClients().iterator().next();
+		}
+		return client;
+	}
+
+	/**
 	 * Get the first (only) Modbus master
 	 * 
 	 * @return {@link ModbusMaster}
@@ -578,6 +608,15 @@ public class OeeContext {
 	 */
 	public void setCronEventClients(Collection<CronEventClient> clients) {
 		contextMap.put(CRON_KEY, clients);
+	}
+
+	/**
+	 * Set the list of the Proficy event clients defined for the collector
+	 * 
+	 * @param clients Set of {@link ProficyClient}
+	 */
+	public void setProficyClients(Collection<ProficyClient> clients) {
+		contextMap.put(PROFICY_KEY, clients);
 	}
 
 	/**
@@ -678,6 +717,17 @@ public class OeeContext {
 	}
 
 	/**
+	 * Add a Proficy event client to the list
+	 * 
+	 * @param client {@link ProficyClient}
+	 */
+	public void addProficyClient(ProficyClient client) {
+		if (!getProficyClients().contains(client)) {
+			getProficyClients().add(client);
+		}
+	}
+
+	/**
 	 * Add a Modbus master to the list
 	 * 
 	 * @param master {@link ModbusMaster}
@@ -773,6 +823,17 @@ public class OeeContext {
 	public void removeCronEventClient(CronEventClient client) {
 		if (getCronEventClients().contains(client)) {
 			getCronEventClients().remove(client);
+		}
+	}
+
+	/**
+	 * Remove a Proficy event client from the list
+	 * 
+	 * @param client {@link ProficyClient}
+	 */
+	public void removeProficyClient(ProficyClient client) {
+		if (getProficyClients().contains(client)) {
+			getProficyClients().remove(client);
 		}
 	}
 
@@ -899,6 +960,11 @@ public class OeeContext {
 
 		sb.append("\n Cron clients ...");
 		for (CronEventClient client : getCronEventClients()) {
+			sb.append('\t').append(client.toString());
+		}
+
+		sb.append("\n Proficy clients ...");
+		for (ProficyClient client : getProficyClients()) {
 			sb.append('\t').append(client.toString());
 		}
 

@@ -32,6 +32,10 @@ public class KafkaSource extends CollectorDataSource {
 	@Column(name = "MSG_MODE")
 	private String messageMode;
 
+	// overloaded for trust store
+	@Column(name = "END_PATH")
+	private String truststore;
+
 	public KafkaSource() {
 		super();
 		setDataSourceType(DataSourceType.KAFKA);
@@ -70,11 +74,11 @@ public class KafkaSource extends CollectorDataSource {
 
 	// overload endpoint path
 	public String getTruststore() {
-		return getEndpointPath();
+		return truststore;
 	}
 
 	public void setTruststore(String fileName) {
-		setEndpointPath(fileName);
+		truststore = fileName;
 	}
 
 	// overload security policy

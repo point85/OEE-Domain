@@ -4,7 +4,7 @@
 
   <groupId>org.point85</groupId>
   <artifactId>oee-domain</artifactId>
-  <version>3.3.2</version>
+  <version>3.4.0</version>
   <packaging>jar</packaging>
   <url>http://maven.apache.org</url>
 
@@ -12,7 +12,7 @@
   	<maven.compiler.source>1.8</maven.compiler.source>
 	<maven.compiler.target>1.8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jetty.version>9.4.35.v20201120</jetty.version>
+    <jetty.version>9.4.39.v20210325</jetty.version>
     <jackson.version>2.10.0</jackson.version>
 	
 	<!-- if true, do not run any unit tests -->
@@ -25,7 +25,7 @@
 <dependency>
     <groupId>org.bouncycastle</groupId>
     <artifactId>bcprov-jdk15on</artifactId>
-    <version>1.61</version>
+    <version>1.68</version>
 </dependency>  
 
 <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
@@ -85,7 +85,7 @@
 <dependency>
     <groupId>org.eclipse.milo</groupId>
     <artifactId>sdk-client</artifactId>
-    <version>0.5.3</version>
+    <version>0.6.0</version>
 </dependency>
 
 <!-- HIBERNATE JPA -->

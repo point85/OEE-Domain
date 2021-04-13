@@ -531,7 +531,7 @@ public class UaOpcClient implements SessionActivityListener {
 				parameters);
 
 		// consumer
-		BiConsumer<UaMonitoredItem, Integer> onItemCreated = (item, id) -> item
+		UaSubscription.ItemCreationCallback onItemCreated = (item, id) -> item
 				.setValueConsumer(this::onSubscriptionValue);
 
 		List<UaMonitoredItem> items = subscription

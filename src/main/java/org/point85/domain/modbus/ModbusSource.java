@@ -2,6 +2,7 @@ package org.point85.domain.modbus;
 
 import java.util.Objects;
 
+import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.Transient;
@@ -20,6 +21,10 @@ import org.point85.domain.collector.DataSourceType;
 public class ModbusSource extends CollectorDataSource {
 	public static final int DEFAULT_PORT = 502;
 	public static final int DEFAULT_UNIT_ID = 0;
+
+	// overloaded for transport name
+	@Column(name = "END_PATH")
+	private String transportName;
 
 	@Transient
 	private ModbusTransport transport;
@@ -57,20 +62,20 @@ public class ModbusSource extends CollectorDataSource {
 		if (tokens.length == 3) {
 			setHost(tokens[0]);
 			setPort(Integer.valueOf(tokens[1]));
-			setEndpointPath(tokens[2]);
+			transportName = tokens[2];
 		}
 	}
 
 	public ModbusTransport getTransport() {
 		if (transport == null) {
-			transport = ModbusTransport.valueOf(getEndpointPath());
+			transport = ModbusTransport.valueOf(transportName);
 		}
 		return transport;
 	}
 
 	public void setTransport(ModbusTransport transport) {
 		this.transport = transport;
-		setEndpointPath(transport.name());
+		transportName = transport.name();
 	}
 
 	public ModbusEndpoint getEndpoint() {

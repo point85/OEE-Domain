@@ -85,8 +85,6 @@ public class MqttOeeClient extends BaseMessagingClient {
 	 * 
 	 * @param hostName Host name
 	 * @param port     Host port
-	 * @param userName User name
-	 * @param password User password
 	 * @throws Exception Exception
 	 */
 	public void connect(String hostName, int port) throws Exception {
@@ -264,7 +262,7 @@ public class MqttOeeClient extends BaseMessagingClient {
 	 * @param clientKeystore   Client's keystore name
 	 * @param keystorePassword Keystore's password
 	 * @param keyPassword      Private key's password
-	 * @param forConsumer      If true, this is the consumer's configuration
+	 * @throws Exception Exception
 	 */
 	public void setSSLConfiguration(String clientKeystore, String keystorePassword, String keyPassword)
 			throws Exception {
@@ -303,9 +301,8 @@ public class MqttOeeClient extends BaseMessagingClient {
 	/**
 	 * Set the client's security configuration to use SASL SSL and SCRAM-SHA-512
 	 * 
-	 * @param userName    Principal's name
-	 * @param password    Principal's password
-	 * @param forConsumer If true, this is the consumer's configuration
+	 * @param userName Principal's name
+	 * @param password Principal's password
 	 */
 	public void setAuthenticationConfiguration(String userName, String password) {
 		if (userName != null && userName.trim().length() > 0) {
