@@ -12,7 +12,7 @@
   	<maven.compiler.source>1.8</maven.compiler.source>
 	<maven.compiler.target>1.8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jetty.version>9.4.39.v20210325</jetty.version>
+    <jetty.version>9.4.41.v20210516</jetty.version>
     <jackson.version>2.10.0</jackson.version>
 	
 	<!-- if true, do not run any unit tests -->
