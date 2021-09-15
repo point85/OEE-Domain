@@ -1,7 +1,10 @@
-package org.point85.domain.http;
+package org.point85.domain.dto;
 
 import org.point85.domain.collector.CollectorDataSource;
 
+/**
+ * Data Transfer Object (DTO) for data source
+ */
 public class DataSourceDto extends NamedDto {
 	private String host;
 	private Integer port;

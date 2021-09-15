@@ -1,7 +1,10 @@
-package org.point85.domain.http;
+package org.point85.domain.dto;
 
 import java.util.List;
 
+/**
+ * Data Transfer Object (DTO) for data source HTTP response
+ */
 public class DataSourceResponseDto {
 	private List<DataSourceDto> dataSourceList;
 

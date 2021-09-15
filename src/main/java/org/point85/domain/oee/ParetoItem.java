@@ -11,11 +11,15 @@ public class ParetoItem implements Comparable<ParetoItem> {
 	// y-axis value
 	private Number value;
 
-	public ParetoItem(String category, Number value) {
-		this.category = category;
+	// time loss in this category
+	private TimeLoss loss;
+
+	public ParetoItem(TimeLoss loss, Number value) {
+		this.category = loss.toString();
 		this.value = value;
+		this.loss = loss;
 	}
-	
+
 	public ParetoItem(String category, Duration duration) {
 		this.category = category;
 		this.value = duration.getSeconds();
@@ -74,9 +78,17 @@ public class ParetoItem implements Comparable<ParetoItem> {
 
 		return comparison;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "Category: " + category + ", Value: " + value;
+	}
+
+	public TimeLoss getLoss() {
+		return loss;
+	}
+
+	public void setLoss(TimeLoss loss) {
+		this.loss = loss;
 	}
 }

@@ -729,6 +729,11 @@ public class UnitOfMeasure extends NamedObject {
 
 		// re-cache
 		MeasurementSystem.instance().registerUnit(this);
+		
+		// remove from conversion registry
+		if (conversionRegistry.containsKey(abscissaUnit)) {
+			conversionRegistry.remove(abscissaUnit);
+		}
 	}
 
 	/**

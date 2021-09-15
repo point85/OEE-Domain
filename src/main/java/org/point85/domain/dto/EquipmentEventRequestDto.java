@@ -1,4 +1,4 @@
-package org.point85.domain.http;
+package org.point85.domain.dto;
 
 /**
  * Data Transfer Object (DTO) for an equipment event (availability, production

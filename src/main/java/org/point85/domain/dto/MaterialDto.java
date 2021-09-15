@@ -1,8 +1,13 @@
-package org.point85.domain.http;
+package org.point85.domain.dto;
 
+import org.point85.domain.plant.Material;
+
+/**
+ * Data Transfer Object (DTO) for a material
+ */
 public class MaterialDto extends NamedDto {
 	private String category;
-	
+
 	public MaterialDto() {
 		super();
 	}
@@ -10,6 +15,11 @@ public class MaterialDto extends NamedDto {
 	public MaterialDto(String name, String description, String category) {
 		super(name, description);
 		this.category = category;
+	}
+
+	public MaterialDto(Material material) {
+		super(material.getName(), material.getDescription());
+		this.category = material.getCategory();
 	}
 
 	public String getCategory() {

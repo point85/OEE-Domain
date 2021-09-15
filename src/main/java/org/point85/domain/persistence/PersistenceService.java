@@ -166,6 +166,9 @@ public final class PersistenceService {
 		if (emf == null && emfFuture != null) {
 			try {
 				emf = emfFuture.get(EMF_CREATION_TO_SEC, TimeUnit.SECONDS);
+			} catch (InterruptedException e) {
+				// Restore interrupted state
+				Thread.currentThread().interrupt();
 			} catch (Exception e) {
 				getLogger()
 						.error("Unable to create an EntityManagerFactory after " + EMF_CREATION_TO_SEC + " seconds.");
@@ -1779,15 +1782,15 @@ public final class PersistenceService {
 		query.setParameter("type", type);
 		query.setParameter("dateTime", dateTime.toLocalDateTime());
 		query.setMaxResults(1);
-		List<OeeEvent> records = query.getResultList();
+		List<OeeEvent> events = query.getResultList();
 		em.close();
 
-		OeeEvent record = null;
-		if (records.size() == 1) {
-			record = records.get(0);
+		OeeEvent event = null;
+		if (events.size() == 1) {
+			event = events.get(0);
 		}
 
-		return record;
+		return event;
 	}
 
 	public OeeEvent fetchLastEvent(Equipment equipment, OeeEventType type) throws Exception {
@@ -1803,15 +1806,15 @@ public final class PersistenceService {
 		query.setParameter("equipment", equipment);
 		query.setParameter("type", type);
 		query.setMaxResults(1);
-		List<OeeEvent> records = query.getResultList();
+		List<OeeEvent> events = query.getResultList();
 		em.close();
 
-		OeeEvent record = null;
-		if (records.size() == 1) {
-			record = records.get(0);
+		OeeEvent event = null;
+		if (events.size() == 1) {
+			event = events.get(0);
 		}
 
-		return record;
+		return event;
 	}
 
 	public int purge(Equipment equipment, OffsetDateTime cutoff) throws Exception {
@@ -2002,6 +2005,64 @@ public final class PersistenceService {
 		TypedQuery<OeeEvent> query = em.createQuery(qry, OeeEvent.class);
 		query.setParameter("equipment", equipment);
 		query.setParameter("sourceId", sourceId);
+
+		if (from != null) {
+			query.setParameter("from", from);
+		}
+
+		if (to != null) {
+			query.setParameter("to", to);
+		}
+
+		List<OeeEvent> events = query.getResultList();
+		em.close();
+
+		return events;
+	}
+
+	/**
+	 * Fetch events from the database with the specified criteria
+	 * @param equipment required {@link Equipment}
+	 * @param material optional produced {@link Material}
+	 * @param type optional event type {@link OeeEventType}
+	 * @param from optional starting date/time
+	 * @param to optional ending date/time
+	 * @return list of {@link OeeEvent}
+	 * @throws Exception Exception
+	 */
+	public List<OeeEvent> fetchEvents(Equipment equipment, Material material, OeeEventType type, OffsetDateTime from,
+			OffsetDateTime to) throws Exception {
+
+		String qry = "SELECT e FROM OeeEvent e WHERE e.equipment = :equipment ";
+
+		if (material != null) {
+			qry += "AND e.material = :material ";
+		}
+
+		if (type != null) {
+			qry += "AND e.eventType = :type ";
+		}
+
+		if (from != null) {
+			qry += "AND e.startTime.localDateTime >= :from ";
+		}
+
+		if (to != null) {
+			qry += "AND e.startTime.localDateTime < :to ";
+		}
+		qry += " ORDER BY e.startTime.localDateTime ASC";
+
+		EntityManager em = getEntityManager();
+		TypedQuery<OeeEvent> query = em.createQuery(qry, OeeEvent.class);
+		query.setParameter("equipment", equipment);
+
+		if (material != null) {
+			query.setParameter("material", material);
+		}
+
+		if (type != null) {
+			query.setParameter("type", type);
+		}
 
 		if (from != null) {
 			query.setParameter("from", from.toLocalDateTime());

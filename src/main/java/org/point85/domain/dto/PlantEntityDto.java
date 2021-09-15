@@ -1,8 +1,11 @@
-package org.point85.domain.http;
+package org.point85.domain.dto;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Data Transfer Object (DTO) for a plant entity (e.g. Equipment}
+ */
 public class PlantEntityDto extends NamedDto {
 	private String parent;
 

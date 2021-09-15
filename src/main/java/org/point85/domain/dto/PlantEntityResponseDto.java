@@ -1,7 +1,10 @@
-package org.point85.domain.http;
+package org.point85.domain.dto;
 
 import java.util.List;
 
+/**
+ * Data Transfer Object (DTO) for an HTTP plant entity response
+ */
 public class PlantEntityResponseDto {
 	private List<PlantEntityDto> entityList;
 

@@ -3,10 +3,12 @@ package org.point85.domain.oee;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.persistence.PersistenceService;
@@ -26,7 +28,7 @@ public final class EquipmentLossManager {
 	private EquipmentLossManager() {
 	}
 
-	public static void calculateEquipmentLoss(EquipmentLoss equipmentLoss, OffsetDateTime from, OffsetDateTime to)
+	private static void calculateEquipmentLoss(EquipmentLoss equipmentLoss, OffsetDateTime from, OffsetDateTime to)
 			throws Exception {
 
 		// time period
@@ -51,16 +53,16 @@ public final class EquipmentLossManager {
 
 		equipmentLoss.getEventRecords().addAll(productions);
 
-		for (OeeEvent record : productions) {
-			Quantity quantity = record.getQuantity();
+		for (OeeEvent production : productions) {
+			Quantity quantity = production.getQuantity();
 
 			if (quantity.getUOM() == null) {
 				throw new Exception(DomainLocalizer.instance().getErrorString("no.uom.production", quantity.getAmount(),
-						record.getSourceId(), record.getOffsetStartTime()));
+						production.getSourceId(), production.getOffsetStartTime()));
 			}
 			Duration lostTime = null;
 
-			switch (record.getEventType()) {
+			switch (production.getEventType()) {
 			case PROD_GOOD: {
 				equipmentLoss.incrementGoodQuantity(quantity);
 				break;
@@ -71,7 +73,7 @@ public final class EquipmentLossManager {
 
 				// convert to a time loss
 				lostTime = equipmentLoss.convertToLostTime(quantity);
-				record.setLostTime(lostTime);
+				production.setLostTime(lostTime);
 				break;
 			}
 
@@ -80,7 +82,7 @@ public final class EquipmentLossManager {
 
 				// convert to a time loss
 				lostTime = equipmentLoss.convertToLostTime(quantity);
-				record.setLostTime(lostTime);
+				production.setLostTime(lostTime);
 				break;
 			}
 
@@ -88,34 +90,34 @@ public final class EquipmentLossManager {
 				break;
 			}
 
-			if (record.getReason() != null && lostTime != null) {
+			if (production.getReason() != null && lostTime != null) {
 				// reason map too
-				equipmentLoss.incrementReasonLoss(record.getReason(), lostTime);
+				equipmentLoss.incrementReasonLoss(production.getReason(), lostTime);
 			}
 		}
 
 		// availability losses
-		List<OeeEvent> records = PersistenceService.instance().fetchAvailability(equipment, from, to);
+		List<OeeEvent> events = PersistenceService.instance().fetchAvailability(equipment, from, to);
 
-		equipmentLoss.getEventRecords().addAll(records);
+		equipmentLoss.getEventRecords().addAll(events);
 
-		for (int i = 0; i < records.size(); i++) {
-			OeeEvent record = records.get(i);
+		for (int i = 0; i < events.size(); i++) {
+			OeeEvent event = events.get(i);
 
 			// skip no loss records
-			if (record.getReason() != null) {
-				TimeLoss lossCategory = record.getReason().getLossCategory();
+			if (event.getReason() != null) {
+				TimeLoss lossCategory = event.getReason().getLossCategory();
 
 				if (lossCategory.equals(TimeLoss.NO_LOSS)) {
 					continue;
 				}
 			}
 
-			Duration eventDuration = record.getDuration();
+			Duration eventDuration = event.getDuration();
 			Duration duration = eventDuration;
 
-			OffsetDateTime start = record.getStartTime();
-			OffsetDateTime end = record.getEndTime();
+			OffsetDateTime start = event.getStartTime();
+			OffsetDateTime end = event.getEndTime();
 
 			// check first record for edge time
 			if (i == 0) {
@@ -125,7 +127,7 @@ public final class EquipmentLossManager {
 					Duration edge = Duration.between(start, from);
 					duration = eventDuration.minus(edge);
 				}
-			} else if (i == (records.size() - 1)) {
+			} else if (i == (events.size() - 1)) {
 				// last record
 				if (end == null || to.isBefore(end)) {
 					// get time in interval
@@ -139,10 +141,10 @@ public final class EquipmentLossManager {
 			}
 
 			// increment the loss for this reason
-			equipmentLoss.incrementLoss(record.getReason(), duration);
+			equipmentLoss.incrementLoss(event.getReason(), duration);
 
 			// save in event record
-			record.setLostTime(duration);
+			event.setLostTime(duration);
 		}
 
 		// compute reduced speed from the other losses
@@ -185,5 +187,63 @@ public final class EquipmentLossManager {
 			logger.info("Pareto Reason: " + entry.getKey().getName() + ", duration: " + entry.getValue());
 		}
 		return items;
+	}
+
+	public static void buildLoss(EquipmentLoss equipmentLoss, String materialId, OffsetDateTime odtStart,
+			OffsetDateTime odtEnd) throws Exception {
+
+		Map<String, Material> materialMap = new HashMap<>();
+
+		List<OeeEvent> setups = null;
+		if (materialId != null) {
+			Material material = PersistenceService.instance().fetchMaterialByName(materialId);
+
+			// filter for a specific material
+			setups = PersistenceService.instance().fetchSetupsForPeriodAndMaterial(equipmentLoss.getEquipment(),
+					odtStart, odtEnd, material);
+		} else {
+			// material and job during this period from setups
+			setups = PersistenceService.instance().fetchSetupsForPeriod(equipmentLoss.getEquipment(), odtStart, odtEnd);
+		}
+
+		if (setups.isEmpty()) {
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.setup",
+					DomainUtils.offsetDateTimeToString(odtStart, DomainUtils.OFFSET_DATE_TIME_PATTERN),
+					DomainUtils.offsetDateTimeToString(odtEnd, DomainUtils.OFFSET_DATE_TIME_PATTERN)));
+		}
+
+		// add setup events
+		equipmentLoss.getEventRecords().addAll(setups);
+
+		// step through each setup period since materials could have changed
+		for (OeeEvent setup : setups) {
+			if (setup.getMaterial() == null) {
+				continue;
+			}
+
+			String id = setup.getMaterial().getDisplayString();
+
+			if (materialMap.get(id) == null) {
+				materialMap.put(id, setup.getMaterial());
+			}
+
+			equipmentLoss.setMaterial(setup.getMaterial());
+
+			// calculate the time losses over the setup period
+			OffsetDateTime periodStart = setup.getStartTime();
+
+			if (periodStart.compareTo(odtStart) < 0) {
+				periodStart = odtStart;
+			}
+
+			OffsetDateTime periodEnd = setup.getEndTime();
+
+			if (periodEnd == null || (periodEnd.compareTo(odtEnd) > 0)) {
+				periodEnd = odtEnd;
+			}
+
+			/// calculate the time losses for this material and time period
+			EquipmentLossManager.calculateEquipmentLoss(equipmentLoss, periodStart, periodEnd);
+		}
 	}
 }

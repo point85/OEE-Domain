@@ -2,6 +2,10 @@ package org.point85.domain.http;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,10 +16,28 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 import org.point85.domain.collector.OeeEvent;
+import org.point85.domain.dto.DataSourceDto;
+import org.point85.domain.dto.DataSourceResponseDto;
+import org.point85.domain.dto.EquipmentEventRequestDto;
+import org.point85.domain.dto.EquipmentEventResponseDto;
+import org.point85.domain.dto.EquipmentStatusResponseDto;
+import org.point85.domain.dto.MaterialDto;
+import org.point85.domain.dto.MaterialResponseDto;
+import org.point85.domain.dto.OeeEventDto;
+import org.point85.domain.dto.OeeEventsResponseDto;
+import org.point85.domain.dto.OeeResponseDto;
+import org.point85.domain.dto.PlantEntityDto;
+import org.point85.domain.dto.PlantEntityResponseDto;
+import org.point85.domain.dto.ReasonDto;
+import org.point85.domain.dto.ReasonResponseDto;
+import org.point85.domain.dto.SourceIdResponseDto;
 import org.point85.domain.i18n.DomainLocalizer;
+import org.point85.domain.oee.EquipmentLoss;
+import org.point85.domain.oee.EquipmentLossManager;
 import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
@@ -173,6 +195,94 @@ class OeeHttpServlet extends HttpServlet {
 
 				content = serveEquipmentStatusRequest(equipmentNames[0]);
 
+			} else if (tokens[1].equalsIgnoreCase(OeeHttpServer.EVENTS_EP)) {
+				// OEE events request
+				Map<String, String[]> queryParameters = request.getParameterMap();
+
+				// equipment is required
+				String[] equipmentNames = queryParameters.get(OeeHttpServer.EQUIP_ATTRIB);
+
+				if (equipmentNames == null || equipmentNames.length == 0) {
+					throw new Exception(DomainLocalizer.instance().getErrorString("no.equipment.name"));
+				}
+
+				// material can be null
+				String materialId = null;
+				String[] materialIds = queryParameters.get(OeeHttpServer.MATERIAL_ATTRIB);
+
+				if (materialIds != null && materialIds.length > 0) {
+					materialId = materialIds[0];
+				}
+
+				// event type can be null
+				String eventType = null;
+				String[] eventTypes = queryParameters.get(OeeHttpServer.EVENT_TYPE_ATTRIB);
+
+				if (eventTypes != null && eventTypes.length > 0) {
+					eventType = eventTypes[0];
+				}
+
+				// from timestamp can be null
+				String fromTime = null;
+
+				String[] fromTimes = queryParameters.get(OeeHttpServer.FROM_ATTRIB);
+
+				if (fromTimes != null && fromTimes.length > 0) {
+					fromTime = fromTimes[0];
+				}
+
+				// to timestamp can be null
+				String toTime = null;
+
+				String[] toTimes = queryParameters.get(OeeHttpServer.TO_ATTRIB);
+
+				if (toTimes != null && toTimes.length > 0) {
+					toTime = toTimes[0];
+				}
+
+				// server the request
+				content = serveEventsRequest(equipmentNames[0], materialId, eventType, fromTime, toTime);
+
+			} else if (tokens[1].equalsIgnoreCase(OeeHttpServer.OEE_EP)) {
+				// OEE calculation request
+				Map<String, String[]> queryParameters = request.getParameterMap();
+
+				// equipment is required
+				String[] equipmentNames = queryParameters.get(OeeHttpServer.EQUIP_ATTRIB);
+
+				if (equipmentNames == null || equipmentNames.length == 0) {
+					throw new Exception(DomainLocalizer.instance().getErrorString("no.equipment.name"));
+				}
+
+				// material can be null
+				String materialId = null;
+				String[] materialIds = queryParameters.get(OeeHttpServer.MATERIAL_ATTRIB);
+
+				if (materialIds != null && materialIds.length > 0) {
+					materialId = materialIds[0];
+				}
+
+				// from timestamp can be null
+				String fromTime = null;
+
+				String[] fromTimes = queryParameters.get(OeeHttpServer.FROM_ATTRIB);
+
+				if (fromTimes != null && fromTimes.length > 0) {
+					fromTime = fromTimes[0];
+				}
+
+				// to timestamp can be null
+				String toTime = null;
+
+				String[] toTimes = queryParameters.get(OeeHttpServer.TO_ATTRIB);
+
+				if (toTimes != null && toTimes.length > 0) {
+					toTime = toTimes[0];
+				}
+
+				// server the request
+				content = serveOeeRequest(equipmentNames[0], materialId, fromTime, toTime);
+
 			} else if (tokens[1].equalsIgnoreCase("favicon.ico")) {
 				// ignore icon
 				response.setStatus(HttpServletResponse.SC_OK);
@@ -307,6 +417,123 @@ class OeeHttpServlet extends HttpServlet {
 		}
 
 		return gson.toJson(new MaterialResponseDto(materialDtos));
+	}
+
+	// handle request for OEE events
+	private String serveEventsRequest(String equipmentName, String materialId, String eventType, String fromTimestamp,
+			String toTimestamp) throws Exception {
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Request - equipment: " + equipmentName + ", material: " + materialId + ", type: " + eventType
+					+ ", from: " + fromTimestamp + ", to: " + toTimestamp);
+		}
+
+		// equipment
+		Equipment equipment = PersistenceService.instance().fetchEquipmentByName(equipmentName);
+
+		// material
+		Material material = (materialId != null) ? PersistenceService.instance().fetchMaterialByName(materialId) : null;
+
+		// event type
+		OeeEventType type = (eventType != null) ? OeeEventType.deserialize(eventType) : null;
+
+		// from time can be offset or local
+		OffsetDateTime fromODT = null;
+
+		if (fromTimestamp != null) {
+			if (fromTimestamp.length() > DomainUtils.LOCAL_DATE_TIME_8601.length()) {
+				fromODT = DomainUtils.offsetDateTimeFromString(fromTimestamp, DomainUtils.OFFSET_DATE_TIME_8601);
+			} else {
+				LocalDateTime ldt = DomainUtils.localDateTimeFromString(fromTimestamp,
+						DomainUtils.LOCAL_DATE_TIME_8601);
+				fromODT = DomainUtils.fromLocalDateTime(ldt);
+			}
+		}
+
+		// to time can be offset or local
+		OffsetDateTime toODT = null;
+
+		if (toTimestamp != null) {
+			if (toTimestamp.length() > DomainUtils.LOCAL_DATE_TIME_8601.length()) {
+				toODT = DomainUtils.offsetDateTimeFromString(toTimestamp, DomainUtils.OFFSET_DATE_TIME_8601);
+			} else {
+				LocalDateTime ldt = DomainUtils.localDateTimeFromString(toTimestamp, DomainUtils.LOCAL_DATE_TIME_8601);
+				toODT = DomainUtils.fromLocalDateTime(ldt);
+			}
+		}
+
+		if (toODT != null && fromODT != null && toODT.isBefore(fromODT)) {
+			throw new Exception(DomainLocalizer.instance().getErrorString("start.before.end", fromODT, toODT));
+		}
+
+		List<OeeEvent> events = PersistenceService.instance().fetchEvents(equipment, material, type, fromODT, toODT);
+
+		List<OeeEventDto> eventDtos = new ArrayList<>();
+
+		for (OeeEvent event : events) {
+			OeeEventDto dto = new OeeEventDto(event);
+			eventDtos.add(dto);
+		}
+
+		return gson.toJson(new OeeEventsResponseDto(eventDtos));
+	}
+
+	// handle request for OEE calculations
+	private String serveOeeRequest(String equipmentName, String materialId, String fromTimestamp, String toTimestamp)
+			throws Exception {
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Request - equipment: " + equipmentName + ", material: " + materialId + ", from: "
+					+ fromTimestamp + ", to: " + toTimestamp);
+		}
+
+		// equipment
+		Equipment equipment = PersistenceService.instance().fetchEquipmentByName(equipmentName);
+
+		// from time can be offset or local
+		OffsetDateTime fromODT = null;
+
+		if (fromTimestamp != null) {
+			if (fromTimestamp.length() > DomainUtils.LOCAL_DATE_TIME_8601.length()) {
+				fromODT = DomainUtils.offsetDateTimeFromString(fromTimestamp, DomainUtils.OFFSET_DATE_TIME_8601);
+			} else {
+				LocalDateTime ldt = DomainUtils.localDateTimeFromString(fromTimestamp,
+						DomainUtils.LOCAL_DATE_TIME_8601);
+				fromODT = DomainUtils.fromLocalDateTime(ldt);
+			}
+		} else {
+			// set a default
+			LocalDateTime ldtStart = LocalDateTime.of(LocalDate.now(), LocalTime.MIDNIGHT);
+			fromODT = DomainUtils.fromLocalDateTime(ldtStart);
+		}
+
+		// to time can be offset or local
+		OffsetDateTime toODT = null;
+
+		if (toTimestamp != null) {
+			if (toTimestamp.length() > DomainUtils.LOCAL_DATE_TIME_8601.length()) {
+				toODT = DomainUtils.offsetDateTimeFromString(toTimestamp, DomainUtils.OFFSET_DATE_TIME_8601);
+			} else {
+				LocalDateTime ldt = DomainUtils.localDateTimeFromString(toTimestamp, DomainUtils.LOCAL_DATE_TIME_8601);
+				toODT = DomainUtils.fromLocalDateTime(ldt);
+			}
+		} else {
+			// set a default
+			LocalDateTime ldtEnd = LocalDateTime.of(LocalDate.now().plusDays(1), LocalTime.MIDNIGHT);
+			toODT = DomainUtils.fromLocalDateTime(ldtEnd);
+		}
+
+		if (toODT != null && fromODT != null && toODT.isBefore(fromODT)) {
+			throw new Exception(DomainLocalizer.instance().getErrorString("start.before.end", fromODT, toODT));
+		}
+
+		// populate the equipment loss data
+		EquipmentLoss equipmentLoss = new EquipmentLoss(equipment);
+
+		// do the calculations
+		EquipmentLossManager.buildLoss(equipmentLoss, materialId, fromODT, toODT);
+
+		return gson.toJson(new OeeResponseDto(equipmentLoss));
 	}
 
 	// handle request for reasons

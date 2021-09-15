@@ -1,5 +1,8 @@
-package org.point85.domain.http;
+package org.point85.domain.dto;
 
+/**
+ * Data Transfer Object (DTO) for an equipment event HTTP response
+ */
 public class EquipmentEventResponseDto {
 	private static final String OK_STATUS = "OK";
 	private static final String ERROR_STATUS = "ERROR";

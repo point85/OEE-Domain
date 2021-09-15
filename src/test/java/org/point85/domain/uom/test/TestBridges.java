@@ -264,9 +264,5 @@ public class TestBridges extends BaseTest {
 		assertTrue(isCloseTo(qConverted.getAmount(), 32.7405025d, DELTA6));
 		qBack = qConverted.convert(uomTonnePerGram);
 		assertTrue(qBack.equals(qGrade));
-
-		qGrade = new Quantity(1.0d, uomPennyweightPerShortTon);
-		qConverted = qGrade.convert(uomPennyweightPerShortTon);
-		assertTrue(isCloseTo(qBack.getAmount(), 1.0d, DELTA6));
 	}
 }

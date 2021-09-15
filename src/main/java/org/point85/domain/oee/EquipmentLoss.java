@@ -121,7 +121,7 @@ public class EquipmentLoss {
 	private ParetoItem fromLossCategory(TimeLoss category, Unit timeUnit) throws Exception {
 		Number loss = convertSeconds(getLoss(category).getSeconds(), timeUnit);
 
-		return new ParetoItem(category.toString(), loss);
+		return new ParetoItem(category, loss);
 	}
 
 	public Duration getDuration() {
@@ -218,9 +218,17 @@ public class EquipmentLoss {
 			throw new Exception(DomainLocalizer.instance().getErrorString("no.time"));
 		}
 
-		Quantity availableQty = new Quantity(getAvailableTime().getSeconds(), Unit.SECOND);
-		Quantity denominator = availableQty.multiply(designSpeed);
-		double hloee = goodQuantity.divide(denominator).getAmount();
+		// available time in seconds
+		Quantity availableTime = new Quantity(getAvailableTime().getSeconds(), Unit.SECOND);
+
+		// convert available time to design speed unit
+		UnitOfMeasure timeUnit = designSpeed.getUOM().getDivisor();
+		Quantity convertedTime = availableTime.convert(timeUnit);
+
+		Quantity denominator = convertedTime.multiply(designSpeed);
+		
+		// High level OEE in percent
+		double hloee = goodQuantity.divide(denominator).getAmount() * 100.0d;
 		return (float) hloee;
 	}
 

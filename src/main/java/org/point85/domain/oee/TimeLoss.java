@@ -8,8 +8,8 @@ import org.point85.domain.i18n.DomainLocalizer;
 import javafx.scene.paint.Color;
 
 public enum TimeLoss {
-	NOT_SCHEDULED, UNSCHEDULED, REJECT_REWORK,
-	STARTUP_YIELD, PLANNED_DOWNTIME, UNPLANNED_DOWNTIME, MINOR_STOPPAGES, REDUCED_SPEED, SETUP, NO_LOSS;
+	NOT_SCHEDULED, UNSCHEDULED, REJECT_REWORK, STARTUP_YIELD, PLANNED_DOWNTIME, UNPLANNED_DOWNTIME, MINOR_STOPPAGES,
+	REDUCED_SPEED, SETUP, NO_LOSS;
 
 	// database values
 	public static final String NO_LOSS_VALUE = "NLOSS";
@@ -141,5 +141,45 @@ public enum TimeLoss {
 			break;
 		}
 		return DomainLocalizer.instance().getLangString(key);
+	}
+
+	public String serialize() {
+		String value = null;
+
+		switch (this) {
+		case MINOR_STOPPAGES:
+			value = MINOR_STOPPAGES_VALUE;
+			break;
+		case NOT_SCHEDULED:
+			value = NOT_SCHEDULED_VALUE;
+			break;
+		case NO_LOSS:
+			value = NO_LOSS_VALUE;
+			break;
+		case PLANNED_DOWNTIME:
+			value = PLANNED_DOWNTIME_VALUE;
+			break;
+		case REDUCED_SPEED:
+			value = REDUCED_SPEED_VALUE;
+			break;
+		case REJECT_REWORK:
+			value = REJECT_REWORK_VALUE;
+			break;
+		case SETUP:
+			value = SETUP_VALUE;
+			break;
+		case STARTUP_YIELD:
+			value = STARTUP_YIELD_VALUE;
+			break;
+		case UNPLANNED_DOWNTIME:
+			value = UNPLANNED_DOWNTIME_VALUE;
+			break;
+		case UNSCHEDULED:
+			value = UNSCHEDULED_VALUE;
+			break;
+		default:
+			break;
+		}
+		return value;
 	}
 }

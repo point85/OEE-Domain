@@ -32,6 +32,10 @@ public class OeeHttpServer {
 	public static final String EQUIP_ATTRIB = "equipment";
 	public static final String DS_TYPE_ATTRIB = "sourceType";
 	public static final String MATERIAL_ATTRIB = "material";
+	public static final String EVENT_TYPE_ATTRIB = "type";
+	public static final String FROM_ATTRIB = "from";
+	public static final String TO_ATTRIB = "to";
+	
 	public static final String EVENT_KEY = "eventData";
 
 	// root mapping
@@ -42,9 +46,11 @@ public class OeeHttpServer {
 	public static final String REASON_EP = "reason";
 	public static final String MATERIAL_EP = "material";
 	public static final String EVENT_EP = "event";
+	public static final String EVENTS_EP = "events";
 	public static final String SOURCE_ID_EP = "source_id";
 	public static final String DATA_SOURCE_EP = "data_source";
 	public static final String STATUS_EP = "status";
+	public static final String OEE_EP = "oee";
 
 	// thread pool
 	private static final int MAX_THREADS = 200;

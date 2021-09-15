@@ -1,6 +1,9 @@
-package org.point85.domain.http;
+package org.point85.domain.dto;
 
-public class NamedDto {
+/**
+ * Base class for named DTOs
+ */
+abstract class NamedDto {
 	private String name;
 	
 	private String description;

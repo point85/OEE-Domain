@@ -1,5 +1,8 @@
-package org.point85.domain.http;
+package org.point85.domain.dto;
 
+/**
+ * Data Transfer Object (DTO) for an equipment status HTTP response
+ */
 public class EquipmentStatusResponseDto {
 	// material being run
 	private MaterialDto material;

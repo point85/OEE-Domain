@@ -72,4 +72,78 @@ public enum OeeEventType {
 		}
 		return DomainLocalizer.instance().getLangString(key);
 	}
+
+	public String serialize() {
+		String value = null;
+
+		switch (this) {
+		case AVAILABILITY:
+			value = AVAILABILITY_VALUE;
+			break;
+		case CUSTOM:
+			value = CUSTOM_VALUE;
+			break;
+		case JOB_CHANGE:
+			value = JOB_VALUE;
+			break;
+		case MATL_CHANGE:
+			value = MATERIAL_VALUE;
+			break;
+		case PROD_GOOD:
+			value = GOOD_PROD_VALUE;
+			break;
+		case PROD_REJECT:
+			value = REJECT_PROD_VALUE;
+			break;
+		case PROD_STARTUP:
+			value = STARTUP_PROD_VALUE;
+			break;
+		default:
+			break;
+		}
+		return value;
+	}
+
+	public static OeeEventType deserialize(String value) {
+		OeeEventType type = null;
+
+		if (value == null) {
+			return type;
+		}
+
+		switch (value) {
+		case OeeEventType.AVAILABILITY_VALUE:
+			type = OeeEventType.AVAILABILITY;
+			break;
+
+		case OeeEventType.GOOD_PROD_VALUE:
+			type = OeeEventType.PROD_GOOD;
+			break;
+
+		case OeeEventType.REJECT_PROD_VALUE:
+			type = OeeEventType.PROD_REJECT;
+			break;
+
+		case OeeEventType.STARTUP_PROD_VALUE:
+			type = OeeEventType.PROD_STARTUP;
+			break;
+
+		case OeeEventType.JOB_VALUE:
+			type = OeeEventType.JOB_CHANGE;
+			break;
+
+		case OeeEventType.MATERIAL_VALUE:
+			type = OeeEventType.MATL_CHANGE;
+			break;
+
+		case OeeEventType.CUSTOM_VALUE:
+			type = OeeEventType.CUSTOM;
+			break;
+
+		default:
+			break;
+
+		}
+		return type;
+	}
 }
