@@ -34,12 +34,13 @@ import java.time.LocalTime;
 import org.junit.Test;
 import org.point85.domain.schedule.Rotation;
 import org.point85.domain.schedule.Shift;
+import org.point85.domain.schedule.Team;
 import org.point85.domain.schedule.WorkSchedule;
 
 public class TestSnapSchedule extends BaseTest {
 
 	@Test
-	public void testLowNight() throws Exception {
+	public void testLowNight() throws Exception {				
 		String description = "Low night demand";
 
 		schedule = new WorkSchedule("Low Night Demand Plan", description);
@@ -67,9 +68,33 @@ public class TestSnapSchedule extends BaseTest {
 		schedule.createTeam("Team4", "Fourth team", rotation, referenceDate.minusDays(28));
 		schedule.createTeam("Team5", "Fifth team", rotation, referenceDate.minusDays(14));
 		schedule.createTeam("Team6", "Sixth team", rotation, referenceDate.minusDays(35));
+		
+		// specific checks
+		assertTrue(schedule.getRotationDuration().getSeconds() == 6048 * 3600);
+		assertTrue(schedule.getRotationWorkingTime().getSeconds() == 1344 * 3600);
+		
+		LocalDateTime from = LocalDateTime.of(laterDate, day.getStart());
+		LocalDateTime to = LocalDateTime.of(laterDate.plusDays(28), day.getStart());
+		
+		Duration workingTime = schedule.calculateWorkingTime(from, to);
+		assertTrue(workingTime.getSeconds() == 896 * 3600);
+		
+		Duration nonWorkingTime = schedule.calculateNonWorkingTime(from, to);
+		assertTrue(nonWorkingTime.getSeconds() == 0 * 3600);
+		
+		Duration overTime = schedule.calculateOvertime(from, to);
+		assertTrue(overTime.getSeconds() == 0 * 3600);
+		
+		for (Team team : schedule.getTeams()) {
+			assertTrue(team.getRotation().getDuration().getSeconds() == 1008 * 3600);
+			assertTrue(isCloseTo(team.getPercentageWorked(), 22.22f, DELTA2));
+			assertTrue(team.getRotation().getWorkingTime().getSeconds() == 224 * 3600);
+			assertTrue(team.getHoursWorkedPerWeek().getSeconds() == 37 * 3600 + 20 * 60);
+		}
 
 		runBaseTest(schedule, Duration.ofHours(224), Duration.ofDays(42), referenceDate);
 	}
+	
 
 	@Test
 	public void test3TeamFixed24() throws Exception {
@@ -90,10 +115,22 @@ public class TestSnapSchedule extends BaseTest {
 		schedule.createTeam("Team1", "First team", rotation, referenceDate);
 		schedule.createTeam("Team2", "Second team", rotation, referenceDate.minusDays(3));
 		schedule.createTeam("Team3", "Third team", rotation, referenceDate.minusDays(6));
+		
+		// specific checks
+		assertTrue(schedule.getRotationDuration().getSeconds() == 648 * 3600);
+		assertTrue(schedule.getRotationWorkingTime().getSeconds() == 216 * 3600);
+		
+		for (Team team : schedule.getTeams()) {
+			assertTrue(team.getRotation().getDuration().getSeconds() == 216 * 3600);
+			assertTrue(isCloseTo(team.getPercentageWorked(), 33.33f, DELTA2));
+			assertTrue(team.getRotation().getWorkingTime().getSeconds() == 72 * 3600);
+			assertTrue(team.getHoursWorkedPerWeek().getSeconds() == 56 * 3600);
+		}
 
 		runBaseTest(schedule, Duration.ofHours(72), Duration.ofDays(9), referenceDate);
 	}
 
+	
 	@Test
 	public void test549() throws Exception {
 		String description = "Compressed work schedule.";
@@ -118,10 +155,21 @@ public class TestSnapSchedule extends BaseTest {
 		// 2 teams
 		schedule.createTeam("Team1", "First team", rotation, referenceDate);
 		schedule.createTeam("Team2", "Second team", rotation, referenceDate.minusDays(14));
+		
+		// specific checks
+		assertTrue(schedule.getRotationDuration().getSeconds() == 1344 * 3600);
+		assertTrue(schedule.getRotationWorkingTime().getSeconds() == 320 * 3600);
+		
+		for (Team team : schedule.getTeams()) {
+			assertTrue(team.getRotation().getDuration().getSeconds() == 672 * 3600);
+			assertTrue(isCloseTo(team.getPercentageWorked(), 23.81f, DELTA2));
+			assertTrue(team.getRotation().getWorkingTime().getSeconds() == 160 * 3600);
+			assertTrue(team.getHoursWorkedPerWeek().getSeconds() == 40 * 3600);
+		}
 
 		runBaseTest(schedule, Duration.ofHours(160), Duration.ofDays(28), referenceDate);
 	}
-
+	
 	@Test
 	public void test9to5() throws Exception {
 		String description = "This is the basic 9 to 5 schedule plan for office employees. Every employee works 8 hrs a day from Monday to Friday.";
@@ -137,10 +185,33 @@ public class TestSnapSchedule extends BaseTest {
 
 		// 1 team, 1 shift
 		schedule.createTeam("Team", "One team", rotation, referenceDate);
+		
+		// specific checks
+		assertTrue(schedule.getRotationDuration().getSeconds() == 168 * 3600);
+		assertTrue(schedule.getRotationWorkingTime().getSeconds() == 40 * 3600);
+		
+		LocalDateTime from = LocalDateTime.of(laterDate, laterTime);
+		LocalDateTime to = LocalDateTime.of(laterDate.plusDays(28), laterTime);
+		
+		Duration workingTime = schedule.calculateWorkingTime(from, to);
+		assertTrue(workingTime.getSeconds() == 160 * 3600);
+		
+		Duration nonWorkingTime = schedule.calculateNonWorkingTime(from, to);
+		assertTrue(nonWorkingTime.getSeconds() == 0 * 3600);
+		
+		Duration overtime = schedule.calculateOvertime(from, to);
+		assertTrue(overtime.getSeconds() == 0 * 3600);
+		
+		for (Team team : schedule.getTeams()) {
+			assertTrue(team.getRotation().getDuration().getSeconds() == 168 * 3600);
+			assertTrue(isCloseTo(team.getPercentageWorked(), 23.81f, DELTA2));
+			assertTrue(team.getRotation().getWorkingTime().getSeconds() == 40 * 3600);
+			assertTrue(team.getHoursWorkedPerWeek().getSeconds() == 40 * 3600);
+		}
 
 		runBaseTest(schedule, Duration.ofHours(40), Duration.ofDays(7), referenceDate);
 	}
-
+		
 	@Test
 	public void test8Plus12() throws Exception {
 		String description = "This is a fast rotation plan that uses 4 teams and a combination of three 8-hr shifts on weekdays "
@@ -178,10 +249,22 @@ public class TestSnapSchedule extends BaseTest {
 		schedule.createTeam("Team 2", "Second team", rotation, referenceDate.minusDays(7));
 		schedule.createTeam("Team 3", "Third team", rotation, referenceDate.minusDays(14));
 		schedule.createTeam("Team 4", "Fourth team", rotation, referenceDate.minusDays(21));
+		
+		// specific checks
+		assertTrue(schedule.getRotationDuration().getSeconds() == 2688 * 3600);
+		assertTrue(schedule.getRotationWorkingTime().getSeconds() == 672 * 3600);
+		
+		for (Team team : schedule.getTeams()) {
+			assertTrue(team.getRotation().getDuration().getSeconds() == 672 * 3600);
+			assertTrue(isCloseTo(team.getPercentageWorked(), 25.00f, DELTA2));
+			assertTrue(team.getRotation().getWorkingTime().getSeconds() == 168 * 3600);
+			assertTrue(team.getHoursWorkedPerWeek().getSeconds() == 42 * 3600);
+		}
 
 		runBaseTest(schedule, Duration.ofHours(168), Duration.ofDays(28), referenceDate);
 	}
-
+	
+		
 	@Test
 	public void testICUInterns() throws Exception {
 		String description = "This plan supports a combination of 14-hr day shift , 15.5-hr cross-cover shift , and a 14-hr night shift for medical interns. "
@@ -210,10 +293,22 @@ public class TestSnapSchedule extends BaseTest {
 		schedule.createTeam("Team 2", "Second team", rotation, referenceDate.minusDays(3));
 		schedule.createTeam("Team 3", "Third team", rotation, referenceDate.minusDays(2));
 		schedule.createTeam("Team 4", "Forth team", rotation, referenceDate.minusDays(1));
+		
+		// specific checks
+		assertTrue(schedule.getRotationDuration().getSeconds() == 384 * 3600);
+		assertTrue(schedule.getRotationWorkingTime().getSeconds() == 174 * 3600);
+		
+		for (Team team : schedule.getTeams()) {
+			assertTrue(team.getRotation().getDuration().getSeconds() == 96 * 3600);
+			assertTrue(isCloseTo(team.getPercentageWorked(), 45.31f, DELTA2));
+			assertTrue(team.getRotation().getWorkingTime().getSeconds() == 43 * 3600 + 30 * 60);
+			assertTrue(team.getHoursWorkedPerWeek().getSeconds() == 76 * 3600 + 7 * 60 + 30);
+		}
 
 		runBaseTest(schedule, Duration.ofMinutes(2610), Duration.ofDays(4), referenceDate);
 	}
 
+	
 	@Test
 	public void testDupont() throws Exception {
 		String description = "The DuPont 12-hour rotating shift schedule uses 4 teams (crews) and 2 twelve-hour shifts to provide 24/7 coverage. "
@@ -241,10 +336,23 @@ public class TestSnapSchedule extends BaseTest {
 		schedule.createTeam("Team 2", "Second team", rotation, referenceDate.minusDays(7));
 		schedule.createTeam("Team 3", "Third team", rotation, referenceDate.minusDays(14));
 		schedule.createTeam("Team 4", "Forth team", rotation, referenceDate.minusDays(21));
+		
+		// specific checks
+		assertTrue(schedule.getRotationDuration().getSeconds() == 2688 * 3600);
+		assertTrue(schedule.getRotationWorkingTime().getSeconds() == 672 * 3600);
+		
+		for (Team team : schedule.getTeams()) {
+			assertTrue(team.getRotation().getDuration().getSeconds() == 672 * 3600);
+			assertTrue(isCloseTo(team.getPercentageWorked(), 25.00f, DELTA2));
+			assertTrue(team.getRotation().getWorkingTime().getSeconds() == 168 * 3600);
+			assertTrue(team.getHoursWorkedPerWeek().getSeconds() == 42 * 3600);
+		}
 
 		runBaseTest(schedule, Duration.ofHours(168), Duration.ofDays(28), referenceDate);
 	}
+	
 
+		
 	@Test
 	public void testDNO() throws Exception {
 		String description = "This is a fast rotation plan that uses 3 teams and two 12-hr shifts to provide 24/7 coverage. "
@@ -271,10 +379,22 @@ public class TestSnapSchedule extends BaseTest {
 		LocalDateTime from = LocalDateTime.of(referenceDate.plusDays(rotation.getDayCount()), LocalTime.of(7, 0, 0));
 		Duration duration = schedule.calculateWorkingTime(from, from.plusDays(3));
 		assertTrue(duration.equals(Duration.ofHours(72)));
+		
+		// specific checks
+		assertTrue(schedule.getRotationDuration().getSeconds() == 216 * 3600);
+		assertTrue(schedule.getRotationWorkingTime().getSeconds() == 72 * 3600);
+		
+		for (Team team : schedule.getTeams()) {
+			assertTrue(team.getRotation().getDuration().getSeconds() == 72 * 3600);
+			assertTrue(isCloseTo(team.getPercentageWorked(), 33.33f, DELTA2));
+			assertTrue(team.getRotation().getWorkingTime().getSeconds() == 24 * 3600);
+			assertTrue(team.getHoursWorkedPerWeek().getSeconds() == 56 * 3600);
+		}
 
 		runBaseTest(schedule, Duration.ofHours(24), Duration.ofDays(3), referenceDate);
 	}
 
+		
 	@Test
 	public void test21TeamFixed() throws Exception {
 		String description = "This plan is a fixed (no rotation) plan that uses 21 teams and three 8-hr shifts to provide 24/7 coverage. "
@@ -347,11 +467,23 @@ public class TestSnapSchedule extends BaseTest {
 		schedule.createTeam("Team 19", "5th night team", nightRotation, referenceDate.plusDays(28));
 		schedule.createTeam("Team 20", "6th night team", nightRotation, referenceDate.plusDays(35));
 		schedule.createTeam("Team 21", "7th night team", nightRotation, referenceDate.plusDays(42));
+		
+		// specific checks
+		assertTrue(schedule.getRotationDuration().getSeconds() == 24696 * 3600);
+		assertTrue(schedule.getRotationWorkingTime().getSeconds() == 5880 * 3600);
+		
+		for (Team team : schedule.getTeams()) {
+			assertTrue(team.getRotation().getDuration().getSeconds() == 1176 * 3600);
+			assertTrue(isCloseTo(team.getPercentageWorked(), 23.81f, DELTA2));
+			assertTrue(team.getRotation().getWorkingTime().getSeconds() == 280 * 3600);
+			assertTrue(team.getHoursWorkedPerWeek().getSeconds() == 40 * 3600);
+		}
 
 		runBaseTest(schedule, Duration.ofHours(280), Duration.ofDays(49), referenceDate.plusDays(49));
 
 	}
 
+		
 	@Test
 	public void testTwoTeam() throws Exception {
 		String description = "This is a fixed (no rotation) plan that uses 2 teams and two 12-hr shifts to provide 24/7 coverage. "
@@ -373,12 +505,25 @@ public class TestSnapSchedule extends BaseTest {
 		Rotation team2Rotation = schedule.createRotation("Team2", "Team2");
 		team2Rotation.addSegment(night, 1, 0);
 
+		// teams
 		schedule.createTeam("Team 1", "First team", team1Rotation, referenceDate);
 		schedule.createTeam("Team 2", "Second team", team2Rotation, referenceDate);
+		
+		// specific checks
+		assertTrue(schedule.getRotationDuration().getSeconds() == 48 * 3600);
+		assertTrue(schedule.getRotationWorkingTime().getSeconds() == 24 * 3600);
+		
+		for (Team team : schedule.getTeams()) {
+			assertTrue(team.getRotation().getDuration().getSeconds() == 24 * 3600);
+			assertTrue(isCloseTo(team.getPercentageWorked(), 50.00f, DELTA2));
+			assertTrue(team.getRotation().getWorkingTime().getSeconds() == 12 * 3600);
+			assertTrue(team.getHoursWorkedPerWeek().getSeconds() == 84 * 3600);
+		}
 
 		runBaseTest(schedule, Duration.ofHours(12), Duration.ofDays(1), referenceDate);
 	}
 
+		
 	@Test
 	public void testPanama() throws Exception {
 		String description = "This is a slow rotation plan that uses 4 teams and two 12-hr shifts to provide 24/7 coverage. "
@@ -421,7 +566,19 @@ public class TestSnapSchedule extends BaseTest {
 		schedule.createTeam("Team 2", "Second team", rotation, referenceDate.minusDays(28));
 		schedule.createTeam("Team 3", "Third team", rotation, referenceDate.minusDays(7));
 		schedule.createTeam("Team 4", "Fourth team", rotation, referenceDate.minusDays(35));
+		
+		// specific checks
+		assertTrue(schedule.getRotationDuration().getSeconds() == 5376 * 3600);
+		assertTrue(schedule.getRotationWorkingTime().getSeconds() == 1344 * 3600);
+		
+		for (Team team : schedule.getTeams()) {
+			assertTrue(team.getRotation().getDuration().getSeconds() == 1344 * 3600);
+			assertTrue(isCloseTo(team.getPercentageWorked(), 25.00f, DELTA2));
+			assertTrue(team.getRotation().getWorkingTime().getSeconds() == 336 * 3600);
+			assertTrue(team.getHoursWorkedPerWeek().getSeconds() == 42 * 3600);
+		}
 
 		runBaseTest(schedule, Duration.ofHours(336), Duration.ofDays(56), referenceDate);
 	}
+
 }
