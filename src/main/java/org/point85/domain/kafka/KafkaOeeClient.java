@@ -131,6 +131,9 @@ public class KafkaOeeClient extends BaseMessagingClient {
 
 		try {
 			validator.checkConnection(true).get(10, TimeUnit.SECONDS);
+
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
 		} catch (Exception e) {
 			throw new Exception(DomainLocalizer.instance().getErrorString("kafka.unable.to.connect",
 					consumerProperties.get(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)));
@@ -190,6 +193,8 @@ public class KafkaOeeClient extends BaseMessagingClient {
 
 		try {
 			validator.checkConnection(false).get(10, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
 		} catch (Exception e) {
 			throw new Exception(DomainLocalizer.instance().getErrorString("kafka.unable.to.connect",
 					producerProperties.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG)));
@@ -355,10 +360,10 @@ public class KafkaOeeClient extends BaseMessagingClient {
 						// collection of records
 						ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(pollingInterval));
 
-						records.forEach(record -> {
+						records.forEach(consumerRecord -> {
 							if (listener != null) {
 								// serialize to ApplicationMessage
-								String json = record.value();
+								String json = consumerRecord.value();
 
 								if (logger.isInfoEnabled()) {
 									logger.info("Received message: \n" + json);
@@ -549,15 +554,9 @@ public class KafkaOeeClient extends BaseMessagingClient {
 
 						value = producer.partitionsFor(producerTopic).isEmpty();
 					}
-				} finally {
-					if (consumer != null) {
-						consumer.close();
-					}
-
-					if (producer != null) {
-						producer.close();
-					}
-				}
+				} catch (Exception e) {
+					logger.error(e.getMessage());
+				} 
 				return value;
 			});
 		}

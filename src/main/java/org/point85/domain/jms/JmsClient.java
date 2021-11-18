@@ -93,7 +93,7 @@ public class JmsClient extends BaseMessagingClient {
 
 		// non-transacted, auto-ack session
 		session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-		
+
 		setHostName(brokerHostName);
 		setHostPort(port);
 
@@ -285,7 +285,7 @@ public class JmsClient extends BaseMessagingClient {
 		textMessage.setText(serialize(message));
 		textMessage.setJMSCorrelationID(createCorrelationId());
 
-		producer.send(textMessage, DeliveryMode.NON_PERSISTENT, HIGH_PRIORITY, (long) (ttlSec * 1000));
+		producer.send(textMessage, DeliveryMode.NON_PERSISTENT, HIGH_PRIORITY, ttlSec * 1000l);
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Sent text message of type " + message.getMessageType());

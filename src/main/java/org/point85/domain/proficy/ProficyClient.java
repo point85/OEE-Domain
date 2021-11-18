@@ -123,7 +123,7 @@ public class ProficyClient extends PollingClient {
 		String basicAuthPayload = "Basic " + Base64.getEncoder().encodeToString(usernameColonPassword.getBytes());
 
 		if (logger.isInfoEnabled()) {
-			System.out.println(
+			logger.info(
 					"Sending UAA Oath token request to " + uaaUrl + " for user " + getProficySource().getUserName());
 		}
 
@@ -193,7 +193,7 @@ public class ProficyClient extends PollingClient {
 	private void checkSSLCertificateValidation() throws Exception {
 		if (getProficySource().getValidateCertificate()) {
 			if (logger.isInfoEnabled()) {
-				System.out.println("SSL certificate validation is enabled.");
+				logger.info("SSL certificate validation is enabled.");
 			}
 			return;
 		}
@@ -221,7 +221,7 @@ public class ProficyClient extends PollingClient {
 		HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
 
 		if (logger.isInfoEnabled()) {
-			System.out.println("SSL certificate validation is disabled.");
+			logger.info("SSL certificate validation is disabled.");
 		}
 	}
 
@@ -238,7 +238,7 @@ public class ProficyClient extends PollingClient {
 			conn.setRequestMethod("GET");
 
 			if (logger.isInfoEnabled()) {
-				System.out.println("Sending GET request to " + url);
+				logger.info("Sending GET request to " + url);
 			}
 
 			BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
@@ -276,7 +276,7 @@ public class ProficyClient extends PollingClient {
 			String payload = gson.toJson(body);
 
 			if (logger.isInfoEnabled()) {
-				System.out.println("Sending POST request to " + url + "\n content: " + payload);
+				logger.info("Sending POST request to " + url + "\n content: " + payload);
 			}
 
 			OutputStream os = conn.getOutputStream();
