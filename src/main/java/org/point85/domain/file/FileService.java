@@ -3,7 +3,6 @@ package org.point85.domain.file;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,7 +49,7 @@ public class FileService {
 		return fileList;
 	}
 
-	public String readFile(File file) throws IOException {
+	public String readFile(File file) throws Exception {
 		String data = "";
 		if (file == null) {
 			return data;
@@ -65,7 +64,7 @@ public class FileService {
 		return new String(bytes);
 	}
 
-	public void writeFile(String filePath, String fileName, String content) throws IOException {
+	public void writeFile(String filePath, String fileName, String content) throws Exception {
 		if (filePath == null || fileName == null || content == null) {
 			return;
 		}
@@ -76,7 +75,7 @@ public class FileService {
 
 		// make sure that directory is there
 		if (!createDirectory(filePath)) {
-			throw new IOException("Cannot create directory " + filePath);
+			throw new Exception("Cannot create directory " + filePath);
 		}
 
 		String canonicalPath = filePath + File.separator + fileName;
@@ -100,7 +99,7 @@ public class FileService {
 		}
 	}
 
-	public void deleteFile(File file) throws IOException {
+	public void deleteFile(File file) throws Exception {
 		Files.delete(file.toPath());
 	}
 
@@ -117,7 +116,7 @@ public class FileService {
 		return dir.mkdirs();
 	}
 
-	public OffsetDateTime extractTimestamp(File file) throws IOException {
+	public OffsetDateTime extractTimestamp(File file) throws Exception {
 		BasicFileAttributes attributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
 
 		FileTime ct = attributes.creationTime();
@@ -127,7 +126,7 @@ public class FileService {
 		return OffsetDateTime.ofInstant(instant, ZoneId.systemDefault());
 	}
 
-	public void moveFile(String fromPath, String toPath) throws IOException {
+	public void moveFile(String fromPath, String toPath) throws Exception {
 		if (logger.isInfoEnabled()) {
 			logger.info("Moving file from " + fromPath + " to " + toPath);
 		}
@@ -136,13 +135,13 @@ public class FileService {
 		int idx = toPath.lastIndexOf(File.separator);
 
 		if (!createDirectory(toPath.substring(0, idx))) {
-			throw new IOException("Cannot create directory " + toPath);
+			throw new Exception("Cannot create directory " + toPath);
 		}
 
 		Files.move(Paths.get(fromPath), Paths.get(toPath), StandardCopyOption.REPLACE_EXISTING);
 	}
 
-	public void moveFile(File file, String toPath) throws IOException {
+	public void moveFile(File file, String toPath) throws Exception {
 		String fromPath = file.getAbsolutePath();
 
 		if (logger.isInfoEnabled()) {
@@ -153,7 +152,7 @@ public class FileService {
 		int idx = toPath.lastIndexOf(File.separator);
 
 		if (!createDirectory(toPath.substring(0, idx))) {
-			throw new IOException("Cannot create directory " + toPath);
+			throw new Exception("Cannot create directory " + toPath);
 		}
 
 		Files.move(Paths.get(fromPath), Paths.get(toPath), StandardCopyOption.REPLACE_EXISTING);

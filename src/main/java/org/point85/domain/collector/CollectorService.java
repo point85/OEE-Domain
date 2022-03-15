@@ -1,7 +1,6 @@
 package org.point85.domain.collector;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -2692,7 +2691,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					// fail
 					try {
 						fileClient.moveFile(file, FileEventClient.PROCESSING_FOLDER, FileEventClient.FAIL_FOLDER, e);
-					} catch (IOException ex) {
+					} catch (Exception ex) {
 						onException("Unable to move file.", ex);
 					}
 				}

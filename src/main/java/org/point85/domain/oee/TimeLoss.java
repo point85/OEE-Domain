@@ -5,8 +5,6 @@ import java.util.List;
 
 import org.point85.domain.i18n.DomainLocalizer;
 
-import javafx.scene.paint.Color;
-
 public enum TimeLoss {
 	NOT_SCHEDULED, UNSCHEDULED, REJECT_REWORK, STARTUP_YIELD, PLANNED_DOWNTIME, UNPLANNED_DOWNTIME, MINOR_STOPPAGES,
 	REDUCED_SPEED, SETUP, NO_LOSS;
@@ -65,36 +63,46 @@ public enum TimeLoss {
 		return isLoss;
 	}
 
-	public Color getColor() {
-		Color color = Color.WHITE;
+	public String getColor() {
+		// WHITE
+		String color = "#FFFFFF";
 
 		switch (this) {
 		case MINOR_STOPPAGES:
-			color = Color.AQUA;
+			// AQUA
+			color = "#00FFFF";
 			break;
 		case NOT_SCHEDULED:
-			color = Color.BISQUE;
+			// BISQUE
+			color = "#FFE4C4";
 			break;
 		case PLANNED_DOWNTIME:
-			color = Color.CORAL;
+			// CORAL
+			color = "#FF7F50";
 			break;
 		case REDUCED_SPEED:
-			color = Color.YELLOW;
+			// YELLOW
+			color = "#FFFF00";
 			break;
 		case REJECT_REWORK:
-			color = Color.PURPLE;
+			// PURPLE
+			color = "#800080";
 			break;
 		case STARTUP_YIELD:
-			color = Color.IVORY;
+			// IVORY
+			color = "#FFFFF0";
 			break;
 		case UNPLANNED_DOWNTIME:
-			color = Color.RED;
+			// RED
+			color = "#FF0000";
 			break;
 		case UNSCHEDULED:
-			color = Color.LIGHTGREY;
+			// LIGHTGREY
+			color = "#D3D3D3";
 			break;
 		case SETUP:
-			color = Color.MAGENTA;
+			// MAGENTA
+			color = "#FF00FF";
 			break;
 		default:
 			break;

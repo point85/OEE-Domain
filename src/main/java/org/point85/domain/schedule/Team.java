@@ -152,8 +152,8 @@ public class Team extends Named implements Comparable<Team> {
 			return Duration.ZERO;
 		}
 
-		float days = (float) getRotation().getDuration().toDays();
-		float secPerWeek = (float) getRotation().getWorkingTime().getSeconds() * (7.0f / days);
+		float days = getRotation().getDuration().toDays();
+		float secPerWeek = getRotation().getWorkingTime().getSeconds() * (7.0f / days);
 		return Duration.ofSeconds((long) secPerWeek);
 	}
 

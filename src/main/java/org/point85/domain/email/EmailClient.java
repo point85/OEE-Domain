@@ -360,7 +360,7 @@ public class EmailClient extends BaseMessagingClient {
 		message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
 		message.setSubject(subject);
 		message.setText(content);
-		message.setFrom(smtpProperties.getProperty(MAIL_SMTP_USER));
+		message.setFrom(new InternetAddress(smtpProperties.getProperty(MAIL_SMTP_USER)));
 		message.setContent(content, TEXT_PLAIN);
 
 		// send message

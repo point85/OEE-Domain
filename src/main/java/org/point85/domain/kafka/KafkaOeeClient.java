@@ -408,12 +408,8 @@ public class KafkaOeeClient extends BaseMessagingClient {
 							consumer.commitSync();
 						}
 					} finally {
-						if (consumer != null) {
-							consumer.close();
-						}
-
 						if (logger.isInfoEnabled()) {
-							logger.info("Closed consumer");
+							logger.info("Stopped polling");
 						}
 					}
 				}
@@ -556,7 +552,7 @@ public class KafkaOeeClient extends BaseMessagingClient {
 					}
 				} catch (Exception e) {
 					logger.error(e.getMessage());
-				} 
+				}
 				return value;
 			});
 		}

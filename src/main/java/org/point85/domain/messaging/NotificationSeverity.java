@@ -2,8 +2,6 @@ package org.point85.domain.messaging;
 
 import org.point85.domain.i18n.DomainLocalizer;
 
-import javafx.scene.paint.Color;
-
 /**
  * The severity level of a notification message
  *
@@ -32,18 +30,21 @@ public enum NotificationSeverity {
 		return DomainLocalizer.instance().getLangString(key);
 	}
 
-	public Color getColor() {
-		Color color = null;
+	public String getColor() {
+		String color = null;
 
 		switch (this) {
 		case ERROR:
-			color = Color.RED;
+			// RED
+			color = "#FF0000";
 			break;
 		case INFO:
-			color = Color.BLACK;
+			// BLACK
+			color = "#000000";
 			break;
 		case WARNING:
-			color = Color.AQUA;
+			// AQUA
+			color = "#00FFFF";
 			break;
 		default:
 			break;

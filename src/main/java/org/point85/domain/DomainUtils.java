@@ -13,9 +13,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Calendar;
 
-import javax.jms.JMSException;
-import javax.xml.ws.http.HTTPException;
-
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.jinterop.dcom.common.JIException;
@@ -43,8 +40,8 @@ public final class DomainUtils {
 	}
 
 	public static String getVersionInfo() {
-		return DomainLocalizer.instance().getLangString("version") + " 3.5.1, "
-				+ LocalDate.of(2021, 11, 17).format(DateTimeFormatter.ISO_DATE);
+		return DomainLocalizer.instance().getLangString("version") + " 3.6.0, "
+				+ LocalDate.of(2022, 3, 15).format(DateTimeFormatter.ISO_DATE);
 	}
 
 	// format a Duration
@@ -183,15 +180,9 @@ public final class DomainUtils {
 		if (e instanceof MqttException) {
 			MqttException me = (MqttException) e;
 			sb.append("\n\tReason: ").append(me.getReasonCode());
-		} else if (e instanceof JMSException) {
-			JMSException je = (JMSException) e;
-			sb.append("\n\tCode: ").append(je.getErrorCode());
 		} else if (e instanceof JIException) {
 			JIException jie = (JIException) e;
 			sb.append("\n\tCode: ").append(jie.getErrorCode());
-		} else if (e instanceof HTTPException) {
-			HTTPException he = (HTTPException) e;
-			sb.append("\n\tCode: ").append(he.getStatusCode());
 		}
 
 		return sb.toString();
@@ -200,5 +191,16 @@ public final class DomainUtils {
 	public static String getJVMInfo() {
 		return System.getProperty("java.version") + ", " + System.getProperty("java.vm.name") + ", "
 				+ System.getProperty("java.runtime.version");
+	}
+
+	public static int getJVMVersion() {
+		int version = 8;
+		String[] tokens = System.getProperty("java.version").split(".");
+
+		if (!tokens[0].equals("1")) {
+			version = Integer.parseInt(tokens[0]);
+		}
+
+		return version;
 	}
 }

@@ -1,7 +1,6 @@
 package org.point85.domain.file;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -90,23 +89,23 @@ public class FileEventClient extends PollingClient {
 		return getFileEventSource().getId().equals(otherClient.getFileEventSource().getId());
 	}
 
-	public void moveFileToReadyFolder(File file, FileEventSource source, String sourceId) throws IOException {
+	public void moveFileToReadyFolder(File file, FileEventSource source, String sourceId) throws Exception {
 		String toPath = source.getHost() + File.separator + sourceId + File.separator + FileEventClient.READY_FOLDER
 				+ File.separator + file.getName();
 
 		// make sure that directory is there
 		if (!fileService.createDirectory(toPath)) {
-			throw new IOException("Cannot create directory " + toPath);
+			throw new Exception("Cannot create directory " + toPath);
 		}
 
 		fileService.moveFile(file, toPath);
 	}
 
-	public void moveFile(File file, String fromFolder, String toFolder) throws IOException {
+	public void moveFile(File file, String fromFolder, String toFolder) throws Exception {
 		this.moveFile(file, fromFolder, toFolder, null);
 	}
 
-	public void moveFile(File file, String fromFolder, String toFolder, Exception e) throws IOException {
+	public void moveFile(File file, String fromFolder, String toFolder, Exception e) throws Exception {
 		// path in ready folder
 		String path = file.getCanonicalPath();
 
@@ -126,7 +125,7 @@ public class FileEventClient extends PollingClient {
 		}
 	}
 
-	public void writeFile(FileEventSource source, String sourceId, String folder, String content) throws IOException {
+	public void writeFile(FileEventSource source, String sourceId, String folder, String content) throws Exception {
 		String pathName = source.getHost() + File.separator + sourceId + File.separator + folder;
 		fileService.writeFile(pathName, UUID.randomUUID().toString(), content);
 	}

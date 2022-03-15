@@ -6,7 +6,6 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.Objects;
 
-import org.jinterop.dcom.common.JIException;
 import org.jinterop.dcom.core.JIVariant;
 import org.openscada.opc.dcom.common.ResultSet;
 import org.openscada.opc.dcom.da.OPCITEMDEF;
@@ -33,7 +32,7 @@ public class OpcDaMonitoredItem {
 		this.opcItemResult = opcItemResult;
 	}
 
-	public ResultSet<Integer> setActive() throws JIException {
+	public ResultSet<Integer> setActive() throws Exception {
 		OPCItemMgt itemManager = getGroup().getGroupManager().getItemManagement();
 		int handle = getItemResult().getServerHandle();
 		return itemManager.setActiveState(true, handle);

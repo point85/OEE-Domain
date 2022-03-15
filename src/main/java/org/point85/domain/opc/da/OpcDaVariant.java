@@ -2,7 +2,6 @@ package org.point85.domain.opc.da;
 
 import java.util.Date;
 
-import org.jinterop.dcom.common.JIException;
 import org.jinterop.dcom.core.JIArray;
 import org.jinterop.dcom.core.JICurrency;
 import org.jinterop.dcom.core.JIString;
@@ -278,7 +277,7 @@ public class OpcDaVariant {
 		return valueString;
 	}
 
-	public Number getValueAsNumber() throws JIException {
+	public Number getValueAsNumber() throws Exception {
 		Number numberValue = null;
 
 		switch (getJIVariant().getType()) {
@@ -399,7 +398,7 @@ public class OpcDaVariant {
 		return type;
 	}
 
-	public boolean isNumeric() throws JIException {
+	public boolean isNumeric() throws Exception {
 		return getValueAsNumber() != null;
 	}
 

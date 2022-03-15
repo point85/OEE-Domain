@@ -119,6 +119,25 @@ public class TestWorkSchedule extends BaseTest {
 
 		runBaseTest(schedule, Duration.ofHours(63), Duration.ofDays(42), rotationStart);
 	}
+	
+	@Test
+	public void testFirefighterShifts3() throws Exception {
+		// Mountain View, CA fire shifts
+		schedule = new WorkSchedule("Mountain View", "Three 24 hour alternating shifts");
+
+		// shift, start at 08:00 for 24 hours
+		Shift shift = schedule.createShift("24 Hours", "24 hour shift", LocalTime.of(8, 0, 0), Duration.ofHours(24));
+
+		// 2 day ON, 4 OFF
+		Rotation rotation = schedule.createRotation("2and4", "Two days on, four days off.");
+		rotation.addSegment(shift, 2, 4);
+
+		schedule.createTeam("A", "Green", rotation, LocalDate.of(2022, 1, 5));
+		schedule.createTeam("B", "Blue", rotation, LocalDate.of(2022, 1, 1));
+		schedule.createTeam("C", "Red", rotation, LocalDate.of(2022, 1, 3));
+
+		runBaseTest(schedule, Duration.ofHours(48), Duration.ofDays(6), LocalDate.of(2022, 3, 1));
+	}
 
 	@Test
 	public void testFirefighterShifts2() throws Exception {

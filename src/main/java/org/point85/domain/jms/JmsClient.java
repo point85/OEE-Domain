@@ -6,7 +6,6 @@ import java.util.Random;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
-import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
@@ -123,7 +122,7 @@ public class JmsClient extends BaseMessagingClient {
 		}
 	}
 
-	public void consumeEvents(boolean fromTopic) throws JMSException {
+	public void consumeEvents(boolean fromTopic) throws Exception {
 		MessageConsumer consumer = null;
 
 		if (fromTopic) {
@@ -180,7 +179,7 @@ public class JmsClient extends BaseMessagingClient {
 						eventListener.onJmsMessage(appMessage);
 					}
 
-				} catch (JMSException e) {
+				} catch (Exception e) {
 					logger.error(e.getMessage());
 				}
 			}
@@ -189,7 +188,7 @@ public class JmsClient extends BaseMessagingClient {
 		consumer.setMessageListener(listener);
 	}
 
-	public void consumeNotifications(boolean fromTopic) throws JMSException {
+	public void consumeNotifications(boolean fromTopic) throws Exception {
 		MessageConsumer consumer = null;
 
 		if (fromTopic) {
@@ -249,7 +248,7 @@ public class JmsClient extends BaseMessagingClient {
 						eventListener.onJmsMessage(appMessage);
 					}
 
-				} catch (JMSException e) {
+				} catch (Exception e) {
 					logger.error(e.getMessage());
 				}
 			}
@@ -278,7 +277,7 @@ public class JmsClient extends BaseMessagingClient {
 		send(producer, message, ttlSec);
 	}
 
-	private void send(MessageProducer producer, ApplicationMessage message, int ttlSec) throws JMSException {
+	private void send(MessageProducer producer, ApplicationMessage message, int ttlSec) throws Exception {
 		producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
 
 		TextMessage textMessage = session.createTextMessage();

@@ -310,7 +310,7 @@ class OeeHttpServlet extends HttpServlet {
 		}
 	}
 
-	private void createErrorResponse(HttpServletResponse response, String message) throws IOException {
+	private void createErrorResponse(HttpServletResponse response, String message) throws Exception {
 		EquipmentEventResponseDto responseDto = new EquipmentEventResponseDto(message);
 		String payload = gson.toJson(responseDto);
 		response.setStatus(HttpServletResponse.SC_BAD_REQUEST);

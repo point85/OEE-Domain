@@ -14,7 +14,7 @@ import javax.net.ssl.TrustManagerFactory;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.point85.domain.DomainUtils;
 import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.messaging.ApplicationMessage;
@@ -37,9 +37,6 @@ public class MqttOeeClient extends BaseMessagingClient {
 
 	// true = non durable subscriptions
 	private static final boolean CLEAN_SESSION = true;
-
-	// temporary directory for in flight messages
-	private static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
 
 	// protocol
 	private static final String TCP_PROTOCOL = "tcp://";
@@ -99,11 +96,8 @@ public class MqttOeeClient extends BaseMessagingClient {
 			}
 		}
 
-		// persistent data store (closed when client disconnects)
-		MqttDefaultFilePersistence dataStore = new MqttDefaultFilePersistence(TEMP_DIR);
-
 		// create client
-		mqttClient = new MqttClient(url, MqttClient.generateClientId(), dataStore);
+		mqttClient = new MqttClient(url, MqttClient.generateClientId(), new MemoryPersistence());
 
 		// connect to server
 		mqttClient.connect(connectionOptions);

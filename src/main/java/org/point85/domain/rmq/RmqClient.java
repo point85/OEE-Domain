@@ -262,7 +262,7 @@ public class RmqClient extends BaseMessagingClient {
 		}
 	}
 
-	public void createRpcQueue() throws IOException {
+	public void createRpcQueue() throws Exception {
 		replyQueueName = channel.queueDeclare().getQueue();
 
 		Consumer consumer = new DefaultConsumer(channel) {

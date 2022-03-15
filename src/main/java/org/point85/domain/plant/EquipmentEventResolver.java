@@ -8,8 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 
+import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.point85.domain.collector.DataCollector;
 import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.i18n.DomainLocalizer;
@@ -30,9 +30,6 @@ public class EquipmentEventResolver {
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(EquipmentEventResolver.class);
 
-	// Nashorn script engine
-	public static final String SCRIPT_ENGINE_NAME = "nashorn";
-
 	// reason cache
 	private final ConcurrentMap<String, Reason> reasonCache = new ConcurrentHashMap<>();
 
@@ -46,7 +43,7 @@ public class EquipmentEventResolver {
 	private final ScriptEngine scriptEngine;
 
 	public EquipmentEventResolver() {
-		scriptEngine = new ScriptEngineManager().getEngineByName(SCRIPT_ENGINE_NAME);
+		scriptEngine = new NashornScriptEngineFactory().getScriptEngine();
 	}
 
 	public void clearCache() {

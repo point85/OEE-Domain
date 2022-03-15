@@ -3,7 +3,7 @@ package org.point85.domain.collector;
 import org.point85.domain.i18n.DomainLocalizer;
 
 public enum DataSourceType {
-	DATABASE, FILE, HTTP, JMS, RMQ, MODBUS, MQTT, OPC_DA, OPC_UA, CRON, KAFKA, EMAIL, PROFICY;
+	CRON, DATABASE, EMAIL, FILE, HTTP, JMS, KAFKA, MODBUS, MQTT, OPC_DA, OPC_UA, PROFICY, RMQ;
 
 	public static final String OPC_DA_VALUE = "OPC_DA";
 	public static final String OPC_UA_VALUE = "OPC_UA";
