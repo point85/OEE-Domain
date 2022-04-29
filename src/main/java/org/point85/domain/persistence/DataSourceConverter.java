@@ -69,6 +69,10 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 			value = DataSourceType.PROFICY_VALUE;
 			break;
 
+		case WEB_SOCKET:
+			value = DataSourceType.WEB_SOCKET_VALUE;
+			break;
+
 		default:
 			break;
 		}
@@ -135,6 +139,10 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 
 		case DataSourceType.PROFICY_VALUE:
 			state = DataSourceType.PROFICY;
+			break;
+
+		case DataSourceType.WEB_SOCKET_VALUE:
+			state = DataSourceType.WEB_SOCKET;
 			break;
 
 		default:

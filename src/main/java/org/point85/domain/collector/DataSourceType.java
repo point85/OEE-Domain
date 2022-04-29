@@ -3,7 +3,7 @@ package org.point85.domain.collector;
 import org.point85.domain.i18n.DomainLocalizer;
 
 public enum DataSourceType {
-	CRON, DATABASE, EMAIL, FILE, HTTP, JMS, KAFKA, MODBUS, MQTT, OPC_DA, OPC_UA, PROFICY, RMQ;
+	CRON, DATABASE, EMAIL, FILE, HTTP, JMS, KAFKA, MODBUS, MQTT, OPC_DA, OPC_UA, PROFICY, RMQ, WEB_SOCKET;
 
 	public static final String OPC_DA_VALUE = "OPC_DA";
 	public static final String OPC_UA_VALUE = "OPC_UA";
@@ -18,6 +18,7 @@ public enum DataSourceType {
 	public static final String KAFKA_VALUE = "KAFKA";
 	public static final String EMAIL_VALUE = "EMAIL";
 	public static final String PROFICY_VALUE = "PROFICY";
+	public static final String WEB_SOCKET_VALUE = "WEB_SOCKET";
 
 	@Override
 	public String toString() {
@@ -62,6 +63,9 @@ public enum DataSourceType {
 			break;
 		case PROFICY:
 			key = "proficy.type";
+			break;
+		case WEB_SOCKET:
+			key = "web.socket.type";
 			break;
 		default:
 			break;

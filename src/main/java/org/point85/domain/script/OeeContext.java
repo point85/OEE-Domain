@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.java_websocket.server.WebSocketServer;
 import org.point85.domain.cron.CronEventClient;
 import org.point85.domain.db.DatabaseEventClient;
 import org.point85.domain.email.EmailClient;
@@ -21,6 +22,8 @@ import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.Material;
 import org.point85.domain.proficy.ProficyClient;
 import org.point85.domain.rmq.RmqClient;
+import org.point85.domain.socket.WebSocketOeeClient;
+import org.point85.domain.socket.WebSocketOeeServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,6 +84,9 @@ public class OeeContext {
 	// Modbus key
 	private static final String MODBUS_KEY = "MODBUS";
 
+	// Web socket key
+	private static final String WS_KEY = "WEB_SOCKET";
+
 	// hash map of objects exposed to scripting
 	private final ConcurrentMap<String, Object> contextMap;
 
@@ -103,6 +109,7 @@ public class OeeContext {
 		setCronEventClients(new HashSet<>());
 		setModbusMasters(new HashSet<>());
 		setProficyClients(new HashSet<>());
+		setWebSocketClients(new HashSet<>());
 	}
 
 	/**
@@ -584,6 +591,15 @@ public class OeeContext {
 	}
 
 	/**
+	 * Set the list of the web socket clients defined for the collector
+	 * 
+	 * @param clients Set of {@link WebSocketOeeClient}
+	 */
+	public void setWebSocketClients(Collection<WebSocketOeeClient> clients) {
+		contextMap.put(WS_KEY, clients);
+	}
+
+	/**
 	 * Set the list of the database event clients defined for the collector
 	 * 
 	 * @param clients Set of {@link DatabaseEventClient}
@@ -874,6 +890,62 @@ public class OeeContext {
 	}
 
 	/**
+	 * Get a list of the web socket servers defined for the collector
+	 * 
+	 * @return Collection of {@link WebSocketOeeServer}
+	 */
+	@SuppressWarnings("unchecked")
+	public Collection<WebSocketOeeServer> getWebSocketServers() {
+		return (Collection<WebSocketOeeServer>) contextMap.get(WS_KEY);
+	}
+
+	/**
+	 * Get the first (only) web socket server
+	 * 
+	 * @return {@link WebSocketOeeServer}
+	 */
+	public WebSocketOeeServer getWebSocketServer() {
+		// get the first one
+		WebSocketOeeServer server = null;
+
+		if (!getWebSocketServers().isEmpty()) {
+			server = getWebSocketServers().iterator().next();
+		}
+		return server;
+	}
+
+	/**
+	 * Set a list of the web socket servers defined for the collector
+	 * 
+	 * @param servers Set of {@link WebSocketOeeServer}
+	 */
+	public void setWebSocketServers(Set<WebSocketOeeServer> servers) {
+		contextMap.put(WS_KEY, servers);
+	}
+
+	/**
+	 * Add an web socket server to the list
+	 * 
+	 * @param server {@link WebSocketOeeServer}
+	 */
+	public void addWebSocketServer(WebSocketOeeServer server) {
+		if (!getWebSocketServers().contains(server)) {
+			getWebSocketServers().add(server);
+		}
+	}
+
+	/**
+	 * Remove a web socket server from the list
+	 * 
+	 * @param server {@link WebSocketOeeServer}
+	 */
+	public void removeWebSocketServer(WebSocketOeeServer server) {
+		if (getWebSocketServers().contains(server)) {
+			getWebSocketServers().remove(server);
+		}
+	}
+
+	/**
 	 * Set a list of the HTTP servers defined for the collector
 	 * 
 	 * @param servers Set of {@link OeeHttpServer}
@@ -966,6 +1038,11 @@ public class OeeContext {
 		sb.append("\n Proficy clients ...");
 		for (ProficyClient client : getProficyClients()) {
 			sb.append('\t').append(client.toString());
+		}
+
+		sb.append("\n Web socket servers ...");
+		for (WebSocketServer server : getWebSocketServers()) {
+			sb.append('\t').append(server.toString());
 		}
 
 		return sb.toString();

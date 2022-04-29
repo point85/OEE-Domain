@@ -99,6 +99,9 @@ import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.OeeContext;
 import org.point85.domain.script.OeeEventType;
+import org.point85.domain.socket.WebSocketMessageListener;
+import org.point85.domain.socket.WebSocketOeeServer;
+import org.point85.domain.socket.WebSocketSource;
 import org.point85.domain.uom.UnitOfMeasure;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -112,9 +115,10 @@ import com.google.gson.Gson;
  * into OEE performance, availability and quality records.
  *
  */
-public class CollectorService implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener,
-		RmqMessageListener, JmsMessageListener, DatabaseEventListener, FileEventListener, MqttMessageListener,
-		ModbusEventListener, CronEventListener, KafkaMessageListener, EmailMessageListener, ProficyEventListener {
+public class CollectorService
+		implements HttpEventListener, OpcDaDataChangeListener, OpcUaAsynchListener, RmqMessageListener,
+		JmsMessageListener, DatabaseEventListener, FileEventListener, MqttMessageListener, ModbusEventListener,
+		CronEventListener, KafkaMessageListener, EmailMessageListener, ProficyEventListener, WebSocketMessageListener {
 
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(CollectorService.class);
@@ -166,6 +170,7 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	private final Map<String, MqttBrokerSource> mqttBrokerMap = new HashMap<>();
 	private final Map<String, CronSource> cronSchedulerMap = new HashMap<>();
 	private final Map<String, PolledSource> proficyMap = new HashMap<>();
+	private final Map<String, WebSocketServerSource> webSocketServerMap = new HashMap<>();
 
 	// equipment by name cache
 	private final ConcurrentMap<String, Equipment> equipmentCache = new ConcurrentHashMap<>();
@@ -194,8 +199,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		emailBrokerMap.clear();
 		databaseServerMap.clear();
 		fileServerMap.clear();
+		modbusSlaveMap.clear();
 		cronSchedulerMap.clear();
 		mqttBrokerMap.clear();
+		proficyMap.clear();
+		webSocketServerMap.clear();
 
 		gson = new Gson();
 		appContext = new OeeContext();
@@ -257,6 +265,23 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			}
 			serverSource = new HttpServerSource(source);
 			httpServerMap.put(id, serverSource);
+		}
+	}
+
+	// collect all web socket server info
+	private void buildWebSocketServers(EventResolver resolver) {
+		WebSocketSource source = (WebSocketSource) resolver.getDataSource();
+		String id = source.getId();
+
+		WebSocketServerSource serverSource = webSocketServerMap.get(id);
+
+		if (serverSource == null) {
+			if (logger.isInfoEnabled()) {
+				logger.info("Found web socket server specified for host " + source.getHost() + " on port "
+						+ source.getPort());
+			}
+			serverSource = new WebSocketServerSource(source);
+			webSocketServerMap.put(id, serverSource);
 		}
 	}
 
@@ -750,7 +775,24 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			appContext.getHttpServers().add(httpServer);
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Started HTTP server on port " + " and HTTPS port " + httpsPort);
+				logger.info("Started embedded HTTP server on HTTP port " + port + " and HTTPS port " + httpsPort);
+			}
+		}
+	}
+
+	private void startWebSocketServers(Map<String, WebSocketServerSource> webSocketServerSources) throws Exception {
+		for (Entry<String, WebSocketServerSource> entry : webSocketServerSources.entrySet()) {
+			WebSocketSource source = entry.getValue().getSource();
+
+			WebSocketOeeServer wsServer = new WebSocketOeeServer(source);
+			wsServer.registerListener(this);
+			wsServer.startup();
+
+			// add to context
+			appContext.getWebSocketServers().add(wsServer);
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Started embedded web socket server on HTTP port " + source.getPort());
 			}
 		}
 	}
@@ -989,6 +1031,11 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 					break;
 				}
 
+				case WEB_SOCKET: {
+					buildWebSocketServers(resolver);
+					break;
+				}
+
 				default:
 					break;
 				}
@@ -1036,6 +1083,9 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 
 		// connect to Proficy historians
 		startProficyPolling(proficyMap);
+
+		// collect data for web socket
+		startWebSocketServers(webSocketServerMap);
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Startup finished.");
@@ -1375,6 +1425,13 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 		appContext.getHttpServers().clear();
 
+		// shutdown web socket servers
+		for (WebSocketOeeServer wsServer : appContext.getWebSocketServers()) {
+			wsServer.shutdown();
+			onInformation("Shutdown web socket server on port " + wsServer.getPort());
+		}
+		appContext.getHttpServers().clear();
+
 		// disconnect OPC DA clients
 		for (DaOpcClient daClient : appContext.getOpcDaClients()) {
 			daClient.disconnect();
@@ -1555,6 +1612,13 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			httpServer.shutdown();
 		}
 
+		// web socket servers
+		for (WebSocketOeeServer wsServer : appContext.getWebSocketServers()) {
+			if (wsServer.isStarted()) {
+				wsServer.shutdown();
+			}
+		}
+
 		// Kafka consumer polling
 		for (KafkaOeeClient consumer : appContext.getKafkaClients()) {
 			consumer.stopPolling();
@@ -1605,6 +1669,13 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		// HTTP servers
 		for (OeeHttpServer httpServer : appContext.getHttpServers()) {
 			httpServer.startup();
+		}
+
+		// web socket servers
+		for (WebSocketOeeServer wsServer : appContext.getWebSocketServers()) {
+			if (!wsServer.isStarted()) {
+				wsServer.startup();
+			}
 		}
 
 		// Modbus slave polling
@@ -1811,6 +1882,12 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 	}
 
 	@Override
+	public void onWebSocketMessage(ApplicationMessage message) {
+		// execute on worker thread
+		executorService.execute(new WebSocketTask(message));
+	}
+
+	@Override
 	public void resolveDatabaseEvents(DatabaseEventClient databaseClient, List<DatabaseEvent> events) {
 		for (DatabaseEvent event : events) {
 			// execute on worker thread
@@ -1945,6 +2022,19 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 		}
 
 		private HttpSource getSource() {
+			return source;
+		}
+	}
+
+	// web socket servers
+	private class WebSocketServerSource {
+		private final WebSocketSource source;
+
+		WebSocketServerSource(WebSocketSource source) {
+			this.source = source;
+		}
+
+		private WebSocketSource getSource() {
 			return source;
 		}
 	}
@@ -2415,6 +2505,26 @@ public class CollectorService implements HttpEventListener, OpcDaDataChangeListe
 			} catch (Exception e) {
 				// processing failed
 				onException("Unable to process event " + message.getMessageType(), e);
+			}
+		}
+	}
+
+	/********************* Web Socket Handler ***********************************/
+	private class WebSocketTask implements Runnable {
+
+		private final ApplicationMessage message;
+
+		WebSocketTask(ApplicationMessage message) {
+			this.message = message;
+		}
+
+		@Override
+		public void run() {
+			try {
+				handleMessage(message);
+			} catch (Exception e) {
+				// processing failed
+				onException("Unable to process Web Socket equipment event ", e);
 			}
 		}
 	}

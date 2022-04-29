@@ -62,6 +62,7 @@ import org.point85.domain.schedule.Team;
 import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.OeeEventType;
+import org.point85.domain.socket.WebSocketSource;
 import org.point85.domain.uom.MeasurementSystem;
 import org.point85.domain.uom.MeasurementType;
 import org.point85.domain.uom.Unit;
@@ -1598,8 +1599,8 @@ public final class PersistenceService {
 				EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class, Reason.class,
 				Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class, ExceptionPeriod.class,
 				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class, ModbusSource.class,
-				EntitySchedule.class, CronEventSource.class, KafkaSource.class, EmailSource.class,
-				ProficySource.class };
+				EntitySchedule.class, CronEventSource.class, KafkaSource.class, EmailSource.class, ProficySource.class,
+				WebSocketSource.class };
 	}
 
 	private Class<?>[] getDatabaseEventEntityClasses() {
@@ -2022,11 +2023,12 @@ public final class PersistenceService {
 
 	/**
 	 * Fetch events from the database with the specified criteria
+	 * 
 	 * @param equipment required {@link Equipment}
-	 * @param material optional produced {@link Material}
-	 * @param type optional event type {@link OeeEventType}
-	 * @param from optional starting date/time
-	 * @param to optional ending date/time
+	 * @param material  optional produced {@link Material}
+	 * @param type      optional event type {@link OeeEventType}
+	 * @param from      optional starting date/time
+	 * @param to        optional ending date/time
 	 * @return list of {@link OeeEvent}
 	 * @throws Exception Exception
 	 */

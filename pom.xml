@@ -4,7 +4,7 @@
 
   <groupId>org.point85</groupId>
   <artifactId>oee-domain</artifactId>
-  <version>3.6.0</version>
+  <version>3.7.0</version>
   <packaging>jar</packaging>
   <url>http://maven.apache.org</url>
 
@@ -14,7 +14,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jetty.version>9.4.45.v20220203</jetty.version>
     <jackson.version>2.13.1</jackson.version>
-    <slf4j.version>1.7.32</slf4j.version>
+    <log4j2.version>2.17.2</log4j2.version>
 	
 	<!-- if true, do not run any unit tests -->
 	<maven.test.skip>true</maven.test.skip>
@@ -85,32 +85,18 @@
 </dependency>
 
 <!-- LOGGING -->
-<!-- https://mvnrepository.com/artifact/log4j/log4j -->
-<dependency>
-    <groupId>log4j</groupId>
-    <artifactId>log4j</artifactId>
-    <version>1.2.17</version>
-</dependency>
-
 <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
 <dependency>
     <groupId>org.slf4j</groupId>
     <artifactId>slf4j-api</artifactId>
-    <version>${slf4j.version}</version>
-</dependency>
-
-<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-log4j12 -->
-<dependency>
-    <groupId>org.slf4j</groupId>
-    <artifactId>slf4j-log4j12</artifactId>
-    <version>${slf4j.version}</version>
+    <version>1.7.36</version>
 </dependency>
 
 <!-- https://mvnrepository.com/artifact/org.slf4j/jul-to-slf4j -->
 <dependency>
     <groupId>org.slf4j</groupId>
     <artifactId>jul-to-slf4j</artifactId>
-    <version>${slf4j.version}</version>
+    <version>1.7.36</version>
 </dependency>
 
 <!-- RABBITMQ AMQP -->
@@ -211,7 +197,14 @@
     <artifactId>nashorn-core</artifactId>
     <version>15.3</version>
 </dependency>
-    
+
+<!-- https://mvnrepository.com/artifact/org.java-websocket/Java-WebSocket -->
+<dependency>
+    <groupId>org.java-websocket</groupId>
+    <artifactId>Java-WebSocket</artifactId>
+    <version>1.5.3</version>
+</dependency>
+
 </dependencies>
   
   <!-- copy dependent jars -->
