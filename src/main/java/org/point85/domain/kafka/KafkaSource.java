@@ -9,6 +9,7 @@ import javax.persistence.Entity;
 import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.dto.KafkaSourceDto;
 
 /**
  * The KafkaSource class represents a Kafka server both as a source of events
@@ -46,6 +47,16 @@ public class KafkaSource extends CollectorDataSource {
 		setDataSourceType(DataSourceType.KAFKA);
 	}
 
+	public KafkaSource(KafkaSourceDto dto) {
+		super(dto);
+
+		keystore = dto.getKeystore();
+		keystorePassword = dto.getKeystorePassword();
+		truststore = dto.getTruststore();
+		truststorePassword = dto.getTruststorePassword();
+		messageMode = dto.getKeyPassword();
+	}
+
 	@Override
 	public String getId() {
 		return getName();
@@ -71,6 +82,10 @@ public class KafkaSource extends CollectorDataSource {
 	public void setKeystorePassword(String password) {
 		this.keystorePassword = DomainUtils.encode(password);
 	}
+	
+	public String getEncodedKeystorePassword() {
+		return keystorePassword;
+	}
 
 	// overload endpoint path
 	public String getTruststore() {
@@ -85,6 +100,10 @@ public class KafkaSource extends CollectorDataSource {
 	public String getTruststorePassword() {
 		return DomainUtils.decode(truststorePassword);
 	}
+	
+	public String getEncodedTruststorePassword() {
+		return truststorePassword;
+	}
 
 	public void setTruststorePassword(String password) {
 		this.truststorePassword = DomainUtils.encode(password);
@@ -93,6 +112,10 @@ public class KafkaSource extends CollectorDataSource {
 	// overload message mode
 	public String getKeyPassword() {
 		return DomainUtils.decode(messageMode);
+	}
+	
+	public String getEncodedKeyPassword() {
+		return messageMode;
 	}
 
 	public void setKeyPassword(String password) {

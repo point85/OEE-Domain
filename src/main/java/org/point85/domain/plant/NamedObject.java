@@ -48,8 +48,7 @@ public abstract class NamedObject extends KeyedObject implements Comparable<Name
 	/**
 	 * Set the optimistic locking version
 	 * 
-	 * @param version
-	 *            Version
+	 * @param version Version
 	 */
 	public void setVersion(Integer version) {
 		this.version = version;
@@ -86,7 +85,7 @@ public abstract class NamedObject extends KeyedObject implements Comparable<Name
 		}
 		return false;
 	}
-	
+
 	@Override
 	public int compareTo(NamedObject other) {
 		return getName().compareTo(other.getName());
@@ -96,7 +95,7 @@ public abstract class NamedObject extends KeyedObject implements Comparable<Name
 	public String toString() {
 		return name + ", " + description;
 	}
-	
+
 	public String getDisplayString() {
 		return name + " (" + description + ")";
 	}

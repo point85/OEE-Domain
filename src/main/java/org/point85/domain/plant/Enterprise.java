@@ -6,6 +6,8 @@ import java.util.List;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+import org.point85.domain.dto.EnterpriseDto;
+
 @Entity
 @DiscriminatorValue(Enterprise.ENTER_VALUE)
 public class Enterprise extends PlantEntity {
@@ -20,6 +22,12 @@ public class Enterprise extends PlantEntity {
 
 	public Enterprise(String name, String description) {
 		super(name, description, EntityLevel.ENTERPRISE);
+	}
+	
+	public Enterprise(EnterpriseDto dto) throws Exception {
+		super(dto);
+		setLevel(EntityLevel.ENTERPRISE);
+		
 	}
 
 	public List<Site> getSites() {

@@ -9,6 +9,7 @@ import javax.persistence.Transient;
 
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.dto.ModbusSourceDto;
 
 @Entity
 @DiscriminatorValue(DataSourceType.MODBUS_VALUE)
@@ -49,6 +50,14 @@ public class ModbusSource extends CollectorDataSource {
 	public ModbusSource(String name, String description) {
 		super(name, description);
 		setDataSourceType(DataSourceType.MODBUS);
+	}
+
+	public ModbusSource(ModbusSourceDto dto) {
+		super(dto);
+		setDataSourceType(DataSourceType.MODBUS);
+
+		this.transportName = dto.getTransportName();
+		this.transport = dto.getTransportName() != null ? ModbusTransport.valueOf(dto.getTransportName()) : null;
 	}
 
 	@Override

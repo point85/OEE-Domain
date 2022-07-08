@@ -7,6 +7,7 @@ import javax.persistence.Entity;
 
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.dto.FileSourceDto;
 
 @Entity
 @DiscriminatorValue(DataSourceType.FILE_VALUE)
@@ -20,6 +21,10 @@ public class FileEventSource extends CollectorDataSource {
 	public FileEventSource(String name, String description) {
 		super(name, description);
 		setDataSourceType(DataSourceType.FILE);
+	}
+
+	public FileEventSource(FileSourceDto dto) {
+		super(dto);
 	}
 
 	@Override

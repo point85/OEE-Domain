@@ -15,6 +15,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import org.point85.domain.dto.ReasonDto;
 import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.persistence.TimeLossConverter;
 
@@ -53,6 +54,11 @@ public class Reason extends NamedObject {
 
 	public Reason(String name, String description) {
 		super(name, description);
+	}
+
+	public Reason(ReasonDto dto) {
+		super(dto.getName(), dto.getDescription());
+		this.timeLoss = dto.getLossCategory() != null ? TimeLoss.valueOf(dto.getLossCategory()) : null;
 	}
 
 	public Reason getParent() {

@@ -13,6 +13,9 @@ import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
 
+import org.point85.domain.dto.EquipmentDto;
+import org.point85.domain.dto.EquipmentMaterialDto;
+import org.point85.domain.dto.EventResolverDto;
 import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.OeeEventType;
@@ -46,6 +49,25 @@ public class Equipment extends PlantEntity {
 
 	public Equipment(String name, String description) {
 		super(name, description, EntityLevel.EQUIPMENT);
+	}
+
+	public Equipment(EquipmentDto dto) throws Exception {
+		super(dto);
+		setLevel(EntityLevel.EQUIPMENT);
+
+		for (EquipmentMaterialDto materialDto : dto.getEquipmentMaterials()) {
+			EquipmentMaterial equipmentMaterial = new EquipmentMaterial(materialDto);
+			equipmentMaterial.setEquipment(this);
+
+			equipmentMaterials.add(equipmentMaterial);
+		}
+
+		for (EventResolverDto resolverDto : dto.getEventResolvers()) {
+			EventResolver resolver = new EventResolver(resolverDto);
+			resolver.setEquipment(this);
+
+			eventResolvers.add(resolver);
+		}
 	}
 
 	public WorkCell getWorkCell() {

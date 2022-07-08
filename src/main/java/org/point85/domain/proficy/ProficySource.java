@@ -8,6 +8,7 @@ import javax.persistence.Entity;
 
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.dto.ProficySourceDto;
 
 /**
  * A Proficy historian data source
@@ -37,6 +38,16 @@ public class ProficySource extends CollectorDataSource {
 	public ProficySource(String name, String description) {
 		super(name, description);
 		setDataSourceType(DataSourceType.PROFICY);
+	}
+
+	public ProficySource(ProficySourceDto dto) {
+		super(dto);
+		setDataSourceType(DataSourceType.PROFICY);
+
+		this.uaaHttpPort = dto.getUaaHttpPort() != null ? String.valueOf(dto.getUaaHttpPort()) : null;
+		this.validateCertificate = dto.getValidateCertificate() != null ? String.valueOf(dto.getValidateCertificate())
+				: null;
+		this.httpsPort = dto.getHttpsPort() != null ? String.valueOf(dto.getHttpsPort()) : null;
 	}
 
 	@Override

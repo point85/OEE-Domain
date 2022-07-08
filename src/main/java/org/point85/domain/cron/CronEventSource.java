@@ -8,6 +8,7 @@ import javax.persistence.Entity;
 
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.dto.CronSourceDto;
 
 /**
  * 
@@ -35,6 +36,12 @@ public class CronEventSource extends CollectorDataSource {
 	public CronEventSource(String name, String description) {
 		super(name, description);
 		setDataSourceType(DataSourceType.CRON);
+	}
+
+	public CronEventSource(CronSourceDto dto) {
+		super(dto);
+
+		setCronExpression(dto.getCronExpression());
 	}
 
 	@Override

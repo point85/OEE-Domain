@@ -1,5 +1,8 @@
 package org.point85.domain;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormatSymbols;
 import java.time.Duration;
@@ -12,6 +15,8 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Calendar;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -25,6 +30,9 @@ public final class DomainUtils {
 
 	// ISO 8601 datetime format, yyyy-mm-ddThh:mm:ss.nnn
 	public static final String LOCAL_DATE_TIME_8601 = "yyyy-MM-dd'T'HH:mm:ss.SSS";
+
+	// ISO 8601 date format, yyyy-mm-dd
+	public static final String LOCAL_DATE_8601 = "yyyy-MM-dd";
 
 	// ISO 8601 datetime UTC format, yyyy-mm-ddThh:mm:ss.nnnZ
 	public static final String UTC_DATE_TIME_8601 = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
@@ -40,8 +48,8 @@ public final class DomainUtils {
 	}
 
 	public static String getVersionInfo() {
-		return DomainLocalizer.instance().getLangString("version") + " 3.7.0, "
-				+ LocalDate.of(2022, 4, 28).format(DateTimeFormatter.ISO_DATE);
+		return DomainLocalizer.instance().getLangString("version") + " 3.8.0, "
+				+ LocalDate.of(2022, 7, 8).format(DateTimeFormatter.ISO_DATE);
 	}
 
 	// format a Duration
@@ -90,9 +98,24 @@ public final class DomainUtils {
 		return (iso8601 != null) ? OffsetDateTime.parse(iso8601.trim(), dtf) : null;
 	}
 
+	public static String localDateTimeToString(LocalDateTime ldt, String pattern) {
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(pattern);
+		return (ldt != null) ? ldt.format(dtf) : null;
+	}
+
 	public static LocalDateTime localDateTimeFromString(String iso8601, String pattern) {
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(pattern);
 		return (iso8601 != null) ? LocalDateTime.parse(iso8601.trim(), dtf) : null;
+	}
+
+	public static String localDateToString(LocalDate ld, String pattern) {
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(pattern);
+		return (ld != null) ? ld.format(dtf) : null;
+	}
+
+	public static LocalDate localDateFromString(String iso8601, String pattern) {
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern(pattern);
+		return (iso8601 != null) ? LocalDate.parse(iso8601.trim(), dtf) : null;
 	}
 
 	// create a UTC OffsetDateTime from the DateTime
@@ -202,5 +225,30 @@ public final class DomainUtils {
 		}
 
 		return version;
+	}
+
+	public static void gzip(String content, String fileName) throws Exception {
+		try (FileOutputStream outputStream = new FileOutputStream(fileName);
+				GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream)) {
+			byte[] data = content.getBytes();
+			gzipOutputStream.write(data);
+		}
+	}
+
+	public static String gunzip(byte[] data) throws Exception {
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		ByteArrayInputStream bis = new ByteArrayInputStream(data);
+		GZIPInputStream in = new GZIPInputStream(bis);
+		byte[] buffer = new byte[1024];
+		int len = 0;
+
+		while ((len = in.read(buffer)) >= 0) {
+			bos.write(buffer, 0, len);
+		}
+
+		in.close();
+		bos.close();
+
+		return new String(bos.toByteArray());
 	}
 }

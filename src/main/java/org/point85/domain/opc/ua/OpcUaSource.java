@@ -12,6 +12,7 @@ import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
 import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.dto.OpcUaSourceDto;
 
 @Entity
 @DiscriminatorValue(DataSourceType.OPC_UA_VALUE)
@@ -38,7 +39,7 @@ public class OpcUaSource extends CollectorDataSource {
 
 	@Column(name = "KEYSTORE_PWD")
 	private String keystorePassword;
-	
+
 	@Column(name = "END_PATH")
 	private String endpointPath;
 
@@ -50,6 +51,17 @@ public class OpcUaSource extends CollectorDataSource {
 	public OpcUaSource(String name, String description) {
 		super(name, description);
 		setDataSourceType(DataSourceType.OPC_UA);
+	}
+
+	public OpcUaSource(OpcUaSourceDto dto) {
+		super(dto);
+		setDataSourceType(DataSourceType.OPC_UA);
+
+		this.securityPolicy = dto.getSecurityPolicy();
+		this.messageMode = dto.getMessageMode();
+		this.keystore = dto.getKeystore();
+		this.keystorePassword = dto.getKeystorePassword();
+		this.endpointPath = dto.getEndpointPath();
 	}
 
 	@Override
@@ -65,7 +77,7 @@ public class OpcUaSource extends CollectorDataSource {
 			setPort(Integer.valueOf(tokens[1]));
 		}
 	}
-	
+
 	public String getEndpointPath() {
 		return endpointPath;
 	}
@@ -128,6 +140,10 @@ public class OpcUaSource extends CollectorDataSource {
 
 	public void setKeystorePassword(String keystorePassword) {
 		this.keystorePassword = DomainUtils.encode(keystorePassword);
+	}
+
+	public String getEncodedKeystorePassword() {
+		return this.keystorePassword;
 	}
 
 	@Override

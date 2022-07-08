@@ -6,14 +6,16 @@ import java.util.List;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+import org.point85.domain.dto.AreaDto;
+
 @Entity
 @DiscriminatorValue(Area.AREA_VALUE)
 public class Area extends PlantEntity {
 	public static final String AREA_VALUE = "AREA";
-	
+
 	public static final String DEFAULT_NAME = "Area";
 	public static final String DEFAULT_DESC = "Default area";
-	
+
 	public Area() {
 		super();
 		setLevel(EntityLevel.AREA);
@@ -21,6 +23,11 @@ public class Area extends PlantEntity {
 
 	public Area(String name, String description) {
 		super(name, description, EntityLevel.AREA);
+	}
+
+	public Area(AreaDto dto) throws Exception {
+		super(dto);
+		setLevel(EntityLevel.AREA);
 	}
 
 	public List<ProductionLine> getProductionLines() {

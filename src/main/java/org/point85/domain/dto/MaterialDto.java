@@ -5,7 +5,7 @@ import org.point85.domain.plant.Material;
 /**
  * Data Transfer Object (DTO) for a material
  */
-public class MaterialDto extends NamedDto {
+public class MaterialDto extends NamedObjectDto {
 	private String category;
 
 	public MaterialDto() {

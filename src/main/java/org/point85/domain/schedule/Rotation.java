@@ -41,6 +41,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.point85.domain.dto.RotationDto;
+import org.point85.domain.dto.RotationSegmentDto;
 import org.point85.domain.i18n.DomainLocalizer;
 
 /**
@@ -84,8 +86,19 @@ public class Rotation extends Named implements Comparable<Rotation> {
 	 * @param description Description
 	 * @throws Exception Exception
 	 */
-	Rotation(String name, String description) throws Exception {
+	Rotation(String name, String description) {
 		super(name, description);
+	}
+
+	public Rotation(RotationDto dto) throws Exception {
+		super(dto.getName(), dto.getDescription());
+
+		for (RotationSegmentDto segmentDto : dto.getRotationSegments()) {
+			RotationSegment segment = new RotationSegment(segmentDto);
+
+			this.getRotationSegments().add(segment);
+			segment.setRotation(this);
+		}
 	}
 
 	// create the day-off
@@ -202,7 +215,7 @@ public class Rotation extends Named implements Comparable<Rotation> {
 		return workSchedule;
 	}
 
-	void setWorkSchedule(WorkSchedule workSchedule) {
+	public void setWorkSchedule(WorkSchedule workSchedule) {
 		this.workSchedule = workSchedule;
 	}
 

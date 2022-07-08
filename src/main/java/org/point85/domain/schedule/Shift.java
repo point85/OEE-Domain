@@ -38,6 +38,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.point85.domain.dto.ShiftDto;
 import org.point85.domain.i18n.DomainLocalizer;
 
 /**
@@ -68,6 +69,13 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 
 	Shift(String name, String description, LocalTime start, Duration duration) {
 		super(name, description, start, duration);
+	}
+
+	public Shift(ShiftDto dto) throws Exception {
+		this.setName(dto.getName());
+		this.setDescription(dto.getDescription());
+		this.setStart(LocalTime.ofSecondOfDay(dto.getStartTime()));
+		this.setDuration(Duration.ofSeconds(dto.getDuration()));
 	}
 
 	/**
@@ -211,7 +219,7 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 			toSecond = endSecond;
 		}
 
-		return Duration.ofSeconds((long)toSecond - (long)fromSecond);
+		return Duration.ofSeconds((long) toSecond - (long) fromSecond);
 	}
 
 	/**
@@ -278,7 +286,7 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 		return workSchedule;
 	}
 
-	void setWorkSchedule(WorkSchedule workSchedule) {
+	public void setWorkSchedule(WorkSchedule workSchedule) {
 		this.workSchedule = workSchedule;
 	}
 
@@ -313,7 +321,7 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 	public boolean isWorkingPeriod() {
 		return true;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof Shift) {

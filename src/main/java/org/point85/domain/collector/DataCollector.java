@@ -10,8 +10,11 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.point85.domain.dto.DataCollectorDto;
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.persistence.CollectorStateConverter;
 import org.point85.domain.persistence.DataSourceConverter;
+import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.NamedObject;
 
 @Entity
@@ -59,6 +62,28 @@ public class DataCollector extends NamedObject {
 		super(name, description);
 	}
 
+	public DataCollector(DataCollectorDto dto) throws Exception {
+		super(dto.getName(), dto.getDescription());
+
+		this.brokerHost = dto.getBrokerHost();
+		this.brokerPort = dto.getBrokerPort();
+		this.brokerType = dto.getBrokerType() != null ? DataSourceType.valueOf(dto.getBrokerType()) : null;
+		this.brokerUserName = dto.getBrokerUserName();
+		this.brokerUserPassword = dto.getBrokerUserPassword();
+		this.host = dto.getHost();
+
+		if (dto.getNotificationServer() != null) {
+			notificationServer = PersistenceService.instance().fetchDataSourceByName(dto.getNotificationServer());
+
+			if (notificationServer == null) {
+				throw new Exception(
+						DomainLocalizer.instance().getErrorString("no.data.source", dto.getNotificationServer()));
+			}
+		}
+
+		this.state = dto.getState() != null ? CollectorState.valueOf(dto.getState()) : null;
+	}
+
 	public String getHost() {
 		return host;
 	}
@@ -99,5 +124,45 @@ public class DataCollector extends NamedObject {
 
 	public void setNotificationServer(CollectorDataSource server) {
 		this.notificationServer = server;
+	}
+
+	public DataSourceType getBrokerType() {
+		return brokerType;
+	}
+
+	public void setBrokerType(DataSourceType brokerType) {
+		this.brokerType = brokerType;
+	}
+
+	public String getBrokerHost() {
+		return brokerHost;
+	}
+
+	public void setBrokerHost(String brokerHost) {
+		this.brokerHost = brokerHost;
+	}
+
+	public Integer getBrokerPort() {
+		return brokerPort;
+	}
+
+	public void setBrokerPort(Integer brokerPort) {
+		this.brokerPort = brokerPort;
+	}
+
+	public String getBrokerUserName() {
+		return brokerUserName;
+	}
+
+	public void setBrokerUserName(String brokerUserName) {
+		this.brokerUserName = brokerUserName;
+	}
+
+	public String getBrokerUserPassword() {
+		return brokerUserPassword;
+	}
+
+	public void setBrokerUserPassword(String brokerUserPassword) {
+		this.brokerUserPassword = brokerUserPassword;
 	}
 }

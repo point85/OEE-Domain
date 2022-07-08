@@ -13,6 +13,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 import org.point85.domain.DomainUtils;
+import org.point85.domain.dto.CollectorDataSourceDto;
 import org.point85.domain.persistence.DataSourceConverter;
 import org.point85.domain.plant.NamedObject;
 
@@ -50,6 +51,16 @@ public abstract class CollectorDataSource extends NamedObject {
 		super(name, description);
 	}
 
+	protected CollectorDataSource(CollectorDataSourceDto dto) {
+		super(dto.getName(), dto.getDescription());
+
+		host = dto.getHost();
+		port = dto.getPort();
+		userName = dto.getUserName();
+		userPassword = dto.getUserPassword();
+		sourceType = dto.getSourceType() != null ? DataSourceType.valueOf(dto.getSourceType()) : null;
+	}
+
 	public abstract String getId();
 
 	public abstract void setId(String id);
@@ -70,12 +81,16 @@ public abstract class CollectorDataSource extends NamedObject {
 		this.userName = userName;
 	}
 
+	public String getEncodedPassword() {
+		return userPassword;
+	}
+
 	public String getUserPassword() {
-		return DomainUtils.decode(this.userPassword);
+		return userPassword != null ? DomainUtils.decode(userPassword) : null;
 	}
 
 	public void setPassword(String password) {
-		this.userPassword = DomainUtils.encode(password);
+		this.userPassword = password != null ? DomainUtils.encode(password) : null;
 	}
 
 	public DataSourceType getDataSourceType() {

@@ -40,6 +40,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.point85.domain.DomainUtils;
+import org.point85.domain.dto.TeamDto;
 import org.point85.domain.i18n.DomainLocalizer;
 
 /**
@@ -78,6 +80,12 @@ public class Team extends Named implements Comparable<Team> {
 		super(name, description);
 		this.rotation = rotation;
 		this.rotationStart = rotationStart;
+	}
+	
+	public Team(TeamDto dto) {
+		super(dto.getName(), dto.getDescription());
+		this.rotation = new Rotation(dto.getRotation(), null);
+		this.rotationStart = DomainUtils.localDateFromString(dto.getRotationStart(), DomainUtils.LOCAL_DATE_8601);
 	}
 
 	/**
@@ -327,7 +335,7 @@ public class Team extends Named implements Comparable<Team> {
 		return workSchedule;
 	}
 
-	void setWorkSchedule(WorkSchedule workSchedule) {
+	public void setWorkSchedule(WorkSchedule workSchedule) {
 		this.workSchedule = workSchedule;
 	}
 

@@ -42,6 +42,11 @@ import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import org.point85.domain.dto.ExceptionPeriodDto;
+import org.point85.domain.dto.RotationDto;
+import org.point85.domain.dto.ShiftDto;
+import org.point85.domain.dto.TeamDto;
+import org.point85.domain.dto.WorkScheduleDto;
 import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.plant.NamedObject;
@@ -91,6 +96,42 @@ public class WorkSchedule extends NamedObject {
 	 */
 	public WorkSchedule(String name, String description) throws Exception {
 		super(name, description);
+	}
+
+	public WorkSchedule(WorkScheduleDto dto) throws Exception {
+		super(dto.getName(), dto.getDescription());
+
+		// teams
+		for (TeamDto teamDto : dto.getTeams()) {
+			Team team = new Team(teamDto);
+
+			getTeams().add(team);
+			team.setWorkSchedule(this);
+		}
+
+		// shifts
+		for (ShiftDto shiftDto : dto.getShifts()) {
+			Shift shift = new Shift(shiftDto);
+
+			getShifts().add(shift);
+			shift.setWorkSchedule(this);
+		}
+
+		// exception periods
+		for (ExceptionPeriodDto periodDto : dto.getExceptionPeriods()) {
+			ExceptionPeriod period = new ExceptionPeriod(periodDto);
+
+			getExceptionPeriods().add(period);
+			period.setWorkSchedule(this);
+		}
+
+		// rotations
+		for (RotationDto rotationDto : dto.getRotations()) {
+			Rotation rotation = new Rotation(rotationDto);
+
+			getRotations().add(rotation);
+			rotation.setWorkSchedule(this);
+		}
 	}
 
 	/**

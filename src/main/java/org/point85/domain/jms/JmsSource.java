@@ -5,6 +5,7 @@ import javax.persistence.Entity;
 
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.dto.JmsSourceDto;
 
 @Entity
 @DiscriminatorValue(DataSourceType.JMS_VALUE)
@@ -17,6 +18,10 @@ public class JmsSource extends CollectorDataSource {
 	public JmsSource(String name, String description) {
 		super(name, description);
 		setDataSourceType(DataSourceType.JMS);
+	}
+
+	public JmsSource(JmsSourceDto dto) {
+		super(dto);
 	}
 
 	@Override

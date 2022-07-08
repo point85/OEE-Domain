@@ -8,6 +8,7 @@ import javax.persistence.Entity;
 
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.dto.HttpSourceDto;
 
 @Entity
 @DiscriminatorValue(DataSourceType.HTTP_VALUE)
@@ -25,6 +26,11 @@ public class HttpSource extends CollectorDataSource {
 	public HttpSource(String name, String description) {
 		super(name, description);
 		setDataSourceType(DataSourceType.HTTP);
+	}
+
+	public HttpSource(HttpSourceDto dto) {
+		super(dto);
+		setHttpsPort(dto.getHttpsPort());
 	}
 
 	@Override
@@ -50,7 +56,7 @@ public class HttpSource extends CollectorDataSource {
 	public void setHttpsPort(Integer port) {
 		httpsPort = (port != null) ? String.valueOf(port) : null;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof HttpSource) {

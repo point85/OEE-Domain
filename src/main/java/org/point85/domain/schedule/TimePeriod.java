@@ -41,7 +41,7 @@ import org.point85.domain.i18n.DomainLocalizer;
  *
  */
 @MappedSuperclass
-abstract class TimePeriod extends Named {
+public abstract class TimePeriod extends Named {
 	private static final int SECONDS_PER_DAY = 24 * 60 * 60;
 
 	// starting time of day

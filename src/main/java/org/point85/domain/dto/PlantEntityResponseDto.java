@@ -1,22 +1,22 @@
 package org.point85.domain.dto;
 
-import java.util.List;
+import org.point85.domain.exim.ExportContent;
 
 /**
  * Data Transfer Object (DTO) for an HTTP plant entity response
  */
 public class PlantEntityResponseDto {
-	private List<PlantEntityDto> entityList;
+	private ExportContent content;
 
-	public PlantEntityResponseDto(List<PlantEntityDto> entityList) {
-		this.entityList = entityList;
+	public PlantEntityResponseDto(ExportContent content) {
+		this.setContent(content);
 	}
 
-	public List<PlantEntityDto> getEntityList() {
-		return entityList;
+	public ExportContent getContent() {
+		return content;
 	}
 
-	public void setEntityList(List<PlantEntityDto> entityList) {
-		this.entityList = entityList;
+	public void setContent(ExportContent content) {
+		this.content = content;
 	}
 }

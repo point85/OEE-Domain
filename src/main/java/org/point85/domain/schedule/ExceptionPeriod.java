@@ -37,6 +37,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import org.point85.domain.DomainUtils;
+import org.point85.domain.dto.ExceptionPeriodDto;
 import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.oee.TimeLoss;
 import org.point85.domain.persistence.TimeLossConverter;
@@ -83,6 +85,15 @@ public class ExceptionPeriod extends Named implements Comparable<ExceptionPeriod
 		this.startDateTime = startDateTime;
 		this.duration = duration;
 		this.timeLoss = loss;
+	}
+
+	public ExceptionPeriod(ExceptionPeriodDto dto) {
+		super(dto.getName(), dto.getDescription());
+		
+		this.startDateTime = DomainUtils.localDateTimeFromString(dto.getStartDateTime(),
+				DomainUtils.LOCAL_DATE_TIME_8601);
+		this.duration = Duration.ofSeconds(dto.getDuration());
+		this.timeLoss = dto.getTimeLoss() != null ? TimeLoss.valueOf(dto.getTimeLoss()) : null;
 	}
 
 	/**
@@ -162,7 +173,7 @@ public class ExceptionPeriod extends Named implements Comparable<ExceptionPeriod
 		return workSchedule;
 	}
 
-	void setWorkSchedule(WorkSchedule workSchedule) {
+	public void setWorkSchedule(WorkSchedule workSchedule) {
 		this.workSchedule = workSchedule;
 	}
 

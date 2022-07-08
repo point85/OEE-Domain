@@ -16,8 +16,10 @@ import javax.persistence.Transient;
 import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataCollector;
+import org.point85.domain.dto.EventResolverDto;
 import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.persistence.EventTypeConverter;
+import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.KeyedObject;
 
@@ -77,6 +79,34 @@ public class EventResolver extends KeyedObject {
 
 	public EventResolver() {
 		super();
+	}
+
+	public EventResolver(EventResolverDto dto) throws Exception {
+
+		if (dto.getCollector() != null) {
+			DataCollector dbCollector = PersistenceService.instance().fetchCollectorByName(dto.getCollector());
+
+			if (dbCollector == null) {
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.data.collector", dto.getCollector()));
+			}
+			this.collector = dbCollector;
+		}
+
+		if (dto.getDataSource() != null) {
+			CollectorDataSource dbSource = PersistenceService.instance().fetchDataSourceByName(dto.getDataSource());
+
+			if (dbSource == null) {
+				throw new Exception(
+						DomainLocalizer.instance().getErrorString("no.collector.source ", dto.getDataSource()));
+			}
+			this.dataSource = dbSource;
+		}
+
+		this.dataType = dto.getDataType();
+		this.functionScript = dto.getScript();
+		this.sourceId = dto.getSourceId();
+		this.updatePeriod = dto.getUpdatePeriod();
+		this.type = dto.getType() != null ? OeeEventType.valueOf(dto.getType()) : null;
 	}
 
 	public CollectorDataSource getDataSource() {

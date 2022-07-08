@@ -9,6 +9,7 @@ import javax.persistence.Entity;
 import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.dto.WebSocketSourceDto;
 
 /**
  * The WebSocketSource class represents an web socket server as a source of
@@ -42,12 +43,29 @@ public class WebSocketSource extends CollectorDataSource {
 
 	/**
 	 * Constructor
-	 * @param name Name of source
+	 * 
+	 * @param name        Name of source
 	 * @param description Description of source
 	 */
 	public WebSocketSource(String name, String description) {
 		super(name, description);
 		setDataSourceType(DataSourceType.WEB_SOCKET);
+	}
+
+	/**
+	 * 
+	 * Constructor
+	 * 
+	 * @param dto {@link WebSocketSourceDto}
+	 */
+	public WebSocketSource(WebSocketSourceDto dto) {
+		super(dto);
+
+		keystore = dto.getKeystore();
+		keystorePassword = dto.getKeystorePassword();
+		messageMode = dto.getKeyPassword();
+		clientAuthentication = dto.getClientAuthentication() != null ? String.valueOf(dto.getClientAuthentication())
+				: null;
 	}
 
 	public boolean isClientAuthorization() {
@@ -109,5 +127,13 @@ public class WebSocketSource extends CollectorDataSource {
 	@Override
 	public int hashCode() {
 		return Objects.hash(getName(), getHost(), getKeystore());
+	}
+
+	public String getEncodedKeystorePassword() {
+		return keystorePassword;
+	}
+
+	public String getEncodedKeyPassword() {
+		return messageMode;
 	}
 }

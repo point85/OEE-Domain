@@ -5,7 +5,7 @@ import org.point85.domain.collector.CollectorDataSource;
 /**
  * Data Transfer Object (DTO) for data source
  */
-public class DataSourceDto extends NamedDto {
+public class DataSourceDto extends NamedObjectDto {
 	private String host;
 	private Integer port;
 

@@ -39,7 +39,7 @@ import org.point85.domain.plant.KeyedObject;
  *
  */
 @MappedSuperclass
-abstract class Named extends KeyedObject {
+public abstract class Named extends KeyedObject {
 	// name
 	@Column(name = "NAME")
 	private String name;

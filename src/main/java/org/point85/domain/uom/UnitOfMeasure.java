@@ -44,7 +44,9 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.point85.domain.dto.UnitOfMeasureDto;
 import org.point85.domain.i18n.DomainLocalizer;
+import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.NamedObject;
 
 /**
@@ -203,6 +205,85 @@ public class UnitOfMeasure extends NamedObject {
 		this.category = DomainLocalizer.instance().getUnitString("default.category");
 	}
 
+	public List<UnitOfMeasure> restoreAttributes(UnitOfMeasureDto dto) throws Exception {
+		setName(dto.getName());
+		setDescription(dto.getDescription());
+
+		List<UnitOfMeasure> created = new ArrayList<>();
+
+		String restoredSymbol = null;
+
+		if (dto.getAbscissaUnit() != null) {
+			restoredSymbol = dto.getAbscissaUnit().getSymbol();
+			UnitOfMeasure inDB = PersistenceService.instance().fetchUomBySymbol(restoredSymbol);
+
+			if (inDB != null) {
+				this.abscissaUnit = inDB;
+			} else {
+				this.abscissaUnit = new UnitOfMeasure();
+				List<UnitOfMeasure> restored = this.abscissaUnit.restoreAttributes(dto.getAbscissaUnit());
+				created.add(abscissaUnit);
+				created.addAll(restored);
+			}
+		}
+
+		if (dto.getBridgeAbscissaUnit() != null) {
+			restoredSymbol = dto.getBridgeAbscissaUnit().getSymbol();
+			UnitOfMeasure inDB = PersistenceService.instance().fetchUomBySymbol(restoredSymbol);
+
+			if (inDB != null) {
+				this.bridgeAbscissaUnit = inDB;
+			} else {
+				this.bridgeAbscissaUnit = new UnitOfMeasure();
+				List<UnitOfMeasure> restored = this.bridgeAbscissaUnit.restoreAttributes(dto.getBridgeAbscissaUnit());
+				created.add(bridgeAbscissaUnit);
+				created.addAll(restored);
+			}
+		}
+
+		if (dto.getUOM1() != null) {
+			restoredSymbol = dto.getUOM1().getSymbol();
+			UnitOfMeasure inDB = PersistenceService.instance().fetchUomBySymbol(restoredSymbol);
+
+			if (inDB != null) {
+				this.uom1 = inDB;
+			} else {
+				this.uom1 = new UnitOfMeasure();
+				List<UnitOfMeasure> restored = this.uom1.restoreAttributes(dto.getUOM1());
+				created.add(uom1);
+				created.addAll(restored);
+			}
+		}
+
+		if (dto.getUOM2() != null) {
+			restoredSymbol = dto.getUOM2().getSymbol();
+			UnitOfMeasure inDB = PersistenceService.instance().fetchUomBySymbol(restoredSymbol);
+
+			if (inDB != null) {
+				this.uom2 = inDB;
+			} else {
+				this.uom2 = new UnitOfMeasure();
+				List<UnitOfMeasure> restored = this.uom2.restoreAttributes(dto.getUOM2());
+				created.add(uom2);
+				created.addAll(restored);
+			}
+		}
+
+		this.bridgeOffset = dto.getBridgeOffset();
+		this.bridgeScalingFactor = dto.getBridgeScalingFactor();
+		this.category = dto.getCategory();
+		this.exponent1 = dto.getExponent1();
+		this.exponent2 = dto.getExponent2();
+		this.offset = dto.getOffset();
+		this.scalingFactor = dto.getScalingFactor();
+		this.symbol = dto.getSymbol();
+		this.unit = dto.getUnit() != null ? Unit.valueOf(dto.getUnit()) : null;
+		this.unitType = UnitType.valueOf(dto.getUnitType());
+
+		return created;
+
+	}
+
 	/**
 	 * Get the symbol
 	 * 
@@ -243,19 +324,19 @@ public class UnitOfMeasure extends NamedObject {
 		this.exponent2 = exponent2;
 	}
 
-	private Integer getExponent1() {
+	public Integer getExponent1() {
 		return exponent1;
 	}
 
-	private Integer getExponent2() {
+	public Integer getExponent2() {
 		return exponent2;
 	}
 
-	private UnitOfMeasure getUOM1() {
+	public UnitOfMeasure getUOM1() {
 		return this.uom1;
 	}
 
-	private UnitOfMeasure getUOM2() {
+	public UnitOfMeasure getUOM2() {
 		return this.uom2;
 	}
 
@@ -729,7 +810,7 @@ public class UnitOfMeasure extends NamedObject {
 
 		// re-cache
 		MeasurementSystem.instance().registerUnit(this);
-		
+
 		// remove from conversion registry
 		if (conversionRegistry.containsKey(abscissaUnit)) {
 			conversionRegistry.remove(abscissaUnit);

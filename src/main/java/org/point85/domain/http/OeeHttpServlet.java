@@ -30,11 +30,12 @@ import org.point85.domain.dto.MaterialResponseDto;
 import org.point85.domain.dto.OeeEventDto;
 import org.point85.domain.dto.OeeEventsResponseDto;
 import org.point85.domain.dto.OeeResponseDto;
-import org.point85.domain.dto.PlantEntityDto;
 import org.point85.domain.dto.PlantEntityResponseDto;
 import org.point85.domain.dto.ReasonDto;
 import org.point85.domain.dto.ReasonResponseDto;
 import org.point85.domain.dto.SourceIdResponseDto;
+import org.point85.domain.exim.ExportContent;
+import org.point85.domain.exim.Exporter;
 import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.oee.EquipmentLoss;
 import org.point85.domain.oee.EquipmentLossManager;
@@ -581,40 +582,12 @@ class OeeHttpServlet extends HttpServlet {
 
 	// handle request for plant entities
 	private String servePlantEntityRequest() throws Exception {
-		Map<String, PlantEntityDto> entityMap = new HashMap<>();
-
-		List<PlantEntityDto> topDtos = new ArrayList<>();
-
-		List<PlantEntity> allEntities = PersistenceService.instance().fetchAllPlantEntities();
-
-		for (PlantEntity entity : allEntities) {
-			// this entity
-			PlantEntityDto entityDto = new PlantEntityDto(entity.getName(), entity.getDescription(),
-					entity.getLevel().name());
-
-			// parent entity
-			if (entity.getParent() == null) {
-				topDtos.add(entityDto);
-			}
-
-			// put in map
-			entityMap.put(entityDto.getName(), entityDto);
-		}
-
-		// set children
-		for (PlantEntity entity : allEntities) {
-			PlantEntityDto parentDto = entityMap.get(entity.getName());
-
-			for (PlantEntity childEntity : entity.getChildren()) {
-				PlantEntityDto childDto = entityMap.get(childEntity.getName());
-
-				childDto.setParent(parentDto.getName());
-				parentDto.getChildren().add(childDto);
-			}
-		}
+		ExportContent content = Exporter.instance().prepare(PlantEntity.class);
 
 		// JSON payload
-		return gson.toJson(new PlantEntityResponseDto(topDtos));
+		PlantEntityResponseDto response = new PlantEntityResponseDto(content);
+
+		return gson.toJson(response);
 	}
 
 	// handle equipment event

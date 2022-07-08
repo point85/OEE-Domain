@@ -8,7 +8,7 @@ import org.point85.domain.plant.Reason;
 /**
  * Data Transfer Object (DTO) for an OEE reason
  */
-public class ReasonDto extends NamedDto {
+public class ReasonDto extends NamedObjectDto {
 	private String parent;
 	private String lossCategory;
 

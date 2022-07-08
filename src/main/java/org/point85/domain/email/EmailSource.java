@@ -9,6 +9,7 @@ import javax.persistence.Transient;
 
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.dto.EmailSourceDto;
 
 /**
  * The EmailSource class represents an email server both as a source of events
@@ -58,6 +59,26 @@ public class EmailSource extends CollectorDataSource {
 	public EmailSource(String name, String description) {
 		super(name, description);
 		setDataSourceType(DataSourceType.EMAIL);
+	}
+
+	public EmailSource(EmailSourceDto dto) {
+		super(dto);
+
+		EmailProtocol protocolEmail = dto.getEmailProtocol() != null ? EmailProtocol.valueOf(dto.getEmailProtocol())
+				: null;
+		setProtocol(protocolEmail);
+
+		setReceiveHost(dto.getHost());
+		setReceivePort(dto.getPort());
+		EmailSecurityPolicy policy = dto.getReceiveSecurityPolicy() != null
+				? EmailSecurityPolicy.valueOf(dto.getReceiveSecurityPolicy())
+				: null;
+		setReceiveSecurityPolicy(policy);
+
+		setSendHost(dto.getSendHost());
+		setSendPort(dto.getSendPort());
+		policy = dto.getSendSecurityPolicy() != null ? EmailSecurityPolicy.valueOf(dto.getSendSecurityPolicy()) : null;
+		setSendSecurityPolicy(policy);
 	}
 
 	public String getReceiveHost() {

@@ -9,6 +9,7 @@ import javax.persistence.Entity;
 import org.point85.domain.DomainUtils;
 import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
+import org.point85.domain.dto.MqttSourceDto;
 
 @Entity
 @DiscriminatorValue(DataSourceType.MQTT_VALUE)
@@ -31,6 +32,14 @@ public class MqttSource extends CollectorDataSource {
 	public MqttSource(String name, String description) {
 		super(name, description);
 		setDataSourceType(DataSourceType.MQTT);
+	}
+
+	public MqttSource(MqttSourceDto dto) {
+		super(dto);
+
+		keystore = dto.getKeystore();
+		keystorePassword = dto.getKeystorePassword();
+		messageMode = dto.getKeyPassword();
 	}
 
 	@Override
@@ -59,6 +68,10 @@ public class MqttSource extends CollectorDataSource {
 		this.keystorePassword = DomainUtils.encode(password);
 	}
 
+	public String getEncodedKeystorePassword() {
+		return keystorePassword;
+	}
+
 	// overload message mode
 	public String getKeyPassword() {
 		return DomainUtils.decode(messageMode);
@@ -66,6 +79,10 @@ public class MqttSource extends CollectorDataSource {
 
 	public void setKeyPassword(String password) {
 		this.messageMode = DomainUtils.encode(password);
+	}
+
+	public String getEncodedKeyPassword() {
+		return messageMode;
 	}
 
 	@Override

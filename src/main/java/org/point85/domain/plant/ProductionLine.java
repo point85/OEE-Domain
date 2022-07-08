@@ -6,6 +6,8 @@ import java.util.List;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+import org.point85.domain.dto.ProductionLineDto;
+
 @Entity
 @DiscriminatorValue(ProductionLine.LINE_VALUE)
 public class ProductionLine extends PlantEntity {
@@ -21,6 +23,11 @@ public class ProductionLine extends PlantEntity {
 
 	public ProductionLine(String name, String description) {
 		super(name, description, EntityLevel.PRODUCTION_LINE);
+	}
+	
+	public ProductionLine(ProductionLineDto dto) throws Exception  {
+		super(dto);
+		setLevel(EntityLevel.PRODUCTION_LINE);
 	}
 
 	public List<WorkCell> getWorkCells() {

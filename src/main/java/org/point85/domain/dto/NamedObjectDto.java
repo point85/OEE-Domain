@@ -1,22 +1,35 @@
 package org.point85.domain.dto;
 
+import org.point85.domain.plant.NamedObject;
+import org.point85.domain.schedule.Named;
+
 /**
  * Base class for named DTOs
  */
-abstract class NamedDto {
+public abstract class NamedObjectDto {
 	private String name;
-	
+
 	private String description;
-	
-	protected NamedDto() {
+
+	protected NamedObjectDto() {
 		// nothing to do
 	}
-	
-	protected NamedDto(String name, String description) {
+
+	protected NamedObjectDto(String name, String description) {
 		this.name = name;
-		this.description = description;	
+		this.description = description;
+	}
+
+	protected NamedObjectDto(NamedObject namedObject) {
+		this.name = namedObject.getName();
+		this.description = namedObject.getDescription();
 	}
 	
+	protected NamedObjectDto(Named named) {
+		this.name = named.getName();
+		this.description = named.getDescription();
+	}	
+
 	public String getName() {
 		return name;
 	}
@@ -32,7 +45,7 @@ abstract class NamedDto {
 	public void setDescription(String description) {
 		this.description = description;
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

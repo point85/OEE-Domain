@@ -7,6 +7,8 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
+import org.point85.domain.dto.MaterialDto;
+
 @Entity
 @Table(name = "MATERIAL")
 @AttributeOverride(name = "primaryKey", column = @Column(name = "MAT_KEY"))
@@ -24,6 +26,11 @@ public class Material extends NamedObject {
 
 	public Material(String id, String description) {
 		super(id, description);
+	}
+
+	public Material(MaterialDto dto) {
+		super(dto.getName(), dto.getDescription());
+		this.category = dto.getCategory();
 	}
 
 	/**

@@ -35,6 +35,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.point85.domain.dto.RotationSegmentDto;
 import org.point85.domain.plant.KeyedObject;
 
 /**
@@ -84,6 +85,13 @@ public class RotationSegment extends KeyedObject implements Comparable<RotationS
 		this.daysOn = daysOn;
 		this.daysOff = daysOff;
 		this.rotation = rotation;
+	}
+	
+	public RotationSegment(RotationSegmentDto dto) throws Exception {
+		this.startingShift = new Shift();
+		this.startingShift.setName(dto.getShift());
+		this.daysOn = dto.getDaysOn();
+		this.daysOff = dto.getDaysOff();
 	}
 
 	/**
@@ -147,6 +155,10 @@ public class RotationSegment extends KeyedObject implements Comparable<RotationS
 	 */
 	public Rotation getRotation() {
 		return rotation;
+	}
+	
+	public void setRotation(Rotation rotation) {
+		this.rotation = rotation;
 	}
 
 	/**

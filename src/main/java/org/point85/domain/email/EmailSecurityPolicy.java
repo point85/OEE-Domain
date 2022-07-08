@@ -15,10 +15,10 @@ public enum EmailSecurityPolicy {
 
 		switch (this) {
 		case SSL:
-			key = "ssl.policy";
+			key = "email.ssl.policy";
 			break;
 		case TLS:
-			key = "tls.policy";
+			key = "email.tls.policy";
 			break;
 		default:
 			break;

@@ -11,7 +11,10 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.point85.domain.DomainUtils;
+import org.point85.domain.dto.EntityScheduleDto;
 import org.point85.domain.i18n.DomainLocalizer;
+import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.schedule.WorkSchedule;
 
 @Entity
@@ -46,6 +49,27 @@ public class EntitySchedule extends KeyedObject implements Comparable<EntitySche
 		this.endDateTime = endDateTime;
 		this.plantEntity = entity;
 		this.workSchedule = schedule;
+	}
+
+	public EntitySchedule(EntityScheduleDto dto) throws Exception {
+		if (dto.getWorkSchedule() != null) {
+			WorkSchedule schedule = PersistenceService.instance().fetchWorkScheduleByName(dto.getWorkSchedule());
+
+			if (schedule == null) {
+				throw new Exception(
+						DomainLocalizer.instance().getErrorString("no.work.schedule", dto.getWorkSchedule()));
+			}
+
+			this.workSchedule = schedule;
+		}
+
+		this.startDateTime = dto.getStartDateTime() != null
+				? DomainUtils.localDateTimeFromString(dto.getStartDateTime(), DomainUtils.LOCAL_DATE_TIME_8601)
+				: null;
+
+		this.endDateTime = dto.getEndDateTime() != null
+				? DomainUtils.localDateTimeFromString(dto.getEndDateTime(), DomainUtils.LOCAL_DATE_TIME_8601)
+				: null;
 	}
 
 	/**

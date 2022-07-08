@@ -641,6 +641,22 @@ public final class PersistenceService {
 		return entities;
 	}
 
+	// all UOMs
+	public List<UnitOfMeasure> fetchAllUnitsOfMeasures() throws Exception {
+		final String UOM_ALL = "UOM.All";
+
+		if (namedQueryMap.get(UOM_ALL) == null) {
+			createNamedQuery(UOM_ALL, "SELECT uom FROM UnitOfMeasure uom");
+		}
+
+		EntityManager em = getEntityManager();
+		TypedQuery<UnitOfMeasure> query = em.createNamedQuery(UOM_ALL, UnitOfMeasure.class);
+		List<UnitOfMeasure> uoms = query.getResultList();
+		em.close();
+
+		return uoms;
+	}
+
 	private void createNamedQuery(String name, String jsql) throws Exception {
 		EntityManager em = getEntityManager();
 		Query query = em.createQuery(jsql);
@@ -802,6 +818,21 @@ public final class PersistenceService {
 		return materials;
 	}
 
+	public List<WorkSchedule> fetchAllWorkSchedules() throws Exception {
+		final String WORK_ALL = "WORK.All";
+
+		if (namedQueryMap.get(WORK_ALL) == null) {
+			createNamedQuery(WORK_ALL, "SELECT schedule FROM WorkSchedule schedule");
+		}
+
+		EntityManager em = getEntityManager();
+		TypedQuery<WorkSchedule> query = em.createNamedQuery(WORK_ALL, WorkSchedule.class);
+		List<WorkSchedule> schedules = query.getResultList();
+		em.close();
+
+		return schedules;
+	}
+
 	public List<String> fetchMaterialCategories() throws Exception {
 		final String MATL_CATEGORIES = "MATL.Categories";
 
@@ -836,6 +867,26 @@ public final class PersistenceService {
 			material = materials.get(0);
 		}
 		return material;
+	}
+
+	public CollectorDataSource fetchDataSourceByName(String name) throws Exception {
+		final String CDS_BY_NAME = "CDS.ByName";
+
+		if (namedQueryMap.get(CDS_BY_NAME) == null) {
+			createNamedQuery(CDS_BY_NAME, "SELECT cds FROM CollectorDataSource cds WHERE cds.name = :name");
+		}
+
+		CollectorDataSource source = null;
+		EntityManager em = getEntityManager();
+		TypedQuery<CollectorDataSource> query = em.createNamedQuery(CDS_BY_NAME, CollectorDataSource.class);
+		query.setParameter("name", name);
+		List<CollectorDataSource> sources = query.getResultList();
+		em.close();
+
+		if (sources.size() == 1) {
+			source = sources.get(0);
+		}
+		return source;
 	}
 
 	public Equipment fetchEquipmentByName(String name) throws Exception {

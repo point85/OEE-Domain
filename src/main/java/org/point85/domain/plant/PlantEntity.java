@@ -21,6 +21,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import org.point85.domain.dto.EntityScheduleDto;
+import org.point85.domain.dto.PlantEntityDto;
 import org.point85.domain.persistence.EntityLevelConverter;
 import org.point85.domain.schedule.WorkSchedule;
 
@@ -71,6 +73,19 @@ public class PlantEntity extends NamedObject {
 	public PlantEntity(String name, String description, EntityLevel nodeLevel) {
 		super(name, description);
 		this.level = nodeLevel;
+	}
+
+	public PlantEntity(PlantEntityDto dto) throws Exception {
+		super(dto.getName(), dto.getDescription());
+
+		this.retentionDuration = dto.getRetentionDuration() != null ? Duration.ofSeconds(dto.getRetentionDuration())
+				: null;
+
+		for (EntityScheduleDto scheduleDto : dto.getEntitySchedules()) {
+			EntitySchedule schedule = new EntitySchedule(scheduleDto);
+			schedule.setPlantEntity(this);
+			entitySchedules.add(schedule);
+		}
 	}
 
 	public PlantEntity getParent() {

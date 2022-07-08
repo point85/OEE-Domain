@@ -6,14 +6,16 @@ import java.util.List;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+import org.point85.domain.dto.WorkCellDto;
+
 @Entity
 @DiscriminatorValue(WorkCell.CELL_VALUE)
 public class WorkCell extends PlantEntity {
 	public static final String CELL_VALUE = "WC";
-	
+
 	public static final String DEFAULT_NAME = "Work Cell";
 	public static final String DEFAULT_DESC = "Default work cell";
-	
+
 	public WorkCell() {
 		super();
 		setLevel(EntityLevel.WORK_CELL);
@@ -21,6 +23,11 @@ public class WorkCell extends PlantEntity {
 
 	public WorkCell(String name, String description) {
 		super(name, description, EntityLevel.WORK_CELL);
+	}
+
+	public WorkCell(WorkCellDto dto) throws Exception {
+		super(dto);
+		setLevel(EntityLevel.WORK_CELL);
 	}
 
 	public List<Equipment> getEquipment() {

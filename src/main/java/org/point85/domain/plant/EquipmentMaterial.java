@@ -9,6 +9,9 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import org.point85.domain.dto.EquipmentMaterialDto;
+import org.point85.domain.i18n.DomainLocalizer;
+import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.UnitOfMeasure;
 
@@ -20,11 +23,11 @@ public class EquipmentMaterial extends KeyedObject {
 
 	// OEE target
 	@Column(name = "OEE_TARGET")
-	private double oeeTarget;
+	private Double oeeTarget;
 
 	// ideal run rate
 	@Column(name = "RUN_AMOUNT")
-	private double runRateAmount;
+	private Double runRateAmount;
 
 	@OneToOne
 	@JoinColumn(name = "RUN_UOM_KEY")
@@ -54,11 +57,44 @@ public class EquipmentMaterial extends KeyedObject {
 		this.material = material;
 	}
 
-	public double getOeeTarget() {
+	public EquipmentMaterial(EquipmentMaterialDto dto) throws Exception {
+		this.isDefault = dto.getIsDefault();
+		this.oeeTarget = dto.getOeeTarget();
+		this.runRateAmount = dto.getRunRateAmount();
+
+		if (dto.getRejectUOM() != null) {
+			UnitOfMeasure uom = PersistenceService.instance().fetchUomBySymbol(dto.getRejectUOM());
+
+			if (uom == null) {
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.uom", dto.getRejectUOM()));
+			}
+			this.rejectUOM = uom;
+		}
+
+		if (dto.getRunRateUOM() != null) {
+			UnitOfMeasure uom = PersistenceService.instance().fetchUomBySymbol(dto.getRunRateUOM());
+
+			if (uom == null) {
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.uom", dto.getRunRateUOM()));
+			}
+			this.runRateUOM = uom;
+		}
+
+		if (dto.getMaterial() != null) {
+			Material dtoMaterial = PersistenceService.instance().fetchMaterialByName(dto.getMaterial());
+
+			if (dtoMaterial == null) {
+				throw new Exception(DomainLocalizer.instance().getErrorString("no.material", dto.getMaterial()));
+			}
+			this.material = dtoMaterial;
+		}
+	}
+
+	public Double getOeeTarget() {
 		return oeeTarget;
 	}
 
-	public void setOeeTarget(double oeeTarget) {
+	public void setOeeTarget(Double oeeTarget) {
 		this.oeeTarget = oeeTarget;
 	}
 
@@ -66,7 +102,7 @@ public class EquipmentMaterial extends KeyedObject {
 		return new Quantity(runRateAmount, runRateUOM);
 	}
 
-	public double getRunRateAmount() {
+	public Double getRunRateAmount() {
 		return runRateAmount;
 	}
 
@@ -79,7 +115,7 @@ public class EquipmentMaterial extends KeyedObject {
 		this.runRateUOM = runRate.getUOM();
 	}
 
-	public void setRunRateAmount(double amount) {
+	public void setRunRateAmount(Double amount) {
 		this.runRateAmount = amount;
 	}
 
