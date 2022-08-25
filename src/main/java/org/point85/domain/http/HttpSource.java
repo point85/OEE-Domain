@@ -18,6 +18,14 @@ public class HttpSource extends CollectorDataSource {
 	@Column(name = "END_PATH")
 	private String httpsPort;
 
+	// overloaded for client id
+	@Column(name = "MSG_MODE")
+	private String clientId;
+
+	// overloaded for client secret
+	@Column(name = "KEYSTORE")
+	private String clientSecret;
+
 	public HttpSource() {
 		super();
 		setDataSourceType(DataSourceType.HTTP);
@@ -31,6 +39,9 @@ public class HttpSource extends CollectorDataSource {
 	public HttpSource(HttpSourceDto dto) {
 		super(dto);
 		setHttpsPort(dto.getHttpsPort());
+
+		setClientId(dto.getClientId());
+		setClientSecret(dto.getClientSecret());
 	}
 
 	@Override
@@ -55,6 +66,22 @@ public class HttpSource extends CollectorDataSource {
 	// use endpoint path column
 	public void setHttpsPort(Integer port) {
 		httpsPort = (port != null) ? String.valueOf(port) : null;
+	}
+
+	public String getClientId() {
+		return this.clientId;
+	}
+
+	public void setClientId(String clientId) {
+		this.clientId = clientId;
+	}
+
+	public String getClientSecret() {
+		return this.clientSecret;
+	}
+
+	public void setClientSecret(String clientSecret) {
+		this.clientSecret = clientSecret;
 	}
 
 	@Override

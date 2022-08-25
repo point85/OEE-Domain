@@ -90,6 +90,9 @@ public class OeeContext {
 	// hash map of objects exposed to scripting
 	private final ConcurrentMap<String, Object> contextMap;
 
+	// user properties map
+	private ConcurrentMap<Object, Object> propertyMap = new ConcurrentHashMap<>();
+
 	public OeeContext() {
 		contextMap = new ConcurrentHashMap<>();
 
@@ -974,6 +977,26 @@ public class OeeContext {
 		if (getHttpServers().contains(server)) {
 			getHttpServers().remove(server);
 		}
+	}
+
+	/**
+	 * Set the property value associated with this key
+	 * 
+	 * @param key   Key
+	 * @param value Value
+	 */
+	public void setProperty(Object key, Object value) {
+		this.propertyMap.put(key, value);
+	}
+
+	/**
+	 * Get the property value for this key
+	 * 
+	 * @param key Key
+	 * @return Value
+	 */
+	public Object getProperty(Object key) {
+		return this.propertyMap.get(key);
 	}
 
 	@Override

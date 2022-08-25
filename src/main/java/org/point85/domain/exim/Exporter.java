@@ -116,6 +116,7 @@ public class Exporter extends BaseExportImport {
 	 * @param clazz Class to backup
 	 * @param file  File to write to
 	 * @throws Exception Exception
+	 * @return {@link ExportContent} 
 	 */
 	public synchronized ExportContent backup(Class<?> clazz, File file) throws Exception {
 		if (clazz.equals(Material.class)) {

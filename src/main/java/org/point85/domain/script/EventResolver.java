@@ -97,7 +97,7 @@ public class EventResolver extends KeyedObject {
 
 			if (dbSource == null) {
 				throw new Exception(
-						DomainLocalizer.instance().getErrorString("no.collector.source ", dto.getDataSource()));
+						DomainLocalizer.instance().getErrorString("no.collector.source", dto.getDataSource()));
 			}
 			this.dataSource = dbSource;
 		}

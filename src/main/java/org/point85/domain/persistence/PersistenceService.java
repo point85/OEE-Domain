@@ -2059,11 +2059,11 @@ public final class PersistenceService {
 		query.setParameter("sourceId", sourceId);
 
 		if (from != null) {
-			query.setParameter("from", from);
+			query.setParameter("from", from.toLocalDateTime());
 		}
 
 		if (to != null) {
-			query.setParameter("to", to);
+			query.setParameter("to", to.toLocalDateTime());
 		}
 
 		List<OeeEvent> events = query.getResultList();
