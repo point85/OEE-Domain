@@ -54,6 +54,7 @@ import org.point85.domain.plant.Site;
 import org.point85.domain.plant.WorkCell;
 import org.point85.domain.proficy.ProficySource;
 import org.point85.domain.rmq.RmqSource;
+import org.point85.domain.schedule.Break;
 import org.point85.domain.schedule.ExceptionPeriod;
 import org.point85.domain.schedule.Rotation;
 import org.point85.domain.schedule.RotationSegment;
@@ -1649,9 +1650,9 @@ public final class PersistenceService {
 				OpcDaSource.class, OpcUaSource.class, Area.class, Enterprise.class, Equipment.class,
 				EquipmentMaterial.class, Material.class, PlantEntity.class, ProductionLine.class, Reason.class,
 				Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class, ExceptionPeriod.class,
-				Rotation.class, RotationSegment.class, Shift.class, Team.class, WorkSchedule.class, ModbusSource.class,
-				EntitySchedule.class, CronEventSource.class, KafkaSource.class, EmailSource.class, ProficySource.class,
-				WebSocketSource.class };
+				Rotation.class, RotationSegment.class, Shift.class, Break.class, Team.class, WorkSchedule.class,
+				ModbusSource.class, EntitySchedule.class, CronEventSource.class, KafkaSource.class, EmailSource.class,
+				ProficySource.class, WebSocketSource.class };
 	}
 
 	private Class<?>[] getDatabaseEventEntityClasses() {

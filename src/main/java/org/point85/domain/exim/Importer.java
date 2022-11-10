@@ -115,8 +115,8 @@ public class Importer extends BaseExportImport {
 
 		String json = DomainUtils.gunzip(bytes);
 
-		if (logger.isInfoEnabled()) {
-			logger.info(json);
+		if (logger.isTraceEnabled()) {
+			logger.trace(json);
 		}
 
 		ExportContent content = gson.fromJson(json, ExportContent.class);

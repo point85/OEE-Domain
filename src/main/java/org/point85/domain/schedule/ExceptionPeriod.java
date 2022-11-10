@@ -89,7 +89,7 @@ public class ExceptionPeriod extends Named implements Comparable<ExceptionPeriod
 
 	public ExceptionPeriod(ExceptionPeriodDto dto) {
 		super(dto.getName(), dto.getDescription());
-		
+
 		this.startDateTime = DomainUtils.localDateTimeFromString(dto.getStartDateTime(),
 				DomainUtils.LOCAL_DATE_TIME_8601);
 		this.duration = Duration.ofSeconds(dto.getDuration());
@@ -187,11 +187,15 @@ public class ExceptionPeriod extends Named implements Comparable<ExceptionPeriod
 	public boolean isInPeriod(LocalDate day) throws Exception {
 		boolean isInPeriod = false;
 
-		LocalDate periodStart = getStartDateTime().toLocalDate();
-		LocalDate periodEnd = getEndDateTime().toLocalDate();
+		Duration span = Duration.between(getStartDateTime(), getEndDateTime());
 
-		if (day.compareTo(periodStart) >= 0 && day.compareTo(periodEnd) <= 0) {
-			isInPeriod = true;
+		if (span.compareTo(Duration.ofHours(24l)) >= 0) {
+			LocalDate periodStart = getStartDateTime().toLocalDate();
+			LocalDate periodEnd = getEndDateTime().toLocalDate();
+
+			if (day.compareTo(periodStart) >= 0 && day.compareTo(periodEnd) <= 0) {
+				isInPeriod = true;
+			}
 		}
 
 		return isInPeriod;
@@ -216,6 +220,15 @@ public class ExceptionPeriod extends Named implements Comparable<ExceptionPeriod
 	@Override
 	public int hashCode() {
 		return Objects.hash(getName(), getWorkSchedule());
+	}
+
+	/**
+	 * Check to see if this is a working period designated as a no loss category
+	 * 
+	 * @return True if a working period, else false
+	 */
+	public boolean isWorkingPeriod() {
+		return timeLoss.equals(TimeLoss.NO_LOSS);
 	}
 
 	/**

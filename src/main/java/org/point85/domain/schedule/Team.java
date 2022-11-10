@@ -81,7 +81,7 @@ public class Team extends Named implements Comparable<Team> {
 		this.rotation = rotation;
 		this.rotationStart = rotationStart;
 	}
-	
+
 	public Team(TeamDto dto) {
 		super(dto.getName(), dto.getDescription());
 		this.rotation = new Rotation(dto.getRotation(), null);

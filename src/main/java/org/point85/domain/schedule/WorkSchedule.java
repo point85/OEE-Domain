@@ -42,6 +42,7 @@ import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import org.point85.domain.dto.BreakDto;
 import org.point85.domain.dto.ExceptionPeriodDto;
 import org.point85.domain.dto.RotationDto;
 import org.point85.domain.dto.ShiftDto;
@@ -115,6 +116,15 @@ public class WorkSchedule extends NamedObject {
 
 			getShifts().add(shift);
 			shift.setWorkSchedule(this);
+
+			// breaks
+			if (shiftDto.getBreaks() != null) {
+				for (BreakDto breakDto : shiftDto.getBreaks()) {
+					Break period = new Break(breakDto);
+					period.setShift(shift);
+					shift.addBreak(period);
+				}
+			}
 		}
 
 		// exception periods
@@ -175,7 +185,7 @@ public class WorkSchedule extends NamedObject {
 		List<ExceptionPeriod> periods = new ArrayList<>();
 
 		for (ExceptionPeriod period : exceptionPeriods) {
-			if (!period.getLossCategory().equals(TimeLoss.NO_LOSS)) {
+			if (!period.isWorkingPeriod()) {
 				periods.add(period);
 			}
 		}
@@ -191,7 +201,7 @@ public class WorkSchedule extends NamedObject {
 		List<ExceptionPeriod> periods = new ArrayList<>();
 
 		for (ExceptionPeriod period : exceptionPeriods) {
-			if (period.getLossCategory().equals(TimeLoss.NO_LOSS)) {
+			if (period.isWorkingPeriod()) {
 				periods.add(period);
 			}
 		}
@@ -387,6 +397,9 @@ public class WorkSchedule extends NamedObject {
 			}
 		}
 
+		// remove breaks
+		shift.getBreaks().clear();
+
 		shifts.remove(shift);
 	}
 
@@ -462,11 +475,11 @@ public class WorkSchedule extends NamedObject {
 			sum = sum.plus(team.calculateWorkingTime(from, to));
 		}
 
-		// remove the non-working time
+		// remove the non-working time from exception periods, e.g. holidays
 		Duration nonWorking = calculateNonWorkingTime(from, to);
 		sum = sum.minus(nonWorking);
 
-		// add overtime
+		// add overtime from exception periods
 		Duration overTime = calculateOvertime(from, to);
 		sum = sum.plus(overTime);
 

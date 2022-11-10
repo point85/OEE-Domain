@@ -194,7 +194,9 @@ public class MqttOeeClient extends BaseMessagingClient {
 	 * @throws Exception Exception
 	 */
 	public void disconnect() throws Exception {
-		mqttClient.unsubscribe(EVENT_TOPIC);
+		if (eventListener != null) {
+			mqttClient.unsubscribe(EVENT_TOPIC);
+		}
 		mqttClient.disconnect();
 		mqttClient.close(true);
 

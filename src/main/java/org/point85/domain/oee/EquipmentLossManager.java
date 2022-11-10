@@ -1,8 +1,13 @@
 package org.point85.domain.oee;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +21,10 @@ import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentMaterial;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
+import org.point85.domain.schedule.Break;
+import org.point85.domain.schedule.ExceptionPeriod;
+import org.point85.domain.schedule.Shift;
+import org.point85.domain.schedule.ShiftInstance;
 import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.uom.Quantity;
 import org.slf4j.Logger;
@@ -147,30 +156,193 @@ public final class EquipmentLossManager {
 			event.setLostTime(duration);
 		}
 
+		// find the work schedule
+		WorkSchedule schedule = equipment.findWorkSchedule();
+
+		// calculate the non-working time flagged as lost time
+		addExceptionPeriodLoss(equipmentLoss, schedule);
+
+		// calculate shift breaks flagged as lost time
+		addBreakLoss(equipmentLoss, schedule);
+
 		// compute reduced speed from the other losses
 		equipmentLoss.calculateReducedSpeedLoss();
+
+		if (logger.isTraceEnabled()) {
+			logger.trace(equipmentLoss.toString());
+		}
+	}
+
+	private static void addExceptionPeriodLoss(EquipmentLoss equipmentLoss, WorkSchedule schedule) throws Exception {
+		if (schedule == null) {
+			return;
+		}
 
 		// calculate the non-working time based on the time frame
 		OffsetDateTime odtStart = equipmentLoss.getStartDateTime();
 		OffsetDateTime odtEnd = equipmentLoss.getEndDateTime();
 
-		if (odtStart != null && odtEnd != null) {
-			Duration notScheduled = Duration.ZERO;
-			Duration extraNotScheduled = Duration.ZERO;
-
-			// from the work schedule
-			WorkSchedule schedule = equipment.findWorkSchedule();
-			if (schedule != null) {
-				notScheduled = schedule.calculateNonWorkingTime(odtStart.toLocalDateTime(), odtEnd.toLocalDateTime());
-
-				// add any additional time not scheduled
-				extraNotScheduled = equipmentLoss.getLoss(TimeLoss.NOT_SCHEDULED);
-			}
-			equipmentLoss.setLoss(TimeLoss.NOT_SCHEDULED, notScheduled.plus(extraNotScheduled));
+		if (odtStart == null || odtEnd == null) {
+			return;
 		}
 
-		if (logger.isTraceEnabled()) {
-			logger.trace(equipmentLoss.toString());
+		LocalDateTime from = odtStart.toLocalDateTime();
+		LocalDateTime to = odtEnd.toLocalDateTime();
+
+		final ZoneId ZONE_ID = ZoneId.of("Z");
+		long fromSeconds = from.atZone(ZONE_ID).toEpochSecond();
+		long toSeconds = to.atZone(ZONE_ID).toEpochSecond();
+
+		Map<TimeLoss, Duration> exceptionLossMap = new EnumMap<>(TimeLoss.class);
+
+		for (ExceptionPeriod period : schedule.getExceptionPeriods()) {
+			LocalDateTime start = period.getStartDateTime();
+			long startSeconds = start.atZone(ZONE_ID).toEpochSecond();
+
+			LocalDateTime end = period.getEndDateTime();
+			long endSeconds = end.atZone(ZONE_ID).toEpochSecond();
+
+			if (fromSeconds >= endSeconds) {
+				// look at next period
+				continue;
+			}
+
+			if (toSeconds <= startSeconds) {
+				// done with periods
+				break;
+			}
+
+			// found a period, check edge conditions
+			if (fromSeconds > startSeconds) {
+				startSeconds = fromSeconds;
+			}
+
+			if (toSeconds < endSeconds) {
+				endSeconds = toSeconds;
+			}
+
+			Duration periodDuration = Duration.ofSeconds(endSeconds - startSeconds);
+			TimeLoss periodLoss = period.getLossCategory();
+			Duration sum = exceptionLossMap.get(periodLoss);
+
+			if (sum == null) {
+				exceptionLossMap.put(periodLoss, periodDuration);
+			} else {
+				Duration total = sum.plus(periodDuration);
+				exceptionLossMap.put(periodLoss, total);
+			}
+
+			if (toSeconds <= endSeconds) {
+				break;
+			}
+		}
+
+		// add to equipment losses
+		for (Entry<TimeLoss, Duration> entry : exceptionLossMap.entrySet()) {
+			if (!entry.getKey().equals(TimeLoss.NO_LOSS)) {
+				Duration accumulated = equipmentLoss.getLoss(entry.getKey());
+				equipmentLoss.setLoss(entry.getKey(), entry.getValue().plus(accumulated));
+			}
+		}
+	}
+
+	private static void addBreakLoss(EquipmentLoss equipmentLoss, WorkSchedule schedule) throws Exception {
+		if (schedule == null) {
+			return;
+		}
+
+		// see if any breaks have loss time
+		boolean checkBreaks = false;
+
+		for (Shift shift : schedule.getShifts()) {
+			for (Break period : shift.getBreaks()) {
+				TimeLoss loss = period.getLossCategory();
+				if (loss != null && !loss.equals(TimeLoss.NO_LOSS)) {
+					checkBreaks = true;
+					break;
+				}
+			}
+
+			if (checkBreaks) {
+				break;
+			}
+		}
+
+		if (!checkBreaks) {
+			return;
+		}
+
+		OffsetDateTime odtStart = equipmentLoss.getStartDateTime();
+		OffsetDateTime odtEnd = equipmentLoss.getEndDateTime();
+
+		// get shift instances
+		LocalDate startDate = odtStart.toLocalDate();
+		LocalDate endDate = odtEnd.toLocalDate();
+
+		long days = endDate.toEpochDay() - startDate.toEpochDay() + 1;
+
+		LocalDate day = startDate;
+
+		Map<TimeLoss, Duration> breakLossMap = new EnumMap<>(TimeLoss.class);
+
+		// check each day in the period
+		for (long i = 0; i < days; i++) {
+			List<ShiftInstance> instances = schedule.getShiftInstancesForDay(day);
+
+			for (ShiftInstance instance : instances) {
+				List<Break> breaks = instance.getShift().getBreaks();
+
+				for (Break period : breaks) {
+					// check loss category
+					if (period.getLossCategory() == null || (period.getLossCategory() != null
+							&& period.getLossCategory().equals(TimeLoss.NO_LOSS))) {
+						continue;
+					}
+
+					// only include contained breaks
+					if (i == 0) {
+						if (period.getStart().isBefore(odtStart.toLocalTime())) {
+							if (logger.isWarnEnabled()) {
+								logger.warn(DomainLocalizer.instance().getErrorString("break.start.before",
+										period.getStart(), odtStart.toLocalTime()));
+							}
+							continue;
+						}
+					}
+
+					if (i == (days - 1)) {
+						LocalTime endTime = odtEnd.toLocalTime();
+						if (!endTime.equals(LocalTime.MIDNIGHT) && endTime.isBefore(period.getEnd())) {
+							if (logger.isWarnEnabled()) {
+								logger.warn(DomainLocalizer.instance().getErrorString("break.end.after",
+										period.getEnd(), odtEnd.toLocalTime()));
+							}
+							continue;
+						}
+					}
+
+					// add to total
+					Duration breakDuration = period.getDuration();
+					TimeLoss breakLoss = period.getLossCategory();
+					Duration sum = breakLossMap.get(breakLoss);
+
+					if (sum == null) {
+						sum = Duration.ZERO;
+					}
+
+					if (breakLoss != null) {
+						Duration total = sum.plus(breakDuration);
+						breakLossMap.put(breakLoss, total);
+					}
+				} /// end each break
+			} // end each shift
+			day = day.plusDays(1);
+		} // end day-by-day
+
+		// add to equipment losses
+		for (Entry<TimeLoss, Duration> entry : breakLossMap.entrySet()) {
+			Duration accumulated = equipmentLoss.getLoss(entry.getKey());
+			equipmentLoss.setLoss(entry.getKey(), entry.getValue().plus(accumulated));
 		}
 	}
 

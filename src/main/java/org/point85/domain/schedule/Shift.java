@@ -31,12 +31,13 @@ import java.util.List;
 import java.util.Objects;
 
 import javax.persistence.AttributeOverride;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 
 import org.point85.domain.dto.ShiftDto;
 import org.point85.domain.i18n.DomainLocalizer;
@@ -57,7 +58,7 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 	private WorkSchedule workSchedule;
 
 	// breaks
-	@Transient
+	@OneToMany(mappedBy = "shift", cascade = CascadeType.ALL, orphanRemoval = true)
 	private final List<Break> breaks = new ArrayList<>();
 
 	/**
@@ -121,8 +122,26 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 	 */
 	public Break createBreak(String name, String description, LocalTime startTime, Duration duration) throws Exception {
 		Break period = new Break(name, description, startTime, duration);
-		addBreak(period);
+
+		if (breaks.contains(period)) {
+			throw new Exception(DomainLocalizer.instance().getErrorString("break.already.exists", name));
+		}
+
+		breaks.add(period);
+		period.setShift(this);
+
 		return period;
+	}
+
+	/**
+	 * Remove this break from the shift
+	 * 
+	 * @param period {@link Break}
+	 */
+	public void deleteBreak(Break period) {
+		if (breaks.contains(period)) {
+			breaks.remove(period);
+		}
 	}
 
 	private int toRoundedSecond(LocalTime time) {

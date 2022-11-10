@@ -101,8 +101,8 @@ public class Exporter extends BaseExportImport {
 		// backup content
 		String json = gson.toJson(content);
 
-		if (logger.isInfoEnabled()) {
-			logger.info(json);
+		if (logger.isTraceEnabled()) {
+			logger.trace(json);
 		}
 
 		DomainUtils.gzip(json, file.getCanonicalPath());

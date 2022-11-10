@@ -50,6 +50,14 @@ public enum TimeLoss {
 		return losses;
 	}
 
+	public static List<TimeLoss> getBreakLosses() {
+		List<TimeLoss> losses = new ArrayList<>(3);
+		losses.add(NOT_SCHEDULED);
+		losses.add(UNSCHEDULED);
+		losses.add(PLANNED_DOWNTIME);
+		return losses;
+	}
+
 	public static TimeLoss getNoLoss() {
 		return NO_LOSS;
 	}

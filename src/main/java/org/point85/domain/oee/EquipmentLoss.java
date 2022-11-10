@@ -15,6 +15,7 @@ import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentMaterial;
 import org.point85.domain.plant.Material;
 import org.point85.domain.plant.Reason;
+import org.point85.domain.schedule.WorkSchedule;
 import org.point85.domain.uom.Quantity;
 import org.point85.domain.uom.Unit;
 import org.point85.domain.uom.UnitOfMeasure;
@@ -31,6 +32,9 @@ public class EquipmentLoss {
 
 	// date and time accumulation ends
 	private OffsetDateTime endDateTime;
+
+	// accumulated working time
+	private Duration totalWorkingTime;
 
 	// map of losses
 	private final EnumMap<TimeLoss, Duration> lossMap = new EnumMap<>(TimeLoss.class);
@@ -88,6 +92,7 @@ public class EquipmentLoss {
 		material = null;
 		startDateTime = null;
 		endDateTime = null;
+		totalWorkingTime = null;
 
 		goodQuantity = null;
 		startupQuantity = null;
@@ -125,11 +130,23 @@ public class EquipmentLoss {
 	}
 
 	public Duration getDuration() {
-		if (startDateTime == null || endDateTime == null) {
-			return Duration.ZERO;
-		} else {
-			return Duration.between(startDateTime, endDateTime);
+		if (totalWorkingTime == null && startDateTime != null && endDateTime != null) {
+			// get the work schedule working time
+			WorkSchedule currentSchedule = equipment.findWorkSchedule();
+
+			if (currentSchedule != null) {
+				try {
+					totalWorkingTime = currentSchedule.calculateWorkingTime(startDateTime.toLocalDateTime(),
+							endDateTime.toLocalDateTime());
+				} catch (Exception e) {
+					// caller must enter valid starting and ending dates
+				}
+			} else {
+				// assume all time is working time
+				totalWorkingTime = Duration.between(startDateTime, endDateTime);
+			}
 		}
+		return totalWorkingTime;
 	}
 
 	public Duration getLoss(TimeLoss category) {
@@ -226,7 +243,7 @@ public class EquipmentLoss {
 		Quantity convertedTime = availableTime.convert(timeUnit);
 
 		Quantity denominator = convertedTime.multiply(designSpeed);
-		
+
 		// High level OEE in percent
 		double hloee = goodQuantity.divide(denominator).getAmount() * 100.0d;
 		return (float) hloee;
@@ -352,7 +369,7 @@ public class EquipmentLoss {
 		StringBuilder sb = new StringBuilder();
 
 		if (startDateTime != null && endDateTime != null) {
-			sb.append("\nFrom: ").append(startDateTime.toString()).append("To: ").append(endDateTime.toString())
+			sb.append("\nFrom: ").append(startDateTime.toString()).append(" To: ").append(endDateTime.toString())
 					.append(", Duration: ").append(getDuration().toString());
 		}
 
