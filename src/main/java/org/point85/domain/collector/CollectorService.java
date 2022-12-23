@@ -1747,14 +1747,8 @@ public class CollectorService
 			days = Equipment.DEFAULT_RETENTION_PERIOD;
 		}
 
-		OffsetDateTime cutoff = OffsetDateTime.now().minusDays(days.toDays());
-
-		if (logger.isInfoEnabled()) {
-			logger.info("Purging records for equipment " + equipment.getName() + " older than " + cutoff);
-		}
-
 		// purge database tables
-		PersistenceService.instance().purge(equipment, cutoff);
+		PersistenceService.instance().purge(equipment, days);
 	}
 
 	private OeeEvent saveOeeEvent(OeeEvent event) throws Exception {
@@ -1796,9 +1790,7 @@ public class CollectorService
 		List<KeyedObject> savedRecords = PersistenceService.instance().save(records);
 
 		// purge old data
-		if (!type.isProduction()) {
-			purgeRecords(event);
-		}
+		purgeRecords(event);
 
 		return (OeeEvent) savedRecords.get(0);
 	}

@@ -1,5 +1,6 @@
 package org.point85.domain.persistence;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -108,6 +109,10 @@ public final class PersistenceService {
 	private String jdbcUserName;
 	private String jdbcPassword;
 
+	// purging interval
+	private static final Duration PURGE_WAIT = Duration.ofHours(1);
+	private OffsetDateTime lastPurgeEvent = null;
+
 	private PersistenceService() {
 		namedQueryMap = new ConcurrentHashMap<>();
 	}
@@ -172,8 +177,7 @@ public final class PersistenceService {
 				// Restore interrupted state
 				Thread.currentThread().interrupt();
 			} catch (Exception e) {
-				getLogger()
-						.error("Unable to create an EntityManagerFactory after " + EMF_CREATION_TO_SEC + " seconds.");
+				getLogger().error(DomainLocalizer.instance().getErrorString("emf.failure", EMF_CREATION_TO_SEC));
 
 				if (e.getMessage() != null) {
 					getLogger().error(e.getMessage());
@@ -1870,10 +1874,36 @@ public final class PersistenceService {
 		return event;
 	}
 
-	public int purge(Equipment equipment, OffsetDateTime cutoff) throws Exception {
+	/**
+	 * Delete old OEE event records
+	 * 
+	 * @param equipment {@link Equipment}
+	 * @param retention Duration in days to retain OEE events
+	 * @return count of deleted records
+	 * @throws Exception Exception
+	 */
+	public int purge(Equipment equipment, Duration retention) throws Exception {
+		OffsetDateTime odtNow = OffsetDateTime.now();
+
+		if (lastPurgeEvent == null) {
+			lastPurgeEvent = odtNow;
+		}
+
+		if (Duration.between(lastPurgeEvent, odtNow).compareTo(PURGE_WAIT) < 0) {
+			// too soon to purge
+			return 0;
+		}
+
+		// get the cutoff date and time
+		OffsetDateTime cutoff = odtNow.minusDays(retention.toDays());
+
+		if (getLogger().isInfoEnabled()) {
+			getLogger().info(DomainLocalizer.instance().getLangString("purge.equipment", equipment.getName(), cutoff));
+		}
+
 		EntityManager em = getEntityManager();
 
-		// preserve active setup records
+		// delete availability and production records
 		final String PURGE_OEE = "Oee.Purge";
 
 		if (namedQueryMap.get(PURGE_OEE) == null) {
@@ -1907,13 +1937,17 @@ public final class PersistenceService {
 			txn.begin();
 
 			// execute the deletions
-			int deletedCount = purgeOee.executeUpdate();
-			purgeMaterial.executeUpdate();
+			int deletedEvents = purgeOee.executeUpdate();
+			int deletedSetups = purgeMaterial.executeUpdate();
 
 			// commit transaction
 			txn.commit();
 
-			return deletedCount;
+			if (getLogger().isInfoEnabled()) {
+				getLogger().info(DomainLocalizer.instance().getLangString("purge.event", deletedEvents, deletedSetups));
+			}
+
+			return deletedEvents;
 		} catch (Exception e) {
 			// roll back transaction
 			if (txn != null && txn.isActive()) {

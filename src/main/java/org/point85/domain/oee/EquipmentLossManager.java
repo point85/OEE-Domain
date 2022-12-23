@@ -112,6 +112,9 @@ public final class EquipmentLossManager {
 
 		for (int i = 0; i < events.size(); i++) {
 			OeeEvent event = events.get(i);
+			
+			// first gather MTBF & MTTR data
+			equipmentLoss.collectMeanData(event);
 
 			// skip no loss records
 			if (event.getReason() != null) {

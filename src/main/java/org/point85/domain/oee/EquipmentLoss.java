@@ -53,6 +53,14 @@ public class EquipmentLoss {
 	// history
 	private List<OeeEvent> eventRecords = new ArrayList<>();
 
+	// MTBF
+	private OeeEvent lastFailure;
+	private List<Duration> failures = new ArrayList<>();
+
+	// MTTR
+	private OeeEvent lastRepair;
+	private List<Duration> repairs = new ArrayList<>();
+
 	public EquipmentLoss(Equipment equipment) {
 		this.equipment = equipment;
 		resetLosses();
@@ -99,6 +107,12 @@ public class EquipmentLoss {
 		rejectQuantity = null;
 
 		designSpeed = null;
+
+		lastFailure = null;
+		failures.clear();
+
+		lastRepair = null;
+		repairs.clear();
 	}
 
 	public List<ParetoItem> getLossItems(Unit timeUnit) throws Exception {
@@ -530,5 +544,138 @@ public class EquipmentLoss {
 			eqm = equipment.getEquipmentMaterial(material);
 		}
 		return eqm;
+	}
+
+	public OeeEvent getLastFailure() {
+		return lastFailure;
+	}
+
+	public void setLastFailure(OeeEvent lastFailure) {
+		this.lastFailure = lastFailure;
+	}
+
+	public OeeEvent getLastRepair() {
+		return lastRepair;
+	}
+
+	public void setLastRepair(OeeEvent lastRepair) {
+		this.lastRepair = lastRepair;
+	}
+
+	public void addMTBF(Duration duration) {
+		this.failures.add(duration);
+	}
+
+	public List<Duration> getFailures() {
+		return failures;
+	}
+
+	public void addMTTR(Duration duration) {
+		this.repairs.add(duration);
+	}
+
+	public List<Duration> getRepairs() {
+		return this.repairs;
+	}
+
+	/**
+	 * Compute the Mean Time Between Failures (MTBF) based on previously collected
+	 * failure data. A failure is an unplanned downtime event.
+	 * 
+	 * @return average duration of a failure.
+	 */
+	public Duration calculateMTBF() {
+		// skip summary records
+		Duration duration = Duration.ZERO;
+
+		for (Duration failure : failures) {
+			duration = duration.plus(failure);
+		}
+
+		if (!failures.isEmpty()) {
+			float totalSeconds = duration.getSeconds();
+			float count = failures.size();
+			duration = Duration.ofSeconds(Math.round(totalSeconds / count));
+		}
+		return duration;
+	}
+
+	/**
+	 * Compute the Mean Time To Repair (MTTR) based on previously collected repair
+	 * data. A repair duration is the time between a failure and the next
+	 * non-failure availability event.
+	 * 
+	 * @return average duration of a repair
+	 */
+	public Duration calculateMTTR() {
+		Duration duration = Duration.ZERO;
+
+		for (Duration repair : repairs) {
+			duration = duration.plus(repair);
+		}
+
+		if (!repairs.isEmpty()) {
+			float totalSeconds = duration.getSeconds();
+			float count = repairs.size();
+			duration = Duration.ofSeconds(Math.round(totalSeconds / count));
+		}
+		return duration;
+	}
+
+	// failure event is defined as the end time minus start time period equal to the
+	// duration
+	private boolean isFailureEvent(OeeEvent event) {
+		boolean isEvent = false;
+		OffsetDateTime eventStartTime = event.getStartTime();
+		OffsetDateTime eventEndTime = event.getEndTime();
+
+		if (eventEndTime != null) {
+			Duration periodDuration = Duration.between(eventStartTime, eventEndTime);
+			if (periodDuration.compareTo(event.getDuration()) == 0) {
+				isEvent = true;
+			}
+		}
+
+		return isEvent;
+	}
+
+	/**
+	 * Accumulate duration of failure and repair events to use in the mean
+	 * calculations. Summary data is excluded.
+	 * 
+	 * @param event {@link OeeEvent}
+	 */
+	public void collectMeanData(OeeEvent event) {
+		// save data for MTBF and MTTR, must not be summarized data
+		TimeLoss lossCategory = event.getReason().getLossCategory();
+		OffsetDateTime eventStartTime = event.getStartTime();
+		OeeEvent failure = getLastFailure();
+
+		if (lossCategory.equals(TimeLoss.UNPLANNED_DOWNTIME)) {
+			// check last failure
+			if (failure != null && isFailureEvent(failure)) {
+				// another failure, look for events only - no summaries
+				if (isFailureEvent(event)) {
+					OffsetDateTime lastTime = failure.getStartTime();
+					Duration duration = Duration.between(lastTime, eventStartTime);
+					addMTBF(duration);
+				}
+			}
+			setLastFailure(event);
+			setLastRepair(null);
+		} else {
+			// check for a repair after a failure, look for events only - no summaries
+			if (lossCategory.equals(TimeLoss.NO_LOSS) || lossCategory.equals(TimeLoss.SETUP)
+					|| lossCategory.equals(TimeLoss.PLANNED_DOWNTIME)) {
+				// repair event
+				if (failure != null && isFailureEvent(failure) && getLastRepair() == null) {
+					// calculate repair time
+					OffsetDateTime lastTime = failure.getStartTime();
+					Duration duration = Duration.between(lastTime, eventStartTime);
+					addMTTR(duration);
+				}
+			}
+			setLastRepair(event);
+		}
 	}
 }
