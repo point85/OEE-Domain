@@ -54,6 +54,9 @@ public class JmsClient extends BaseMessagingClient {
 
 	// listener to call back when a message is received
 	private JmsMessageListener eventListener;
+	
+	// for correlation ID
+	private Random random = new Random(System.currentTimeMillis());
 
 	public void registerListener(JmsMessageListener listener) {
 		this.eventListener = listener;
@@ -292,7 +295,6 @@ public class JmsClient extends BaseMessagingClient {
 	}
 
 	private String createCorrelationId() {
-		Random random = new Random(System.currentTimeMillis());
 		return Long.toHexString(random.nextLong());
 	}
 

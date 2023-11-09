@@ -2174,6 +2174,11 @@ public class CollectorService
 				Object dataValue = UaOpcClient.getJavaObject(uaValue.getValue());
 				String sourceId = item.getReadValueId().getNodeId().toParseableString();
 				DateTime dt = uaValue.getServerTime();
+
+				if (dt == null) {
+					dt = DateTime.now();
+				}
+
 				OffsetDateTime startTimestamp = DomainUtils.localTimeFromDateTime(dt);
 
 				if (logger.isInfoEnabled()) {

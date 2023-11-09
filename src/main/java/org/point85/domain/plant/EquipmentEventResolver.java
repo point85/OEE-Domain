@@ -233,7 +233,10 @@ public class EquipmentEventResolver {
 
 		// fill in resolution
 		OeeEvent event = new OeeEvent(equipment, sourceValue, result);
-		event.setCollector(collector.getName());
+		
+		if (collector != null) {
+			event.setCollector(collector.getName());
+		}
 
 		// specific processing
 		if (result != null) {

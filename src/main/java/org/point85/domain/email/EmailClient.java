@@ -173,7 +173,7 @@ public class EmailClient extends BaseMessagingClient {
 			}
 
 			Object content = message.getContent();
-			String json = null;
+			String json = "";
 
 			if (content instanceof MimeMultipart) {
 				MimeMultipart mime = (MimeMultipart) content;

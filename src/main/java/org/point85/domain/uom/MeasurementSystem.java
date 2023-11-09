@@ -1100,7 +1100,9 @@ public class MeasurementSystem {
 			uom = createScalarUOM(UnitType.PRESSURE, Unit.IN_HG, DomainLocalizer.instance().getUnitString("inhg.name"),
 					DomainLocalizer.instance().getUnitString("inhg.symbol"),
 					DomainLocalizer.instance().getUnitString("inhg.desc"));
-			uom.setConversion(0.4911531047, getUOM(Unit.PSI));
+			UnitOfMeasure u1 = createProductUOM(getUOM(Unit.FOOT), getUOM(Unit.SQUARE_SECOND));
+			UnitOfMeasure u2 = createQuotientUOM(getUOM(Unit.POUND_MASS), u1);
+			uom.setConversion(2275.520677, u2);
 			break;
 
 		case SQUARE_INCH:

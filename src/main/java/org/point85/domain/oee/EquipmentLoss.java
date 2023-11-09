@@ -646,6 +646,10 @@ public class EquipmentLoss {
 	 * @param event {@link OeeEvent}
 	 */
 	public void collectMeanData(OeeEvent event) {
+		if (event.getReason() == null) {
+			return;
+		}
+		
 		// save data for MTBF and MTTR, must not be summarized data
 		TimeLoss lossCategory = event.getReason().getLossCategory();
 		OffsetDateTime eventStartTime = event.getStartTime();

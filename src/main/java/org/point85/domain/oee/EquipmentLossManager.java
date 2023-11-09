@@ -366,6 +366,10 @@ public final class EquipmentLossManager {
 
 	public static void buildLoss(EquipmentLoss equipmentLoss, String materialId, OffsetDateTime odtStart,
 			OffsetDateTime odtEnd) throws Exception {
+		
+		if (odtStart == null || odtEnd == null) {
+			return;
+		}
 
 		Map<String, Material> materialMap = new HashMap<>();
 

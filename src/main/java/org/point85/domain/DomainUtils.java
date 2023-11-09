@@ -48,8 +48,8 @@ public final class DomainUtils {
 	}
 
 	public static String getVersionInfo() {
-		return DomainLocalizer.instance().getLangString("version") + " 3.9.1, "
-				+ LocalDate.of(2022, 12, 24).format(DateTimeFormatter.ISO_DATE);
+		return DomainLocalizer.instance().getLangString("version") + " 3.9.2, "
+				+ LocalDate.of(2023, 11, 10).format(DateTimeFormatter.ISO_DATE);
 	}
 
 	// format a Duration
@@ -218,7 +218,7 @@ public final class DomainUtils {
 
 	public static int getJVMVersion() {
 		int version = 8;
-		String[] tokens = System.getProperty("java.version").split(".");
+		String[] tokens = System.getProperty("java.version").split("\\.");
 
 		if (!tokens[0].equals("1")) {
 			version = Integer.parseInt(tokens[0]);

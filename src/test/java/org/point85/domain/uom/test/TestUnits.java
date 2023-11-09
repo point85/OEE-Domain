@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 
 import org.junit.Test;
 import org.point85.domain.uom.Constant;
+import org.point85.domain.uom.MeasurementSystem;
 import org.point85.domain.uom.MeasurementType;
 import org.point85.domain.uom.Prefix;
 import org.point85.domain.uom.Quantity;
@@ -1816,5 +1817,63 @@ public class TestUnits extends BaseTest {
 
 		sf = minsq.getConversionFactor(p2);
 		assertTrue(sf == 1d);
+	}
+	
+	@Test
+	public void testConversions5() throws Exception {
+		MeasurementSystem sys = MeasurementSystem.instance();
+		UnitOfMeasure inHg = sys.getUOM(Unit.IN_HG);
+		UnitOfMeasure hr = sys.getUOM(Unit.HOUR);
+		UnitOfMeasure ft2 = sys.getUOM(Unit.SQUARE_FOOT);
+		UnitOfMeasure s = sys.getUOM(Unit.SECOND);
+		UnitOfMeasure day = sys.getUOM(Unit.DAY);
+		UnitOfMeasure msq = sys.getUOM(Unit.SQUARE_METRE);
+		UnitOfMeasure Pa = sys.getUOM(Unit.PASCAL);
+		UnitOfMeasure ng = sys.getUOM(Prefix.NANO, Unit.GRAM);
+		UnitOfMeasure g = sys.getUOM(Unit.GRAM);
+		UnitOfMeasure grain = sys.getUOM(Unit.GRAIN);
+
+		// mm of Mercury pressure
+		UnitOfMeasure mmHg = sys.createScalarUOM(UnitType.PRESSURE, "mmHg", "mmHg", "mmHg");
+		mmHg.setConversion(133.3223684d, Pa);
+
+		// US perm
+		UnitOfMeasure us1 = sys.createQuotientUOM(grain, inHg);
+		UnitOfMeasure us2 = sys.createQuotientUOM(us1, ft2);
+		UnitOfMeasure perm = sys.createQuotientUOM(us2, hr);
+		perm.setName("perm");
+		perm.setSymbol("perm");
+		perm.setDescription("gn/hr/ft2/inHg");
+	
+		// metric perm
+		UnitOfMeasure m1 = sys.createQuotientUOM(g, day);
+		UnitOfMeasure m2 = sys.createQuotientUOM(m1, msq);
+		UnitOfMeasure mperm = sys.createQuotientUOM(m2, mmHg);
+		mperm.setName("mperm");
+		mperm.setSymbol("mperm");
+		mperm.setDescription("g/day/m2/mmHg");
+		
+		// Equivalent SI unit
+		UnitOfMeasure si1 = sys.createQuotientUOM(ng, s);
+		UnitOfMeasure si2 = sys.createQuotientUOM(si1, msq);
+		UnitOfMeasure eqSI = sys.createQuotientUOM(si2, Pa);
+
+		// US perm to equivalent SI
+		double f = perm.getConversionFactor(eqSI);
+		assertTrue(isCloseTo(f, 57.214184d, DELTA6));
+		f = eqSI.getConversionFactor(perm);
+		assertTrue(isCloseTo(f, 0.0174781d, DELTA6));	
+		
+		// metric perm to US perm
+		f = perm.getConversionFactor(mperm);
+		assertTrue(isCloseTo(f, 0.659053d, DELTA6));
+		f = mperm.getConversionFactor(perm);
+		assertTrue(isCloseTo(f, 1.517328d, DELTA6));		
+		
+		// metric perm to equivalent SI
+		f = mperm.getConversionFactor(eqSI);
+		assertTrue(isCloseTo(f, 86.812694d, DELTA6));
+		f = eqSI.getConversionFactor(mperm);
+		assertTrue(isCloseTo(f, 0.0115190d, DELTA6));		
 	}
 }

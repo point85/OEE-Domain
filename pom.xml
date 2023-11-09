@@ -4,7 +4,7 @@
 
   <groupId>org.point85</groupId>
   <artifactId>oee-domain</artifactId>
-  <version>3.9.1</version>
+  <version>3.9.2</version>
   <packaging>jar</packaging>
   <url>http://maven.apache.org</url>
 
@@ -12,22 +12,21 @@
   	<maven.compiler.source>11</maven.compiler.source>
 	<maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jetty.version>10.0.11</jetty.version>
-    <jackson.version>2.13.4.2</jackson.version>
+    <jetty.version>9.4.53.v20231009</jetty.version>
+    <jackson.version>2.15.3</jackson.version>
 	
 	<!-- if true, do not run any unit tests -->
 	<maven.test.skip>true</maven.test.skip>
   </properties>
 
-  <dependencies>
-  
-<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
+  <dependencies>  
+<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on -->
 <dependency>
     <groupId>org.bouncycastle</groupId>
-    <artifactId>bcprov-jdk15on</artifactId>
-    <version>1.69</version>
-</dependency>  
-
+    <artifactId>bcprov-jdk18on</artifactId>
+    <version>1.76</version>
+</dependency> 
+ 
 <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
 <dependency>
     <groupId>com.google.code.gson</groupId>
@@ -36,33 +35,41 @@
 </dependency>
 
 <!--  OPC DA -->
+<!-- https://mvnrepository.com/artifact/org.openscada.external/org.openscada.external.jcifs -->
+<dependency>
+    <groupId>org.openscada</groupId>
+    <artifactId>opcda.jcifs</artifactId>
+    <version>1.2.25</version>
+</dependency>
+
+
 <!--  https://github.com/IOT-DSA/dslink-java-opc -->
 <!--  https://mvnrepository.com/artifact/org.openscada.jinterop/org.openscada.jinterop.deps -->
 <!-- https://github.com/ctron/org.openscada.utgard/tree/1.0/org.openscada.opc.lib.test/src/org/openscada/opc/lib -->
 <dependency>
-    <groupId>org.openscada.jinterop</groupId>
-    <artifactId>org.openscada.jinterop.deps</artifactId>
+    <groupId>org.openscada</groupId>
+    <artifactId>opcda.deps</artifactId>
     <version>1.5.0</version> 
 </dependency>
 
 <!-- https://mvnrepository.com/artifact/org.openscada.jinterop/org.openscada.jinterop.core -->
 <dependency>
-    <groupId>org.openscada.jinterop</groupId>
-    <artifactId>org.openscada.jinterop.core</artifactId>
+    <groupId>org.openscada</groupId>
+    <artifactId>opcda.core</artifactId>
     <version>2.1.8</version>
 </dependency>
 
 <!-- https://mvnrepository.com/artifact/org.openscada.utgard/org.openscada.opc.dcom -->
 <dependency>
-    <groupId>org.openscada.utgard</groupId>
-    <artifactId>org.openscada.opc.dcom</artifactId>
+    <groupId>org.openscada</groupId>
+    <artifactId>opcda.dcom</artifactId>
     <version>1.5.0</version>   
 </dependency>
 
 <!-- https://mvnrepository.com/artifact/org.openscada.utgard/org.openscada.opc.lib -->
 <dependency>
-    <groupId>org.openscada.utgard</groupId>
-    <artifactId>org.openscada.opc.lib</artifactId>
+    <groupId>org.openscada</groupId>
+    <artifactId>opcda.lib</artifactId>
     <version>1.5.0</version>   
 </dependency>
      
@@ -71,7 +78,7 @@
 <dependency>
     <groupId>org.eclipse.milo</groupId>
     <artifactId>sdk-client</artifactId>
-    <version>0.6.8</version>
+    <version>0.6.11</version>
 </dependency>
 
 <!-- HIBERNATE JPA -->
@@ -103,7 +110,7 @@
 <dependency>
     <groupId>com.rabbitmq</groupId>
     <artifactId>amqp-client</artifactId>
-    <version>5.16.0</version>
+    <version>5.19.0</version>
 </dependency>
 
 <!-- ACTIVEMQ -->
@@ -111,7 +118,7 @@
 <dependency>
     <groupId>org.apache.activemq</groupId>
     <artifactId>activemq-client</artifactId>
-    <version>5.17.2</version>
+    <version>5.18.2</version>
 </dependency>
 
 <!-- MQTT -->
@@ -127,7 +134,7 @@
 <dependency>
     <groupId>com.ghgande</groupId>
     <artifactId>j2mod</artifactId>
-    <version>3.1.1</version>
+    <version>3.2.0</version>
 </dependency>
 
 <!-- junit for testing.  See: http://junit.org/junit4/ -->
@@ -174,7 +181,7 @@
 <dependency>
     <groupId>org.apache.kafka</groupId>
     <artifactId>kafka-clients</artifactId>
-    <version>3.3.1</version>
+    <version>3.6.0</version>
 </dependency>
 
 <dependency>
@@ -201,10 +208,10 @@
 <dependency>
     <groupId>org.java-websocket</groupId>
     <artifactId>Java-WebSocket</artifactId>
-    <version>1.5.3</version>
+    <version>1.5.4</version>
 </dependency>
 
-</dependencies>
+  </dependencies>
   
   <!-- copy dependent jars -->
     <build>
@@ -212,7 +219,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
+        <version>3.11.0</version>
         <configuration>
           <executable>${JAVA_HOME}/bin/javac</executable>
           <source>11</source>
@@ -223,6 +230,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.2.0</version>
         <executions>
           <execution>
             <id>copy-dependencies</id>
@@ -241,5 +249,4 @@
       </plugin> 
     </plugins>
   </build>
-  
 </project>
