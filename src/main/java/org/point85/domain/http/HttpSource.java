@@ -43,6 +43,10 @@ public class HttpSource extends CollectorDataSource {
 		setClientId(dto.getClientId());
 		setClientSecret(dto.getClientSecret());
 	}
+	
+	public HttpSource(String host, Integer port) {
+		super(host, port);
+	}
 
 	@Override
 	public String getId() {

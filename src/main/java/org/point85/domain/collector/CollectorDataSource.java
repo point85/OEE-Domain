@@ -61,6 +61,11 @@ public abstract class CollectorDataSource extends NamedObject {
 		sourceType = dto.getSourceType() != null ? DataSourceType.valueOf(dto.getSourceType()) : null;
 	}
 
+	protected CollectorDataSource(String host, Integer port) {
+		this.host = host;
+		this.port = port;
+	}
+
 	public abstract String getId();
 
 	public abstract void setId(String id);

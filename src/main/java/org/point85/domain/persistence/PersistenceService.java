@@ -258,7 +258,7 @@ public final class PersistenceService {
 
 		if (namedQueryMap.get(EQUIPMENT_SOURCE_IDS) == null) {
 			createNamedQuery(EQUIPMENT_SOURCE_IDS,
-					"SELECT er.sourceId FROM EventResolver er JOIN er.equipment eq JOIN er.dataSource ds WHERE eq.name = :name AND ds.sourceType = :type");
+					"SELECT er.sourceId FROM EventResolver er JOIN er.entity ent JOIN er.dataSource ds WHERE ent.name = :name AND ds.sourceType = :type");
 		}
 
 		EntityManager em = getEntityManager();
@@ -2010,6 +2010,21 @@ public final class PersistenceService {
 		em.close();
 
 		return result;
+	}
+	
+	/**
+	 * Execute the native SQL query
+	 * @param sql SQL select statement
+	 * @return List of Object[], one per row
+	 * @throws Exception Exception
+	 */
+	@SuppressWarnings("unchecked")
+	public List<Object[]> executeNativeQuery(String sql) throws Exception {
+		EntityManager em = getEntityManager();
+		List<Object[]> rowList = em.createNativeQuery(sql).getResultList();
+		em.close();
+
+		return rowList;
 	}
 
 	/**

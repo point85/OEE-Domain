@@ -15,9 +15,7 @@ import javax.persistence.Transient;
 
 import org.point85.domain.dto.EquipmentDto;
 import org.point85.domain.dto.EquipmentMaterialDto;
-import org.point85.domain.dto.EventResolverDto;
 import org.point85.domain.i18n.DomainLocalizer;
-import org.point85.domain.script.EventResolver;
 import org.point85.domain.script.OeeEventType;
 import org.point85.domain.uom.UnitOfMeasure;
 
@@ -38,10 +36,6 @@ public class Equipment extends PlantEntity {
 	@OneToMany(mappedBy = "equipment", cascade = CascadeType.ALL, orphanRemoval = true)
 	private Set<EquipmentMaterial> equipmentMaterials = new HashSet<>();
 
-	// reason resolvers
-	@OneToMany(mappedBy = "equipment", cascade = CascadeType.ALL, orphanRemoval = true)
-	private Set<EventResolver> eventResolvers = new HashSet<>();
-
 	public Equipment() {
 		super();
 		setLevel(EntityLevel.EQUIPMENT);
@@ -60,13 +54,6 @@ public class Equipment extends PlantEntity {
 			equipmentMaterial.setEquipment(this);
 
 			equipmentMaterials.add(equipmentMaterial);
-		}
-
-		for (EventResolverDto resolverDto : dto.getEventResolvers()) {
-			EventResolver resolver = new EventResolver(resolverDto);
-			resolver.setEquipment(this);
-
-			eventResolvers.add(resolver);
 		}
 	}
 
@@ -139,32 +126,6 @@ public class Equipment extends PlantEntity {
 		this.equipmentMaterials = materials;
 		this.populateMap();
 
-	}
-
-	public Set<EventResolver> getScriptResolvers() {
-		return eventResolvers;
-	}
-
-	public void setScriptResolvers(Set<EventResolver> resolvers) {
-		this.eventResolvers = resolvers;
-	}
-
-	public void addScriptResolver(EventResolver resolver) {
-		if (!eventResolvers.contains(resolver)) {
-			eventResolvers.add(resolver);
-			resolver.setEquipment(this);
-		}
-	}
-
-	public void removeScriptResolver(EventResolver resolver) {
-		if (eventResolvers.contains(resolver)) {
-			eventResolvers.remove(resolver);
-			resolver.setEquipment(null);
-		}
-	}
-
-	public boolean hasResolver(EventResolver resolver) {
-		return eventResolvers.contains(resolver);
 	}
 
 	public boolean hasEquipmentMaterial(EquipmentMaterial equipmentMaterial) {

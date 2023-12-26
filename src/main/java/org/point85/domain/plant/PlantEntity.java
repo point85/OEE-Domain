@@ -22,9 +22,11 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.point85.domain.dto.EntityScheduleDto;
+import org.point85.domain.dto.EventResolverDto;
 import org.point85.domain.dto.PlantEntityDto;
 import org.point85.domain.persistence.EntityLevelConverter;
 import org.point85.domain.schedule.WorkSchedule;
+import org.point85.domain.script.EventResolver;
 
 /**
  * The PlantEntity class is an object in the S95 hierarchy (Enterprise, Site,
@@ -66,6 +68,10 @@ public class PlantEntity extends NamedObject {
 	@Column(name = "RETENTION")
 	private Duration retentionDuration;
 
+	// reason resolvers
+	@OneToMany(mappedBy = "entity", cascade = CascadeType.ALL, orphanRemoval = true)
+	private Set<EventResolver> eventResolvers = new HashSet<>();
+
 	public PlantEntity() {
 		super();
 	}
@@ -85,6 +91,15 @@ public class PlantEntity extends NamedObject {
 			EntitySchedule schedule = new EntitySchedule(scheduleDto);
 			schedule.setPlantEntity(this);
 			entitySchedules.add(schedule);
+		}
+
+		if (dto.getEventResolvers() != null) {
+			for (EventResolverDto resolverDto : dto.getEventResolvers()) {
+				EventResolver resolver = new EventResolver(resolverDto);
+				resolver.setPlantEntity(this);
+
+				eventResolvers.add(resolver);
+			}
 		}
 	}
 
@@ -193,5 +208,31 @@ public class PlantEntity extends NamedObject {
 	public String toString() {
 		String parentName = parent != null ? parent.getName() : "none";
 		return super.toString() + ", Level: " + getLevel() + ", Parent: " + parentName;
+	}
+
+	public Set<EventResolver> getScriptResolvers() {
+		return eventResolvers;
+	}
+
+	public void setScriptResolvers(Set<EventResolver> resolvers) {
+		this.eventResolvers = resolvers;
+	}
+
+	public void addScriptResolver(EventResolver resolver) {
+		if (!eventResolvers.contains(resolver)) {
+			eventResolvers.add(resolver);
+			resolver.setPlantEntity(this);
+		}
+	}
+
+	public void removeScriptResolver(EventResolver resolver) {
+		if (eventResolvers.contains(resolver)) {
+			eventResolvers.remove(resolver);
+			resolver.setPlantEntity(null);
+		}
+	}
+
+	public boolean hasResolver(EventResolver resolver) {
+		return eventResolvers.contains(resolver);
 	}
 }

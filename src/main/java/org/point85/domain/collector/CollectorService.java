@@ -2197,6 +2197,11 @@ public class CollectorService
 	}
 
 	public synchronized void recordResolution(OeeEvent resolvedEvent) throws Exception {
+		// only for equipment
+		if (resolvedEvent.getEquipment() == null) {
+			return;
+		}
+		
 		if (resolvedEvent.getOffsetEndTime() != null && resolvedEvent.getDuration() != null) {
 			Duration delta = Duration.between(resolvedEvent.getStartTime(), resolvedEvent.getEndTime());
 

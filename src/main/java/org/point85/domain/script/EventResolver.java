@@ -22,6 +22,7 @@ import org.point85.domain.persistence.EventTypeConverter;
 import org.point85.domain.persistence.PersistenceService;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.KeyedObject;
+import org.point85.domain.plant.PlantEntity;
 
 @Entity
 @Table(name = "EVENT_RESOLVER")
@@ -35,7 +36,7 @@ public class EventResolver extends KeyedObject {
 	// owning plant entity
 	@ManyToOne
 	@JoinColumn(name = "ENT_KEY")
-	private Equipment equipment;
+	private PlantEntity entity;
 
 	@OneToOne
 	@JoinColumn(name = "SOURCE_KEY")
@@ -134,11 +135,15 @@ public class EventResolver extends KeyedObject {
 	}
 
 	public Equipment getEquipment() {
-		return equipment;
+		return (entity instanceof Equipment) ? (Equipment)entity : null;
+	}
+	
+	public PlantEntity getPlantEntity() {
+		return entity;
 	}
 
-	public void setEquipment(Equipment owner) {
-		this.equipment = owner;
+	public void setPlantEntity(PlantEntity owner) {
+		this.entity = owner;
 	}
 
 	/**

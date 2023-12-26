@@ -37,7 +37,7 @@ public class EquipmentEventResolver {
 	private final ConcurrentMap<String, Material> materialCache = new ConcurrentHashMap<>();
 
 	// resolvers by source id
-	private final ConcurrentMap<Equipment, List<EventResolver>> resolverCache = new ConcurrentHashMap<>();
+	private final ConcurrentMap<PlantEntity, List<EventResolver>> resolverCache = new ConcurrentHashMap<>();
 
 	// engine to evaluate java script
 	private final ScriptEngine scriptEngine;
@@ -63,13 +63,13 @@ public class EquipmentEventResolver {
 
 			for (EventResolver resolver : resolvers) {
 
-				Equipment equipment = resolver.getEquipment();
+				PlantEntity entity = resolver.getPlantEntity();
 
-				List<EventResolver> equipmentResolvers = resolverCache.get(equipment);
+				List<EventResolver> equipmentResolvers = resolverCache.get(entity);
 
 				if (equipmentResolvers == null) {
 					equipmentResolvers = new ArrayList<>();
-					resolverCache.put(equipment, equipmentResolvers);
+					resolverCache.put(entity, equipmentResolvers);
 				}
 				equipmentResolvers.add(resolver);
 			}
@@ -111,18 +111,18 @@ public class EquipmentEventResolver {
 			OffsetDateTime dateTime) throws Exception {
 
 		String sourceId = eventResolver.getSourceId();
-		Equipment equipment = eventResolver.getEquipment();
 		OeeEventType resolverType = eventResolver.getType();
 		String script = eventResolver.getScript();
 		DataCollector collector = eventResolver.getCollector();
 
 		if (sourceValue == null) {
-			throw new Exception(
-					DomainLocalizer.instance().getErrorString("no.source.value", sourceId, equipment.getName()));
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.source.value", sourceId,
+					eventResolver.getPlantEntity().getName()));
 		}
 
 		if (script == null || script.length() == 0) {
-			throw new Exception(DomainLocalizer.instance().getErrorString("no.script", sourceId, equipment.getName()));
+			throw new Exception(DomainLocalizer.instance().getErrorString("no.script", sourceId,
+					eventResolver.getPlantEntity().getName()));
 		}
 
 		if (logger.isInfoEnabled()) {
@@ -134,22 +134,30 @@ public class EquipmentEventResolver {
 			logger.trace("for script \n" + script);
 		}
 
-		ResolverFunction resolverFunction = new ResolverFunction(script);
-
 		// result of script execution
+		ResolverFunction resolverFunction = new ResolverFunction(script);
 		Object result = resolverFunction.invoke(getScriptEngine(), context, sourceValue, eventResolver);
-
-		// set last value
-		eventResolver.setLastValue(sourceValue);
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Result: " + result);
+		}
+
+		// save last value
+		if (resolverType.isProduction()) {
+			// last value is the output
+			eventResolver.setLastValue(result);
+		} else {
+			// last value is the input
+			eventResolver.setLastValue(sourceValue);
 		}
 
 		// a null result means to ignore the script execution
 		if (result == null) {
 			return null;
 		}
+
+		// fill in resolution
+		OeeEvent event = new OeeEvent(eventResolver.getEquipment(), sourceValue, result);
 
 		// an event time could have been set in the resolver
 		OffsetDateTime eventTime = dateTime;
@@ -160,14 +168,68 @@ public class EquipmentEventResolver {
 		if (eventTime == null) {
 			eventTime = OffsetDateTime.now();
 		}
+		event.setStartTime(eventTime);
 
-		// save last value
-		if (resolverType.isProduction()) {
-			eventResolver.setLastValue(result);
+		if (collector != null) {
+			event.setCollector(collector.getName());
 		}
 
+		// resolver type
+		event.setEventType(resolverType);
+
+		// source id
+		event.setSourceId(sourceId);
+
+		// set shift and team
+		setShift(event, eventResolver, eventTime);
+
+		// set material
+		setMaterial(event, eventResolver, context, sourceValue, result);
+
+		// set job
+		setJob(event, eventResolver, context, result);
+
+		// specific processing
+		if (result != null) {
+			switch (resolverType) {
+			case AVAILABILITY: {
+				processReason(event);
+				break;
+			}
+			case JOB_CHANGE: {
+				processJob(event);
+				break;
+			}
+			case MATL_CHANGE: {
+				processMaterial(event);
+				break;
+			}
+
+			case PROD_GOOD:
+			case PROD_REJECT:
+			case PROD_STARTUP: {
+				// the script could have set a reason name (e.g. for reject production)
+				String reasonName = eventResolver.getReason();
+				processProduction(event, resolverType, context, reasonName);
+				break;
+			}
+
+			case CUSTOM:
+			default:
+				break;
+			}
+		}
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Resolved event. " + event.toString());
+		}
+
+		return event;
+	}
+
+	private void setShift(OeeEvent event, EventResolver eventResolver, OffsetDateTime eventTime) throws Exception {
 		// set shift
-		WorkSchedule schedule = equipment.findWorkSchedule();
+		WorkSchedule schedule = eventResolver.getPlantEntity().findWorkSchedule();
 		Shift shift = null;
 		Team team = null;
 
@@ -180,9 +242,19 @@ public class EquipmentEventResolver {
 				team = shiftInstances.get(0).getTeam();
 			}
 		}
+		event.setShift(shift);
+		event.setTeam(team);
+	}
 
-		// set material
+	private void setMaterial(OeeEvent event, EventResolver eventResolver, OeeContext context, Object sourceValue,
+			Object result) throws Exception {
 		Material material = null;
+		Equipment equipment = eventResolver.getEquipment();
+
+		if (equipment == null) {
+			return;
+		}
+
 		if (eventResolver.getType().equals(OeeEventType.MATL_CHANGE)) {
 			// set material from event
 			material = fetchMaterial((String) sourceValue);
@@ -216,76 +288,29 @@ public class EquipmentEventResolver {
 				}
 			}
 		}
-
-		// set job
-		String job = null;
-		if (eventResolver.getType().equals(OeeEventType.JOB_CHANGE)) {
-			// set job from event
-			job = (String) result;
-			context.setJob(equipment, job);
-		} else {
-			// set job from context
-			job = context.getJob(equipment);
-		}
-
-		// the script could have set a reason name (e.g. for reject production)
-		String reasonName = eventResolver.getReason();
-
-		// fill in resolution
-		OeeEvent event = new OeeEvent(equipment, sourceValue, result);
-		
-		if (collector != null) {
-			event.setCollector(collector.getName());
-		}
-
-		// specific processing
-		if (result != null) {
-			switch (resolverType) {
-			case AVAILABILITY: {
-				processReason(event);
-				break;
-			}
-			case JOB_CHANGE: {
-				processJob(event);
-				break;
-			}
-			case MATL_CHANGE: {
-				processMaterial(event);
-				break;
-			}
-
-			case PROD_GOOD:
-			case PROD_REJECT:
-			case PROD_STARTUP: {
-				processProduction(event, resolverType, material, context, reasonName);
-				break;
-			}
-
-			case CUSTOM:
-			default:
-				break;
-			}
-		}
-
-		// common attributes
 		event.setMaterial(material);
-		event.setJob(job);
-		event.setEventType(resolverType);
-		event.setSourceId(sourceId);
-		event.setStartTime(eventTime);
-		event.setShift(shift);
-		event.setTeam(team);
+	}
 
-		if (logger.isInfoEnabled()) {
-			logger.info("Resolved event. " + event.toString());
+	private void setJob(OeeEvent event, EventResolver eventResolver, OeeContext context, Object result) {
+		String job = null;
+		Equipment equipment = eventResolver.getEquipment();
+
+		if (equipment != null) {
+			if (eventResolver.getType().equals(OeeEventType.JOB_CHANGE)) {
+				// set job from event
+				job = (String) result;
+				context.setJob(equipment, job);
+			} else {
+				// set job from context
+				job = context.getJob(equipment);
+			}
 		}
-
-		return event;
+		event.setJob(job);
 	}
 
 	// production counts
-	private void processProduction(OeeEvent resolvedEvent, OeeEventType resolverType, Material material,
-			OeeContext context, String reasonName) throws Exception {
+	private void processProduction(OeeEvent resolvedEvent, OeeEventType resolverType, OeeContext context,
+			String reasonName) throws Exception {
 		Object outputValue = resolvedEvent.getOutputValue();
 		Double amount = null;
 
@@ -310,7 +335,7 @@ public class EquipmentEventResolver {
 		}
 
 		// get UOM from material and equipment
-		Material producedMaterial = material;
+		Material producedMaterial = resolvedEvent.getMaterial();
 
 		if (producedMaterial == null) {
 			EquipmentMaterial eqm = resolvedEvent.getEquipment().getDefaultEquipmentMaterial();
