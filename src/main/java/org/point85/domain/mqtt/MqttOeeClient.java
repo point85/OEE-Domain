@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.net.InetAddress;
 import java.security.KeyStore;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -42,6 +43,10 @@ public class MqttOeeClient extends BaseMessagingClient {
 	private static final String TCP_PROTOCOL = "tcp://";
 	private static final String SSL_PROTOCOL = "ssl://";
 
+	// polling loop for replies
+	private static final int NUM_TRIES = 20;
+	private static final int RETRY_WAIT = 500;
+
 	// native client
 	private MqttClient mqttClient;
 
@@ -51,20 +56,42 @@ public class MqttOeeClient extends BaseMessagingClient {
 	// connection options
 	private MqttConnectOptions connectionOptions = new MqttConnectOptions();
 
+	// flag for response from publishing a message is available
+	private AtomicBoolean dataAvailable = new AtomicBoolean(false);
+
+	// the text of the message response
+	private String messageResponse;
+
 	public MqttOeeClient() {
 		connectionOptions.setAutomaticReconnect(true);
 		connectionOptions.setCleanSession(CLEAN_SESSION);
 		connectionOptions.setConnectionTimeout(10);
 	}
 
+	/**
+	 * Register listener for replies
+	 * 
+	 * @param listener {@link MqttMessageListener}
+	 */
 	public void registerListener(MqttMessageListener listener) {
 		this.eventListener = listener;
 	}
 
+	/**
+	 * Remove the reply listener
+	 */
 	public void unregisterListener() {
 		this.eventListener = null;
 	}
 
+	/**
+	 * Initialize the client
+	 * 
+	 * @param hostName Broker name
+	 * @param port     Broker port
+	 * @param listener {@link MqttMessageListener}
+	 * @throws Exception Exception
+	 */
 	public void startUp(String hostName, int port, MqttMessageListener listener) throws Exception {
 		// connect to server
 		connect(hostName, port);
@@ -110,6 +137,12 @@ public class MqttOeeClient extends BaseMessagingClient {
 		}
 	}
 
+	/**
+	 * Subscribe to message replies
+	 * 
+	 * @param qos {@link QualityOfService}
+	 * @throws Exception Exception
+	 */
 	public void subscribeToEvents(QualityOfService qos) throws Exception {
 		mqttClient.subscribe(EVENT_TOPIC, (topic, msg) -> {
 			String json = new String(msg.getPayload());
@@ -140,6 +173,12 @@ public class MqttOeeClient extends BaseMessagingClient {
 		}
 	}
 
+	/**
+	 * Subscribe to notification messages
+	 * 
+	 * @param qos {@link QualityOfService}
+	 * @throws Exception Exception
+	 */
 	public void subscribeToNotifications(QualityOfService qos) throws Exception {
 		mqttClient.subscribe(STATUS_TOPIC, (topic, msg) -> {
 			String json = new String(msg.getPayload());
@@ -173,9 +212,21 @@ public class MqttOeeClient extends BaseMessagingClient {
 		}
 	}
 
+	/**
+	 * Publish an ApplicationMessage to the topic with the specified
+	 * QualityOfService
+	 * 
+	 * @param topic   Topic
+	 * @param message {@link ApplicationMessage}
+	 * @param qos     {@link QualityOfService}
+	 * @throws Exception Exception
+	 */
 	public void publish(String topic, ApplicationMessage message, QualityOfService qos) throws Exception {
 		String text = serialize(message);
+		publishMessage(topic, text, qos);
+	}
 
+	private void publishMessage(String topic, String text, QualityOfService qos) throws Exception {
 		MqttMessage mqttMessage = new MqttMessage();
 		mqttMessage.setQos(qos.getQos());
 		mqttMessage.setRetained(false);
@@ -185,6 +236,69 @@ public class MqttOeeClient extends BaseMessagingClient {
 
 		if (logger.isInfoEnabled()) {
 			logger.info("Message published to topic " + topic + ".  QoS: " + qos + "\n\t" + text);
+		}
+	}
+
+	/**
+	 * Publish a text message, then wait for a response message. A prior call to
+	 * subscribeToTopic() is required.
+	 * 
+	 * @param topic   Topic to publish to
+	 * @param text    Payload of message
+	 * @param qos     {@link QualityOfService}
+	 * @param maxWait Maximum time to wait in seconds
+	 * @return Payload of message response
+	 * @throws Exception Exception
+	 */
+	public String publishAndWait(String topic, String text, QualityOfService qos, int maxWait) throws Exception {
+		dataAvailable.set(false);
+		messageResponse = null;
+
+		// send the message
+		publishMessage(topic, text, qos);
+
+		// wait for response
+		long start = System.currentTimeMillis();
+
+		for (int i = 0; i < NUM_TRIES; i++) {
+			Thread.sleep(RETRY_WAIT);
+			long delta = (System.currentTimeMillis() - start) / 1000;
+
+			if (dataAvailable.get() || delta >= maxWait) {
+				// response has been received or timed out
+				break;
+			}
+		}
+
+		if (messageResponse == null || messageResponse.isEmpty()) {
+			logger.warn("No response to publishing the message was received within " + maxWait + " seconds.");
+		}
+		return messageResponse;
+	}
+
+	/**
+	 * Subscribe to this topic
+	 * 
+	 * @param topic Topic to subscribe to
+	 * @throws Exception Exception
+	 */
+	public void subscribeToTopic(String topic) throws Exception {
+		mqttClient.subscribe(topic, (theTopic, msg) -> {
+			messageResponse = new String(msg.getPayload());
+
+			if (messageResponse != null && !messageResponse.isEmpty()) {
+				dataAvailable.set(true);
+			} else {
+				dataAvailable.set(false);
+			}
+
+			if (logger.isInfoEnabled()) {
+				logger.info("MQTT message received, topic: " + theTopic + ", payload:\n\t" + messageResponse);
+			}
+		});
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Subscribed to topic " + topic);
 		}
 	}
 

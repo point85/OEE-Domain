@@ -71,6 +71,10 @@ public class Rotation extends Named implements Comparable<Rotation> {
 	@OneToMany(mappedBy = "rotation", cascade = CascadeType.ALL, orphanRemoval = true)
 	private final List<RotationSegment> rotationSegments = new ArrayList<>();
 
+	// teams
+	@OneToMany(mappedBy = "rotation", cascade = CascadeType.ALL, orphanRemoval = true)
+	private final List<Team> teams = new ArrayList<>();
+
 	// list of working and non-working days
 	@Transient
 	private List<TimePeriod> periods;
@@ -215,8 +219,22 @@ public class Rotation extends Named implements Comparable<Rotation> {
 		return workSchedule;
 	}
 
+	/**
+	 * Assign the work schedule to this rotation
+	 * 
+	 * @param workSchedule {@link WorkSchedule}
+	 */
 	public void setWorkSchedule(WorkSchedule workSchedule) {
 		this.workSchedule = workSchedule;
+	}
+
+	/**
+	 * Get the rotation's related teams
+	 * 
+	 * @return List of {@link Team}
+	 */
+	public List<Team> getTeams() {
+		return this.teams;
 	}
 
 	@Override

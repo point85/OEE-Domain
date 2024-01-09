@@ -27,12 +27,10 @@ package org.point85.domain.schedule;
 import java.util.Objects;
 
 import javax.persistence.AttributeOverride;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.point85.domain.dto.RotationSegmentDto;
@@ -61,7 +59,7 @@ public class RotationSegment extends KeyedObject implements Comparable<RotationS
 	private int sequence = 0;
 
 	// shift that starts this segment
-	@OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+	@ManyToOne
 	@JoinColumn(name = "SHIFT_KEY")
 	private Shift startingShift;
 

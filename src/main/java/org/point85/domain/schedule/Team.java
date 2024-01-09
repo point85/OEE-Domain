@@ -32,12 +32,10 @@ import java.time.LocalTime;
 import java.util.Objects;
 
 import javax.persistence.AttributeOverride;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.point85.domain.DomainUtils;
@@ -65,7 +63,7 @@ public class Team extends Named implements Comparable<Team> {
 	private LocalDate rotationStart;
 
 	// shift rotation days
-	@OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+	@ManyToOne
 	@JoinColumn(name = "ROTATION_KEY")
 	private Rotation rotation;
 

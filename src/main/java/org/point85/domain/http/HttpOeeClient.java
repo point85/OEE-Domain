@@ -20,6 +20,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
+/**
+ * Class for making HTTP GET and PUT requests
+ */
 public class HttpOeeClient {
 	// logger
 	private Logger logger = LoggerFactory.getLogger(HttpOeeClient.class);

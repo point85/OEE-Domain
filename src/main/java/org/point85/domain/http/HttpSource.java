@@ -10,9 +10,13 @@ import org.point85.domain.collector.CollectorDataSource;
 import org.point85.domain.collector.DataSourceType;
 import org.point85.domain.dto.HttpSourceDto;
 
+/**
+ * The HttpSource class represents an HTTP/HTTPS server as a source of
+ * application events.
+ *
+ */
 @Entity
 @DiscriminatorValue(DataSourceType.HTTP_VALUE)
-
 public class HttpSource extends CollectorDataSource {
 	// overloaded for HTTPS port
 	@Column(name = "END_PATH")

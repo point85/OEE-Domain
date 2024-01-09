@@ -61,6 +61,10 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 	@OneToMany(mappedBy = "shift", cascade = CascadeType.ALL, orphanRemoval = true)
 	private final List<Break> breaks = new ArrayList<>();
 
+	// shifts
+	@OneToMany(mappedBy = "startingShift", cascade = CascadeType.ALL, orphanRemoval = true)
+	private final List<RotationSegment> segments = new ArrayList<>();
+
 	/**
 	 * Default constructor
 	 */
@@ -86,6 +90,15 @@ public class Shift extends TimePeriod implements Comparable<Shift> {
 	 */
 	public List<Break> getBreaks() {
 		return this.breaks;
+	}
+
+	/**
+	 * Get the rotations segments for this shift
+	 * 
+	 * @return List {@link RotationSegment}
+	 */
+	public List<RotationSegment> getRotationSegments() {
+		return this.segments;
 	}
 
 	/**
