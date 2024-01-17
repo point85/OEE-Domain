@@ -2323,7 +2323,7 @@ public class CollectorService
 			}
 
 			// reason could have been set in the resolver script code
-			Reason eventReason = event.getReason();
+			Reason eventReason = resolvedEvent.getReason();
 			if (eventResolver.getReason() != null) {
 				eventReason = fetchReason(eventResolver.getReason());
 			}
