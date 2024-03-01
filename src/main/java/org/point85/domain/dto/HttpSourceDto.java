@@ -3,12 +3,15 @@ package org.point85.domain.dto;
 import org.point85.domain.http.HttpSource;
 
 public class HttpSourceDto extends CollectorDataSourceDto {
-
+	// HTTPS
 	private Integer httpsPort;
 
 	// OAuth 2.0
 	private String clientId;
 	private String clientSecret;
+
+	// external application flag
+	private Boolean standalone;
 
 	public HttpSourceDto(HttpSource source) {
 		super(source);
@@ -41,5 +44,13 @@ public class HttpSourceDto extends CollectorDataSourceDto {
 
 	public void setClientSecret(String clientSecret) {
 		this.clientSecret = clientSecret;
+	}
+
+	public Boolean isStandalone() {
+		return standalone;
+	}
+
+	public void setStandalone(Boolean externalApp) {
+		this.standalone = externalApp;
 	}
 }

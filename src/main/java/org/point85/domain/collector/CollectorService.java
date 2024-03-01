@@ -1040,6 +1040,29 @@ public class CollectorService
 					break;
 				}
 			}
+		} // end resolvers
+		
+		checkForStandaloneServers();
+	}
+	
+	private void checkForStandaloneServers() throws Exception {
+		// check for HTTP sources for external apps
+		List<CollectorDataSource> sources = PersistenceService.instance().fetchDataSources(DataSourceType.HTTP);
+
+		for (CollectorDataSource source : sources) {
+			HttpSource httpSource = (HttpSource) source;
+			if (httpSource.isStandalone()) {
+				if (!httpServerMap.containsKey(httpSource.getId())) {
+					if (logger.isInfoEnabled()) {
+						logger.info("Found standalone HTTP server specified for host " + httpSource.getHost() + " on HTTP port "
+								+ httpSource.getPort() + " and HTTPS port " + httpSource.getHttpsPort());
+					}
+
+					// server is not being used for a resolver, so add it
+					HttpServerSource serverSource = new HttpServerSource(httpSource);
+					httpServerMap.put(httpSource.getId(), serverSource);
+				}
+			}
 		}
 	}
 
@@ -2201,7 +2224,7 @@ public class CollectorService
 		if (resolvedEvent.getEquipment() == null) {
 			return;
 		}
-		
+
 		if (resolvedEvent.getOffsetEndTime() != null && resolvedEvent.getDuration() != null) {
 			Duration delta = Duration.between(resolvedEvent.getStartTime(), resolvedEvent.getEndTime());
 

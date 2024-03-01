@@ -30,6 +30,10 @@ public class HttpSource extends CollectorDataSource {
 	@Column(name = "KEYSTORE")
 	private String clientSecret;
 
+	// overloaded external app flag
+	@Column(name = "SEC_POLICY")
+	private String standaloneFlag;
+
 	public HttpSource() {
 		super();
 		setDataSourceType(DataSourceType.HTTP);
@@ -46,8 +50,10 @@ public class HttpSource extends CollectorDataSource {
 
 		setClientId(dto.getClientId());
 		setClientSecret(dto.getClientSecret());
+		
+		setStandalone(dto.isStandalone());
 	}
-	
+
 	public HttpSource(String host, Integer port) {
 		super(host, port);
 	}
@@ -103,5 +109,17 @@ public class HttpSource extends CollectorDataSource {
 	@Override
 	public int hashCode() {
 		return Objects.hash(getName(), getHost(), getHttpsPort());
+	}
+
+	public Boolean isStandalone() {		
+		return standaloneFlag != null ? Boolean.valueOf(standaloneFlag) : false;
+	}
+
+	public void setStandalone(Boolean flag) {
+		if (flag != null) {
+			standaloneFlag = flag.toString();
+		} else {
+			standaloneFlag = Boolean.FALSE.toString();
+		}
 	}
 }

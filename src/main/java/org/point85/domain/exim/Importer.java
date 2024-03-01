@@ -87,6 +87,13 @@ public class Importer extends BaseExportImport {
 		// Singleton
 	}
 
+	// objects in the database
+	private Map<String, PlantEntity> entityMap = new HashMap<>();
+	private Map<String, Reason> reasonMap = new HashMap<>();
+	private Map<String, Material> materialMap = new HashMap<>();
+	private Map<String, DataCollector> collectorMap = new HashMap<>();
+	private Map<String, WorkSchedule> scheduleMap = new HashMap<>();
+
 	/**
 	 * Obtain an instance of an Importer
 	 * 
@@ -152,16 +159,16 @@ public class Importer extends BaseExportImport {
 		// cache all materials
 		List<Material> dbMaterials = PersistenceService.instance().fetchAllMaterials();
 
-		Map<String, Material> dbMap = new HashMap<>();
+		materialMap.clear();
 		for (Material dbMaterial : dbMaterials) {
-			dbMap.put(dbMaterial.getName(), dbMaterial);
+			materialMap.put(dbMaterial.getName(), dbMaterial);
 		}
 
 		List<KeyedObject> toSaveMaterials = new ArrayList<>();
 
 		// iterate over each exported material, skip database one if there
 		for (MaterialDto dto : content.getMaterials()) {
-			Material material = dbMap.get(dto.getName());
+			Material material = materialMap.get(dto.getName());
 
 			if (material == null) {
 				material = new Material(dto);
@@ -178,10 +185,11 @@ public class Importer extends BaseExportImport {
 		}
 	}
 
-	private void addChildReasons(Reason parent, List<ReasonDto> childDtos, Map<String, Reason> dbMap) throws Exception {
+	private void addReasons(Reason parent, List<ReasonDto> childDtos, List<KeyedObject> toSaveReasons)
+			throws Exception {
 		// iterate over each child
 		for (ReasonDto childDto : childDtos) {
-			Reason childReason = dbMap.get(childDto.getName());
+			Reason childReason = reasonMap.get(childDto.getName());
 
 			if (childReason == null) {
 				// create reason
@@ -199,7 +207,7 @@ public class Importer extends BaseExportImport {
 			}
 
 			// recurse
-			addChildReasons(childReason, childDto.getChildren(), dbMap);
+			addReasons(childReason, childDto.getChildren(), toSaveReasons);
 		}
 	}
 
@@ -207,241 +215,353 @@ public class Importer extends BaseExportImport {
 		// cache all reasons
 		List<Reason> dbReasons = PersistenceService.instance().fetchAllReasons();
 
-		Map<String, Reason> dbMap = new HashMap<>();
+		reasonMap.clear();
 		for (Reason dbReason : dbReasons) {
-			dbMap.put(dbReason.getName(), dbReason);
+			reasonMap.put(dbReason.getName(), dbReason);
 		}
 
+		// reasons to be saved
 		List<KeyedObject> toSaveReasons = new ArrayList<>();
 
-		// top-level reasons
+		// imported reasons
 		for (ReasonDto dto : content.getReasons()) {
-
-			Reason parentReason = dbMap.get(dto.getName());
+			Reason parentReason = reasonMap.get(dto.getName());
 
 			if (parentReason == null) {
 				parentReason = new Reason(dto);
 				toSaveReasons.add(parentReason);
-
-				if (logger.isInfoEnabled()) {
-					logger.info("Imported reason: " + dto.getName());
-				}
 			}
 
 			// children
-			if (!dto.getChildren().isEmpty()) {
-				addChildReasons(parentReason, dto.getChildren(), dbMap);
+			addReasons(parentReason, dto.getChildren(), toSaveReasons);
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Imported reason: " + dto.getName());
 			}
 		}
 
-		PersistenceService.instance().save(toSaveReasons);
+		// save reasons
+		if (!toSaveReasons.isEmpty()) {
+			PersistenceService.instance().save(toSaveReasons);
+		}
 	}
 
 	private void restorePlantEntities(ExportContent content) throws Exception {
 		// cache all entities
 		List<PlantEntity> dbPlantEntities = PersistenceService.instance().fetchAllPlantEntities();
 
-		Map<String, PlantEntity> dbMap = new HashMap<>();
+		entityMap.clear();
 		for (PlantEntity dbPlantEntity : dbPlantEntities) {
-			dbMap.put(dbPlantEntity.getName(), dbPlantEntity);
+			entityMap.put(dbPlantEntity.getName(), dbPlantEntity);
 		}
 
 		List<KeyedObject> toSavePlantEntities = new ArrayList<>();
 
-		// top-level entities
-		for (EnterpriseDto dto : content.getEnterprises()) {
-			if (dbMap.get(dto.getName()) != null) {
-				continue;
+		// enterprises
+		for (EnterpriseDto enterpriseDto : content.getEnterprises()) {
+			boolean modified = false;
+
+			Enterprise enterprise = (Enterprise) entityMap.get(enterpriseDto.getName());
+
+			if (enterprise == null) {
+				// enterprise does not exist
+				enterprise = new Enterprise(enterpriseDto);
+				modified = true;
 			}
 
-			Enterprise entity = new Enterprise(dto);
-			addSites(entity, dto.getSites());
+			// add sites
+			modified = addSites(enterprise, enterpriseDto.getSites());
 
-			toSavePlantEntities.add(entity);
+			if (modified) {
+				toSavePlantEntities.add(enterprise);
+			}
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Imported enterprise: " + dto.getName());
+				logger.info("Imported enterprise: " + enterpriseDto.getName());
 			}
 		}
 
-		for (SiteDto dto : content.getSites()) {
-			if (dbMap.get(dto.getName()) != null) {
-				continue;
+		// sites
+		for (SiteDto siteDto : content.getSites()) {
+			boolean modified = false;
+
+			// get existing site
+			Site site = (Site) entityMap.get(siteDto.getName());
+
+			if (site == null) {
+				// site does not exist
+				site = new Site(siteDto);
+				modified = true;
 			}
 
-			Site entity = new Site(dto);
-			addAreas(entity, dto.getAreas());
+			// add areas
+			modified = addAreas(site, siteDto.getAreas());
 
-			toSavePlantEntities.add(entity);
+			if (modified) {
+				toSavePlantEntities.add(site);
+			}
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Imported site: " + dto.getName());
+				logger.info("Imported site: " + siteDto.getName());
 			}
 		}
 
-		for (AreaDto dto : content.getAreas()) {
-			if (dbMap.get(dto.getName()) != null) {
-				continue;
+		// areas
+		for (AreaDto areaDto : content.getAreas()) {
+			boolean modified = false;
+
+			// get existing area
+			Area area = (Area) entityMap.get(areaDto.getName());
+
+			if (area == null) {
+				// area does not exist
+				area = new Area(areaDto);
+				modified = true;
 			}
 
-			Area entity = new Area(dto);
-			addProductionLines(entity, dto.getProductionLines());
+			// add production lines
+			modified = addProductionLines(area, areaDto.getProductionLines());
 
-			toSavePlantEntities.add(entity);
+			if (modified) {
+				toSavePlantEntities.add(area);
+			}
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Imported area: " + dto.getName());
+				logger.info("Imported area: " + areaDto.getName());
 			}
 		}
 
-		for (ProductionLineDto dto : content.getProductionLines()) {
-			if (dbMap.get(dto.getName()) != null) {
-				continue;
+		// production lines
+		for (ProductionLineDto lineDto : content.getProductionLines()) {
+			boolean modified = false;
+
+			// get existing line
+			ProductionLine line = (ProductionLine) entityMap.get(lineDto.getName());
+
+			if (line == null) {
+				// production line does not exist
+				line = new ProductionLine(lineDto);
+				modified = true;
 			}
 
-			ProductionLine entity = new ProductionLine(dto);
-			addWorkCells(entity, dto.getWorkCells());
+			// add work cells
+			modified = addWorkCells(line, lineDto.getWorkCells());
 
-			toSavePlantEntities.add(entity);
+			// save production line
+			if (modified) {
+				toSavePlantEntities.add(line);
+			}
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Imported line: " + dto.getName());
+				logger.info("Imported line: " + lineDto.getName());
 			}
 		}
 
-		for (WorkCellDto dto : content.getWorkCells()) {
-			if (dbMap.get(dto.getName()) != null) {
-				continue;
+		// work cells
+		for (WorkCellDto cellDto : content.getWorkCells()) {
+			boolean modified = false;
+
+			// get existing work cell
+			WorkCell cell = (WorkCell) entityMap.get(cellDto.getName());
+
+			if (cell == null) {
+				// new work cell
+				cell = new WorkCell(cellDto);
+				modified = true;
 			}
 
-			WorkCell entity = new WorkCell(dto);
-			addEquipment(entity, dto.getEquipment());
+			// add equipment
+			modified = addEquipment(cell, cellDto.getEquipment());
 
-			toSavePlantEntities.add(entity);
+			// save work cell
+			if (modified) {
+				toSavePlantEntities.add(cell);
+			}
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Imported cell: " + dto.getName());
+				logger.info("Imported cell: " + cellDto.getName());
 			}
 		}
 
 		// equipment
-		for (EquipmentDto dto : content.getEquipment()) {
-			if (dbMap.get(dto.getName()) != null) {
-				continue;
+		for (EquipmentDto equipmentDto : content.getEquipment()) {
+			boolean modified = false;
+
+			// get existing equipment
+			Equipment equipment = (Equipment) entityMap.get(equipmentDto.getName());
+
+			if (equipment == null) {
+				// new equipment
+				equipment = new Equipment(equipmentDto);
+				modified = true;
 			}
 
-			Equipment entity = new Equipment(dto);
-
-			toSavePlantEntities.add(entity);
+			// save equipment
+			if (modified) {
+				toSavePlantEntities.add(equipment);
+			}
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Imported equipment: " + dto.getName());
+				logger.info("Imported equipment: " + equipmentDto.getName());
 			}
 		}
 
-		PersistenceService.instance().save(toSavePlantEntities);
-	}
-
-	public void addSites(Enterprise parent, List<SiteDto> childDtos) throws Exception {
-
-		for (SiteDto childDto : childDtos) {
-			// create entity
-			Site childPlantEntity = new Site(childDto);
-
-			// add child
-			parent.getChildren().add(childPlantEntity);
-
-			// set parent
-			childPlantEntity.setParent(parent);
-
-			if (logger.isInfoEnabled()) {
-				logger.info("Imported site: " + childDto.getName());
-			}
-
-			// recurse
-			addAreas(childPlantEntity, childDto.getAreas());
+		// save new entities
+		if (!toSavePlantEntities.isEmpty()) {
+			PersistenceService.instance().save(toSavePlantEntities);
 		}
 	}
 
-	public void addAreas(Site parent, List<AreaDto> childDtos) throws Exception {
+	public boolean addSites(Enterprise enterprise, List<SiteDto> siteDtos) throws Exception {
+		boolean modified = false;
 
-		for (AreaDto childDto : childDtos) {
-			// create entity
-			Area childPlantEntity = new Area(childDto);
+		for (SiteDto siteDto : siteDtos) {
+			Site site = null;
 
-			// add child
-			parent.getChildren().add(childPlantEntity);
+			// check for site already in database
+			if (entityMap.containsKey(siteDto.getName())) {
+				site = (Site) entityMap.get(siteDto.getName());
+			} else {
+				// create entity
+				site = new Site(siteDto);
 
-			// set parent
-			childPlantEntity.setParent(parent);
+				connectParentChild(enterprise, site);
 
-			if (logger.isInfoEnabled()) {
-				logger.info("Imported area: " + childDto.getName());
+				modified = true;
 			}
 
-			// recurse
-			addProductionLines(childPlantEntity, childDto.getProductionLines());
+			// add areas
+			modified = addAreas(site, siteDto.getAreas());
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Imported site: " + siteDto.getName());
+			}
 		}
+		return modified;
 	}
 
-	public void addProductionLines(Area parent, List<ProductionLineDto> childDtos) throws Exception {
+	public boolean addAreas(Site site, List<AreaDto> areaDtos) throws Exception {
+		boolean modified = false;
 
-		for (ProductionLineDto childDto : childDtos) {
-			// create entity
-			ProductionLine childPlantEntity = new ProductionLine(childDto);
+		// iterate over each area
+		for (AreaDto areaDto : areaDtos) {
+			Area area = null;
 
-			// add child
-			parent.getChildren().add(childPlantEntity);
+			// check for area already in database
+			if (entityMap.containsKey(areaDto.getName())) {
+				area = (Area) entityMap.get(areaDto.getName());
+			} else {
+				// create entity
+				area = new Area(areaDto);
 
-			// set parent
-			childPlantEntity.setParent(parent);
+				connectParentChild(site, area);
 
-			if (logger.isInfoEnabled()) {
-				logger.info("Imported line: " + childDto.getName());
+				modified = true;
 			}
 
-			// recurse
-			addWorkCells(childPlantEntity, childDto.getWorkCells());
+			// add lines
+			modified = addProductionLines(area, areaDto.getProductionLines());
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Imported area: " + areaDto.getName());
+			}
 		}
+		return modified;
 	}
 
-	public void addWorkCells(ProductionLine parent, List<WorkCellDto> childDtos) throws Exception {
-		// iterate over each child
-		for (WorkCellDto childDto : childDtos) {
-			// create entity
-			WorkCell childPlantEntity = new WorkCell(childDto);
+	public boolean addProductionLines(Area area, List<ProductionLineDto> lineDtos) throws Exception {
+		boolean modified = false;
 
-			// add child
-			parent.getChildren().add(childPlantEntity);
+		// iterate over each line
+		for (ProductionLineDto lineDto : lineDtos) {
+			ProductionLine line = null;
 
-			// set parent
-			childPlantEntity.setParent(parent);
+			// check for line already in database
+			if (entityMap.containsKey(lineDto.getName())) {
+				// already in DB
+				line = (ProductionLine) entityMap.get(lineDto.getName());
+			} else {
+				// create entity
+				line = new ProductionLine(lineDto);
 
-			if (logger.isInfoEnabled()) {
-				logger.info("Imported work cell: " + childDto.getName());
+				connectParentChild(area, line);
+
+				modified = true;
 			}
 
-			// recurse
-			addEquipment(childPlantEntity, childDto.getEquipment());
+			// add cells
+			modified = addWorkCells(line, lineDto.getWorkCells());
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Imported line: " + lineDto.getName());
+			}
 		}
+		return modified;
 	}
 
-	public void addEquipment(WorkCell parent, List<EquipmentDto> childDtos) throws Exception {
-		// iterate over each child
-		for (EquipmentDto childDto : childDtos) {
-			// create entity
-			Equipment childPlantEntity = new Equipment(childDto);
+	public boolean addWorkCells(ProductionLine line, List<WorkCellDto> workCellDtos) throws Exception {
+		boolean modified = false;
 
-			// add child
-			parent.getChildren().add(childPlantEntity);
+		// iterate over each work cell
+		for (WorkCellDto workCellDto : workCellDtos) {
+			WorkCell cell = null;
 
-			// set parent
-			childPlantEntity.setParent(parent);
+			// check for cell already in database
+			if (entityMap.containsKey(workCellDto.getName())) {
+				// already in DB
+				cell = (WorkCell) entityMap.get(workCellDto.getName());
+			} else {
+				// create entity
+				cell = new WorkCell(workCellDto);
+
+				connectParentChild(line, cell);
+
+				modified = true;
+			}
+
+			// add equipment
+			modified = addEquipment(cell, workCellDto.getEquipment());
 
 			if (logger.isInfoEnabled()) {
-				logger.info("Imported equipment: " + childDto.getName());
+				logger.info("Imported work cell: " + workCellDto.getName());
 			}
 		}
+		return modified;
+	}
+
+	public boolean addEquipment(WorkCell cell, List<EquipmentDto> equipmentDtos) throws Exception {
+		boolean modified = false;
+
+		// iterate over each equipment
+		for (EquipmentDto equipmentDto : equipmentDtos) {
+			Equipment equipment = null;
+
+			// check for equipment already in database
+			if (entityMap.containsKey(equipmentDto.getName())) {
+				// already in DB
+				equipment = (Equipment) entityMap.get(equipmentDto.getName());
+			} else {
+				// create entity
+				equipment = new Equipment(equipmentDto);
+
+				connectParentChild(cell, equipment);
+
+				modified = true;
+			}
+
+			if (logger.isInfoEnabled()) {
+				logger.info("Imported equipment: " + equipmentDto.getName());
+			}
+		}
+		return modified;
+	}
+
+	private void connectParentChild(PlantEntity parent, PlantEntity child) {
+		// add child
+		parent.getChildren().add(child);
+
+		// set parent
+		child.setParent(parent);
 	}
 
 	private void restoreUOMs(ExportContent content) throws Exception {
@@ -517,16 +637,16 @@ public class Importer extends BaseExportImport {
 		// cache all work schedules
 		List<WorkSchedule> dbSchedules = PersistenceService.instance().fetchAllWorkSchedules();
 
-		Map<String, WorkSchedule> dbMap = new HashMap<>();
+		scheduleMap.clear();
 		for (WorkSchedule dbSchedule : dbSchedules) {
-			dbMap.put(dbSchedule.getName(), dbSchedule);
+			scheduleMap.put(dbSchedule.getName(), dbSchedule);
 		}
 
 		List<KeyedObject> toSaveSchedules = new ArrayList<>();
 
 		// iterate over each exported schedule, skip database one if is there
 		for (WorkScheduleDto dto : content.getWorkSchedules()) {
-			WorkSchedule schedule = dbMap.get(dto.getName());
+			WorkSchedule schedule = scheduleMap.get(dto.getName());
 
 			if (schedule == null) {
 				schedule = new WorkSchedule(dto);
@@ -572,16 +692,16 @@ public class Importer extends BaseExportImport {
 		// cache all data collectors
 		List<DataCollector> dbDataCollectors = PersistenceService.instance().fetchAllDataCollectors();
 
-		Map<String, DataCollector> dbMap = new HashMap<>();
+		collectorMap.clear();
 		for (DataCollector dbDataCollector : dbDataCollectors) {
-			dbMap.put(dbDataCollector.getName(), dbDataCollector);
+			collectorMap.put(dbDataCollector.getName(), dbDataCollector);
 		}
 
 		List<KeyedObject> toSaveDataCollectors = new ArrayList<>();
 
 		// iterate over each exported data collector, skip database one if there
 		for (DataCollectorDto dto : content.getDataCollectors()) {
-			DataCollector collector = dbMap.get(dto.getName());
+			DataCollector collector = collectorMap.get(dto.getName());
 
 			if (collector == null) {
 				collector = new DataCollector(dto);

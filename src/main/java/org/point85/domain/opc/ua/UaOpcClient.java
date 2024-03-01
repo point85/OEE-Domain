@@ -707,6 +707,10 @@ public class UaOpcClient implements SessionActivityListener {
 		return connectedSource.getHost().equals(otherClient.connectedSource.getHost())
 				&& connectedSource.getPort().equals(otherClient.connectedSource.getPort());
 	}
+	
+	public OpcUaSource getOpcUaSource() {
+		return connectedSource;
+	}
 
 	@Override
 	public String toString() {

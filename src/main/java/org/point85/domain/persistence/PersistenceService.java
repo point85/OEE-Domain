@@ -2001,27 +2001,28 @@ public final class PersistenceService {
 	 * @return JSON string of result list
 	 * @throws Exception Exception
 	 */
-	@SuppressWarnings("unchecked")
 	public String executeQuery(String sql) throws Exception {
 		EntityManager em = getEntityManager();
-		List<Object[]> rowList = em.createNativeQuery(sql).getResultList();
+		@SuppressWarnings("rawtypes")
+		List rowList = em.createNativeQuery(sql).getResultList();
 		Gson gson = new Gson();
 		String result = gson.toJson(rowList);
 		em.close();
 
 		return result;
 	}
-	
+
 	/**
 	 * Execute the native SQL query
+	 * 
 	 * @param sql SQL select statement
-	 * @return List of Object[], one per row
+	 * @return List of Object or Object[]
 	 * @throws Exception Exception
 	 */
-	@SuppressWarnings("unchecked")
-	public List<Object[]> executeNativeQuery(String sql) throws Exception {
+	@SuppressWarnings("rawtypes")
+	public List executeNativeQuery(String sql) throws Exception {
 		EntityManager em = getEntityManager();
-		List<Object[]> rowList = em.createNativeQuery(sql).getResultList();
+		List rowList = em.createNativeQuery(sql).getResultList();
 		em.close();
 
 		return rowList;
