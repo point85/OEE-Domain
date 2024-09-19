@@ -7,9 +7,9 @@ abstract class BaseExportImport {
 	protected Gson gson = new Gson();
 	
 	// content to export or import
-	protected ExportContent content = new ExportContent();
+	protected ExportImportContent content = new ExportImportContent();
 	
-	public ExportContent getExportContent() {
+	public ExportImportContent getContent() {
 		return content;
 	}
 }

@@ -46,14 +46,19 @@ public class Equipment extends PlantEntity {
 	}
 
 	public Equipment(EquipmentDto dto) throws Exception {
-		super(dto);
-		setLevel(EntityLevel.EQUIPMENT);
-
-		for (EquipmentMaterialDto materialDto : dto.getEquipmentMaterials()) {
-			EquipmentMaterial equipmentMaterial = new EquipmentMaterial(materialDto);
-			equipmentMaterial.setEquipment(this);
-
-			equipmentMaterials.add(equipmentMaterial);
+		setAttributes(dto);
+	}
+	
+	public void setAttributes(EquipmentDto dto) throws Exception {
+		super.setAttributes(dto);
+		
+		if (dto.getEquipmentMaterials() != null) {
+			for (EquipmentMaterialDto materialDto : dto.getEquipmentMaterials()) {
+				EquipmentMaterial equipmentMaterial = new EquipmentMaterial(materialDto);
+				equipmentMaterial.setEquipment(this);
+	
+				equipmentMaterials.add(equipmentMaterial);
+			}
 		}
 	}
 

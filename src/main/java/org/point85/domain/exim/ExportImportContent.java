@@ -29,7 +29,7 @@ import org.point85.domain.dto.WebSocketSourceDto;
 import org.point85.domain.dto.WorkCellDto;
 import org.point85.domain.dto.WorkScheduleDto;
 
-public class ExportContent {
+public class ExportImportContent {
 	private List<MaterialDto> materials = new ArrayList<>();
 	private List<ReasonDto> reasons = new ArrayList<>();
 	private List<UnitOfMeasureDto> uoms = new ArrayList<>();
@@ -59,6 +59,21 @@ public class ExportContent {
 	private List<ProficySourceDto> proficySources = new ArrayList<>();
 	private List<RmqSourceDto> rmqSources = new ArrayList<>();
 	private List<WebSocketSourceDto> webSocketSources = new ArrayList<>();
+	
+	// create or update flag
+	private Boolean forCreate;
+	
+	public ExportImportContent() {
+		
+	}
+	
+	public ExportImportContent(Boolean forCreate) {
+		this.forCreate = forCreate;
+	}
+	
+	public Boolean isForCreate() {
+		return this.forCreate;
+	}
 
 	public void clear() {
 		this.materials.clear();
@@ -90,11 +105,11 @@ public class ExportContent {
 		this.webSocketSources.clear();
 	}
 
-	List<MaterialDto> getMaterials() {
+	public List<MaterialDto> getMaterials() {
 		return this.materials;
 	}
 
-	List<ReasonDto> getReasons() {
+	public List<ReasonDto> getReasons() {
 		return this.reasons;
 	}
 
@@ -102,11 +117,11 @@ public class ExportContent {
 		this.reasons = dtos;
 	}
 
-	List<UnitOfMeasureDto> getUOMs() {
+	public List<UnitOfMeasureDto> getUOMs() {
 		return this.uoms;
 	}
 
-	List<WorkScheduleDto> getWorkSchedules() {
+	public List<WorkScheduleDto> getWorkSchedules() {
 		return this.schedules;
 	}
 

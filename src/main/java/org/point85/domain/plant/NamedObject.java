@@ -6,6 +6,8 @@ import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Version;
 
+import org.point85.domain.dto.NamedObjectDto;
+
 /**
  * NamedObject is the base class for all named objects
  * 
@@ -34,6 +36,15 @@ public abstract class NamedObject extends KeyedObject implements Comparable<Name
 		super();
 		this.name = name;
 		this.description = description;
+	}
+	
+	protected void setAttributes(NamedObjectDto dto) {
+		if (dto.getName() != null) {
+		setName(dto.getName());}
+		
+		if (dto.getDescription() != null) {
+		setDescription(dto.getDescription());
+		}
 	}
 
 	/**

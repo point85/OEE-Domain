@@ -9,6 +9,7 @@ public class EquipmentEventResponseDto {
 
 	private String status = OK_STATUS;
 	private String errorText;
+	private EquipmentEventRequestDto requestDto;
 
 	public EquipmentEventResponseDto() {
 		this.errorText = OK_STATUS;
@@ -16,6 +17,10 @@ public class EquipmentEventResponseDto {
 
 	public EquipmentEventResponseDto(String errorText) {
 		this.errorText = errorText;
+	}
+	
+	public EquipmentEventResponseDto(EquipmentEventRequestDto requestDto) {
+		this.setRequestDto(requestDto);
 	}
 
 	public String getErrorText() {
@@ -41,6 +46,14 @@ public class EquipmentEventResponseDto {
 
 	public boolean isError() {
 		return !isOK();
+	}
+
+	public EquipmentEventRequestDto getRequestDto() {
+		return requestDto;
+	}
+
+	public void setRequestDto(EquipmentEventRequestDto requestDto) {
+		this.requestDto = requestDto;
 	}
 
 }

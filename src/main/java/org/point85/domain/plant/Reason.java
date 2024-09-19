@@ -57,8 +57,15 @@ public class Reason extends NamedObject {
 	}
 
 	public Reason(ReasonDto dto) {
-		super(dto.getName(), dto.getDescription());
-		this.timeLoss = dto.getLossCategory() != null ? TimeLoss.valueOf(dto.getLossCategory()) : null;
+		setAttributes(dto);
+	}
+	
+	public void setAttributes(ReasonDto dto) {
+		super.setAttributes(dto);
+		
+		if (dto.getLossCategory() != null) {
+			this.timeLoss =  TimeLoss.valueOf(dto.getLossCategory());
+		}
 	}
 
 	public Reason getParent() {

@@ -4,7 +4,7 @@
 
   <groupId>org.point85</groupId>
   <artifactId>oee-domain</artifactId>
-  <version>3.10.3</version>
+  <version>3.11.0</version>
   <packaging>jar</packaging>
   <url>http://maven.apache.org</url>
 
@@ -12,7 +12,7 @@
   	<maven.compiler.source>11</maven.compiler.source>
 	<maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jetty.version>9.4.54.v20240208</jetty.version>
+    <jetty.version>9.4.56.v20240826</jetty.version>
 	
 	<!-- if true, do not run any unit tests -->
 	<maven.test.skip>true</maven.test.skip>
@@ -23,7 +23,7 @@
 <dependency>
     <groupId>org.bouncycastle</groupId>
     <artifactId>bcprov-jdk18on</artifactId>
-    <version>1.77</version>
+    <version>1.78.1</version>
 </dependency> 
  
 <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
@@ -77,7 +77,7 @@
 <dependency>
     <groupId>org.eclipse.milo</groupId>
     <artifactId>sdk-client</artifactId>
-    <version>0.6.12</version>
+    <version>0.6.14</version>
 </dependency>
 
 <!-- HIBERNATE JPA -->
@@ -109,7 +109,7 @@
 <dependency>
     <groupId>com.rabbitmq</groupId>
     <artifactId>amqp-client</artifactId>
-    <version>5.20.0</version>
+    <version>5.21.0</version>
 </dependency>
 
 <!-- ACTIVEMQ -->
@@ -117,7 +117,7 @@
 <dependency>
     <groupId>org.apache.activemq</groupId>
     <artifactId>activemq-client</artifactId>
-    <version>5.18.3</version>
+    <version>5.18.5</version>
 </dependency>
 
 <!-- MQTT -->
@@ -133,7 +133,7 @@
 <dependency>
     <groupId>com.ghgande</groupId>
     <artifactId>j2mod</artifactId>
-    <version>3.2.0</version>
+    <version>3.2.1</version>
 </dependency>
 
 <!-- junit for testing.  See: http://junit.org/junit4/ -->
@@ -181,14 +181,14 @@
 <dependency>
     <groupId>org.apache.kafka</groupId>
     <artifactId>kafka-clients</artifactId>
-    <version>3.6.1</version>
+    <version>3.8.0</version>
 </dependency>
 
 <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
 <dependency>
    <groupId>com.fasterxml.jackson.core</groupId>
     <artifactId>jackson-databind</artifactId>
-    <version>2.16.1</version>
+    <version>2.17.2</version>
 </dependency>
 
 <!-- https://mvnrepository.com/artifact/com.sun.mail/javax.mail -->
@@ -209,7 +209,7 @@
 <dependency>
     <groupId>org.java-websocket</groupId>
     <artifactId>Java-WebSocket</artifactId>
-    <version>1.5.6</version>
+    <version>1.5.7</version>
 </dependency>
 
   </dependencies>

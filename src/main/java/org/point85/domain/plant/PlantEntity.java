@@ -82,22 +82,29 @@ public class PlantEntity extends NamedObject {
 	}
 
 	public PlantEntity(PlantEntityDto dto) throws Exception {
-		super(dto.getName(), dto.getDescription());
-
+		setAttributes(dto);
+	}
+	
+	public void setAttributes(PlantEntityDto dto) throws Exception {
+		super.setAttributes(dto);
+		
+		this.level = EntityLevel.valueOf(dto.getLevel());
+		
 		this.retentionDuration = dto.getRetentionDuration() != null ? Duration.ofSeconds(dto.getRetentionDuration())
 				: null;
 
-		for (EntityScheduleDto scheduleDto : dto.getEntitySchedules()) {
-			EntitySchedule schedule = new EntitySchedule(scheduleDto);
-			schedule.setPlantEntity(this);
-			entitySchedules.add(schedule);
+		if (dto.getEntitySchedules() != null) {
+			for (EntityScheduleDto scheduleDto : dto.getEntitySchedules()) {
+				EntitySchedule schedule = new EntitySchedule(scheduleDto);
+				schedule.setPlantEntity(this);
+				entitySchedules.add(schedule);
+			}
 		}
 
 		if (dto.getEventResolvers() != null) {
 			for (EventResolverDto resolverDto : dto.getEventResolvers()) {
 				EventResolver resolver = new EventResolver(resolverDto);
 				resolver.setPlantEntity(this);
-
 				eventResolvers.add(resolver);
 			}
 		}

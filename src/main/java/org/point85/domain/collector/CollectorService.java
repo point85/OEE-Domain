@@ -2176,7 +2176,7 @@ public class CollectorService
 			try {
 				processHttpEquipmentEvent(dto);
 			} catch (Exception e) {
-				onException("Unable to resolve equipment event.", e);
+				onException(DomainLocalizer.instance().getErrorString("unable.to.resolve"), e);
 			}
 		}
 	}

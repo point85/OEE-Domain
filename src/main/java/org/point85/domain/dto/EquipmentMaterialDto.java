@@ -12,6 +12,8 @@ public class EquipmentMaterialDto {
 	private String rejectUOM;
 
 	private String material;
+	
+	private MaterialDto producedMaterial;
 
 	private Boolean isDefault;
 
@@ -22,6 +24,7 @@ public class EquipmentMaterialDto {
 				: null;
 		this.rejectUOM = equipmentMaterial.getRejectUOM() != null ? equipmentMaterial.getRejectUOM().getSymbol() : null;
 		this.material = equipmentMaterial.getMaterial() != null ? equipmentMaterial.getMaterial().getName() : null;
+		this.setProducedMaterial(equipmentMaterial.getMaterial() != null ? new MaterialDto(equipmentMaterial.getMaterial()) : null);
 		this.isDefault = equipmentMaterial.isDefault();
 	}
 
@@ -71,6 +74,14 @@ public class EquipmentMaterialDto {
 
 	public void setIsDefault(Boolean isDefault) {
 		this.isDefault = isDefault;
+	}
+
+	public MaterialDto getProducedMaterial() {
+		return producedMaterial;
+	}
+
+	public void setProducedMaterial(MaterialDto producedMaterial) {
+		this.producedMaterial = producedMaterial;
 	}
 
 }

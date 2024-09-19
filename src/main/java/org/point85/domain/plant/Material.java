@@ -29,8 +29,15 @@ public class Material extends NamedObject {
 	}
 
 	public Material(MaterialDto dto) {
-		super(dto.getName(), dto.getDescription());
-		this.category = dto.getCategory();
+		setAttributes(dto);
+	}
+	
+	public void setAttributes(MaterialDto dto) {
+		super.setAttributes(dto);
+		
+		if (dto.getCategory() != null) {
+			setCategory(dto.getCategory());
+		}
 	}
 
 	/**

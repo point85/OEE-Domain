@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.point85.domain.i18n.DomainLocalizer;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -187,6 +188,9 @@ public class CronEventClient implements JobListener {
 
 		Date date = trigger.computeFirstFireTime(null);
 
+		if (date == null) {
+			throw new Exception(DomainLocalizer.instance().getErrorString("invalid.cron.expression", cronExpression));
+		}
 		return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
 	}
 

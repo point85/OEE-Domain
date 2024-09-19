@@ -116,9 +116,9 @@ public class Exporter extends BaseExportImport {
 	 * @param clazz Class to backup
 	 * @param file  File to write to
 	 * @throws Exception Exception
-	 * @return {@link ExportContent} 
+	 * @return {@link ExportImportContent} 
 	 */
-	public synchronized ExportContent backup(Class<?> clazz, File file) throws Exception {
+	public synchronized ExportImportContent backup(Class<?> clazz, File file) throws Exception {
 		if (clazz.equals(Material.class)) {
 			prepareMaterials(PersistenceService.instance().fetchAllMaterials());
 		} else if (clazz.equals(Reason.class)) {
@@ -175,9 +175,9 @@ public class Exporter extends BaseExportImport {
 	 * 
 	 * @param clazz Class to backup
 	 * @throws Exception Exception
-	 * @return {@link ExportContent}
+	 * @return {@link ExportImportContent}
 	 */
-	public synchronized ExportContent prepare(Class<?> clazz) throws Exception {
+	public synchronized ExportImportContent prepare(Class<?> clazz) throws Exception {
 		return backup(clazz, null);
 	}
 

@@ -43,6 +43,7 @@ import org.point85.domain.dto.WorkScheduleDto;
 import org.point85.domain.email.EmailSource;
 import org.point85.domain.file.FileEventSource;
 import org.point85.domain.http.HttpSource;
+import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.jms.JmsSource;
 import org.point85.domain.kafka.KafkaSource;
 import org.point85.domain.modbus.ModbusSource;
@@ -55,6 +56,7 @@ import org.point85.domain.plant.Enterprise;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.KeyedObject;
 import org.point85.domain.plant.Material;
+import org.point85.domain.plant.NamedObject;
 import org.point85.domain.plant.PlantEntity;
 import org.point85.domain.plant.ProductionLine;
 import org.point85.domain.plant.Reason;
@@ -126,7 +128,7 @@ public class Importer extends BaseExportImport {
 			logger.trace(json);
 		}
 
-		ExportContent content = gson.fromJson(json, ExportContent.class);
+		ExportImportContent content = gson.fromJson(json, ExportImportContent.class);
 
 		// data sources
 		restoreDataSources(content);
@@ -154,8 +156,20 @@ public class Importer extends BaseExportImport {
 		// entities
 		restorePlantEntities(content);
 	}
+	
+	private void checkExistance(NamedObject obj, String name, Boolean forCreate) throws Exception {
+		if (forCreate != null) {
+			if (forCreate && obj != null) {
+				throw new Exception(DomainLocalizer.instance().getErrorString("already.exists", name));
+			}
+				
+			if (!forCreate && obj == null) {
+				throw new Exception(DomainLocalizer.instance().getErrorString("does.not.exist", name));
+			}
+		}
+	}
 
-	private void restoreMaterials(ExportContent content) throws Exception {
+	public List<KeyedObject> restoreMaterials(ExportImportContent content) throws Exception {
 		// cache all materials
 		List<Material> dbMaterials = PersistenceService.instance().fetchAllMaterials();
 
@@ -166,26 +180,31 @@ public class Importer extends BaseExportImport {
 
 		List<KeyedObject> toSaveMaterials = new ArrayList<>();
 
-		// iterate over each exported material, skip database one if there
+		// iterate over each exported material
 		for (MaterialDto dto : content.getMaterials()) {
 			Material material = materialMap.get(dto.getName());
+			
+			checkExistance(material, dto.getName(), content.isForCreate());
 
 			if (material == null) {
 				material = new Material(dto);
-				toSaveMaterials.add(material);
+			} else {
+				material.setAttributes(dto);
+			}
+			toSaveMaterials.add(material);
 
-				if (logger.isInfoEnabled()) {
-					logger.info("Imported material: " + dto.getName());
-				}
+			if (logger.isInfoEnabled()) {
+				logger.info("Imported material: " + dto.getName());
 			}
 		}
 
 		if (!toSaveMaterials.isEmpty()) {
 			PersistenceService.instance().save(toSaveMaterials);
 		}
+		return toSaveMaterials;
 	}
 
-	private void addReasons(Reason parent, List<ReasonDto> childDtos, List<KeyedObject> toSaveReasons)
+	private void addChildReasons(Reason parent, List<ReasonDto> childDtos, List<KeyedObject> toSaveReasons)
 			throws Exception {
 		// iterate over each child
 		for (ReasonDto childDto : childDtos) {
@@ -207,11 +226,11 @@ public class Importer extends BaseExportImport {
 			}
 
 			// recurse
-			addReasons(childReason, childDto.getChildren(), toSaveReasons);
+			addChildReasons(childReason, childDto.getChildren(), toSaveReasons);
 		}
 	}
 
-	private void restoreReasons(ExportContent content) throws Exception {
+	public List<KeyedObject> restoreReasons(ExportImportContent content) throws Exception {
 		// cache all reasons
 		List<Reason> dbReasons = PersistenceService.instance().fetchAllReasons();
 
@@ -225,15 +244,29 @@ public class Importer extends BaseExportImport {
 
 		// imported reasons
 		for (ReasonDto dto : content.getReasons()) {
-			Reason parentReason = reasonMap.get(dto.getName());
+			Reason reason = reasonMap.get(dto.getName());
+			checkExistance(reason, dto.getName(), content.isForCreate());
+			
+			Reason parent = null;
+			if (dto.getParent()!= null) {
+				parent = reasonMap.get(dto.getParent());
+			}
 
-			if (parentReason == null) {
-				parentReason = new Reason(dto);
-				toSaveReasons.add(parentReason);
+			if (reason == null) {
+				// create
+				reason = new Reason(dto);
+			} else {
+				// update
+				reason.setAttributes(dto);
+			}
+			toSaveReasons.add(reason);
+			
+			if (parent != null) {
+				reason.setParent(parent);
 			}
 
 			// children
-			addReasons(parentReason, dto.getChildren(), toSaveReasons);
+			addChildReasons(reason, dto.getChildren(), toSaveReasons);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Imported reason: " + dto.getName());
@@ -244,9 +277,11 @@ public class Importer extends BaseExportImport {
 		if (!toSaveReasons.isEmpty()) {
 			PersistenceService.instance().save(toSaveReasons);
 		}
+		
+		return toSaveReasons;
 	}
 
-	private void restorePlantEntities(ExportContent content) throws Exception {
+	public List<KeyedObject>  restorePlantEntities(ExportImportContent content) throws Exception {
 		// cache all entities
 		List<PlantEntity> dbPlantEntities = PersistenceService.instance().fetchAllPlantEntities();
 
@@ -259,22 +294,23 @@ public class Importer extends BaseExportImport {
 
 		// enterprises
 		for (EnterpriseDto enterpriseDto : content.getEnterprises()) {
-			boolean modified = false;
-
 			Enterprise enterprise = (Enterprise) entityMap.get(enterpriseDto.getName());
+			checkExistance(enterprise, enterpriseDto.getName(), content.isForCreate());
 
 			if (enterprise == null) {
-				// enterprise does not exist
+				// create
 				enterprise = new Enterprise(enterpriseDto);
-				modified = true;
+			} else {
+				// update
+				enterprise.setAttributes(enterpriseDto);
 			}
 
 			// add sites
-			modified = addSites(enterprise, enterpriseDto.getSites());
-
-			if (modified) {
-				toSavePlantEntities.add(enterprise);
+			if (enterpriseDto.getSites() != null) {
+				addSites(enterprise, enterpriseDto.getSites());
 			}
+
+			toSavePlantEntities.add(enterprise);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Imported enterprise: " + enterpriseDto.getName());
@@ -283,23 +319,32 @@ public class Importer extends BaseExportImport {
 
 		// sites
 		for (SiteDto siteDto : content.getSites()) {
-			boolean modified = false;
-
 			// get existing site
 			Site site = (Site) entityMap.get(siteDto.getName());
+			checkExistance(site, siteDto.getName(), content.isForCreate());
 
 			if (site == null) {
-				// site does not exist
+				// create
 				site = new Site(siteDto);
-				modified = true;
+			} else {
+				// update
+				site.setAttributes(siteDto);
+			}
+			
+			if (siteDto.getParent() != null) {
+				PlantEntity parent = entityMap.get(siteDto.getParent());
+				if (parent == null) {
+					throw new Exception(DomainLocalizer.instance().getErrorString("does.not.exist", siteDto.getParent()));
+				}
+				site.setParent(parent);
 			}
 
 			// add areas
-			modified = addAreas(site, siteDto.getAreas());
-
-			if (modified) {
-				toSavePlantEntities.add(site);
+			if (siteDto.getAreas() != null) {
+				addAreas(site, siteDto.getAreas());
 			}
+
+			toSavePlantEntities.add(site);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Imported site: " + siteDto.getName());
@@ -308,23 +353,32 @@ public class Importer extends BaseExportImport {
 
 		// areas
 		for (AreaDto areaDto : content.getAreas()) {
-			boolean modified = false;
-
 			// get existing area
 			Area area = (Area) entityMap.get(areaDto.getName());
+			checkExistance(area, areaDto.getName(), content.isForCreate());
 
 			if (area == null) {
-				// area does not exist
+				// create
 				area = new Area(areaDto);
-				modified = true;
+			} else {
+				// update
+				area.setAttributes(areaDto);
+			}
+			
+			if (areaDto.getParent() != null) {
+				PlantEntity parent = entityMap.get(areaDto.getParent());
+				if (parent == null) {
+					throw new Exception(DomainLocalizer.instance().getErrorString("does.not.exist", areaDto.getParent()));
+				}
+				area.setParent(parent);
 			}
 
 			// add production lines
-			modified = addProductionLines(area, areaDto.getProductionLines());
-
-			if (modified) {
-				toSavePlantEntities.add(area);
+			if (areaDto.getProductionLines() != null) {
+				addProductionLines(area, areaDto.getProductionLines());
 			}
+
+			toSavePlantEntities.add(area);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Imported area: " + areaDto.getName());
@@ -333,24 +387,32 @@ public class Importer extends BaseExportImport {
 
 		// production lines
 		for (ProductionLineDto lineDto : content.getProductionLines()) {
-			boolean modified = false;
-
 			// get existing line
 			ProductionLine line = (ProductionLine) entityMap.get(lineDto.getName());
+			checkExistance(line, lineDto.getName(), content.isForCreate());
 
 			if (line == null) {
-				// production line does not exist
+				// create
 				line = new ProductionLine(lineDto);
-				modified = true;
+			} else {
+				// update
+				line.setAttributes(lineDto);
+			}
+			
+			if (lineDto.getParent() != null) {
+				PlantEntity parent = entityMap.get(lineDto.getParent());
+				if (parent == null) {
+					throw new Exception(DomainLocalizer.instance().getErrorString("does.not.exist", lineDto.getParent()));
+				}
+				line.setParent(parent);
 			}
 
 			// add work cells
-			modified = addWorkCells(line, lineDto.getWorkCells());
-
-			// save production line
-			if (modified) {
-				toSavePlantEntities.add(line);
+			if (lineDto.getWorkCells() != null) {
+				addWorkCells(line, lineDto.getWorkCells());
 			}
+
+			toSavePlantEntities.add(line);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Imported line: " + lineDto.getName());
@@ -359,24 +421,32 @@ public class Importer extends BaseExportImport {
 
 		// work cells
 		for (WorkCellDto cellDto : content.getWorkCells()) {
-			boolean modified = false;
-
 			// get existing work cell
 			WorkCell cell = (WorkCell) entityMap.get(cellDto.getName());
+			checkExistance(cell, cellDto.getName(), content.isForCreate());
 
 			if (cell == null) {
 				// new work cell
 				cell = new WorkCell(cellDto);
-				modified = true;
+			} else {
+				cell.setAttributes(cellDto);
+			}
+			
+			if (cellDto.getParent() != null) {
+				PlantEntity parent = entityMap.get(cellDto.getParent());
+				if (parent == null) {
+					throw new Exception(DomainLocalizer.instance().getErrorString("does.not.exist", cellDto.getParent()));
+				}
+				cell.setParent(parent);
 			}
 
 			// add equipment
-			modified = addEquipment(cell, cellDto.getEquipment());
+			if (cellDto.getEquipment() != null) {
+				addEquipment(cell, cellDto.getEquipment());
+			}
 
 			// save work cell
-			if (modified) {
-				toSavePlantEntities.add(cell);
-			}
+			toSavePlantEntities.add(cell);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Imported cell: " + cellDto.getName());
@@ -385,21 +455,27 @@ public class Importer extends BaseExportImport {
 
 		// equipment
 		for (EquipmentDto equipmentDto : content.getEquipment()) {
-			boolean modified = false;
-
 			// get existing equipment
 			Equipment equipment = (Equipment) entityMap.get(equipmentDto.getName());
+			checkExistance(equipment, equipmentDto.getName(), content.isForCreate());
 
 			if (equipment == null) {
 				// new equipment
 				equipment = new Equipment(equipmentDto);
-				modified = true;
+			} else {
+				equipment.setAttributes(equipmentDto);
+			}
+						
+			if (equipmentDto.getParent() != null) {
+				PlantEntity parent = entityMap.get(equipmentDto.getParent());
+				if (parent == null) {
+					throw new Exception(DomainLocalizer.instance().getErrorString("does.not.exist", equipmentDto.getParent()));
+				}
+				equipment.setParent(parent);
 			}
 
 			// save equipment
-			if (modified) {
-				toSavePlantEntities.add(equipment);
-			}
+			toSavePlantEntities.add(equipment);
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Imported equipment: " + equipmentDto.getName());
@@ -410,6 +486,8 @@ public class Importer extends BaseExportImport {
 		if (!toSavePlantEntities.isEmpty()) {
 			PersistenceService.instance().save(toSavePlantEntities);
 		}
+		
+		return toSavePlantEntities;
 	}
 
 	public boolean addSites(Enterprise enterprise, List<SiteDto> siteDtos) throws Exception {
@@ -564,7 +642,7 @@ public class Importer extends BaseExportImport {
 		child.setParent(parent);
 	}
 
-	private void restoreUOMs(ExportContent content) throws Exception {
+	private void restoreUOMs(ExportImportContent content) throws Exception {
 		// iterate through each exported UOM
 		for (UnitOfMeasureDto dto : content.getUOMs()) {
 
@@ -633,7 +711,7 @@ public class Importer extends BaseExportImport {
 		}
 	}
 
-	private void restoreWorkSchedules(ExportContent content) throws Exception {
+	private void restoreWorkSchedules(ExportImportContent content) throws Exception {
 		// cache all work schedules
 		List<WorkSchedule> dbSchedules = PersistenceService.instance().fetchAllWorkSchedules();
 
@@ -688,7 +766,7 @@ public class Importer extends BaseExportImport {
 		}
 	}
 
-	private void restoreDataCollectors(ExportContent content) throws Exception {
+	private void restoreDataCollectors(ExportImportContent content) throws Exception {
 		// cache all data collectors
 		List<DataCollector> dbDataCollectors = PersistenceService.instance().fetchAllDataCollectors();
 
@@ -718,7 +796,7 @@ public class Importer extends BaseExportImport {
 		}
 	}
 
-	private void restoreDataSources(ExportContent content) throws Exception {
+	private void restoreDataSources(ExportImportContent content) throws Exception {
 		List<KeyedObject> toSaveSources = new ArrayList<>();
 
 		for (DataSourceType type : DataSourceType.values()) {

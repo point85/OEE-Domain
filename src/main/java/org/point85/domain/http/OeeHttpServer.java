@@ -60,6 +60,16 @@ public class OeeHttpServer {
 	private static final String KEYSTORE_PASSWORD = "Point85";
 
 	private static final String POINT85_KEYSTORE = "config/security/point85-keystore.jks";
+	
+	// REST URL
+	public static final String REST_URL = "rest";
+	
+	// REST resources
+	public static final String ENTITIES_RESOURCE = "entities";
+	public static final String REASONS_RESOURCE = "reasons";
+	public static final String MATERIALS_RESOURCE = "materials";
+	public static final String EVENT_RESOURCE = "event";
+	public static final String STATUS_RESOURCE = "status";
 
 	// logger
 	private static final Logger logger = LoggerFactory.getLogger(OeeHttpServer.class);

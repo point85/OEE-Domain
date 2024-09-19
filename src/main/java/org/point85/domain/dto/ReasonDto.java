@@ -13,6 +13,7 @@ public class ReasonDto extends NamedObjectDto {
 	private String lossCategory;
 
 	private List<ReasonDto> children = new ArrayList<>();
+	private List<String> childrenNames = new ArrayList<>();
 
 	public ReasonDto() {
 		super();
@@ -33,6 +34,11 @@ public class ReasonDto extends NamedObjectDto {
 		// parent
 		String parentName = reason.getParent() != null ? reason.getParent().getName() : null;
 		this.parent = parentName;
+		
+		// children names
+		for (Reason child : reason.getChildren()) {
+			childrenNames.add(child.getName());
+		}
 	}
 
 	public String getParent() {
@@ -49,6 +55,14 @@ public class ReasonDto extends NamedObjectDto {
 
 	public void setChildren(List<ReasonDto> children) {
 		this.children = children;
+	}
+	
+	public List<String> getChildrenNames() {
+		return childrenNames;
+	}
+
+	public void setChildrenames(List<String> names) {
+		this.childrenNames = names;
 	}
 
 	public String getLossCategory() {
