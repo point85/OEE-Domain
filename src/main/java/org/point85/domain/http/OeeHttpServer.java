@@ -3,7 +3,10 @@ package org.point85.domain.http;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.EnumSet;
 import java.util.Objects;
+
+import javax.servlet.DispatcherType;
 
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -12,8 +15,10 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
@@ -169,6 +174,13 @@ public class OeeHttpServer {
 			logger.info("Added HTTPS connector, HTTPS keystore: " + keystorePath);
 		}
 	}
+	
+	private void configureCrossOriginFilter(ServletContextHandler context) {
+        FilterHolder cors = context.addFilter(org.eclipse.jetty.servlets.CrossOriginFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
+        cors.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
+        cors.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "GET,POST,PUT,DELETE,HEAD");
+        cors.setInitParameter(CrossOriginFilter.ALLOWED_HEADERS_PARAM, "Content-Type,Authorization");
+	}
 
 	/**
 	 * Start the Jetty server
@@ -179,6 +191,9 @@ public class OeeHttpServer {
 		// servlet context
 		ServletContextHandler context = new ServletContextHandler();
 		context.setContextPath("/");
+		
+		// CORS
+		configureCrossOriginFilter(context);
 
 		// create Jetty server in a queued thread pool
 		QueuedThreadPool threadPool = new QueuedThreadPool(MAX_THREADS, MIN_THREADS, IDLE_TIMEOUT);
