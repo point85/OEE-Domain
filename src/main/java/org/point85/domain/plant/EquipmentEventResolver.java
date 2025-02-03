@@ -142,12 +142,8 @@ public class EquipmentEventResolver {
 			logger.info("Result: " + result);
 		}
 
-		// save last value
-		if (resolverType.isProduction()) {
-			// last value is the output
-			eventResolver.setLastValue(result);
-		} else {
-			// last value is the input
+		// set last value. Could have been set in script.
+		if (eventResolver.getLastValue() == null) {
 			eventResolver.setLastValue(sourceValue);
 		}
 
@@ -156,8 +152,8 @@ public class EquipmentEventResolver {
 			return null;
 		}
 
-		// fill in resolution
-		OeeEvent event = new OeeEvent(eventResolver.getEquipment(), sourceValue, result);
+		// create event
+		OeeEvent event = new OeeEvent(eventResolver.getEquipment(), eventResolver.getLastValue(), result);
 
 		// an event time could have been set in the resolver
 		OffsetDateTime eventTime = dateTime;

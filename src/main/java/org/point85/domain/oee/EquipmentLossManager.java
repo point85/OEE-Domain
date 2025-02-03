@@ -112,19 +112,11 @@ public final class EquipmentLossManager {
 
 		for (int i = 0; i < events.size(); i++) {
 			OeeEvent event = events.get(i);
-			
+
 			// first gather MTBF & MTTR data
 			equipmentLoss.collectMeanData(event);
 
-			// skip no loss records
-			if (event.getReason() != null) {
-				TimeLoss lossCategory = event.getReason().getLossCategory();
-
-				if (lossCategory.equals(TimeLoss.NO_LOSS)) {
-					continue;
-				}
-			}
-
+			// check for edge effects
 			Duration eventDuration = event.getDuration();
 			Duration duration = eventDuration;
 
@@ -157,6 +149,9 @@ public final class EquipmentLossManager {
 
 			// save in event record
 			event.setLostTime(duration);
+
+			// collect PackML data
+			equipmentLoss.collectPackMLStateData(event.getReason(), duration);
 		}
 
 		// find the work schedule
@@ -358,15 +353,13 @@ public final class EquipmentLossManager {
 		for (Entry<Reason, Duration> entry : reasonMap.entrySet()) {
 			ParetoItem item = new ParetoItem(entry.getKey().getName(), entry.getValue());
 			items.add(item);
-
-			logger.info("Pareto Reason: " + entry.getKey().getName() + ", duration: " + entry.getValue());
 		}
 		return items;
 	}
 
 	public static void buildLoss(EquipmentLoss equipmentLoss, String materialId, OffsetDateTime odtStart,
 			OffsetDateTime odtEnd) throws Exception {
-		
+
 		if (odtStart == null || odtEnd == null) {
 			return;
 		}

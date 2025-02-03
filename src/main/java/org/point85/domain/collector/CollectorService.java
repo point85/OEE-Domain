@@ -1041,10 +1041,10 @@ public class CollectorService
 				}
 			}
 		} // end resolvers
-		
+
 		checkForStandaloneServers();
 	}
-	
+
 	private void checkForStandaloneServers() throws Exception {
 		// check for HTTP sources for external apps
 		List<CollectorDataSource> sources = PersistenceService.instance().fetchDataSources(DataSourceType.HTTP);
@@ -1054,8 +1054,9 @@ public class CollectorService
 			if (httpSource.isStandalone()) {
 				if (!httpServerMap.containsKey(httpSource.getId())) {
 					if (logger.isInfoEnabled()) {
-						logger.info("Found standalone HTTP server specified for host " + httpSource.getHost() + " on HTTP port "
-								+ httpSource.getPort() + " and HTTPS port " + httpSource.getHttpsPort());
+						logger.info("Found standalone HTTP server specified for host " + httpSource.getHost()
+								+ " on HTTP port " + httpSource.getPort() + " and HTTPS port "
+								+ httpSource.getHttpsPort());
 					}
 
 					// server is not being used for a resolver, so add it
@@ -2194,7 +2195,8 @@ public class CollectorService
 		@Override
 		public void run() {
 			try {
-				Object dataValue = UaOpcClient.getJavaObject(uaValue.getValue());
+				Object dataValue = appContext.getOpcUaClient().getJavaObject(uaValue.getValue());
+
 				String sourceId = item.getReadValueId().getNodeId().toParseableString();
 				DateTime dt = uaValue.getServerTime();
 

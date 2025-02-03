@@ -112,14 +112,8 @@ public class OeeEvent extends KeyedObject {
 		super();
 		this.equipment = equipment;
 
-		String inValue = null;
-
-		if (inputValue.getClass().isArray()) {
-			inValue = "[0] = " + ((Object[]) inputValue)[0];
-		} else {
-			inValue = inputValue.toString();
-		}
-		this.input = inValue;
+		// input value to be saved
+		setInputValue(inputValue.toString());
 
 		this.outputValue = outputValue;
 	}
@@ -207,7 +201,7 @@ public class OeeEvent extends KeyedObject {
 	public void setInputValue(String inputValue) {
 		String value = inputValue;
 		if (inputValue.length() > MAX_INPUT_VALUE) {
-			value = inputValue.substring(0, MAX_INPUT_VALUE - 1);
+			value = inputValue.substring(0, MAX_INPUT_VALUE - 4) + "...";
 		}
 		this.input = value;
 	}

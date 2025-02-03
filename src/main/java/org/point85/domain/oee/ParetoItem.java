@@ -4,6 +4,9 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Objects;
 
+import org.point85.domain.opc.ua.packml.PackMLState;
+import org.point85.domain.plant.Reason;
+
 public class ParetoItem implements Comparable<ParetoItem> {
 	// x-axis category
 	private String category;
@@ -14,10 +17,24 @@ public class ParetoItem implements Comparable<ParetoItem> {
 	// time loss in this category
 	private TimeLoss loss;
 
+	// PackML state in this category
+	private PackMLState packMLState;
+
 	public ParetoItem(TimeLoss loss, Number value) {
 		this.category = loss.toString();
 		this.value = value;
 		this.loss = loss;
+	}
+
+	public ParetoItem(PackMLState state, Number value) {
+		this.category = state.toString();
+		this.value = value;
+		this.packMLState = state;
+	}
+
+	public ParetoItem(Reason reason, Number value) {
+		this.category = reason.getName();
+		this.value = value;
 	}
 
 	public ParetoItem(String category, Duration duration) {
@@ -90,5 +107,13 @@ public class ParetoItem implements Comparable<ParetoItem> {
 
 	public void setLoss(TimeLoss loss) {
 		this.loss = loss;
+	}
+
+	public PackMLState getPackMLState() {
+		return packMLState;
+	}
+
+	public void setPackMLState(PackMLState packMLState) {
+		this.packMLState = packMLState;
 	}
 }

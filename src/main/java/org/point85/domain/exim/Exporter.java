@@ -116,7 +116,7 @@ public class Exporter extends BaseExportImport {
 	 * @param clazz Class to backup
 	 * @param file  File to write to
 	 * @throws Exception Exception
-	 * @return {@link ExportImportContent} 
+	 * @return {@link ExportImportContent}
 	 */
 	public synchronized ExportImportContent backup(Class<?> clazz, File file) throws Exception {
 		if (clazz.equals(Material.class)) {
@@ -170,6 +170,141 @@ public class Exporter extends BaseExportImport {
 		return content;
 	}
 
+	public synchronized ExportImportContent backupReasons(List<Reason> reasons, File file) throws Exception {
+		prepareReasons(reasons);
+		backup(file);
+		return content;
+	}
+
+	public synchronized ExportImportContent backupUOMs(List<UnitOfMeasure> uoms, File file) throws Exception {
+		prepareUnitsOfMeasure(uoms);
+		backup(file);
+		return content;
+	}
+
+	public synchronized ExportImportContent backupMaterials(List<Material> materials, File file) throws Exception {
+		prepareMaterials(materials);
+		backup(file);
+		return content;
+	}
+
+	public synchronized ExportImportContent backupSchedules(List<WorkSchedule> schedules, File file) throws Exception {
+		prepareWorkSchedules(schedules);
+		backup(file);
+		return content;
+	}
+
+	public synchronized ExportImportContent backupEntities(List<PlantEntity> entities, File file) throws Exception {
+		preparePlantEntities(entities);
+		backup(file);
+		return content;
+	}
+
+	public synchronized ExportImportContent backupCollectors(List<DataCollector> collectors, File file)
+			throws Exception {
+		prepareDataCollectors(collectors);
+		backup(file);
+		return content;
+	}
+
+	public synchronized ExportImportContent backupOpcUaSources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareOpcUaDataSources(sources);
+		backup(file);
+		return content;
+	}
+
+	public synchronized ExportImportContent backupHttpSources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareHttpDataSources(sources);
+		backup(file);
+		return content;
+	}
+	
+	public synchronized ExportImportContent backupCronSources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareCronDataSources(sources);
+		backup(file);
+		return content;
+	}
+	
+	public synchronized ExportImportContent backupDatabaseSources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareDatabaseDataSources(sources);
+		backup(file);
+		return content;
+	}
+	
+	public synchronized ExportImportContent backupEmailSources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareEmailDataSources(sources);
+		backup(file);
+		return content;
+	}
+	
+	public synchronized ExportImportContent backupFileSources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareFileDataSources(sources);
+		backup(file);
+		return content;
+	}
+	
+	public synchronized ExportImportContent backupJmsSources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareJmsDataSources(sources);
+		backup(file);
+		return content;
+	}
+
+	public synchronized ExportImportContent backupKafkaSources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareKafkaDataSources(sources);
+		backup(file);
+		return content;
+	}
+	
+	public synchronized ExportImportContent backupModbusSources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareModbusDataSources(sources);
+		backup(file);
+		return content;
+	}
+	
+	public synchronized ExportImportContent backupMqttSources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareMqttDataSources(sources);
+		backup(file);
+		return content;
+	}
+	
+	public synchronized ExportImportContent backupOpcDaSources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareOpcDaDataSources(sources);
+		backup(file);
+		return content;
+	}
+	
+	public synchronized ExportImportContent backupProficySources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareProficyDataSources(sources);
+		backup(file);
+		return content;
+	}
+	
+	public synchronized ExportImportContent backupRmqSources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareRmqDataSources(sources);
+		backup(file);
+		return content;
+	}
+	
+	public synchronized ExportImportContent backupWebSocketSources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareWebSocketDataSources(sources);
+		backup(file);
+		return content;
+	}
+	
 	/**
 	 * Serialize the objects of this class prior to writing them to a file
 	 * 
@@ -204,17 +339,15 @@ public class Exporter extends BaseExportImport {
 
 		List<ReasonDto> topDtos = new ArrayList<>();
 
+		// put in map for export
 		for (Reason reason : reasons) {
 			String lossName = reason.getLossCategory() != null ? reason.getLossCategory().name() : null;
-
 			ReasonDto reasonDto = new ReasonDto(reason.getName(), reason.getDescription(), lossName);
 
 			// parent entity
 			if (reason.getParent() == null) {
 				topDtos.add(reasonDto);
 			}
-
-			// put in map
 			reasonMap.put(reasonDto.getName(), reasonDto);
 		}
 
@@ -224,7 +357,6 @@ public class Exporter extends BaseExportImport {
 
 			for (Reason childReason : reason.getChildren()) {
 				ReasonDto childDto = reasonMap.get(childReason.getName());
-
 				childDto.setParent(parentDto.getName());
 				parentDto.getChildren().add(childDto);
 			}
@@ -243,6 +375,59 @@ public class Exporter extends BaseExportImport {
 	private void prepareDataCollectors(List<DataCollector> collectors) {
 		for (DataCollector collector : collectors) {
 			content.getDataCollectors().add(new DataCollectorDto(collector));
+		}
+	}
+
+	private void addSites(Enterprise enterprise, EnterpriseDto dto) {
+		for (PlantEntity childEntity : enterprise.getChildren()) {
+			SiteDto siteDto = new SiteDto((Site) childEntity);
+
+			siteDto.setParent(enterprise.getName());
+			dto.getSites().add(siteDto);
+
+			addAreas((Site) childEntity, siteDto);
+		}
+	}
+
+	private void addAreas(Site site, SiteDto dto) {
+		for (PlantEntity childEntity : site.getChildren()) {
+			AreaDto areaDto = new AreaDto((Area) childEntity);
+
+			areaDto.setParent(site.getName());
+			dto.getAreas().add(areaDto);
+
+			addProductionLines((Area) childEntity, areaDto);
+		}
+	}
+
+	private void addProductionLines(Area area, AreaDto dto) {
+		for (PlantEntity childEntity : area.getChildren()) {
+			ProductionLineDto lineDto = new ProductionLineDto((ProductionLine) childEntity);
+
+			lineDto.setParent(dto.getName());
+			dto.getProductionLines().add(lineDto);
+
+			addWorkCells((ProductionLine) childEntity, lineDto);
+		}
+	}
+
+	private void addWorkCells(ProductionLine line, ProductionLineDto dto) {
+		for (PlantEntity childEntity : line.getChildren()) {
+			WorkCellDto cellDto = new WorkCellDto((WorkCell) childEntity);
+
+			cellDto.setParent(dto.getName());
+			dto.getWorkCells().add(cellDto);
+
+			addEquipment((WorkCell) childEntity, cellDto);
+		}
+	}
+
+	private void addEquipment(WorkCell cell, WorkCellDto dto) {
+		for (PlantEntity childEntity : cell.getChildren()) {
+			EquipmentDto childDto = new EquipmentDto((Equipment) childEntity);
+
+			childDto.setParent(dto.getName());
+			dto.getEquipment().add(childDto);
 		}
 	}
 
@@ -276,14 +461,8 @@ public class Exporter extends BaseExportImport {
 					topEnterprises.add(dto);
 				}
 
-				for (PlantEntity childEntity : entity.getChildren()) {
-					SiteDto childDto = new SiteDto((Site) childEntity);
-					siteMap.put(childDto.getName(), childDto);
-
-					childDto.setParent(dto.getName());
-					dto.getSites().add(childDto);
-				}
-
+				// traverse hierarchy
+				addSites((Enterprise) entity, dto);
 			} else if (entity instanceof Site) {
 				SiteDto dto = siteMap.get(entity.getName());
 
@@ -296,13 +475,8 @@ public class Exporter extends BaseExportImport {
 					topSites.add(dto);
 				}
 
-				for (PlantEntity childEntity : entity.getChildren()) {
-					AreaDto childDto = new AreaDto((Area) childEntity);
-					areaMap.put(childDto.getName(), childDto);
-
-					childDto.setParent(dto.getName());
-					dto.getAreas().add(childDto);
-				}
+				// traverse hierarchy
+				addAreas((Site) entity, dto);
 			} else if (entity instanceof Area) {
 				AreaDto dto = areaMap.get(entity.getName());
 
@@ -315,13 +489,8 @@ public class Exporter extends BaseExportImport {
 					topAreas.add(dto);
 				}
 
-				for (PlantEntity childEntity : entity.getChildren()) {
-					ProductionLineDto childDto = new ProductionLineDto((ProductionLine) childEntity);
-					lineMap.put(childDto.getName(), childDto);
-
-					childDto.setParent(dto.getName());
-					dto.getProductionLines().add(childDto);
-				}
+				// traverse hierarchy
+				addProductionLines((Area) entity, dto);
 			} else if (entity instanceof ProductionLine) {
 				ProductionLineDto dto = lineMap.get(entity.getName());
 
@@ -333,6 +502,9 @@ public class Exporter extends BaseExportImport {
 				if (entity.getParent() == null) {
 					topLines.add(dto);
 				}
+
+				// traverse hierarchy
+				addWorkCells((ProductionLine) entity, dto);
 
 				for (PlantEntity childEntity : entity.getChildren()) {
 					WorkCellDto childDto = new WorkCellDto((WorkCell) childEntity);
@@ -353,14 +525,8 @@ public class Exporter extends BaseExportImport {
 					topCells.add(dto);
 				}
 
-				for (PlantEntity childEntity : entity.getChildren()) {
-					EquipmentDto childDto = new EquipmentDto((Equipment) childEntity);
-					equipmentMap.put(childDto.getName(), childDto);
-
-					childDto.setParent(dto.getName());
-					dto.getEquipment().add(childDto);
-				}
-
+				// traverse hierarchy
+				addEquipment((WorkCell) entity, dto);
 			} else if (entity instanceof Equipment) {
 				EquipmentDto dto = equipmentMap.get(entity.getName());
 

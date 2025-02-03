@@ -89,8 +89,8 @@ public enum TimeLoss {
 			color = "#FF7F50";
 			break;
 		case REDUCED_SPEED:
-			// YELLOW
-			color = "#FFFF00";
+			// SALMON
+			color = "#F9A825"; //"#FFFF00";
 			break;
 		case REJECT_REWORK:
 			// PURPLE
@@ -192,6 +192,48 @@ public enum TimeLoss {
 			break;
 		case UNSCHEDULED:
 			value = UNSCHEDULED_VALUE;
+			break;
+		default:
+			break;
+		}
+		return value;
+	}
+
+	public OeeComponent getComponent() {
+		OeeComponent value = null;
+
+		switch (this) {
+		case MINOR_STOPPAGES:
+			value = OeeComponent.PERFORMANCE;
+			break;
+		case NOT_SCHEDULED:
+			value = OeeComponent.NON_WORKING;
+			break;
+		case NO_LOSS:
+			value = OeeComponent.NORMAL;
+			break;
+		case PLANNED_DOWNTIME:
+			value = OeeComponent.AVAILABILITY;
+			break;
+		case REDUCED_SPEED:
+			value = OeeComponent.PERFORMANCE;
+			break;
+		case REJECT_REWORK:
+			value = OeeComponent.QUALITY;
+			break;
+		case SETUP:
+			value = OeeComponent.AVAILABILITY;
+			;
+			break;
+		case STARTUP_YIELD:
+			value = OeeComponent.QUALITY;
+			break;
+		case UNPLANNED_DOWNTIME:
+			value = OeeComponent.AVAILABILITY;
+			;
+			break;
+		case UNSCHEDULED:
+			value = OeeComponent.NON_WORKING;
 			break;
 		default:
 			break;

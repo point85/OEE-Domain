@@ -204,7 +204,7 @@ public class Importer extends BaseExportImport {
 		return toSaveMaterials;
 	}
 
-	private void addChildReasons(Reason parent, List<ReasonDto> childDtos, List<KeyedObject> toSaveReasons)
+	private void addChildReasons(Reason parent, List<ReasonDto> childDtos)
 			throws Exception {
 		// iterate over each child
 		for (ReasonDto childDto : childDtos) {
@@ -226,7 +226,7 @@ public class Importer extends BaseExportImport {
 			}
 
 			// recurse
-			addChildReasons(childReason, childDto.getChildren(), toSaveReasons);
+			addChildReasons(childReason, childDto.getChildren());
 		}
 	}
 
@@ -266,7 +266,7 @@ public class Importer extends BaseExportImport {
 			}
 
 			// children
-			addChildReasons(reason, dto.getChildren(), toSaveReasons);
+			addChildReasons(reason, dto.getChildren());
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Imported reason: " + dto.getName());

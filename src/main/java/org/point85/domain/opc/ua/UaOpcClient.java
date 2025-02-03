@@ -6,6 +6,7 @@ import static org.eclipse.milo.opcua.stack.core.util.ConversionUtil.toList;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,6 +17,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
+import org.eclipse.milo.opcua.binaryschema.GenericBsdParser;
+import org.eclipse.milo.opcua.binaryschema.Struct;
+import org.eclipse.milo.opcua.binaryschema.Struct.Member;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
 import org.eclipse.milo.opcua.sdk.client.api.UaSession;
@@ -26,6 +30,7 @@ import org.eclipse.milo.opcua.sdk.client.api.identity.UsernameProvider;
 import org.eclipse.milo.opcua.sdk.client.api.identity.X509IdentityProvider;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
+import org.eclipse.milo.opcua.sdk.client.dtd.DataTypeDictionarySessionInitializer;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.ServerTypeNode;
 import org.eclipse.milo.opcua.sdk.client.model.nodes.variables.ServerStatusTypeNode;
 import org.eclipse.milo.opcua.sdk.client.nodes.UaVariableNode;
@@ -35,6 +40,8 @@ import org.eclipse.milo.opcua.stack.core.BuiltinDataType;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.NamespaceTable;
 import org.eclipse.milo.opcua.stack.core.Stack;
+import org.eclipse.milo.opcua.stack.core.types.DataTypeManager;
+import org.eclipse.milo.opcua.stack.core.types.OpcUaDefaultBinaryEncoding;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -61,13 +68,20 @@ import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.BuildInfo;
 import org.eclipse.milo.opcua.stack.core.types.structured.CallMethodRequest;
+import org.eclipse.milo.opcua.stack.core.types.structured.EUInformation;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoredItemCreateRequest;
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoringParameters;
+import org.eclipse.milo.opcua.stack.core.types.structured.ReadResponse;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.eclipse.milo.opcua.stack.core.util.EndpointUtil;
 import org.point85.domain.i18n.DomainLocalizer;
+import org.point85.domain.opc.ua.packml.PackMLAlarmDataType;
+import org.point85.domain.opc.ua.packml.PackMLCountDataType;
+import org.point85.domain.opc.ua.packml.PackMLDescriptorDataType;
+import org.point85.domain.opc.ua.packml.PackMLIdentifiers;
+import org.point85.domain.opc.ua.packml.PackMLIngredientsDataType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -238,10 +252,269 @@ public class UaOpcClient implements SessionActivityListener {
 		// synchronous connect
 		opcUaClient.connect().get(REQUEST_TIMEOUT, REQUEST_TIMEOUT_UNIT);
 
+		// binary serializer for extension objects
+		registerSerializers();
+
+		// register known codecs
+		if (serverHasPackMLNamespace()) {
+			registerPackMLCodecs();
+		}
+
 		if (logger.isInfoEnabled()) {
 			logger.info("Connected to server.");
 		}
 		connectedSource = source;
+	}
+
+	private void registerSerializers() {
+		// register default binary parser for extension object codecs
+		opcUaClient.addSessionInitializer(new DataTypeDictionarySessionInitializer(new GenericBsdParser()));
+	}
+
+	private Struct extensionObjectToStruct(ExtensionObject xo) {
+		if (xo == null) {
+			return null;
+		}
+
+		return (Struct) xo.decode(opcUaClient.getDynamicSerializationContext(),
+				OpcUaDefaultBinaryEncoding.getInstance());
+	}
+
+	/**
+	 * Build a string representation of the extension object
+	 * 
+	 * @param xo ExtensionObject
+	 * @return String
+	 * @throws Exception Exception
+	 */
+	public String extensionObjectToString(ExtensionObject xo) throws Exception {
+		if (xo == null) {
+			return null;
+		}
+
+		String result = "";
+		// decode to org.eclipse.milo.opcua.binaryschema.Struct using default binary
+		// decoder
+		try {
+			Object o = xo.decode(opcUaClient.getStaticSerializationContext());
+
+			if (o instanceof ExtensionObject) {
+				Struct struct = extensionObjectToStruct(xo);
+
+				StringBuilder sb = new StringBuilder();
+				sb.append(struct.getName()).append('\n');
+
+				// now each member
+				for (Entry<String, Member> entry : struct.getMembers().entrySet()) {
+					Member member = entry.getValue();
+					String name = member.getName();
+					String value = member.getValue() != null ? member.getValue().toString() : "null";
+					String type = member.getValue() != null ? member.getValue().getClass().getSimpleName() : "null";
+
+					sb.append("    ").append(name).append(" (").append(type).append(") ").append(" = ").append(value)
+							.append('\n');
+				}
+
+				result = sb.toString();
+			}
+
+		} catch (Exception e) {
+			// no decoder
+			if (logger.isWarnEnabled()) {
+				logger.warn(e.getMessage());
+			}
+			result = xo.toString();
+		}
+		return result;
+	}
+
+	/**
+	 * Decode the extension object if a coded is registered for it
+	 * 
+	 * @param xo Extension object
+	 * @return Decoded object
+	 */
+	public Object decodeExtensionObject(ExtensionObject xo) {
+		Object value = null;
+
+		// decode if a codec is registered
+		try {
+			value = xo.decode(opcUaClient.getStaticSerializationContext());
+		} catch (Exception e) {
+			// no, try converting to a struct
+			try {
+				value = extensionObjectToStruct(xo);
+			} catch (Exception ex) {
+				// just a string then
+				value = xo.toString();
+			}
+		}
+		return value;
+	}
+
+	private boolean serverHasPackMLNamespace() throws Exception {
+		boolean result = false;
+
+		// id for server namespace
+		ReadValueId readValueId = new ReadValueId(Identifiers.Server_NamespaceArray, AttributeId.Value.uid(), null,
+				QualifiedName.NULL_VALUE);
+
+		List<ReadValueId> ids = new ArrayList<>(1);
+		ids.add(readValueId);
+
+		ReadResponse response = opcUaClient.read(0.0, TimestampsToReturn.Neither, ids).get();
+
+		DataValue[] values = response.getResults();
+		if (values != null && values.length > 0) {
+			String[] namespaceArray = (String[]) values[0].getValue().getValue();
+			for (String namespace : namespaceArray) {
+				if (namespace.equals(PackMLIdentifiers.NS_URI_OPC_UA_PACKML)) {
+					result = true;
+					break;
+				}
+			}
+		}
+
+		return result;
+	}
+
+	// register the codecs not in NS0
+	private void registerPackMLCodecs() throws Exception {
+		NamespaceTable namespace = opcUaClient.getNamespaceTable();
+		DataTypeManager typeManager = opcUaClient.getStaticDataTypeManager();
+
+		// PackML structures depend on EUInformation in NS0
+		registerEUInformation(namespace, typeManager);
+
+		// PackML descriptors
+		registerPackMLDescriptorDataType(namespace, typeManager);
+
+		// PackML counts
+		registerPackMLCountDataType(namespace, typeManager);
+
+		// PackML alarms
+		registerPackMLAlarmDataType(namespace, typeManager);
+
+		// PackML ingredients
+		registerPackMLIngredientsDataType(namespace, typeManager);
+	}
+
+	// register EUInformation extension object codec
+	private void registerEUInformation(NamespaceTable namespace, DataTypeManager typeManager) throws Exception {
+		NodeId dataTypeId = EUInformation.TYPE_ID.toNodeId(namespace).orElseThrow(() -> new IllegalStateException(
+				"Namespace " + EUInformation.TYPE_ID.getNamespaceUri() + " not found."));
+
+		NodeId binaryEncodingId = EUInformation.BINARY_ENCODING_ID.toNodeId(namespace)
+				.orElseThrow(() -> new IllegalStateException(
+						"Namespace " + EUInformation.BINARY_ENCODING_ID.getNamespaceUri() + " not found."));
+
+		// register by binary encoding node id
+		typeManager.registerCodec(binaryEncodingId, new EUInformation.Codec().asBinaryCodec());
+
+		// register by data type id
+		typeManager.registerCodec(new QualifiedName(dataTypeId.getNamespaceIndex(), "EUInformation"), dataTypeId,
+				new EUInformation.Codec().asBinaryCodec());
+
+		if (logger.isInfoEnabled()) {
+			logger.info(
+					"Registered EUInformation encoding id: " + binaryEncodingId + " and data type id: " + dataTypeId);
+		}
+	}
+
+	// register the PackMLCountDataType codec
+	private void registerPackMLCountDataType(NamespaceTable namespace, DataTypeManager typeManager) throws Exception {
+		NodeId dataTypeId = PackMLCountDataType.TYPE_ID.toNodeId(namespace).orElseThrow(() -> new IllegalStateException(
+				"Namespace " + PackMLCountDataType.TYPE_ID.getNamespaceUri() + " not found."));
+
+		NodeId binaryEncodingId = PackMLCountDataType.BINARY_ENCODING_ID.toNodeId(namespace)
+				.orElseThrow(() -> new IllegalStateException(
+						"Namespace " + PackMLCountDataType.BINARY_ENCODING_ID.getNamespaceUri() + " not found."));
+
+		// register by binary encoding id
+		typeManager.registerCodec(binaryEncodingId, new PackMLCountDataType.Codec().asBinaryCodec());
+
+		// register by data type id
+		typeManager.registerCodec(
+				new QualifiedName(dataTypeId.getNamespaceIndex(), PackMLIdentifiers.PACKML_COUNT_STRUCTURE_NAME),
+				dataTypeId, new PackMLCountDataType.Codec().asBinaryCodec());
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Registered PackMLCountDataType encoding id: " + binaryEncodingId + " and data type id: "
+					+ dataTypeId);
+		}
+	}
+
+	// register the PackMLAlarmDataType codec
+	private void registerPackMLAlarmDataType(NamespaceTable namespace, DataTypeManager typeManager) throws Exception {
+		NodeId dataTypeId = PackMLAlarmDataType.TYPE_ID.toNodeId(namespace).orElseThrow(() -> new IllegalStateException(
+				"Namespace " + PackMLAlarmDataType.TYPE_ID.getNamespaceUri() + " not found."));
+
+		NodeId binaryEncodingId = PackMLAlarmDataType.BINARY_ENCODING_ID.toNodeId(namespace)
+				.orElseThrow(() -> new IllegalStateException(
+						"Namespace " + PackMLAlarmDataType.BINARY_ENCODING_ID.getNamespaceUri() + " not found."));
+
+		// register by binary encoding id
+		typeManager.registerCodec(binaryEncodingId, new PackMLAlarmDataType.Codec().asBinaryCodec());
+
+		// register by data type id
+		typeManager.registerCodec(
+				new QualifiedName(dataTypeId.getNamespaceIndex(), PackMLIdentifiers.PACKML_ALARM_STRUCTURE_NAME),
+				dataTypeId, new PackMLAlarmDataType.Codec().asBinaryCodec());
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Registered PackMLAlarmDataType encoding id: " + binaryEncodingId + " and data type id: "
+					+ dataTypeId);
+		}
+	}
+
+	// register the PackMLDescriptorDataType codec
+	private void registerPackMLDescriptorDataType(NamespaceTable namespace, DataTypeManager typeManager)
+			throws Exception {
+		NodeId dataTypeId = PackMLDescriptorDataType.TYPE_ID.toNodeId(namespace)
+				.orElseThrow(() -> new IllegalStateException(
+						"Namespace " + PackMLDescriptorDataType.TYPE_ID.getNamespaceUri() + " not found."));
+
+		NodeId binaryEncodingId = PackMLDescriptorDataType.BINARY_ENCODING_ID.toNodeId(namespace)
+				.orElseThrow(() -> new IllegalStateException(
+						"Namespace " + PackMLDescriptorDataType.BINARY_ENCODING_ID.getNamespaceUri() + " not found."));
+
+		// register by binary encoding id
+		typeManager.registerCodec(binaryEncodingId, new PackMLDescriptorDataType.Codec().asBinaryCodec());
+
+		// register by data type id
+		typeManager.registerCodec(
+				new QualifiedName(dataTypeId.getNamespaceIndex(), PackMLIdentifiers.PACKML_DESCRIPTER_STRUCTURE_NAME),
+				dataTypeId, new PackMLDescriptorDataType.Codec().asBinaryCodec());
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Registered PackMLDescriptorDataType encoding id: " + binaryEncodingId + " and data type id: "
+					+ dataTypeId);
+		}
+	}
+
+	// register the PackMLIngredientsDataType codec
+	private void registerPackMLIngredientsDataType(NamespaceTable namespace, DataTypeManager typeManager)
+			throws Exception {
+		NodeId dataTypeId = PackMLIngredientsDataType.TYPE_ID.toNodeId(namespace)
+				.orElseThrow(() -> new IllegalStateException(
+						"Namespace " + PackMLIngredientsDataType.TYPE_ID.getNamespaceUri() + " not found."));
+
+		NodeId binaryEncodingId = PackMLIngredientsDataType.BINARY_ENCODING_ID.toNodeId(namespace)
+				.orElseThrow(() -> new IllegalStateException(
+						"Namespace " + PackMLIngredientsDataType.BINARY_ENCODING_ID.getNamespaceUri() + " not found."));
+
+		// register by binary encoding id
+		typeManager.registerCodec(binaryEncodingId, new PackMLIngredientsDataType.Codec().asBinaryCodec());
+
+		// register by data type id
+		typeManager.registerCodec(
+				new QualifiedName(dataTypeId.getNamespaceIndex(), PackMLIdentifiers.PACKML_INGREDIENTS_STRUCTURE_NAME),
+				dataTypeId, new PackMLIngredientsDataType.Codec().asBinaryCodec());
+
+		if (logger.isInfoEnabled()) {
+			logger.info("Registered PackMLIngredientsDataType encoding id: " + binaryEncodingId + " and data type id: "
+					+ dataTypeId);
+		}
 	}
 
 	public synchronized void disconnect() throws Exception {
@@ -359,7 +632,7 @@ public class UaOpcClient implements SessionActivityListener {
 		});
 	}
 
-	public static Object getJavaObject(Variant value) {
+	public Object getJavaObject(Variant value) {
 		Object uaValue = value.getValue();
 		Object javaObject = null;
 		ExpandedNodeId nodeId = null;
@@ -372,95 +645,96 @@ public class UaOpcClient implements SessionActivityListener {
 		}
 
 		Class<?> clazz = BuiltinDataType.getBackingClass(nodeId);
-
 		boolean isArray = uaValue.getClass().isArray();
 
-		if (nodeId.getType().equals(IdType.Numeric)) {
-			// Integer and array of
-			if (clazz.equals(Integer.class)) {
-				javaObject = !isArray ? (Integer) uaValue : (Integer[]) uaValue;
-			} else if (clazz.equals(UInteger.class)) {
-				if (!isArray) {
-					javaObject = ((UInteger) uaValue).longValue();
-				} else {
-					// promote type to avoid negative numbers
-					UInteger[] uInts = (UInteger[]) uaValue;
-					Long[] longs = new Long[uInts.length];
-
-					for (int i = 0; i < uInts.length; i++) {
-						longs[i] = uInts[i].longValue();
-					}
-					javaObject = longs;
-				}
-				// Short and array of
-			} else if (clazz.equals(Short.class)) {
-				javaObject = !isArray ? (Short) uaValue : (Short[]) uaValue;
-			} else if (clazz.equals(UShort.class)) {
-				if (!isArray) {
-					javaObject = ((UShort) uaValue).intValue();
-				} else {
-					// promote type to avoid negative numbers
-					UShort[] uShorts = (UShort[]) uaValue;
-					Integer[] ints = new Integer[uShorts.length];
-
-					for (int i = 0; i < uShorts.length; i++) {
-						ints[i] = uShorts[i].intValue();
-					}
-					javaObject = ints;
-				}
-				// Boolean and array of
-			} else if (clazz.equals(Boolean.class)) {
-				javaObject = !isArray ? (Boolean) uaValue : (Boolean[]) uaValue;
-				// Byte and array of
-			} else if (clazz.equals(Byte.class)) {
-				javaObject = !isArray ? (Byte) uaValue : (Byte[]) uaValue;
-			} else if (clazz.equals(UByte.class)) {
+		// Integer and array of
+		if (clazz.equals(Integer.class)) {
+			javaObject = !isArray ? (Integer) uaValue : (Integer[]) uaValue;
+		} else if (clazz.equals(UInteger.class)) {
+			if (!isArray) {
+				javaObject = ((UInteger) uaValue).longValue();
+			} else {
 				// promote type to avoid negative numbers
-				if (!isArray) {
-					javaObject = ((UByte) uaValue).shortValue();
-				} else {
-					UByte[] uBytes = (UByte[]) uaValue;
-					Short[] shorts = new Short[uBytes.length];
+				UInteger[] uInts = (UInteger[]) uaValue;
+				Long[] longs = new Long[uInts.length];
 
-					for (int i = 0; i < uBytes.length; i++) {
-						shorts[i] = uBytes[i].shortValue();
-					}
-					javaObject = shorts;
+				for (int i = 0; i < uInts.length; i++) {
+					longs[i] = uInts[i].longValue();
 				}
-				// Long and array of
-			} else if (clazz.equals(Long.class)) {
-				javaObject = !isArray ? (Long) uaValue : (Long[]) uaValue;
-			} else if (clazz.equals(ULong.class)) {
-				// promote type to avoid negative numbers
-				if (!isArray) {
-					javaObject = ((ULong) uaValue).doubleValue();
-				} else {
-					ULong[] uInts = (ULong[]) uaValue;
-					Double[] doubles = new Double[uInts.length];
-
-					for (int i = 0; i < uInts.length; i++) {
-						doubles[i] = uInts[i].doubleValue();
-					}
-					javaObject = doubles;
-				}
-				// Float and array of
-			} else if (clazz.equals(Float.class)) {
-				javaObject = !isArray ? (Float) uaValue : (Float[]) uaValue;
-				// Double and array of
-			} else if (clazz.equals(Double.class)) {
-				javaObject = !isArray ? (Double) uaValue : (Double[]) uaValue;
-				// DateTime and array of
-			} else if (clazz.equals(DateTime.class)) {
-				javaObject = !isArray ? (DateTime) uaValue : (DateTime[]) uaValue;
-				// String and array of
-			} else if (clazz.equals(String.class)) {
-				javaObject = !isArray ? (String) uaValue : (String[]) uaValue;
+				javaObject = longs;
 			}
-		} else if (nodeId.getType().equals(IdType.String)) {
+			// Short and array of
+		} else if (clazz.equals(Short.class)) {
+			javaObject = !isArray ? (Short) uaValue : (Short[]) uaValue;
+		} else if (clazz.equals(UShort.class)) {
+			if (!isArray) {
+				javaObject = ((UShort) uaValue).intValue();
+			} else {
+				// promote type to avoid negative numbers
+				UShort[] uShorts = (UShort[]) uaValue;
+				Integer[] ints = new Integer[uShorts.length];
+
+				for (int i = 0; i < uShorts.length; i++) {
+					ints[i] = uShorts[i].intValue();
+				}
+				javaObject = ints;
+			}
+			// Boolean and array of
+		} else if (clazz.equals(Boolean.class)) {
+			javaObject = !isArray ? (Boolean) uaValue : (Boolean[]) uaValue;
+			// Byte and array of
+		} else if (clazz.equals(Byte.class)) {
+			javaObject = !isArray ? (Byte) uaValue : (Byte[]) uaValue;
+		} else if (clazz.equals(UByte.class)) {
+			// promote type to avoid negative numbers
+			if (!isArray) {
+				javaObject = ((UByte) uaValue).shortValue();
+			} else {
+				UByte[] uBytes = (UByte[]) uaValue;
+				Short[] shorts = new Short[uBytes.length];
+
+				for (int i = 0; i < uBytes.length; i++) {
+					shorts[i] = uBytes[i].shortValue();
+				}
+				javaObject = shorts;
+			}
+			// Long and array of
+		} else if (clazz.equals(Long.class)) {
+			javaObject = !isArray ? (Long) uaValue : (Long[]) uaValue;
+		} else if (clazz.equals(ULong.class)) {
+			// promote type to avoid negative numbers
+			if (!isArray) {
+				javaObject = ((ULong) uaValue).doubleValue();
+			} else {
+				ULong[] uInts = (ULong[]) uaValue;
+				Double[] doubles = new Double[uInts.length];
+
+				for (int i = 0; i < uInts.length; i++) {
+					doubles[i] = uInts[i].doubleValue();
+				}
+				javaObject = doubles;
+			}
+			// Float and array of
+		} else if (clazz.equals(Float.class)) {
+			javaObject = !isArray ? (Float) uaValue : (Float[]) uaValue;
+			// Double and array of
+		} else if (clazz.equals(Double.class)) {
+			javaObject = !isArray ? (Double) uaValue : (Double[]) uaValue;
+			// DateTime and array of
+		} else if (clazz.equals(DateTime.class)) {
+			javaObject = !isArray ? (DateTime) uaValue : (DateTime[]) uaValue;
+			// String and array of
+		} else if (clazz.equals(String.class)) {
 			javaObject = !isArray ? (String) uaValue : (String[]) uaValue;
+			// UUID and array of
 		} else if (nodeId.getType().equals(IdType.Guid)) {
 			javaObject = !isArray ? (UUID) uaValue : (UUID[]) uaValue;
 		}
+
+		if (javaObject == null && clazz.equals(ExtensionObject.class)) {
+			javaObject = decodeExtensionObject((ExtensionObject) uaValue);
+		}
+
 		return javaObject;
 	}
 
@@ -540,7 +814,8 @@ public class UaOpcClient implements SessionActivityListener {
 
 		for (UaMonitoredItem item : items) {
 			if (item.getStatusCode().isGood()) {
-				logger.info("Monitored item created for nodeId: " + item.getReadValueId().getNodeId());
+				logger.info("Monitored item created for nodeId: " + item.getReadValueId().getNodeId() + ", id: "
+						+ item.getMonitoredItemId());
 			} else {
 				throw new Exception(DomainLocalizer.instance().getErrorString("no.item",
 						item.getReadValueId().getNodeId(), item.getStatusCode()));
@@ -707,7 +982,7 @@ public class UaOpcClient implements SessionActivityListener {
 		return connectedSource.getHost().equals(otherClient.connectedSource.getHost())
 				&& connectedSource.getPort().equals(otherClient.connectedSource.getPort());
 	}
-	
+
 	public OpcUaSource getOpcUaSource() {
 		return connectedSource;
 	}

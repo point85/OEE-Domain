@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 
 import org.point85.domain.collector.OeeEvent;
 import org.point85.domain.i18n.DomainLocalizer;
+import org.point85.domain.opc.ua.packml.PackMLState;
 import org.point85.domain.plant.Equipment;
 import org.point85.domain.plant.EquipmentMaterial;
 import org.point85.domain.plant.Material;
@@ -60,6 +61,12 @@ public class EquipmentLoss {
 	// MTTR
 	private OeeEvent lastRepair;
 	private List<Duration> repairs = new ArrayList<>();
+
+	// PackML time in state
+	private Map<PackMLState, Duration> packMLStateDurations = new HashMap<>();
+	
+	// PackML time with reason for the state
+	private Map<Reason, Duration> packMLReasonDurations = new HashMap<>();
 
 	public EquipmentLoss(Equipment equipment) {
 		this.equipment = equipment;
@@ -113,6 +120,9 @@ public class EquipmentLoss {
 
 		lastRepair = null;
 		repairs.clear();
+
+		packMLStateDurations.clear();
+		packMLReasonDurations.clear();
 	}
 
 	public List<ParetoItem> getLossItems(Unit timeUnit) throws Exception {
@@ -125,6 +135,55 @@ public class EquipmentLoss {
 			}
 		}
 		return items;
+	}
+	
+	public Object[] getPackMLStateItems(Unit timeUnit) throws Exception {
+		List<ParetoItem> items = new ArrayList<>();
+		Duration total = Duration.ZERO;
+		
+		for (Entry<PackMLState, Duration> entry : packMLStateDurations.entrySet()) {
+			// skip execute state
+			if (!entry.getKey().equals(PackMLState.Execute)) {
+				long seconds = entry.getValue().getSeconds();
+				total = total.plusSeconds(seconds);
+				Number loss = convertSeconds(seconds, timeUnit);
+
+				ParetoItem item= new ParetoItem(entry.getKey(), loss);
+				items.add(item);
+			}
+		}
+		Object[] values = new Object[2];
+		values[0] = items;
+		values[1] = total;
+		
+		return values;
+	}
+	
+	public Object[] getPackMLReasonItems(Unit timeUnit) throws Exception {
+		List<ParetoItem> items = new ArrayList<>();
+		Duration total = Duration.ZERO;
+		
+		for (Entry<Reason, Duration> entry : packMLReasonDurations.entrySet()) {
+			// skip value adding
+			OeeComponent component =  null;
+			if (entry.getKey().getLossCategory() != null) {
+				component = entry.getKey().getLossCategory().getComponent();
+			}
+			
+			if (component != null && !component.equals(OeeComponent.NORMAL)) {
+				long seconds = entry.getValue().getSeconds();
+				total = total.plusSeconds(seconds);
+				Number loss = convertSeconds(seconds, timeUnit);
+
+				ParetoItem item= new ParetoItem(entry.getKey(), loss);
+				items.add(item);
+			}
+		}
+		Object[] values = new Object[2];
+		values[0] = items;
+		values[1] = total;
+		
+		return values;
 	}
 
 	public Number convertSeconds(long seconds, Unit timeUnit) throws Exception {
@@ -190,6 +249,11 @@ public class EquipmentLoss {
 			return;
 		}
 		TimeLoss category = reason.getLossCategory();
+
+		// skip no loss records
+		if (category.equals(TimeLoss.NO_LOSS)) {
+			return;
+		}
 
 		// summary map
 		Duration newDuration = lossMap.get(category).plus(duration);
@@ -578,6 +642,10 @@ public class EquipmentLoss {
 		return this.repairs;
 	}
 
+	public Map<PackMLState, Duration> getPackMLDurations() {
+		return this.packMLStateDurations;
+	}
+
 	/**
 	 * Compute the Mean Time Between Failures (MTBF) based on previously collected
 	 * failure data. A failure is an unplanned downtime event.
@@ -639,6 +707,36 @@ public class EquipmentLoss {
 		return isEvent;
 	}
 
+	// collect time in PackML states
+	public void collectPackMLStateData(Reason reason, Duration duration) {
+		if (reason == null || duration == null) {
+			return;
+		}
+
+		PackMLState state = reason.getPackMLState();
+
+		if (state == null) {
+			// non-PackML reason
+			return;
+		}
+
+		// add up time in PackML states
+		Duration total = packMLStateDurations.get(state);
+		if (total == null) {
+			total = Duration.ZERO;
+			packMLStateDurations.put(state, total);
+		}
+		packMLStateDurations.put(state, total.plus(duration));
+		
+		// add up time for this reason
+		total = packMLReasonDurations.get(reason);
+		if (total == null) {
+			total = Duration.ZERO;
+			packMLReasonDurations.put(reason, total);
+		}
+		packMLReasonDurations.put(reason, total.plus(duration));
+	}
+
 	/**
 	 * Accumulate duration of failure and repair events to use in the mean
 	 * calculations. Summary data is excluded.
@@ -649,7 +747,7 @@ public class EquipmentLoss {
 		if (event.getReason() == null) {
 			return;
 		}
-		
+
 		// save data for MTBF and MTTR, must not be summarized data
 		TimeLoss lossCategory = event.getReason().getLossCategory();
 		OffsetDateTime eventStartTime = event.getStartTime();

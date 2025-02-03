@@ -17,6 +17,7 @@ import javax.persistence.Table;
 
 import org.point85.domain.dto.ReasonDto;
 import org.point85.domain.oee.TimeLoss;
+import org.point85.domain.opc.ua.packml.PackMLState;
 import org.point85.domain.persistence.TimeLossConverter;
 
 /**
@@ -59,12 +60,12 @@ public class Reason extends NamedObject {
 	public Reason(ReasonDto dto) {
 		setAttributes(dto);
 	}
-	
+
 	public void setAttributes(ReasonDto dto) {
 		super.setAttributes(dto);
-		
+
 		if (dto.getLossCategory() != null) {
-			this.timeLoss =  TimeLoss.valueOf(dto.getLossCategory());
+			this.timeLoss = TimeLoss.valueOf(dto.getLossCategory());
 		}
 	}
 
@@ -100,6 +101,19 @@ public class Reason extends NamedObject {
 
 	public void setLossCategory(TimeLoss loss) {
 		this.timeLoss = loss;
+	}
+
+	public PackMLState getPackMLState() {
+		PackMLState state = null;
+
+		if (getParent() != null) {
+			try {
+				state = PackMLState.valueOf(getParent().getName());
+			} catch (Exception e) {
+				// no state with this name
+			}
+		}
+		return state;
 	}
 
 	@Override
