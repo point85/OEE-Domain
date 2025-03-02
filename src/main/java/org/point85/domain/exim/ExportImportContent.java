@@ -11,6 +11,7 @@ import org.point85.domain.dto.EmailSourceDto;
 import org.point85.domain.dto.EnterpriseDto;
 import org.point85.domain.dto.EquipmentDto;
 import org.point85.domain.dto.FileSourceDto;
+import org.point85.domain.dto.GenericSourceDto;
 import org.point85.domain.dto.HttpSourceDto;
 import org.point85.domain.dto.JmsSourceDto;
 import org.point85.domain.dto.KafkaSourceDto;
@@ -59,18 +60,19 @@ public class ExportImportContent {
 	private List<ProficySourceDto> proficySources = new ArrayList<>();
 	private List<RmqSourceDto> rmqSources = new ArrayList<>();
 	private List<WebSocketSourceDto> webSocketSources = new ArrayList<>();
-	
+	private List<GenericSourceDto> genericSources = new ArrayList<>();
+
 	// create or update flag
 	private Boolean forCreate;
-	
+
 	public ExportImportContent() {
-		
+
 	}
-	
+
 	public ExportImportContent(Boolean forCreate) {
 		this.forCreate = forCreate;
 	}
-	
+
 	public Boolean isForCreate() {
 		return this.forCreate;
 	}
@@ -103,6 +105,7 @@ public class ExportImportContent {
 		this.proficySources.clear();
 		this.rmqSources.clear();
 		this.webSocketSources.clear();
+		this.genericSources.clear();
 	}
 
 	public List<MaterialDto> getMaterials() {
@@ -227,6 +230,10 @@ public class ExportImportContent {
 
 	List<WebSocketSourceDto> getWebSocketSources() {
 		return webSocketSources;
+	}
+
+	List<GenericSourceDto> getGenericSources() {
+		return genericSources;
 	}
 
 	List<DataCollectorDto> getDataCollectors() {

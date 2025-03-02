@@ -23,6 +23,7 @@ import org.point85.domain.dto.EmailSourceDto;
 import org.point85.domain.dto.EnterpriseDto;
 import org.point85.domain.dto.EquipmentDto;
 import org.point85.domain.dto.FileSourceDto;
+import org.point85.domain.dto.GenericSourceDto;
 import org.point85.domain.dto.HttpSourceDto;
 import org.point85.domain.dto.JmsSourceDto;
 import org.point85.domain.dto.KafkaSourceDto;
@@ -42,6 +43,7 @@ import org.point85.domain.dto.WorkCellDto;
 import org.point85.domain.dto.WorkScheduleDto;
 import org.point85.domain.email.EmailSource;
 import org.point85.domain.file.FileEventSource;
+import org.point85.domain.generic.GenericSource;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.jms.JmsSource;
@@ -1006,6 +1008,21 @@ public class Importer extends BaseExportImport {
 
 						if (logger.isInfoEnabled()) {
 							logger.info("Imported web socket source: " + dto.getName());
+						}
+					}
+				}
+				break;
+			}
+			case GENERIC: {
+				for (GenericSourceDto dto : content.getGenericSources()) {
+					CollectorDataSource source = PersistenceService.instance().fetchDataSourceByName(dto.getName());
+
+					if (source == null) {
+						source = new GenericSource(dto);
+						toSaveSources.add(source);
+
+						if (logger.isInfoEnabled()) {
+							logger.info("Imported Generic source: " + dto.getName());
 						}
 					}
 				}

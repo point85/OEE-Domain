@@ -73,6 +73,10 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 			value = DataSourceType.WEB_SOCKET_VALUE;
 			break;
 
+		case GENERIC:
+			value = DataSourceType.GENERIC_VALUE;
+			break;
+
 		default:
 			break;
 		}
@@ -143,6 +147,10 @@ public class DataSourceConverter implements AttributeConverter<DataSourceType, S
 
 		case DataSourceType.WEB_SOCKET_VALUE:
 			state = DataSourceType.WEB_SOCKET;
+			break;
+
+		case DataSourceType.GENERIC_VALUE:
+			state = DataSourceType.GENERIC;
 			break;
 
 		default:

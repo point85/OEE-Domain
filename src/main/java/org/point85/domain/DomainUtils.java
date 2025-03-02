@@ -22,7 +22,9 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.jinterop.dcom.common.JIException;
 import org.openscada.opc.dcom.common.FILETIME;
+import org.point85.domain.generic.GenericSource;
 import org.point85.domain.i18n.DomainLocalizer;
+import org.point85.domain.persistence.PersistenceService;
 
 public final class DomainUtils {
 	// ISO 8601 datetime format, yyyy-mm-ddThh:mm:ss.nnnnnn+|-hh:mm
@@ -48,8 +50,8 @@ public final class DomainUtils {
 	}
 
 	public static String getVersionInfo() {
-		return DomainLocalizer.instance().getLangString("version") + " 3.12.0, "
-				+ LocalDate.of(2025, 2, 4).format(DateTimeFormatter.ISO_DATE);
+		return DomainLocalizer.instance().getLangString("version") + " 3.12.1, "
+				+ LocalDate.of(2025, 3, 3).format(DateTimeFormatter.ISO_DATE);
 	}
 
 	// format a Duration
@@ -258,5 +260,15 @@ public final class DomainUtils {
 			sb.append(String.format("%02X ", b));
 		}
 		return sb.toString();
+	}
+	
+	/**
+	 * Fetch the named generic data source
+	 * @param name Name of source
+	 * @return {@link GenericSource}
+	 * @throws Exception Exception
+	 */
+	public static GenericSource getGenericSource(String name) throws Exception {
+		return (GenericSource)PersistenceService.instance().fetchDataSourceByName(name);
 	}
 }

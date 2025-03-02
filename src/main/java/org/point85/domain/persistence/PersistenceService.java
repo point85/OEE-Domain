@@ -33,6 +33,7 @@ import org.point85.domain.db.DatabaseEventSource;
 import org.point85.domain.db.DatabaseEventStatus;
 import org.point85.domain.email.EmailSource;
 import org.point85.domain.file.FileEventSource;
+import org.point85.domain.generic.GenericSource;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.i18n.DomainLocalizer;
 import org.point85.domain.jms.JmsSource;
@@ -1656,7 +1657,7 @@ public final class PersistenceService {
 				Site.class, WorkCell.class, EventResolver.class, UnitOfMeasure.class, ExceptionPeriod.class,
 				Rotation.class, RotationSegment.class, Shift.class, Break.class, Team.class, WorkSchedule.class,
 				ModbusSource.class, EntitySchedule.class, CronEventSource.class, KafkaSource.class, EmailSource.class,
-				ProficySource.class, WebSocketSource.class };
+				ProficySource.class, WebSocketSource.class, GenericSource.class };
 	}
 
 	private Class<?>[] getDatabaseEventEntityClasses() {

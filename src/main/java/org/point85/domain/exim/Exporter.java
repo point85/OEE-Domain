@@ -20,6 +20,7 @@ import org.point85.domain.dto.EmailSourceDto;
 import org.point85.domain.dto.EnterpriseDto;
 import org.point85.domain.dto.EquipmentDto;
 import org.point85.domain.dto.FileSourceDto;
+import org.point85.domain.dto.GenericSourceDto;
 import org.point85.domain.dto.HttpSourceDto;
 import org.point85.domain.dto.JmsSourceDto;
 import org.point85.domain.dto.KafkaSourceDto;
@@ -39,6 +40,7 @@ import org.point85.domain.dto.WorkCellDto;
 import org.point85.domain.dto.WorkScheduleDto;
 import org.point85.domain.email.EmailSource;
 import org.point85.domain.file.FileEventSource;
+import org.point85.domain.generic.GenericSource;
 import org.point85.domain.http.HttpSource;
 import org.point85.domain.jms.JmsSource;
 import org.point85.domain.kafka.KafkaSource;
@@ -159,6 +161,8 @@ public class Exporter extends BaseExportImport {
 			prepareRmqDataSources(PersistenceService.instance().fetchDataSources(DataSourceType.RMQ));
 		} else if (clazz.equals(WebSocketSource.class)) {
 			prepareWebSocketDataSources(PersistenceService.instance().fetchDataSources(DataSourceType.WEB_SOCKET));
+		} else if (clazz.equals(GenericSource.class)) {
+			prepareGenericDataSources(PersistenceService.instance().fetchDataSources(DataSourceType.GENERIC));
 		} else {
 			logger.error("Unknown backup class: " + clazz.getSimpleName());
 		}
@@ -220,35 +224,35 @@ public class Exporter extends BaseExportImport {
 		backup(file);
 		return content;
 	}
-	
+
 	public synchronized ExportImportContent backupCronSources(List<CollectorDataSource> sources, File file)
 			throws Exception {
 		prepareCronDataSources(sources);
 		backup(file);
 		return content;
 	}
-	
+
 	public synchronized ExportImportContent backupDatabaseSources(List<CollectorDataSource> sources, File file)
 			throws Exception {
 		prepareDatabaseDataSources(sources);
 		backup(file);
 		return content;
 	}
-	
+
 	public synchronized ExportImportContent backupEmailSources(List<CollectorDataSource> sources, File file)
 			throws Exception {
 		prepareEmailDataSources(sources);
 		backup(file);
 		return content;
 	}
-	
+
 	public synchronized ExportImportContent backupFileSources(List<CollectorDataSource> sources, File file)
 			throws Exception {
 		prepareFileDataSources(sources);
 		backup(file);
 		return content;
 	}
-	
+
 	public synchronized ExportImportContent backupJmsSources(List<CollectorDataSource> sources, File file)
 			throws Exception {
 		prepareJmsDataSources(sources);
@@ -262,49 +266,56 @@ public class Exporter extends BaseExportImport {
 		backup(file);
 		return content;
 	}
-	
+
 	public synchronized ExportImportContent backupModbusSources(List<CollectorDataSource> sources, File file)
 			throws Exception {
 		prepareModbusDataSources(sources);
 		backup(file);
 		return content;
 	}
-	
+
 	public synchronized ExportImportContent backupMqttSources(List<CollectorDataSource> sources, File file)
 			throws Exception {
 		prepareMqttDataSources(sources);
 		backup(file);
 		return content;
 	}
-	
+
 	public synchronized ExportImportContent backupOpcDaSources(List<CollectorDataSource> sources, File file)
 			throws Exception {
 		prepareOpcDaDataSources(sources);
 		backup(file);
 		return content;
 	}
-	
+
 	public synchronized ExportImportContent backupProficySources(List<CollectorDataSource> sources, File file)
 			throws Exception {
 		prepareProficyDataSources(sources);
 		backup(file);
 		return content;
 	}
-	
+
 	public synchronized ExportImportContent backupRmqSources(List<CollectorDataSource> sources, File file)
 			throws Exception {
 		prepareRmqDataSources(sources);
 		backup(file);
 		return content;
 	}
-	
+
 	public synchronized ExportImportContent backupWebSocketSources(List<CollectorDataSource> sources, File file)
 			throws Exception {
 		prepareWebSocketDataSources(sources);
 		backup(file);
 		return content;
 	}
-	
+
+	public synchronized ExportImportContent backupGenericSources(List<CollectorDataSource> sources, File file)
+			throws Exception {
+		prepareGenericDataSources(sources);
+		backup(file);
+		return content;
+	}
+
 	/**
 	 * Serialize the objects of this class prior to writing them to a file
 	 * 
@@ -673,6 +684,15 @@ public class Exporter extends BaseExportImport {
 		for (CollectorDataSource source : sources) {
 			WebSocketSourceDto dto = new WebSocketSourceDto((WebSocketSource) source);
 			content.getWebSocketSources().add(dto);
+		}
+	}
+
+	private void prepareGenericDataSources(List<CollectorDataSource> sources) {
+		content.getGenericSources().clear();
+
+		for (CollectorDataSource source : sources) {
+			GenericSourceDto dto = new GenericSourceDto((GenericSource) source);
+			content.getGenericSources().add(dto);
 		}
 	}
 }
