@@ -219,7 +219,7 @@ public class EquipmentLoss {
 				totalWorkingTime = Duration.between(startDateTime, endDateTime);
 			}
 		}
-		return totalWorkingTime;
+		return totalWorkingTime != null ? totalWorkingTime : Duration.ZERO;
 	}
 
 	public Duration getLoss(TimeLoss category) {
