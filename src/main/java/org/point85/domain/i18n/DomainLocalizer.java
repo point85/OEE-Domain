@@ -27,7 +27,7 @@ public class DomainLocalizer extends Localizer {
 		i18nUnits = new I18n(UNIT_BUNDLE_NAME);
 	}
 
-	public static DomainLocalizer instance() {
+	public synchronized static DomainLocalizer instance() {
 		if (localizer == null) {
 			localizer = new DomainLocalizer();
 		}

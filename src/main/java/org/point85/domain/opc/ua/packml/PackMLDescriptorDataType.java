@@ -83,7 +83,7 @@ public class PackMLDescriptorDataType implements UaStructure {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		PackMLDescriptorDataType that = (PackMLDescriptorDataType) o;
-		return value == that.value && Objects.equal(name, that.name) && Objects.equal(id, that.id) && unit == that.unit;
+		return value.equals(that.value) && Objects.equal(name, that.name) && Objects.equal(id, that.id) && unit == that.unit;
 	}
 
 	@Override

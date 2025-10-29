@@ -788,7 +788,7 @@ public class UnitOfMeasure extends NamedObject {
 	 * @param offset        Offset
 	 * @throws Exception Exception
 	 */
-	public void setConversion(double scalingFactor, UnitOfMeasure abscissaUnit, double offset) throws Exception {
+	public synchronized void setConversion(double scalingFactor, UnitOfMeasure abscissaUnit, double offset) throws Exception {
 		if (abscissaUnit == null) {
 			throw new Exception(DomainLocalizer.instance().getErrorString("unit.cannot.be.null"));
 		}

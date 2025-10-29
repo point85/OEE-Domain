@@ -120,7 +120,7 @@ public class ShiftInstance implements Comparable<ShiftInstance> {
 
 		boolean teamMatch = getTeam().getName().equals(((ShiftInstance) other).getTeam().getName());
 		boolean shiftMatch = getShift().getName().equals(((ShiftInstance) other).getShift().getName());
-		boolean startMatch = (getStartTime() == ((ShiftInstance) other).getStartTime());
+		boolean startMatch = getStartTime().equals(((ShiftInstance) other).getStartTime());
 
 		return teamMatch && shiftMatch && startMatch;
 

@@ -70,7 +70,7 @@ public class PackMLIngredientsDataType implements UaStructure {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		PackMLIngredientsDataType that = (PackMLIngredientsDataType) o;
-		return ingredientID == that.ingredientID;
+		return ingredientID.equals(that.ingredientID);
 	}
 
 	@Override

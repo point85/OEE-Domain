@@ -207,6 +207,10 @@ public class Rotation extends Named implements Comparable<Rotation> {
 		RotationSegment segment = new RotationSegment(startingShift, daysOn, daysOff, this);
 		rotationSegments.add(segment);
 		segment.setSequence(rotationSegments.size());
+		
+		// invalidate periods cache
+		periods = null;
+		
 		return segment;
 	}
 

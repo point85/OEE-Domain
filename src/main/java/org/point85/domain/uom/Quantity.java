@@ -149,17 +149,14 @@ public class Quantity {
 	 */
 	@Override
 	public boolean equals(Object other) {
-		boolean answer = false;
+		if (this == other)
+			return true;
+		if (!(other instanceof Quantity))
+			return false;
 
-		if (other instanceof Quantity) {
-			Quantity otherQuantity = (Quantity) other;
-
-			// same amount and same unit of measure
-			if (getAmount() == otherQuantity.getAmount() && getUOM().equals(otherQuantity.getUOM())) {
-				answer = true;
-			}
-		}
-		return answer;
+		Quantity that = (Quantity) other;
+		return Math.abs(getAmount() - that.getAmount()) < MeasurementSystem.EPSILON
+				&& Objects.equals(getUOM(), that.getUOM());
 	}
 
 	/**
@@ -252,6 +249,8 @@ public class Quantity {
 			result = ((Integer) number).doubleValue();
 		} else if (number instanceof Short) {
 			result = ((Short) number).doubleValue();
+		} else if (number instanceof BigDecimal) {
+			return ((BigDecimal) number).doubleValue();
 		}
 
 		return result;
@@ -338,6 +337,10 @@ public class Quantity {
 	 * @throws Exception Exception
 	 */
 	public Quantity divide(double divisor) throws Exception {
+		if (divisor == 0.0d) {
+			throw new Exception(DomainLocalizer.instance().getErrorString("divisor.cannot.be.zero"));
+		}
+
 		double amount = getAmount() / divisor;
 		return new Quantity(amount, getUOM());
 	}

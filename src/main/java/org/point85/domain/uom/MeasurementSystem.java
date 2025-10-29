@@ -80,6 +80,9 @@ public class MeasurementSystem {
 
 	// UOM cache manager
 	private final CacheManager cacheManager;
+	
+	// floating point precision equality
+    final static double EPSILON = 1e-10;
 
 	private MeasurementSystem() {
 		cacheManager = new CacheManager();
@@ -210,7 +213,7 @@ public class MeasurementSystem {
 			named.setDescription(DomainLocalizer.instance().getUnitString("boltzmann.desc"));
 			break;
 
-		case AVAGADRO_CONSTANT:
+		case AVOGADRO_CONSTANT:
 			// NA
 			named = new Quantity(6.02214076E+23, getOne());
 			named.setName(DomainLocalizer.instance().getUnitString("avo.name"));
@@ -220,7 +223,7 @@ public class MeasurementSystem {
 
 		case GAS_CONSTANT:
 			// R
-			named = getQuantity(Constant.BOLTZMANN_CONSTANT).multiply(getQuantity(Constant.AVAGADRO_CONSTANT));
+			named = getQuantity(Constant.BOLTZMANN_CONSTANT).multiply(getQuantity(Constant.AVOGADRO_CONSTANT));
 			named.setName(DomainLocalizer.instance().getUnitString("gas.name"));
 			named.setSymbol(DomainLocalizer.instance().getUnitString("gas.symbol"));
 			named.setDescription(DomainLocalizer.instance().getUnitString("gas.desc"));
@@ -237,7 +240,7 @@ public class MeasurementSystem {
 		case FARADAY_CONSTANT:
 			// F = e.NA
 			Quantity qe = getQuantity(Constant.ELEMENTARY_CHARGE);
-			named = qe.multiply(getQuantity(Constant.AVAGADRO_CONSTANT));
+			named = qe.multiply(getQuantity(Constant.AVOGADRO_CONSTANT));
 			named.setName(DomainLocalizer.instance().getUnitString("faraday.name"));
 			named.setSymbol(DomainLocalizer.instance().getUnitString("faraday.symbol"));
 			named.setDescription(DomainLocalizer.instance().getUnitString("faraday.desc"));

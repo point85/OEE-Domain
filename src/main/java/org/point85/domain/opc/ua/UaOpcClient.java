@@ -645,6 +645,10 @@ public class UaOpcClient implements SessionActivityListener {
 		}
 
 		Class<?> clazz = BuiltinDataType.getBackingClass(nodeId);
+		
+		if (clazz == null) {
+			return javaObject;
+		}
 		boolean isArray = uaValue.getClass().isArray();
 
 		// Integer and array of

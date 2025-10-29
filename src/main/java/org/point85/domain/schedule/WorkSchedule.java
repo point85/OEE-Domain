@@ -385,20 +385,16 @@ public class WorkSchedule extends NamedObject {
 		}
 
 		// can't be in use
-		for (Shift inUseShift : shifts) {
-			for (Team team : teams) {
-				Rotation rotation = team.getRotation();
+		for (Team team : teams) {
+			Rotation rotation = team.getRotation();
 
-				for (TimePeriod period : rotation.getPeriods()) {
-					if (period.equals(inUseShift)) {
-						throw new Exception(DomainLocalizer.instance().getErrorString("shift.in.use", shift.getName()));
-					}
+			for (TimePeriod period : rotation.getPeriods()) {
+				if (period.equals(shift)) {
+					throw new Exception(DomainLocalizer.instance().getErrorString("shift.in.use", shift.getName(),
+							shift.getWorkSchedule().getName(), team.getName()));
 				}
 			}
 		}
-
-		// remove breaks
-		shift.getBreaks().clear();
 
 		shifts.remove(shift);
 	}

@@ -263,7 +263,7 @@ public class Team extends Named implements Comparable<Team> {
 		// get the working shift from yesterday
 		Shift lastShift = null;
 
-		LocalDate yesterday = thisDate.plusDays(-1);
+		LocalDate yesterday = thisDate.minusDays(1);
 		ShiftInstance yesterdayInstance = getShiftInstanceForDay(yesterday);
 
 		if (yesterdayInstance != null) {
