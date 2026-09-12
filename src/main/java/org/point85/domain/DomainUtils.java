@@ -50,8 +50,8 @@ public final class DomainUtils {
 	}
 
 	public static String getVersionInfo() {
-		return DomainLocalizer.instance().getLangString("version") + " 3.12.7, "
-				+ LocalDate.of(2026, 7, 24).format(DateTimeFormatter.ISO_DATE);
+		return DomainLocalizer.instance().getLangString("version") + " 3.12.8, "
+				+ LocalDate.of(2026, 9, 13).format(DateTimeFormatter.ISO_DATE);
 	}
 
 	// format a Duration
