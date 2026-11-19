@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 
 import org.slf4j.Logger;
@@ -43,7 +44,7 @@ public class HttpOAuthClient {
 
 		try {
 			// send event
-			URL url = new URL(urlPath);
+			URL url = URI.create(urlPath).toURL();
 			conn = (HttpURLConnection) url.openConnection();
 
 			conn.setDoOutput(true);

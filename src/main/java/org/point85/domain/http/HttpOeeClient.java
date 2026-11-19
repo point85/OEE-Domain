@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -89,7 +90,7 @@ public class HttpOeeClient {
 				}
 			}
 
-			URL url = new URL(urlString);
+			URL url = URI.create(urlString).toURL();
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Sending HTTP get request: " + url);
@@ -223,7 +224,7 @@ public class HttpOeeClient {
 			// build URL
 			String urlString = buildHttpUrl(endpoint);
 
-			URL url = new URL(urlString);
+			URL url = URI.create(urlString).toURL();
 
 			if (logger.isInfoEnabled()) {
 				logger.info("Sending HTTP post request: " + url + " with payload " + payload);

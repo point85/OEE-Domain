@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -130,7 +131,7 @@ public class ProficyClient extends PollingClient {
 		BufferedReader httpResponseReader = null;
 		try {
 			// Connect to the web server endpoint
-			URL serverUrl = new URL(uaaUrl);
+			URL serverUrl = URI.create(uaaUrl).toURL();
 			HttpURLConnection urlConnection = (HttpURLConnection) serverUrl.openConnection();
 
 			// Set HTTP method as GET
@@ -230,7 +231,7 @@ public class ProficyClient extends PollingClient {
 		HttpURLConnection conn = null;
 
 		try {
-			URL url = new URL(buildUrl(resource, parameters));
+			URL url = URI.create(buildUrl(resource, parameters)).toURL();
 			conn = (HttpURLConnection) url.openConnection();
 
 			conn.setRequestProperty("Authorization", "Bearer " + getBearerToken().getAccessToken());
@@ -264,7 +265,7 @@ public class ProficyClient extends PollingClient {
 
 		try {
 			// POST event
-			URL url = new URL(buildUrl(resource, parameters));
+			URL url = URI.create(buildUrl(resource, parameters)).toURL();
 			conn = (HttpURLConnection) url.openConnection();
 
 			conn.setDoOutput(true);

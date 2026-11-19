@@ -809,6 +809,7 @@ public class UaOpcClient implements SessionActivityListener {
 				parameters);
 
 		// consumer
+		@SuppressWarnings("unused")
 		UaSubscription.ItemCreationCallback onItemCreated = (item, id) -> item
 				.setValueConsumer(this::onSubscriptionValue);
 
